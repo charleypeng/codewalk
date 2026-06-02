@@ -362,10 +362,11 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 ## Internationalization (i18n)
 
+- Comprehensive localization with 14 supported languages: English (template), Arabic, Bengali, German, Spanish, French, Hindi, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Urdu, and Chinese (Simplified).
 - ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, ~205 keys). Recent additions: share-as-image keys (msgShareAsImage, msgShareAsImageSubject, msgShareAsImageTooTall, msgShareAsImageFailed), diff review surface keys (sessionDiffSummary, sessionDiffUnified, sessionDiffSplit, sessionDiffFilesChanged, sessionDiffLinesCollapsed, sessionDiffLinesAddedRemoved, sessionDiffContentNotCaptured).
 - Generated `AppLocalizations` classes in `lib/l10n/generated/` provide type-safe translation accessors.
 - UI code uses `context.l10n.keyName` via the `L10nContext` extension (`lib/core/i18n/l10n_context.dart`).
-- Context-free services use `L10nBridge.current?.key ?? 'English fallback'` (`lib/core/i18n/l10n_bridge.dart`).
+- Context-free services (tray, background tasks, notification planning) use `L10nBridge.current` (`lib/core/i18n/l10n_bridge.dart`) for context-free access to translations.
 - The locale registry (`lib/core/i18n/app_locales.dart`) defines supported locales, RTL metadata, resolution callback, and PT_BR normalization.
 - `L10nBridge.current` is set at app boot and on locale change via `LocaleProvider` in `lib/main.dart`.
 - Non-translatable invariants: OpenCode wire event types, permission keys, tool state discriminators, REST paths, config key names, and `prompt_async` contract fields.

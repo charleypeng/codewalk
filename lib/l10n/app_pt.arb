@@ -1,1255 +1,104 @@
 {
-  "@aboutGitHub": {
-    "description": "CodeWalk UI string — aboutGitHub"
-  },
-  "@appShellDownloadingUpdate": {
-    "description": "CodeWalk UI string — appShellDownloadingUpdate"
-  },
-  "@appShellInstall": {
-    "description": "CodeWalk UI string — appShellInstall"
-  },
-  "@appShellInstallFailed": {
-    "description": "CodeWalk UI string — appShellInstallFailed"
-  },
-  "@appShellInstallingUpdate": {
-    "description": "CodeWalk UI string — appShellInstallingUpdate"
-  },
-  "@appShellRestart": {
-    "description": "CodeWalk UI string — appShellRestart"
-  },
-  "@appShellUpdateAvailableResult": {
-    "description": "CodeWalk UI string — appShellUpdateAvailableResult",
-    "placeholders": {
-      "latestVersion": {
-        "type": "String"
-      }
-    }
-  },
-  "@behaviorAdvancedPermissionRule": {
-    "description": "CodeWalk UI string — behaviorAdvancedPermissionRule"
-  },
-  "@behaviorAutomatic": {
-    "description": "CodeWalk UI string — behaviorAutomatic"
-  },
-  "@behaviorAutomaticFallback": {
-    "description": "CodeWalk UI string — behaviorAutomaticFallback"
-  },
-  "@behaviorCellularDataSaver": {
-    "description": "CodeWalk UI string — behaviorCellularDataSaver"
-  },
-  "@behaviorChatLevelShare": {
-    "description": "CodeWalk UI string — behaviorChatLevelShare"
-  },
-  "@behaviorCodeWalkReleaseChecks": {
-    "description": "CodeWalk UI string — behaviorCodeWalkReleaseChecks"
-  },
-  "@behaviorControlsOfficialGlobal": {
-    "description": "CodeWalk UI string — behaviorControlsOfficialGlobal"
-  },
-  "@behaviorControlsUpstreamOpenCode": {
-    "description": "CodeWalk UI string — behaviorControlsUpstreamOpenCode"
-  },
-  "@behaviorCustomDisplayName": {
-    "description": "CodeWalk UI string — behaviorCustomDisplayName"
-  },
-  "@behaviorCutsAutomaticMobile": {
-    "description": "CodeWalk UI string — behaviorCutsAutomaticMobile",
-    "placeholders": {
-      "inSeconds": {
-        "type": "int"
-      }
-    }
-  },
-  "@behaviorDisabled": {
-    "description": "CodeWalk UI string — behaviorDisabled"
-  },
-  "@behaviorLightweightTasksLike": {
-    "description": "CodeWalk UI string — behaviorLightweightTasksLike"
-  },
-  "@behaviorManual": {
-    "description": "CodeWalk UI string — behaviorManual"
-  },
-  "@behaviorNotify": {
-    "description": "CodeWalk UI string — behaviorNotify"
-  },
-  "@behaviorOfficialOpenCodePermission": {
-    "description": "CodeWalk UI string — behaviorOfficialOpenCodePermission"
-  },
-  "@behaviorOpenCodeBackedDefaults": {
-    "description": "CodeWalk UI string — behaviorOpenCodeBackedDefaults"
-  },
-  "@behaviorPermissionHandlingProvenance": {
-    "description": "CodeWalk UI string — behaviorPermissionHandlingProvenance"
-  },
-  "@behaviorPermissionsVariantReasoning": {
-    "description": "CodeWalk UI string — behaviorPermissionsVariantReasoning"
-  },
-  "@behaviorPrimaryAgentAgent": {
-    "description": "CodeWalk UI string — behaviorPrimaryAgentAgent"
-  },
-  "@behaviorRefreshDefaults": {
-    "description": "CodeWalk UI string — behaviorRefreshDefaults"
-  },
-  "@behaviorSharedAcrossOpenCode": {
-    "description": "CodeWalk UI string — behaviorSharedAcrossOpenCode"
-  },
-  "@behaviorTheseValuesWrite": {
-    "description": "CodeWalk UI string — behaviorTheseValuesWrite"
-  },
-  "@cannedAttachFiles": {
-    "description": "CodeWalk UI string — cannedAttachFiles"
-  },
-  "@cannedOffMeansReplace": {
-    "description": "CodeWalk UI string — cannedOffMeansReplace"
-  },
-  "@cannedQuickReply": {
-    "description": "CodeWalk UI string — cannedQuickReply"
-  },
-  "@cannedSendImmediatelyInserting": {
-    "description": "CodeWalk UI string — cannedSendImmediatelyInserting"
-  },
-  "@chatActiveServerUnhealthy": {
-    "description": "CodeWalk UI string — chatActiveServerUnhealthy"
-  },
-  "@chatAppBarMoreActions": {
-    "description": "CodeWalk UI string — chatAppBarMoreActions"
-  },
-  "@chatAppBarPinAction": {
-    "description": "CodeWalk UI string — chatAppBarPinAction"
-  },
-  "@chatAppBarPinDescription": {
-    "description": "CodeWalk UI string — chatAppBarPinDescription"
-  },
-  "@chatAppBarUnpinAction": {
-    "description": "CodeWalk UI string — chatAppBarUnpinAction"
-  },
-  "@chatAppBarUnpinDescription": {
-    "description": "CodeWalk UI string — chatAppBarUnpinDescription"
-  },
-  "@chatCachedConversationsYet": {
-    "description": "CodeWalk UI string — chatCachedConversationsYet"
-  },
-  "@chatChangedFilesAvailable": {
-    "description": "CodeWalk UI string — chatChangedFilesAvailable"
-  },
-  "@chatChildrenChatProviderCurrentSessionChildren": {
-    "description": "CodeWalk UI string — chatChildrenChatProviderCurrentSessionChildren",
-    "placeholders": {
-      "length": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatChooseDirectory": {
-    "description": "CodeWalk UI string — chatChooseDirectory"
-  },
-  "@chatChooseFolderOpen": {
-    "description": "CodeWalk UI string — chatChooseFolderOpen"
-  },
-  "@chatCurrent": {
-    "description": "CodeWalk UI string — chatCurrent"
-  },
-  "@chatDiffFiles": {
-    "description": "CodeWalk UI string — chatDiffFiles"
-  },
-  "@chatDisplay": {
-    "description": "CodeWalk UI string — chatDisplay"
-  },
-  "@chatDoubleESCStop": {
-    "description": "CodeWalk UI string — chatDoubleESCStop"
-  },
-  "@chatFilterDirectories": {
-    "description": "CodeWalk UI string — chatFilterDirectories"
-  },
-  "@chatGroupMessageCountMessages": {
-    "description": "CodeWalk UI string — chatGroupMessageCountMessages",
-    "placeholders": {
-      "messageCount": {
-        "type": "String"
-      },
-      "compactionLabel": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatHelp": {
-    "description": "CodeWalk UI string — chatHelp"
-  },
-  "@chatHistoryCollapsed": {
-    "description": "CodeWalk UI string — chatHistoryCollapsed"
-  },
-  "@chatLatestToolActivity": {
-    "description": "CodeWalk UI string — chatLatestToolActivity"
-  },
-  "@chatLoadingProjectContext": {
-    "description": "CodeWalk UI string — chatLoadingProjectContext"
-  },
-  "@chatMessageHide": {
-    "description": "CodeWalk UI string — chatMessageHide"
-  },
-  "@chatMessageMessagePartUnavailable": {
-    "description": "CodeWalk UI string — chatMessageMessagePartUnavailable"
-  },
-  "@chatMessageMetadataAvailable": {
-    "description": "CodeWalk UI string — chatMessageMetadataAvailable"
-  },
-  "@chatMessageModelMessageModelId": {
-    "description": "CodeWalk UI string — chatMessageModelMessageModelId",
-    "placeholders": {
-      "modelId": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatMessageProviderMessageProviderId": {
-    "description": "CodeWalk UI string — chatMessageProviderMessageProviderId",
-    "placeholders": {
-      "providerId": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatMessageRewindEdit": {
-    "description": "CodeWalk UI string — chatMessageRewindEdit"
-  },
-  "@chatMessageYou": {
-    "description": "CodeWalk UI string — chatMessageYou"
-  },
-  "@chatOpenProject": {
-    "description": "CodeWalk UI string — chatOpenProject"
-  },
-  "@chatOpenProjectFolder": {
-    "description": "CodeWalk UI string — chatOpenProjectFolder"
-  },
-  "@chatOpenSidebar": {
-    "description": "CodeWalk UI string — chatOpenSidebar"
-  },
-  "@chatPageStatusContextUsage": {
-    "description": "CodeWalk UI string — chatPageStatusContextUsage"
-  },
-  "@chatPageStatusCost": {
-    "description": "CodeWalk UI string — chatPageStatusCost"
-  },
-  "@chatPageStatusLimit": {
-    "description": "CodeWalk UI string — chatPageStatusLimit"
-  },
-  "@chatPageStatusManageServers": {
-    "description": "CodeWalk UI string — chatPageStatusManageServers"
-  },
-  "@chatPageStatusSaver": {
-    "description": "CodeWalk UI string — chatPageStatusSaver"
-  },
-  "@chatPageStatusSwitchServer": {
-    "description": "CodeWalk UI string — chatPageStatusSwitchServer"
-  },
-  "@chatPageStatusTokens": {
-    "description": "CodeWalk UI string — chatPageStatusTokens"
-  },
-  "@chatPageStatusUsage": {
-    "description": "CodeWalk UI string — chatPageStatusUsage"
-  },
-  "@chatPageStatusUsagePercent": {
-    "description": "CodeWalk UI string — chatPageStatusUsagePercent",
-    "placeholders": {
-      "usagePercent": {
-        "type": "int"
-      }
-    }
-  },
-  "@chatProjectContext2": {
-    "description": "CodeWalk UI string — chatProjectContext2"
-  },
-  "@chatRealtimeGlobalEvent": {
-    "description": "CodeWalk UI string — chatRealtimeGlobalEvent"
-  },
-  "@chatRealtimeGlobalEventReason": {
-    "description": "CodeWalk UI string — chatRealtimeGlobalEventReason",
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatRealtimeGlobalEventStale": {
-    "description": "CodeWalk UI string — chatRealtimeGlobalEventStale"
-  },
-  "@chatRealtimeMessageStreamReason": {
-    "description": "CodeWalk UI string — chatRealtimeMessageStreamReason",
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatRealtimeRealtimeEvent": {
-    "description": "CodeWalk UI string — chatRealtimeRealtimeEvent"
-  },
-  "@chatRealtimeRealtimeEventReason": {
-    "description": "CodeWalk UI string — chatRealtimeRealtimeEventReason",
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatRealtimeRealtimeEventStale": {
-    "description": "CodeWalk UI string — chatRealtimeRealtimeEventStale"
-  },
-  "@chatRealtimeReconnectingServerTry": {
-    "description": "CodeWalk UI string — chatRealtimeReconnectingServerTry"
-  },
-  "@chatReasoning": {
-    "description": "CodeWalk UI string — chatReasoning"
-  },
-  "@chatRefreshConversation": {
-    "description": "CodeWalk UI string — chatRefreshConversation"
-  },
-  "@chatRefreshProjects": {
-    "description": "CodeWalk UI string — chatRefreshProjects"
-  },
-  "@chatRemoveDisplayNameHistory": {
-    "description": "CodeWalk UI string — chatRemoveDisplayNameHistory",
-    "placeholders": {
-      "displayName": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatRetry2": {
-    "description": "CodeWalk UI string — chatRetry2"
-  },
-  "@chatRetryingModelRequest": {
-    "description": "CodeWalk UI string — chatRetryingModelRequest"
-  },
-  "@chatReviewChanges": {
-    "description": "CodeWalk UI string — chatReviewChanges"
-  },
-  "@chatSelectDirectory": {
-    "description": "CodeWalk UI string — chatSelectDirectory"
-  },
-  "@chatSelectProjectBelow": {
-    "description": "CodeWalk UI string — chatSelectProjectBelow"
-  },
-  "@chatSessionChatSessionSession": {
-    "description": "CodeWalk UI string — chatSessionChatSessionSession",
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatSessionConversationNextAction": {
-    "description": "CodeWalk UI string — chatSessionConversationNextAction",
-    "placeholders": {
-      "nextAction": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatSessionConversations": {
-    "description": "CodeWalk UI string — chatSessionConversations"
-  },
-  "@chatSessionCreateConversationStart": {
-    "description": "CodeWalk UI string — chatSessionCreateConversationStart"
-  },
-  "@chatSessionsLength": {
-    "description": "CodeWalk UI string — chatSessionsLength",
-    "placeholders": {
-      "length": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatSettings": {
-    "description": "CodeWalk UI string — chatSettings"
-  },
-  "@chatSidebarAccess": {
-    "description": "CodeWalk UI string — chatSidebarAccess"
-  },
-  "@chatSyncLabel": {
-    "description": "CodeWalk UI string — chatSyncLabel",
-    "placeholders": {
-      "label": {
-        "type": "String"
-      }
-    }
-  },
-  "@chatTasks": {
-    "description": "CodeWalk UI string — chatTasks"
-  },
-  "@chatTasksAvailableSession": {
-    "description": "CodeWalk UI string — chatTasksAvailableSession"
-  },
-  "@errorFormatAuthenticationFailedReconnect": {
-    "description": "CodeWalk UI string — errorFormatAuthenticationFailedReconnect"
-  },
-  "@errorFormatProviderTemporarilyUnavailable": {
-    "description": "CodeWalk UI string — errorFormatProviderTemporarilyUnavailable"
-  },
-  "@errorFormatQuotaExceededCheck": {
-    "description": "CodeWalk UI string — errorFormatQuotaExceededCheck"
-  },
-  "@errorFormatRateLimitExceeded": {
-    "description": "CodeWalk UI string — errorFormatRateLimitExceeded"
-  },
-  "@errorFormatServerErrorPlease": {
-    "description": "CodeWalk UI string — errorFormatServerErrorPlease"
-  },
-  "@errorFormatServiceTemporarilyUnavailable": {
-    "description": "CodeWalk UI string — errorFormatServiceTemporarilyUnavailable"
-  },
-  "@errorFormatUnableReachServer": {
-    "description": "CodeWalk UI string — errorFormatUnableReachServer"
-  },
-  "@fileActionAttachmentDataDecoded": {
-    "description": "CodeWalk UI string — fileActionAttachmentDataDecoded"
-  },
-  "@fileActionAttachmentPathEmpty": {
-    "description": "CodeWalk UI string — fileActionAttachmentPathEmpty"
-  },
-  "@fileActionAttachmentPayloadEmpty": {
-    "description": "CodeWalk UI string — fileActionAttachmentPayloadEmpty"
-  },
-  "@fileActionAttachmentProvideValid": {
-    "description": "CodeWalk UI string — fileActionAttachmentProvideValid"
-  },
-  "@fileActionAttachmentSavedDevice": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedDevice"
-  },
-  "@fileActionAttachmentSavedOutputFile": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedOutputFile",
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "@fileActionAttachmentSavedOutputFile2": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedOutputFile2",
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "@fileActionAttachmentSavedSavedPath": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedSavedPath",
-    "placeholders": {
-      "savedPath": {
-        "type": "String"
-      }
-    }
-  },
-  "@fileActionLocalAttachmentFound": {
-    "description": "CodeWalk UI string — fileActionLocalAttachmentFound"
-  },
-  "@fileActionSaveCanceled": {
-    "description": "CodeWalk UI string — fileActionSaveCanceled"
-  },
-  "@fileActionUnableOpenLocal": {
-    "description": "CodeWalk UI string — fileActionUnableOpenLocal"
-  },
-  "@filesAddChat": {
-    "description": "CodeWalk UI string — filesAddChat"
-  },
-  "@filesBinaryFilePreview": {
-    "description": "CodeWalk UI string — filesBinaryFilePreview"
-  },
-  "@filesClear": {
-    "description": "CodeWalk UI string — filesClear"
-  },
-  "@filesContents": {
-    "description": "CodeWalk UI string — filesContents"
-  },
-  "@filesFileEmpty": {
-    "description": "CodeWalk UI string — filesFileEmpty"
-  },
-  "@filesFilesFound": {
-    "description": "CodeWalk UI string — filesFilesFound"
-  },
-  "@filesNames": {
-    "description": "CodeWalk UI string — filesNames"
-  },
-  "@filesOpenFilesFileState": {
-    "description": "CodeWalk UI string — filesOpenFilesFileState",
-    "placeholders": {
-      "length": {
-        "type": "String"
-      }
-    }
-  },
-  "@filesQuickOpenFile": {
-    "description": "CodeWalk UI string — filesQuickOpenFile"
-  },
-  "@logsAppLogs": {
-    "description": "CodeWalk UI string — logsAppLogs"
-  },
-  "@logsLevel": {
-    "description": "CodeWalk UI string — logsLevel"
-  },
-  "@logsShowingOrderedLength": {
-    "description": "CodeWalk UI string — logsShowingOrderedLength",
-    "placeholders": {
-      "length": {
-        "type": "int"
-      },
-      "length2": {
-        "type": "int"
-      }
-    }
-  },
-  "@logsTimeRange": {
-    "description": "CodeWalk UI string — logsTimeRange"
-  },
-  "@mathExpressionLabel": {
-    "description": "CodeWalk UI string — mathExpressionLabel"
-  },
-  "@mermaidCopySourceTooltip": {
-    "description": "CodeWalk UI string — mermaidCopySourceTooltip"
-  },
-  "@mermaidDiagramLabel": {
-    "description": "CodeWalk UI string — mermaidDiagramLabel"
-  },
-  "@modelChooseAgent": {
-    "description": "CodeWalk UI string — modelChooseAgent"
-  },
-  "@modelFavorites": {
-    "description": "CodeWalk UI string — modelFavorites"
-  },
-  "@modelModelsFound": {
-    "description": "CodeWalk UI string — modelModelsFound"
-  },
-  "@msgInfoPartDescriptionModel": {
-    "description": "CodeWalk UI string — msgInfoPartDescriptionModel",
-    "placeholders": {
-      "description": {
-        "type": "String"
-      },
-      "model": {
-        "type": "String"
-      }
-    }
-  },
-  "@msgInfoSubtaskPartAgent": {
-    "description": "CodeWalk UI string — msgInfoSubtaskPartAgent",
-    "placeholders": {
-      "agent": {
-        "type": "String"
-      }
-    }
-  },
-  "@msgReadAloud": {
-    "description": "CodeWalk UI string — msgReadAloud"
-  },
-  "@msgReadAloudNotAvailable": {
-    "description": "CodeWalk UI string — msgReadAloudNotAvailable"
-  },
-  "@msgShareAsImage": {
-    "description": "CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble"
-  },
-  "@msgShareAsImageFailed": {
-    "description": "CodeWalk UI string — Shown when image capture or sharing fails unexpectedly"
-  },
-  "@msgShareAsImageSubject": {
-    "description": "CodeWalk UI string — Subject line when sharing a message image via the system share sheet"
-  },
-  "@msgShareAsImageTooTall": {
-    "description": "CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height"
-  },
-  "@msgStopReadAloud": {
-    "description": "CodeWalk UI string — msgStopReadAloud"
-  },
-  "@notifAndroidBatteryOptimization": {
-    "description": "CodeWalk UI string — notifAndroidBatteryOptimization"
-  },
-  "@notifNotificationsArriveReopening": {
-    "description": "CodeWalk UI string — notifNotificationsArriveReopening"
-  },
-  "@notifResponseRunningKeep": {
-    "description": "CodeWalk UI string — notifResponseRunningKeep"
-  },
-  "@notifSelectedSoundLabel": {
-    "description": "CodeWalk UI string — notifSelectedSoundLabel",
-    "placeholders": {
-      "soundLabel": {
-        "type": "String"
-      }
-    }
-  },
-  "@onboardingAIGeneratedTitles": {
-    "description": "CodeWalk UI string — onboardingAIGeneratedTitles"
-  },
-  "@onboardingAddServerLater": {
-    "description": "CodeWalk UI string — onboardingAddServerLater"
-  },
-  "@onboardingAlmostInstallOpenCode": {
-    "description": "CodeWalk UI string — onboardingAlmostInstallOpenCode"
-  },
-  "@onboardingAppProviderLocalSetupLogsLength": {
-    "description": "CodeWalk UI string — onboardingAppProviderLocalSetupLogsLength",
-    "placeholders": {
-      "length": {
-        "type": "int"
-      },
-      "length2": {
-        "type": "int"
-      }
-    }
-  },
-  "@onboardingAuthenticate": {
-    "description": "CodeWalk UI string — onboardingAuthenticate"
-  },
-  "@onboardingChooseAnotherPath": {
-    "description": "CodeWalk UI string — onboardingChooseAnotherPath"
-  },
-  "@onboardingCodeWalkAppOpenCode": {
-    "description": "CodeWalk UI string — onboardingCodeWalkAppOpenCode"
-  },
-  "@onboardingConnectRunningServer": {
-    "description": "CodeWalk UI string — onboardingConnectRunningServer"
-  },
-  "@onboardingConnectionIssue": {
-    "description": "CodeWalk UI string — onboardingConnectionIssue"
-  },
-  "@onboardingConnectionTips": {
-    "description": "CodeWalk UI string — onboardingConnectionTips"
-  },
-  "@onboardingContinueServerURL": {
-    "description": "CodeWalk UI string — onboardingContinueServerURL"
-  },
-  "@onboardingCopyLoginURL": {
-    "description": "CodeWalk UI string — onboardingCopyLoginURL"
-  },
-  "@onboardingDefaultURLEmulator": {
-    "description": "CodeWalk UI string — onboardingDefaultURLEmulator"
-  },
-  "@onboardingDetailedSetupEvents": {
-    "description": "CodeWalk UI string — onboardingDetailedSetupEvents"
-  },
-  "@onboardingDonShowAgain": {
-    "description": "CodeWalk UI string — onboardingDonShowAgain"
-  },
-  "@onboardingExisting": {
-    "description": "CodeWalk UI string — onboardingExisting"
-  },
-  "@onboardingExplainInstallOpenCode": {
-    "description": "CodeWalk UI string — onboardingExplainInstallOpenCode"
-  },
-  "@onboardingGoodOptionDesktop": {
-    "description": "CodeWalk UI string — onboardingGoodOptionDesktop"
-  },
-  "@onboardingInstallBinary": {
-    "description": "CodeWalk UI string — onboardingInstallBinary"
-  },
-  "@onboardingInstallBun": {
-    "description": "CodeWalk UI string — onboardingInstallBun"
-  },
-  "@onboardingInstallBunOpenCode": {
-    "description": "CodeWalk UI string — onboardingInstallBunOpenCode"
-  },
-  "@onboardingInstallNpm": {
-    "description": "CodeWalk UI string — onboardingInstallNpm"
-  },
-  "@onboardingInstallRunOpenCode": {
-    "description": "CodeWalk UI string — onboardingInstallRunOpenCode"
-  },
-  "@onboardingLatestOutputAppProvider": {
-    "description": "CodeWalk UI string — onboardingLatestOutputAppProvider",
-    "placeholders": {
-      "localServerLastOutput": {
-        "type": "String"
-      }
-    }
-  },
-  "@onboardingLetCodeWalkSet": {
-    "description": "CodeWalk UI string — onboardingLetCodeWalkSet"
-  },
-  "@onboardingManagedLocalServer": {
-    "description": "CodeWalk UI string — onboardingManagedLocalServer"
-  },
-  "@onboardingManagedLocalServer2": {
-    "description": "CodeWalk UI string — onboardingManagedLocalServer2"
-  },
-  "@onboardingOpenCode": {
-    "description": "CodeWalk UI string — onboardingOpenCode"
-  },
-  "@onboardingOpenCodeRunningDevice": {
-    "description": "CodeWalk UI string — onboardingOpenCodeRunningDevice"
-  },
-  "@onboardingOpenCodeRunsLocally": {
-    "description": "CodeWalk UI string — onboardingOpenCodeRunsLocally"
-  },
-  "@onboardingOpenTailscaleLogin": {
-    "description": "CodeWalk UI string — onboardingOpenTailscaleLogin"
-  },
-  "@onboardingPasswordRequired": {
-    "description": "CodeWalk UI string — Validation error shown when Basic Auth password is empty"
-  },
-  "@onboardingRecommendedOrderTry": {
-    "description": "CodeWalk UI string — onboardingRecommendedOrderTry"
-  },
-  "@onboardingRefreshChecks": {
-    "description": "CodeWalk UI string — onboardingRefreshChecks"
-  },
-  "@onboardingShowSetupSteps": {
-    "description": "CodeWalk UI string — onboardingShowSetupSteps"
-  },
-  "@onboardingShowSetupSteps2": {
-    "description": "CodeWalk UI string — onboardingShowSetupSteps2"
-  },
-  "@onboardingSkip": {
-    "description": "CodeWalk UI string — onboardingSkip"
-  },
-  "@onboardingSkipSetup": {
-    "description": "CodeWalk UI string — onboardingSkipSetup"
-  },
-  "@onboardingStart": {
-    "description": "CodeWalk UI string — onboardingStart"
-  },
-  "@onboardingStop": {
-    "description": "CodeWalk UI string — onboardingStop"
-  },
-  "@onboardingUseBasicAuth": {
-    "description": "CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth"
-  },
-  "@onboardingUsernameRequired": {
-    "description": "CodeWalk UI string — Validation error shown when Basic Auth username is empty"
-  },
-  "@onboardingUsesServerTitle": {
-    "description": "CodeWalk UI string — onboardingUsesServerTitle"
-  },
-  "@onboardingViewSetupDebug": {
-    "description": "CodeWalk UI string — onboardingViewSetupDebug"
-  },
-  "@onboardingWindowsTipInstalling": {
-    "description": "CodeWalk UI string — onboardingWindowsTipInstalling"
-  },
-  "@questionAnswerSelected": {
-    "description": "CodeWalk UI string — questionAnswerSelected"
-  },
-  "@questionCommaSeparatedValues": {
-    "description": "CodeWalk UI string — questionCommaSeparatedValues"
-  },
-  "@questionQuestionGroupMarked": {
-    "description": "CodeWalk UI string — questionQuestionGroupMarked"
-  },
-  "@questionQuestionRequest": {
-    "description": "CodeWalk UI string — questionQuestionRequest"
-  },
-  "@questionQuestionsProvidedSubmit": {
-    "description": "CodeWalk UI string — questionQuestionsProvidedSubmit"
-  },
-  "@questionReviewAnswersSubmitting": {
-    "description": "CodeWalk UI string — questionReviewAnswersSubmitting"
-  },
-  "@serverClearOAuth": {
-    "description": "CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile"
-  },
-  "@serverOAuthAuthFailed": {
-    "description": "CodeWalk UI string — Error message shown when OAuth re-authentication fails"
-  },
-  "@serverOAuthChip": {
-    "description": "CodeWalk UI string — Chip label showing a server profile uses OAuth authentication"
-  },
-  "@serverOAuthNotSupported": {
-    "description": "CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform"
-  },
-  "@serverReauthenticate": {
-    "description": "CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile"
-  },
-  "@serverTailscaleChip": {
-    "description": "CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale"
-  },
-  "@serversActive": {
-    "description": "CodeWalk UI string — serversActive"
-  },
-  "@serversActiveServer": {
-    "description": "CodeWalk UI string — serversActiveServer"
-  },
-  "@serversAddLeastOpenCode": {
-    "description": "CodeWalk UI string — serversAddLeastOpenCode"
-  },
-  "@serversAddServer": {
-    "description": "CodeWalk UI string — serversAddServer"
-  },
-  "@serversCancel": {
-    "description": "CodeWalk UI string — serversCancel"
-  },
-  "@serversCheckHealth": {
-    "description": "CodeWalk UI string — serversCheckHealth"
-  },
-  "@serversClearDefault": {
-    "description": "CodeWalk UI string — serversClearDefault"
-  },
-  "@serversCommandAppProviderLocalServerCommandPath": {
-    "description": "CodeWalk UI string — serversCommandAppProviderLocalServerCommandPath",
-    "placeholders": {
-      "localServerCommandPath": {
-        "type": "String"
-      }
-    }
-  },
-  "@serversCopy": {
-    "description": "CodeWalk UI string — serversCopy"
-  },
-  "@serversDefault": {
-    "description": "CodeWalk UI string — serversDefault"
-  },
-  "@serversDelete": {
-    "description": "CodeWalk UI string — serversDelete"
-  },
-  "@serversDeleteServer": {
-    "description": "CodeWalk UI string — serversDeleteServer"
-  },
-  "@serversEdit": {
-    "description": "CodeWalk UI string — serversEdit"
-  },
-  "@serversLocalOpenCodeServer": {
-    "description": "CodeWalk UI string — serversLocalOpenCodeServer"
-  },
-  "@serversManagedModeAvailable": {
-    "description": "CodeWalk UI string — serversManagedModeAvailable"
-  },
-  "@serversRefreshHealth": {
-    "description": "CodeWalk UI string — serversRefreshHealth"
-  },
-  "@serversRemoveProfileDisplayName": {
-    "description": "CodeWalk UI string — serversRemoveProfileDisplayName",
-    "placeholders": {
-      "displayName": {
-        "type": "String"
-      }
-    }
-  },
-  "@serversServersConfigured": {
-    "description": "CodeWalk UI string — serversServersConfigured"
-  },
-  "@serversSetActive": {
-    "description": "CodeWalk UI string — serversSetActive"
-  },
-  "@serversSetDefault": {
-    "description": "CodeWalk UI string — serversSetDefault"
-  },
-  "@serversSetupDebug": {
-    "description": "CodeWalk UI string — serversSetupDebug"
-  },
-  "@serversSetupWizard": {
-    "description": "CodeWalk UI string — serversSetupWizard"
-  },
-  "@settingsAppearanceMathRendering": {
-    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
-  },
-  "@settingsAppearanceMathRenderingDescription": {
-    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
-  },
-  "@settingsReadAloudEnabled": {
-    "description": "CodeWalk UI string — settingsReadAloudEnabled"
-  },
-  "@settingsReadAloudEnabledDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudEnabledDescription"
-  },
-  "@settingsReadAloudPitch": {
-    "description": "CodeWalk UI string — settingsReadAloudPitch"
-  },
-  "@settingsReadAloudPitchDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudPitchDescription"
-  },
-  "@settingsReadAloudSectionDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudSectionDescription"
-  },
-  "@settingsReadAloudSectionTitle": {
-    "description": "CodeWalk UI string — settingsReadAloudSectionTitle"
-  },
-  "@settingsReadAloudSpeed": {
-    "description": "CodeWalk UI string — settingsReadAloudSpeed"
-  },
-  "@settingsReadAloudSpeedDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudSpeedDescription"
-  },
-  "@settingsReadAloudVoice": {
-    "description": "CodeWalk UI string — settingsReadAloudVoice"
-  },
-  "@settingsReadAloudVoiceHint": {
-    "description": "CodeWalk UI string — settingsReadAloudVoiceHint"
-  },
-  "@setupDebugBun2": {
-    "description": "CodeWalk UI string — setupDebugBun2"
-  },
-  "@setupDebugCapturedSetupDetails": {
-    "description": "CodeWalk UI string — setupDebugCapturedSetupDetails"
-  },
-  "@setupDebugCapturedSetupLogs": {
-    "description": "CodeWalk UI string — setupDebugCapturedSetupLogs"
-  },
-  "@setupDebugClearSetupDebug": {
-    "description": "CodeWalk UI string — setupDebugClearSetupDebug"
-  },
-  "@setupDebugCodeWalkCaptureEnough": {
-    "description": "CodeWalk UI string — setupDebugCodeWalkCaptureEnough"
-  },
-  "@setupDebugCommandPath2": {
-    "description": "CodeWalk UI string — setupDebugCommandPath2"
-  },
-  "@setupDebugCopySetupDebug": {
-    "description": "CodeWalk UI string — setupDebugCopySetupDebug"
-  },
-  "@setupDebugCurrentStatus": {
-    "description": "CodeWalk UI string — setupDebugCurrentStatus"
-  },
-  "@setupDebugDiagnosticsLoading": {
-    "description": "CodeWalk UI string — setupDebugDiagnosticsLoading"
-  },
-  "@setupDebugEnvironmentDiagnostics": {
-    "description": "CodeWalk UI string — setupDebugEnvironmentDiagnostics"
-  },
-  "@setupDebugFocusedOpenCodeSetup": {
-    "description": "CodeWalk UI string — setupDebugFocusedOpenCodeSetup"
-  },
-  "@setupDebugInstallDirectory": {
-    "description": "CodeWalk UI string — setupDebugInstallDirectory"
-  },
-  "@setupDebugLatestLocalServer": {
-    "description": "CodeWalk UI string — setupDebugLatestLocalServer"
-  },
-  "@setupDebugManualTroubleshooting": {
-    "description": "CodeWalk UI string — setupDebugManualTroubleshooting"
-  },
-  "@setupDebugNetwork2": {
-    "description": "CodeWalk UI string — setupDebugNetwork2"
-  },
-  "@setupDebugNode": {
-    "description": "CodeWalk UI string — setupDebugNode"
-  },
-  "@setupDebugNpm2": {
-    "description": "CodeWalk UI string — setupDebugNpm2"
-  },
-  "@setupDebugOpenCode2": {
-    "description": "CodeWalk UI string — setupDebugOpenCode2"
-  },
-  "@setupDebugOpenCodeSetupDebug": {
-    "description": "CodeWalk UI string — setupDebugOpenCodeSetupDebug"
-  },
-  "@setupDebugPlatform2": {
-    "description": "CodeWalk UI string — setupDebugPlatform2"
-  },
-  "@setupDebugRunDiagnosticsTry": {
-    "description": "CodeWalk UI string — setupDebugRunDiagnosticsTry"
-  },
-  "@setupDebugScreenCoversOpenCode": {
-    "description": "CodeWalk UI string — setupDebugScreenCoversOpenCode"
-  },
-  "@setupDebugTimeEntrySource": {
-    "description": "CodeWalk UI string — setupDebugTimeEntrySource",
-    "placeholders": {
-      "time": {
-        "type": "String"
-      },
-      "source": {
-        "type": "String"
-      }
-    }
-  },
-  "@setupDebugTimeline2": {
-    "description": "CodeWalk UI string — setupDebugTimeline2"
-  },
-  "@setupDebugWSL": {
-    "description": "CodeWalk UI string — setupDebugWSL"
-  },
-  "@shortcutsApply": {
-    "description": "CodeWalk UI string — shortcutsApply"
-  },
-  "@shortcutsConflictConflict": {
-    "description": "CodeWalk UI string — shortcutsConflictConflict",
-    "placeholders": {
-      "conflict": {
-        "type": "String"
-      }
-    }
-  },
-  "@shortcutsKeyboardShortcuts": {
-    "description": "CodeWalk UI string — shortcutsKeyboardShortcuts"
-  },
-  "@shortcutsReset": {
-    "description": "CodeWalk UI string — shortcutsReset"
-  },
-  "@shortcutsSearchEditBindings": {
-    "description": "CodeWalk UI string — shortcutsSearchEditBindings"
-  },
-  "@shortcutsSetShortcutWidget": {
-    "description": "CodeWalk UI string — shortcutsSetShortcutWidget",
-    "placeholders": {
-      "label": {
-        "type": "String"
-      }
-    }
-  },
-  "@shortcutsTheseBindingsStored": {
-    "description": "CodeWalk UI string — shortcutsTheseBindingsStored"
-  },
-  "@speechAutoStopSilence": {
-    "description": "CodeWalk UI string — speechAutoStopSilence"
-  },
-  "@speechChooseRecognitionEngine": {
-    "description": "CodeWalk UI string — speechChooseRecognitionEngine"
-  },
-  "@speechDownload": {
-    "description": "CodeWalk UI string — speechDownload"
-  },
-  "@speechEngine": {
-    "description": "CodeWalk UI string — speechEngine"
-  },
-  "@speechInstalledLanguages": {
-    "description": "CodeWalk UI string — speechInstalledLanguages"
-  },
-  "@speechListeningStopsAutomatically": {
-    "description": "CodeWalk UI string — speechListeningStopsAutomatically"
-  },
-  "@speechMoonshine": {
-    "description": "CodeWalk UI string — speechMoonshine"
-  },
-  "@speechMoonshineModelsDesktop": {
-    "description": "CodeWalk UI string — speechMoonshineModelsDesktop"
-  },
-  "@speechMoonshineStaysDownloadable": {
-    "description": "CodeWalk UI string — speechMoonshineStaysDownloadable"
-  },
-  "@speechNative": {
-    "description": "CodeWalk UI string — speechNative"
-  },
-  "@speechNativeSTTDisabled": {
-    "description": "CodeWalk UI string — speechNativeSTTDisabled"
-  },
-  "@speechNativeSTTWorks": {
-    "description": "CodeWalk UI string — speechNativeSTTWorks"
-  },
-  "@speechNativeStartsFaster": {
-    "description": "CodeWalk UI string — speechNativeStartsFaster"
-  },
-  "@speechParakeet": {
-    "description": "CodeWalk UI string — speechParakeet"
-  },
-  "@speechParakeetModelsDesktop": {
-    "description": "CodeWalk UI string — speechParakeetModelsDesktop"
-  },
-  "@speechParakeetStaysDownloadable": {
-    "description": "CodeWalk UI string — speechParakeetStaysDownloadable"
-  },
-  "@speechPickLanguagePacks": {
-    "description": "CodeWalk UI string — speechPickLanguagePacks"
-  },
-  "@speechRemove": {
-    "description": "CodeWalk UI string — speechRemove"
-  },
-  "@speechSelectSherpaAbove": {
-    "description": "CodeWalk UI string — speechSelectSherpaAbove"
-  },
-  "@speechSenseVoice": {
-    "description": "CodeWalk UI string — speechSenseVoice"
-  },
-  "@speechSenseVoiceModelsDesktop": {
-    "description": "CodeWalk UI string — speechSenseVoiceModelsDesktop"
-  },
-  "@speechSenseVoiceStaysDownloadable": {
-    "description": "CodeWalk UI string — speechSenseVoiceStaysDownloadable"
-  },
-  "@speechSherpa": {
-    "description": "CodeWalk UI string — speechSherpa"
-  },
-  "@speechSherpaExperimentalFail": {
-    "description": "CodeWalk UI string — speechSherpaExperimentalFail"
-  },
-  "@speechSherpaModelsLinux": {
-    "description": "CodeWalk UI string — speechSherpaModelsLinux"
-  },
-  "@speechSpeechText": {
-    "description": "CodeWalk UI string — speechSpeechText"
-  },
-  "@tailscaleNoPeers": {
-    "description": "CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible"
-  },
-  "@tailscalePeerOffline": {
-    "description": "CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline"
-  },
-  "@tailscaleSelectPeer": {
-    "description": "CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source"
-  },
-  "@terminalTerminal": {
-    "description": "CodeWalk UI string — terminalTerminal"
-  },
-  "@toolPresentationAwaitingInput": {
-    "description": "CodeWalk UI string — toolPresentationAwaitingInput"
-  },
-  "@toolPresentationEditing": {
-    "description": "CodeWalk UI string — toolPresentationEditing"
-  },
-  "@toolPresentationEditingFiles": {
-    "description": "CodeWalk UI string — toolPresentationEditingFiles"
-  },
-  "@toolPresentationFinding": {
-    "description": "CodeWalk UI string — toolPresentationFinding"
-  },
-  "@toolPresentationFindingFiles": {
-    "description": "CodeWalk UI string — toolPresentationFindingFiles"
-  },
-  "@toolPresentationReading": {
-    "description": "CodeWalk UI string — toolPresentationReading"
-  },
-  "@toolPresentationReadingFile": {
-    "description": "CodeWalk UI string — toolPresentationReadingFile"
-  },
-  "@toolPresentationRunning": {
-    "description": "CodeWalk UI string — toolPresentationRunning"
-  },
-  "@toolPresentationRunningCommand": {
-    "description": "CodeWalk UI string — toolPresentationRunningCommand"
-  },
-  "@toolPresentationSearching": {
-    "description": "CodeWalk UI string — toolPresentationSearching"
-  },
-  "@toolPresentationSearchingCode": {
-    "description": "CodeWalk UI string — toolPresentationSearchingCode"
-  },
-  "@toolPresentationSearchingWeb": {
-    "description": "CodeWalk UI string — toolPresentationSearchingWeb"
-  },
-  "@toolPresentationUpdatingTaskList": {
-    "description": "CodeWalk UI string — toolPresentationUpdatingTaskList"
-  },
-  "@toolPresentationUpdatingTasks": {
-    "description": "CodeWalk UI string — toolPresentationUpdatingTasks"
-  },
-  "@toolPresentationWaitingInput": {
-    "description": "CodeWalk UI string — toolPresentationWaitingInput"
-  },
-  "@toolPresentationWriting": {
-    "description": "CodeWalk UI string — toolPresentationWriting"
-  },
-  "@toolPresentationWritingFile": {
-    "description": "CodeWalk UI string — toolPresentationWritingFile"
-  },
-  "@useOAuthCloudflareAccess": {
-    "description": "CodeWalk UI string — Label for the Cloudflare Access OAuth toggle in the onboarding/server setup wizard"
-  },
-  "@useOAuthCloudflareAccessSubtitle": {
-    "description": "CodeWalk UI string — Subtitle explaining the OAuth toggle when supported on this platform"
-  },
-  "@useOAuthCloudflareAccessUnsupported": {
-    "description": "CodeWalk UI string — Shown when OAuth is not supported on the current platform"
-  },
-  "@useTailscale": {
-    "description": "CodeWalk UI string — Label for the Tailscale transport toggle in the onboarding/server setup wizard"
-  },
-  "@useTailscaleSubtitle": {
-    "description": "CodeWalk UI string — Subtitle explaining the Tailscale toggle when supported on this platform"
-  },
-  "@useTailscaleUnsupported": {
-    "description": "CodeWalk UI string — Shown when Tailscale transport is not supported on the current platform"
-  },
-  "@workspaceChooseFolderOpen": {
-    "description": "CodeWalk UI string — workspaceChooseFolderOpen"
-  },
-  "@workspaceOpenFolder": {
-    "description": "CodeWalk UI string — workspaceOpenFolder"
-  },
-  "@workspaceOpenProjectFolder": {
-    "description": "CodeWalk UI string — workspaceOpenProjectFolder"
-  },
-  "@workspaceSuggestions": {
-    "description": "CodeWalk UI string — workspaceSuggestions"
-  },
+  "@@locale": "pt",
   "aboutGitHub": "GitHub",
-  "appProviderCannotActivateUnhealthy": "Não é possível ativar um servidor não saudável",
-  "appProviderDesktopOnly": "O servidor local gerenciado está disponível apenas no desktop.",
-  "appProviderDetectingCommand": "Detectando comando OpenCode...",
-  "appProviderErrorCannotActivateUnhealthy": "Não é possível ativar um servidor não saudável",
-  "appProviderErrorCloudflareOAuthNotSupported": "Cloudflare Access OAuth não é suportado nesta plataforma",
-  "appProviderErrorInstallationFailed": "A instalação do OpenCode falhou.",
-  "appProviderErrorInvalidServerUrl": "URL do servidor inválida",
-  "appProviderErrorLocalServerHealthCheckFailed": "O servidor local iniciou, mas a verificação de integridade não passou.",
-  "appProviderErrorManagedDesktopOnly": "O servidor local gerenciado está disponível apenas no desktop.",
-  "appProviderErrorServerAlreadyExists": "Um servidor com esta URL já existe",
-  "appProviderErrorServerProfileNotFound": "Perfil de servidor não encontrado",
-  "appProviderErrorServerUrlRequired": "A URL do servidor é obrigatória",
-  "appProviderErrorTailscaleNotSupported": "Tailscale não é suportado nesta plataforma",
-  "appProviderExitedWithCode": "O servidor local saiu com o código {code}.",
-  "appProviderFailedToStart": "Falha ao iniciar o servidor OpenCode local.",
-  "appProviderInstallBinary": "Instalar binário",
-  "appProviderInstallBunOpenCode": "Instalar Bun + OpenCode",
-  "appProviderInstallSucceeded": "Instalação bem-sucedida.",
-  "appProviderInstallSucceededWithPath": "Instalação bem-sucedida. Comando OpenCode disponível em {path}.",
-  "appProviderInstallViaBun": "Instalar via Bun",
-  "appProviderInstallViaNpm": "Instalar via npm",
-  "appProviderInstallationFailed": "A instalação do OpenCode falhou.",
-  "appProviderInstalledSuccessfully": "Requisitos do OpenCode instalados com sucesso.",
-  "appProviderInstallingRequirements": "Instalando requisitos do OpenCode...",
-  "appProviderInvalidServerUrl": "URL do servidor inválida",
-  "appProviderLabelLocalOpenCodeManaged": "OpenCode Local (Gerenciado)",
-  "appProviderLabelPrimaryServer": "Servidor primário",
-  "appProviderLocalManaged": "OpenCode Local (Gerenciado)",
-  "appProviderLocalServerStopped": "O servidor local está parado.",
-  "appProviderNotDetectedInstall": "O comando OpenCode não foi detectado. Execute a instalação a partir do assistente.",
-  "appProviderNotDetectedRefresh": "O comando OpenCode não foi detectado. Se você o instalou há pouco tempo, atualize as verificações ou reabra o {appName} para recarregar o PATH.",
-  "appProviderOAuthNotSupported": "Cloudflare Access OAuth não é suportado nesta plataforma",
-  "appProviderOpenCodeDetected": "OpenCode detectado",
-  "appProviderOpenCodeNotDetected": "OpenCode não detectado",
-  "appProviderPrimaryServer": "Servidor primário",
-  "appProviderProfileNotFound": "Perfil de servidor não encontrado",
-  "appProviderRunDiagnostics": "Execute diagnósticos para verificar os requisitos locais do OpenCode.",
-  "appProviderRunningAt": "Rodando em {url}",
-  "appProviderSetupDetectingOpenCode": "Detectando comando OpenCode...",
-  "appProviderSetupInstallationSucceeded": "Instalação bem-sucedida.",
-  "appProviderSetupInstallationSucceededWithPath": "Instalação bem-sucedida. Comando OpenCode disponível em {path}.",
-  "appProviderSetupInstallingRequirements": "Instalando requisitos do OpenCode...",
-  "appProviderSetupOpenCodeDetected": "OpenCode detectado",
-  "appProviderSetupOpenCodeNotDetected": "OpenCode não detectado",
-  "appProviderSetupOpenCodeNotDetectedInstall": "O comando OpenCode não foi detectado. Execute a instalação a partir do assistente.",
-  "appProviderSetupOpenCodeNotDetectedRefresh": "O comando OpenCode não foi detectado. Se você o instalou há pouco tempo, atualize as verificações ou reabra o CodeWalk para recarregar o PATH.",
-  "appProviderSetupRequirementsInstalled": "Requisitos do OpenCode instalados com sucesso.",
-  "appProviderSetupUsingOpenCodeAt": "Usando comando OpenCode em {path}",
-  "appProviderStartingLocalServer": "Iniciando servidor local...",
-  "appProviderStatusLocalServerExitedWithCode": "O servidor local saiu com o código {code}.",
-  "appProviderStatusLocalServerStopped": "O servidor local está parado.",
-  "appProviderStatusRunningAt": "Rodando em {url}",
-  "appProviderStatusStartingLocalServer": "Iniciando servidor local...",
-  "appProviderStatusStoppingLocalServer": "Parando servidor local...",
-  "appProviderStoppingLocalServer": "Parando servidor local...",
-  "appProviderTailscaleNotSupported": "Tailscale não é suportado nesta plataforma",
-  "appProviderUsingCommandAt": "Usando comando OpenCode em {path}",
-  "appShellDownloadingUpdate": "Baixando atualização",
-  "appShellInstall": "Instalar",
-  "appShellInstallFailed": "Falha na instalação",
-  "appShellInstallingUpdate": "Instalando atualização...",
-  "appShellRestart": "Reiniciar",
-  "appShellUpdateAvailableResult": "Atualização disponível: v{latestVersion}",
-  "attachmentCouldNotDecode": "Não foi possível decodificar os dados do anexo.",
-  "attachmentCouldNotDownload": "Não foi possível baixar o anexo.",
-  "attachmentCouldNotSave": "Não foi possível salvar o anexo neste dispositivo.",
-  "attachmentDownloadStarted": "O download do anexo começou.",
-  "attachmentLocalNotFound": "O anexo local não foi encontrado neste dispositivo.",
-  "attachmentNoValidLocation": "O anexo não fornece um local válido.",
-  "attachmentNotAvailableOnPlatform": "As ações de anexo não estão disponíveis nesta plataforma.",
-  "attachmentPathEmpty": "O caminho do anexo está vazio.",
-  "attachmentPayloadEmpty": "A carga útil do anexo está vazia.",
-  "attachmentSaveCanceled": "Salvamento cancelado.",
-  "attachmentSavedAndOpened": "Anexo salvo em {path} e aberto.",
-  "attachmentSavedPath": "Anexo salvo em {path}.",
-  "attachmentSavedTo": "Anexo salvo em {path}.",
-  "attachmentUnableToOpenLink": "Não foi possível abrir o link do anexo.",
-  "attachmentUnableToOpenLocal": "Não foi possível abrir o anexo local.",
-  "behaviorAdvancedPermissionRule": "Regra de permissão avançada",
-  "behaviorAutomatic": "Automático",
-  "behaviorAutomaticFallback": "Fallback automático",
-  "behaviorCellularDataSaver": "Economia de dados móveis",
-  "behaviorChatLevelShare": "Compartilhamento em nível de chat",
-  "behaviorCodeWalkReleaseChecks": "Verificações de versão do CodeWalk",
-  "behaviorControlsOfficialGlobal": "Controla as configurações globais oficiais do OpenCode",
-  "behaviorControlsUpstreamOpenCode": "Controla as configurações do OpenCode upstream",
-  "behaviorCustomDisplayName": "Nome de exibição personalizado",
-  "behaviorCutsAutomaticMobile": "Reduz o uso automático de dados móveis parando downloads em segundo plano e limitando as atualizações automáticas em primeiro plano a uma rajada a cada {inSeconds} segundos.",
-  "behaviorDisabled": "Desativado",
-  "behaviorLightweightTasksLike": "Tarefas leves como",
+  "appProviderCannotActivateUnhealthy": "Cannot activate an unhealthy server",
+  "appProviderDesktopOnly": "Managed local server is available only on desktop.",
+  "appProviderDetectingCommand": "Detecting OpenCode command...",
+  "appProviderErrorCannotActivateUnhealthy": "Cannot activate an unhealthy server",
+  "appProviderErrorCloudflareOAuthNotSupported": "Cloudflare Access OAuth is not supported on this platform",
+  "appProviderErrorInstallationFailed": "OpenCode installation failed.",
+  "appProviderErrorInvalidServerUrl": "Invalid server URL",
+  "appProviderErrorLocalServerHealthCheckFailed": "Local server started but health check did not pass.",
+  "appProviderErrorManagedDesktopOnly": "Managed local server is available only on desktop.",
+  "appProviderErrorServerAlreadyExists": "A server with this URL already exists",
+  "appProviderErrorServerProfileNotFound": "Server profile not found",
+  "appProviderErrorServerUrlRequired": "Server URL is required",
+  "appProviderErrorTailscaleNotSupported": "Tailscale is not supported on this platform",
+  "appProviderExitedWithCode": "Local server exited with code {code}.",
+  "appProviderFailedToStart": "Failed to start local OpenCode server.",
+  "appProviderInstallBinary": "Install Binary",
+  "appProviderInstallBunOpenCode": "Install Bun + OpenCode",
+  "appProviderInstallSucceeded": "Installation succeeded.",
+  "appProviderInstallSucceededWithPath": "Installation succeeded. OpenCode command available at {path}.",
+  "appProviderInstallViaBun": "Install via Bun",
+  "appProviderInstallViaNpm": "Install via npm",
+  "appProviderInstallationFailed": "OpenCode installation failed.",
+  "appProviderInstalledSuccessfully": "OpenCode requirements installed successfully.",
+  "appProviderInstallingRequirements": "Installing OpenCode requirements...",
+  "appProviderInvalidServerUrl": "Invalid server URL",
+  "appProviderLabelLocalOpenCodeManaged": "Local OpenCode (Managed)",
+  "appProviderLabelPrimaryServer": "Primary server",
+  "appProviderLocalManaged": "Local OpenCode (Managed)",
+  "appProviderLocalServerStopped": "Local server is stopped.",
+  "appProviderNotDetectedInstall": "OpenCode command was not detected. Run installation from the wizard.",
+  "appProviderNotDetectedRefresh": "OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen {appName} to reload PATH.",
+  "appProviderOAuthNotSupported": "Cloudflare Access OAuth is not supported on this platform",
+  "appProviderOpenCodeDetected": "OpenCode detected",
+  "appProviderOpenCodeNotDetected": "OpenCode not detected",
+  "appProviderPrimaryServer": "Primary server",
+  "appProviderProfileNotFound": "Server profile not found",
+  "appProviderRunDiagnostics": "Run diagnostics to verify local OpenCode requirements.",
+  "appProviderRunningAt": "Running at {url}",
+  "appProviderSetupDetectingOpenCode": "Detecting OpenCode command...",
+  "appProviderSetupInstallationSucceeded": "Installation succeeded.",
+  "appProviderSetupInstallationSucceededWithPath": "Installation succeeded. OpenCode command available at {path}.",
+  "appProviderSetupInstallingRequirements": "Installing OpenCode requirements...",
+  "appProviderSetupOpenCodeDetected": "OpenCode detected",
+  "appProviderSetupOpenCodeNotDetected": "OpenCode not detected",
+  "appProviderSetupOpenCodeNotDetectedInstall": "OpenCode command was not detected. Run installation from the wizard.",
+  "appProviderSetupOpenCodeNotDetectedRefresh": "OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.",
+  "appProviderSetupRequirementsInstalled": "OpenCode requirements installed successfully.",
+  "appProviderSetupUsingOpenCodeAt": "Using OpenCode command at {path}",
+  "appProviderStartingLocalServer": "Starting local server...",
+  "appProviderStatusLocalServerExitedWithCode": "Local server exited with code {code}.",
+  "appProviderStatusLocalServerStopped": "Local server is stopped.",
+  "appProviderStatusRunningAt": "Running at {url}",
+  "appProviderStatusStartingLocalServer": "Starting local server...",
+  "appProviderStatusStoppingLocalServer": "Stopping local server...",
+  "appProviderStoppingLocalServer": "Stopping local server...",
+  "appProviderTailscaleNotSupported": "Tailscale is not supported on this platform",
+  "appProviderUsingCommandAt": "Using OpenCode command at {path}",
+  "appShellDownloadingUpdate": "Downloading update…",
+  "appShellInstall": "Install",
+  "appShellInstallFailed": "Install failed",
+  "appShellInstallingUpdate": "Installing update...",
+  "appShellRestart": "Restart",
+  "appShellUpdateAvailableResult": "Update available: v{latestVersion}",
+  "appShellUpdateInstalledRestartApp": "Update installed. Restart the app to apply.",
+  "appShellUpdateInstalledRestartRequired": "Update installed. Restart is required to apply the new version.",
+  "attachmentCouldNotDecode": "Attachment data could not be decoded.",
+  "attachmentCouldNotDownload": "Attachment could not be downloaded.",
+  "attachmentCouldNotSave": "Attachment could not be saved on this device.",
+  "attachmentDownloadStarted": "Attachment download started.",
+  "attachmentLocalNotFound": "Local attachment was not found on this device.",
+  "attachmentNoValidLocation": "Attachment does not provide a valid location.",
+  "attachmentNotAvailableOnPlatform": "Attachment actions are not available on this platform.",
+  "attachmentPathEmpty": "Attachment path is empty.",
+  "attachmentPayloadEmpty": "Attachment payload is empty.",
+  "attachmentSaveCanceled": "Save canceled.",
+  "attachmentSavedAndOpened": "Attachment saved to {path} and opened.",
+  "attachmentSavedPath": "Attachment saved to {path}.",
+  "attachmentSavedTo": "Attachment saved to {path}.",
+  "attachmentUnableToOpenLink": "Unable to open the attachment link.",
+  "attachmentUnableToOpenLocal": "Unable to open the local attachment.",
+  "behaviorAdvancedPermissionRule": "Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.",
+  "behaviorAutomatic": "Automatic",
+  "behaviorAutomaticFallback": "Automatic fallback",
+  "behaviorCellularDataSaver": "Cellular data saver",
+  "behaviorCellularDataSaverActive": "Cellular data saver is active.",
+  "behaviorChatLevelShare": "Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.",
+  "behaviorCodeWalkReleaseChecks": "Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.",
+  "behaviorControlsOfficialGlobal": "Controls the official global `share` config, not the share button for an individual chat.",
+  "behaviorControlsUpstreamOpenCode": "Controls upstream OpenCode runtime updates, not CodeWalk app update checks.",
+  "behaviorCustomDisplayName": "Custom display name shown in conversations instead of the system username.",
+  "behaviorCutsAutomaticMobile": "Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every {inSeconds} seconds.",
+  "behaviorDataSaverActive": "Active now on mobile data.",
+  "behaviorDataSaverCellularOnly": "Only applies when the connection is cellular/mobile.",
+  "behaviorDataSaverWaiting": "Waiting for the next mobile-data sync window.",
+  "behaviorDisabled": "Disabled",
+  "behaviorLightweightTasksLike": "Used for lightweight tasks like title generation.",
   "behaviorManual": "Manual",
-  "behaviorNotify": "Notificar",
+  "behaviorNotify": "Notify only",
   "behaviorOfficialOpenCodePermission": "Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.",
   "behaviorOpenCodeBackedDefaults": "OpenCode-backed defaults",
   "behaviorPermissionHandlingProvenance": "Permission handling provenance",
@@ -1258,170 +107,298 @@
   "behaviorRefreshDefaults": "Refresh defaults",
   "behaviorSharedAcrossOpenCode": "Shared across OpenCode clients through config.",
   "behaviorTheseValuesWrite": "These values write to `/config` on the active server and match official OpenCode shared config.",
+  "cannedAddTitle": "Add canned answer",
+  "cannedAppendAtCursor": "Append at cursor",
+  "cannedAppendAtCursorSubtitle": "Off means replace current composer text",
   "cannedAttachFiles": "Attach files",
-  "cannedNewQuickReply": "Nova resposta rápida",
+  "cannedEditTitle": "Edit canned answer",
+  "cannedNewQuickReply": "New quick reply",
   "cannedNoSuggestions": "Nenhuma sugestão",
   "cannedOffMeansReplace": "Off means replace current composer text",
   "cannedQuickReply": "New quick reply",
+  "cannedReplace": "Replace",
+  "cannedScopeGlobalSubtitle": "Disable for project-only item",
+  "cannedScopeGlobalUnavailableSubtitle": "Project-only unavailable in current context",
+  "cannedSendAutomaticallySubtitle": "Send immediately after inserting this quick reply",
   "cannedSendImmediatelyInserting": "Send immediately after inserting this quick reply",
+  "cannedTextLabel": "Text",
+  "chatActionNext": "Next",
   "chatActiveServerUnhealthy": "Active server is unhealthy. Sends will try once and fail fast until recovery.",
+  "chatActiveServerUnhealthyLabel": "Active server is unhealthy",
   "chatAddServerToStart": "Adicione um servidor para começar a conversar.",
   "chatAppBarMoreActions": "More actions",
   "chatAppBarPinAction": "Pin to app bar",
   "chatAppBarPinDescription": "This action will stay visible outside the menu.",
   "chatAppBarUnpinAction": "Unpin from app bar",
   "chatAppBarUnpinDescription": "This action will move back into the menu.",
-  "chatBadgeConversationError": "\"{title}\" tem um erro.",
-  "chatBadgeConversationNeedsInput": "\"{title}\" precisa da sua intervenção.",
-  "chatBadgeConversationNewReply": "\"{title}\" tem uma nova resposta.",
-  "chatBadgeDataSaverActive": "A economia de dados móveis está ativa.",
-  "chatBadgeServerNeedsAttention": "A conexão do servidor precisa de atenção.",
-  "chatBadgeSyncing": "Sincronizando conversas...",
+  "chatBadgeConversationError": "\"{title}\" has an error.",
+  "chatBadgeConversationNeedsInput": "\"{title}\" needs your input.",
+  "chatBadgeConversationNewReply": "\"{title}\" has a new reply.",
+  "chatBadgeDataSaverActive": "Cellular data saver is active.",
+  "chatBadgeServerNeedsAttention": "Server connection needs attention.",
+  "chatBadgeSyncing": "Syncing conversations...",
   "chatCachedConversationsYet": "No cached conversations yet",
   "chatChangedFilesAvailable": "No changed files are available for this session.",
-  "chatChildrenChatProviderCurrentSessionChildren": "Filhos: {length}",
+  "chatChildrenChatProviderCurrentSessionChildren": "Children: {length}",
+  "chatChooseAgent": "Select agent",
   "chatChooseDirectory": "Choose Directory",
+  "chatChooseEffort": "Choose effort",
   "chatChooseFolderOpen": "Choose a folder to open as project context.",
+  "chatChooseModel": "Choose model",
   "chatClose": "Fechar",
-  "chatCloseProject": "Fechar {project}",
-  "chatCollapseGroup": "Recolher grupo",
+  "chatCloseProject": "Close {project}",
+  "chatCollapseGroup": "Collapse group",
+  "chatCommandDescriptionProject": "Project command",
+  "chatCommandSourceGeneric": "command",
+  "chatCommandSourceProject": "project",
   "chatCompactContext": "Compactar Contexto",
+  "chatComposerHintShell": "Shell command (Esc to exit)",
+  "chatComposerPlaceholder": "Type your needs...",
+  "chatConversation": "Conversation",
   "chatConversations": "Conversas",
   "chatConversationsPane": "Conversas",
-  "chatCostLabel": "Custo: ${cost}",
+  "chatCostLabel": "Cost: ${cost}",
+  "chatCouldNotRefreshSession": "Could not refresh this conversation",
   "chatCurrent": "Use current",
-  "chatDescriptionChildren": "Filhos: {count}",
-  "chatDescriptionCloseApp": "Fechar o aplicativo usando o comportamento de fechamento da plataforma",
-  "chatDescriptionCycleModels": "Alternar modelos recentes",
-  "chatDescriptionCycleVariant": "Alternar variante do modelo",
-  "chatDescriptionDiffFilesZero": "Arquivos diff: 0",
-  "chatDescriptionFocusInput": "Focar entrada de mensagem",
-  "chatDescriptionFocusOrCloseDrawer": "Focar entrada (ou fechar painel quando aberto)",
-  "chatDescriptionForceExit": "Forçar saída do aplicativo",
-  "chatDescriptionNewConversation": "Nova conversa",
-  "chatDescriptionNextAgent": "Próximo agente",
-  "chatDescriptionOpenProjects": "Use este botão para abrir seus projetos e conversas.",
-  "chatDescriptionOpenSettings": "Abrir configurações",
-  "chatDescriptionPreviousAgent": "Agente anterior",
-  "chatDescriptionProjectCommand": "Comando do projeto",
-  "chatDescriptionQuickOpen": "Abertura rápida de arquivos",
-  "chatDescriptionRefreshData": "Atualizar dados do chat",
-  "chatDescriptionStopResponse": "Parar resposta ativa (enquanto responde)",
-  "chatDescriptionSwitchProject": "Use este botão para alternar pastas de projeto e contexto.",
-  "chatDescriptionVoiceInput": "Iniciar ou parar entrada de voz",
+  "chatDescriptionChildren": "Children: {count}",
+  "chatDescriptionCloseApp": "Close app using platform close behavior",
+  "chatDescriptionCycleModels": "Cycle recent models",
+  "chatDescriptionCycleVariant": "Cycle model variant",
+  "chatDescriptionDiffFilesZero": "Diff files: 0",
+  "chatDescriptionFocusInput": "Focus message input",
+  "chatDescriptionFocusOrCloseDrawer": "Focus input (or close drawer when open)",
+  "chatDescriptionForceExit": "Force-exit the app",
+  "chatDescriptionNewConversation": "New conversation",
+  "chatDescriptionNextAgent": "Next agent",
+  "chatDescriptionOpenProjects": "Use this button to open your projects and conversations.",
+  "chatDescriptionOpenSettings": "Open settings",
+  "chatDescriptionPreviousAgent": "Previous agent",
+  "chatDescriptionProjectCommand": "Project command",
+  "chatDescriptionQuickOpen": "Quick open files",
+  "chatDescriptionRefreshData": "Refresh chat data",
+  "chatDescriptionStopResponse": "Stop active response (while responding)",
+  "chatDescriptionSwitchProject": "Use this button to switch project folders and context.",
+  "chatDescriptionVoiceInput": "Start or stop voice input",
   "chatDiffFiles": "Diff files: 0",
   "chatDisplay": "Display",
   "chatDisplayToggles": "Opções de exibição",
-  "chatDoubleESCStop": "Duplo ESC para parar",
-  "chatExpandGroup": "Expandir grupo",
-  "chatExportCanceled": "Exportação de sessão cancelada",
-  "chatFileExplorerContents": "Conteúdos",
-  "chatFileExplorerNames": "Nomes",
+  "chatDoubleESCStop": "Double ESC to stop",
+  "chatEffortLockedSubConversation": "Effort locked in sub-conversation",
+  "chatExpandGroup": "Expand group",
+  "chatExportCanceled": "Session export canceled",
+  "chatFailedToLoadDirectories": "Failed to load directories",
+  "chatFailedToLoadFile": "Failed to load file",
+  "chatFailedToRefreshProviders": "Failed to refresh providers and models",
+  "chatFailedToRefreshSubConversations": "Failed to refresh sub-conversations. Please try again.",
+  "chatFailedToStopResponse": "Failed to stop current response",
+  "chatFileExplorerContents": "Contents",
+  "chatFileExplorerNames": "Names",
   "chatFilterActive": "Ativas",
   "chatFilterAll": "Todas",
   "chatFilterArchived": "Arquivadas",
   "chatFilterDirectories": "Filter directories",
   "chatFilterSessions": "Filtrar sessões",
-  "chatForkFailed": "Falha ao bifurcar conversa",
-  "chatForked": "Conversa bifurcada",
+  "chatForkFailed": "Failed to fork conversation",
+  "chatForked": "Conversation forked",
   "chatGoToFirst": "Ir para primeira mensagem",
   "chatGoToLatest": "Ir para última mensagem",
-  "chatGroupMessageCountMessages": "{messageCount} mensagens ocultas antes da compactação {compactionLabel}",
+  "chatGroupMessageCountMessages": "{messageCount} messages hidden before {compactionLabel} compaction",
   "chatHelloAssistant": "Olá! Eu sou seu assistente de IA",
   "chatHelp": "How can I help you?",
+  "chatHelpMessage": "Use @ for mentions, ! for shell, / for commands",
   "chatHideConversationsSidebar": "Ocultar barra de Conversas",
   "chatHideUtilitySidebar": "Ocultar barra de Utilidades",
-  "chatHistoryCollapsed": "O histórico anterior está recolhido",
+  "chatHistoryCollapsed": "Previous history is collapsed",
+  "chatHistoryHideEarlier": "Hide earlier messages",
+  "chatHistoryMessagesHidden": "{count} messages hidden before {label} compaction",
+  "chatHistoryShowEarlier": "Show earlier messages",
   "chatKeepWorking": "Continuar trabalhando",
-  "chatLargeContentSkipped": "Conteúdo grande ou malformado foi ignorado para estabilidade.",
+  "chatLargeContentSkipped": "Large or malformed content was skipped for stability.",
   "chatLatestToolActivity": "Latest tool activity stays inside this bounded panel to keep the chat viewport stable.",
   "chatLoadMore": "Carregar mais",
   "chatLoadingProjectContext": "Loading project context...",
-  "chatMessageHide": "Ocultar",
+  "chatMainConversationUnavailable": "Main conversation is not available yet.",
+  "chatMentionAgentSubtitle": "agent",
+  "chatMentionFileSubtitle": "file",
+  "chatMentionSymbolSubtitle": "symbol",
+  "chatMessageAttachedFile": "Attached file",
+  "chatMessageDetails": "Details",
+  "chatMessageHide": "Hide",
+  "chatMessageLess": "Less",
   "chatMessageMessagePartUnavailable": "Message part unavailable",
   "chatMessageMetadataAvailable": "No metadata available",
-  "chatMessageModelMessageModelId": "Modelo: {modelId}",
-  "chatMessageProviderMessageProviderId": "Provedor: {providerId}",
+  "chatMessageModelMessageModelId": "Model: {modelId}",
+  "chatMessageMore": "More",
+  "chatMessageOpenFile": "Open file",
+  "chatMessageProviderMessageProviderId": "Provider: {providerId}",
   "chatMessageRewindEdit": "Rewind and edit from here",
+  "chatMessageRunningTask": "Running task",
+  "chatMessageSaveFile": "Save file",
+  "chatMessageShow": "Show",
+  "chatMessageShowLess": "Show less",
+  "chatMessageShowLessCompact": "Less",
+  "chatMessageShowMore": "Show more",
+  "chatMessageShowMoreCompact": "More",
+  "chatMessageThinking": "Thinking",
+  "chatMessageThinkingProcess": "Thinking Process",
+  "chatMessageToolCall": "1 tool call",
+  "chatMessageToolCalls": "{count} tool calls",
+  "chatMessageToolCommand": "Command",
+  "chatMessageToolCommandTruncated": "Command preview truncated for stability.",
+  "chatMessageToolDiffOmitted": "Diff preview omitted: edit payload is too large to render safely on mobile.",
+  "chatMessageToolInput": "Input",
+  "chatMessageToolInputTruncated": "Input preview truncated for stability.",
+  "chatMessageToolOutputTruncated": "Large tool output preview truncated for app stability.",
+  "chatMessageToolQueuedCount": "{count} queued",
+  "chatMessageToolRunningCount": "{count} running",
+  "chatMessageToolStatusInProgress": "In progress",
+  "chatMessageToolStatusNeedsAttention": "Needs attention",
+  "chatMessageToolStatusQueued": "Queued",
   "chatMessageYou": "You",
+  "chatModelLockedSubConversation": "Model locked in sub-conversation",
   "chatNewChat": "Nova Conversa",
   "chatNewChatTourDescription": "Inicie uma nova conversa aqui.",
   "chatNewChatTourTitle": "Nova conversa",
-  "chatNoConversationsInProject": "Nenhuma conversa neste projeto.",
+  "chatNoConversationsInProject": "No conversations in this project.",
   "chatNoServerYet": "Nenhum servidor configurado ainda",
+  "chatNoSessionSelected": "Select or create a conversation to start chatting",
+  "chatNoSubConversationFound": "No sub-conversation found for this task.",
   "chatOpenFiles": "Abrir Arquivos",
-  "chatOpenProject": "Abrir projeto",
+  "chatOpenProject": "Open project",
   "chatOpenProjectFolder": "Open project folder...",
-  "chatOpenProjectToLoad": "Abra um projeto para carregar conversas.",
-  "chatOpenSidebar": "Abrir barra lateral",
-  "chatPageStatusContextUsage": "Uso do contexto",
-  "chatPageStatusCost": "Custo",
-  "chatPageStatusLimit": "Limite",
-  "chatPageStatusManageServers": "Gerenciar servidores",
-  "chatPageStatusSaver": "Economia",
-  "chatPageStatusSwitchServer": "Trocar servidor",
+  "chatOpenProjectToLoad": "Open project to load conversations.",
+  "chatOpenSidebar": "Open sidebar",
+  "chatPageStatusAutomaticCompactionExplanation": "Automatic compaction happens as context usage grows.",
+  "chatPageStatusCompactNow": "Compact now",
+  "chatPageStatusCompacting": "Compacting...",
+  "chatPageStatusCompactingContextNow": "Compacting context now...",
+  "chatPageStatusContextCompacted": "Context compacted",
+  "chatPageStatusContextUsage": "Context usage",
+  "chatPageStatusCost": "Cost",
+  "chatPageStatusFailedToCompactContext": "Failed to compact context",
+  "chatPageStatusLimit": "Limit",
+  "chatPageStatusManageServers": "Manage Servers",
+  "chatPageStatusSaver": "Saver",
+  "chatPageStatusServer": "Server",
+  "chatPageStatusSwitchServer": "Switch Server",
   "chatPageStatusTokens": "Tokens",
-  "chatPageStatusUsage": "Uso",
+  "chatPageStatusUsage": "Usage",
   "chatPageStatusUsagePercent": "{usagePercent}",
+  "chatPermissionAutoApproveOff": "Permission auto-approve is off",
+  "chatPermissionAutoApproveOn": "Permission auto-approve is on",
   "chatProjectContext": "Contexto do Projeto",
-  "chatProjectContext2": "Contexto do projeto",
-  "chatRealtimeGlobalEvent": "evento global",
-  "chatRealtimeGlobalEventReason": "evento global ({reason})",
-  "chatRealtimeGlobalEventStale": "evento global (geração obsoleta)",
-  "chatRealtimeMessageStreamReason": "fluxo de mensagens ({reason})",
-  "chatRealtimeRealtimeEvent": "evento em tempo real",
-  "chatRealtimeRealtimeEventReason": "evento em tempo real ({reason})",
-  "chatRealtimeRealtimeEventStale": "evento em tempo real (geração obsoleta)",
-  "chatRealtimeReconnectingServerTry": "Reconectando ao servidor. Tente novamente em um momento.",
-  "chatReasoning": "Raciocinando...",
+  "chatProjectContext2": "Project context",
+  "chatRealtimeGlobalEvent": "global event",
+  "chatRealtimeGlobalEventReason": "global event ({reason})",
+  "chatRealtimeGlobalEventStale": "global event (stale generation)",
+  "chatRealtimeMessageStreamReason": "message stream ({reason})",
+  "chatRealtimeRealtimeEvent": "realtime event",
+  "chatRealtimeRealtimeEventReason": "realtime event ({reason})",
+  "chatRealtimeRealtimeEventStale": "realtime event (stale generation)",
+  "chatRealtimeReconnectingServerTry": "Reconnecting to the server. Try again in a moment.",
+  "chatReasoning": "Reasoning...",
   "chatRecentSessions": "Sessões recentes",
   "chatRecentSessionsToggle": "Sessões recentes",
   "chatRedoLastTurn": "Refazer último turno desfeito",
+  "chatRedoNothing": "Nothing to redo in this session",
   "chatRefresh": "Atualizar",
   "chatRefreshConversation": "Could not refresh this conversation",
   "chatRefreshProjects": "Refresh projects",
   "chatRefreshSessionDetails": "Atualizar detalhes da sessão",
-  "chatRemoveDisplayNameHistory": "Remover {displayName} do histórico",
+  "chatRemoveDisplayNameHistory": "Remove {displayName} from history",
   "chatRetry": "Tentar novamente",
   "chatRetry2": "Retry",
   "chatRetryRefresh": "Tentar atualizar novamente",
-  "chatRetryingModelRequest": "Repetindo a solicitação do modelo...",
+  "chatRetryingModelRequest": "Retrying model request...",
   "chatReturnToMainConversation": "Voltar à conversa principal",
   "chatReviewChanges": "Review changes",
   "chatSearchConversations": "Buscar conversas",
-  "chatSearchNextResult": "Próximo resultado",
-  "chatSearchNoResults": "Nenhum resultado",
-  "chatSearchPreviousResult": "Resultado anterior",
-  "chatSearchResultCount": "Mensagem {current} de {total}",
-  "chatSearchTimeline": "Buscar na timeline",
+  "chatSearchNextResult": "Next result",
+  "chatSearchNoResults": "No results",
+  "chatSearchPreviousResult": "Previous result",
+  "chatSearchResultCount": "Message {current} of {total}",
+  "chatSearchTimeline": "Search timeline",
   "chatSelectDirectory": "Select directory",
   "chatSelectOrCreate": "Selecione ou crie uma conversa para começar",
   "chatSelectProjectBelow": "Select a project below.",
+  "chatServerSelectedModel": "Server-selected model",
   "chatSessionActions": "Ações da sessão",
-  "chatSessionChatSessionSession": "Sessão de chat: {title}",
-  "chatSessionConversationNextAction": "Conversa {nextAction}",
+  "chatSessionChatSessionSession": "Chat session: {title}",
+  "chatSessionConversationNextAction": "Conversation {nextAction}",
   "chatSessionConversations": "No conversations",
   "chatSessionCreateConversationStart": "Create a new conversation to start chatting",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "Configurar servidor",
   "chatSettings": "Settings",
-  "chatSidebarAccess": "Acesso à barra lateral",
+  "chatShortcutsCloseApp": "Close app using platform close behavior",
+  "chatShortcutsCycleModels": "Cycle recent models",
+  "chatShortcutsCycleVariant": "Cycle model variant",
+  "chatShortcutsFocusInput": "Focus message input",
+  "chatShortcutsFocusInputCloseDrawer": "Focus input (or close drawer when open)",
+  "chatShortcutsForceExit": "Force-exit the app",
+  "chatShortcutsNewConversation": "New conversation",
+  "chatShortcutsNextAgent": "Next agent",
+  "chatShortcutsOpenSettings": "Open settings",
+  "chatShortcutsPreviousAgent": "Previous agent",
+  "chatShortcutsQuickOpen": "Quick open files",
+  "chatShortcutsRefreshChat": "Refresh chat data",
+  "chatShortcutsStartStopVoice": "Start or stop voice input",
+  "chatShortcutsStopResponse": "Stop active response (while responding)",
+  "chatSidebarAccess": "Sidebar access",
   "chatSortMostRecent": "Mais Recentes",
   "chatSortOldest": "Mais Antigas",
   "chatSortRecent": "Recentes",
   "chatSortSessions": "Ordenar sessões",
   "chatSortTitle": "Título",
-  "chatSyncLabel": "Sincronização: {label}",
+  "chatStartVoiceInput": "Start voice input",
+  "chatStartingVoiceInput": "Starting voice input",
+  "chatStatusBusy": "Status: Busy",
+  "chatStatusPatching": "Patching",
+  "chatStatusPatchingMultipleFiles": "Patching {count} files",
+  "chatStatusPatchingOneFile": "Patching 1 file",
+  "chatStatusRetry": "Status: Retry",
+  "chatStatusRetryCount": "Status: Retry #{count}",
+  "chatStatusSubsession": "Subsession",
+  "chatStatusThinking": "Thinking...",
+  "chatStopVoiceInput": "Stop voice input",
+  "chatSyncLabel": "Sync: {label}",
   "chatTasks": "Tasks",
   "chatTasksAvailableSession": "No tasks are available for this session.",
+  "chatTipBeSpecific": "Tip: Be specific — shorter prompts get faster answers",
+  "chatTipBreakTasks": "Tip: Break large tasks into smaller prompts",
+  "chatTipContextKnob": "Tip: Tap the context knob to see usage details",
+  "chatTipLongPressSend": "Tip: Long-press Send to insert a newline",
+  "chatTipMentionFiles": "Tip: Use @ to mention files in your prompt",
+  "chatTipProvideContext": "Tip: Provide context — paste error messages and logs",
+  "chatTipRenameConversation": "Tip: Tap the title to rename a conversation",
+  "chatTipShellCommands": "Tip: Use ! at the start to run shell commands",
+  "chatTipSlashCommands": "Tip: Use / to access slash commands",
+  "chatTipStepByStep": "Tip: Ask for step-by-step when debugging complex issues",
   "chatToggleSidebars": "Alternar barras laterais",
   "chatTokensLabel": "Tokens: {total}",
+  "chatTourProjectsConversations": "Use this button to open your projects and conversations.",
+  "chatTourSidebarProjectTools": "Use this menu to show the conversations sidebar and project tools.",
+  "chatTourSwitchFolders": "Use this button to switch project folders and context.",
   "chatUndoLastTurn": "Desfazer último turno",
+  "chatUndoNothing": "Nothing to undo in this session",
   "chatUseCurrent": "Usar atual",
+  "chatWaitingForNetworkConnection": "Waiting for network connection...",
+  "chatWelcomeMessage": "Hello! I am your AI assistant.",
+  "chatWelcomeSubmessage": "How can I help you today?",
+  "chatWorkBoundedPanelExplanation": "Latest tool activity stays inside this bounded panel to keep the chat viewport stable.",
+  "chatWorkExpand": "Expand",
+  "chatWorkHide": "Hide",
+  "chatWorkMessageOne": "1 work message",
+  "chatWorkMessagesMultiple": "{count} work messages",
+  "chatWorkShow": "Show",
   "commonCancel": "Cancelar",
+  "commonCopiedToClipboard": "Copied to clipboard",
   "commonDelete": "Excluir",
+  "commonFile": "File",
   "commonReset": "Redefinir",
   "commonSave": "Salvar",
+  "compactionAutomatic": "automatic",
+  "compactionManual": "manual",
   "composerAddAttachment": "Adicionar anexo",
   "composerAttachFiles": "Anexar arquivos",
   "composerCannedAppendAtCursor": "Anexar no cursor",
@@ -1451,10 +428,11 @@
   "dialogSenseVoiceModel": "Modelo SenseVoice",
   "dialogSenseVoiceSetup": "Configuração SenseVoice",
   "dialogVoiceInputSetup": "Configuração de Entrada de Voz",
-  "errorAuthRequired": "Autenticação necessária",
-  "errorAuthRequiredDesc": "A autenticação falhou. Reconecte o provedor e tente novamente.",
-  "errorConnectionFailed": "Falha na conexão",
-  "errorConnectionFailedDesc": "Não foi possível contactar o servidor. Verifique a conexão e o status do servidor.",
+  "errorAnErrorOccurred": "An error occurred",
+  "errorAuthRequired": "Authentication required",
+  "errorAuthRequiredDesc": "Authentication failed. Reconnect the provider and try again.",
+  "errorConnectionFailed": "Connection failed",
+  "errorConnectionFailedDesc": "Unable to reach the server. Check connection and server status.",
   "errorFormatAuthenticationFailedReconnect": "Authentication failed. Reconnect the provider and try again.",
   "errorFormatProviderTemporarilyUnavailable": "Provider temporarily unavailable. Try again shortly.",
   "errorFormatQuotaExceededCheck": "Quota exceeded. Check your provider plan or billing.",
@@ -1462,24 +440,24 @@
   "errorFormatServerErrorPlease": "Server error. Please try again.",
   "errorFormatServiceTemporarilyUnavailable": "Service temporarily unavailable. The server may be starting up — please try again shortly.",
   "errorFormatUnableReachServer": "Unable to reach the server. Check connection and server status.",
-  "errorProviderUnavailable": "Provedor indisponível",
-  "errorProviderUnavailableDesc": "Provedor temporariamente indisponível. Tente novamente em breve.",
-  "errorQuotaExceeded": "Cota excedida",
-  "errorQuotaExceededDesc": "Cota excedida. Verifique o plano do seu provedor ou faturamento.",
-  "errorRateLimitExceeded": "Limite de taxa excedido",
-  "errorRateLimitExceededDesc": "Limite de taxa excedido. Aguarde um momento e tente novamente.",
-  "errorServerError": "Erro no servidor",
-  "errorServerErrorDesc": "Erro no servidor. Por favor, tente novamente.",
-  "errorServiceUnavailable": "Serviço indisponível",
-  "errorServiceUnavailableDesc": "Serviço temporariamente indisponível. O servidor pode estar iniciando — por favor, tente novamente em breve.",
+  "errorProviderUnavailable": "Provider unavailable",
+  "errorProviderUnavailableDesc": "Provider temporarily unavailable. Try again shortly.",
+  "errorQuotaExceeded": "Quota exceeded",
+  "errorQuotaExceededDesc": "Quota exceeded. Check your provider plan or billing.",
+  "errorRateLimitExceeded": "Rate limit exceeded",
+  "errorRateLimitExceededDesc": "Rate limit exceeded. Wait a moment and try again.",
+  "errorServerError": "Server error",
+  "errorServerErrorDesc": "Server error. Please try again.",
+  "errorServiceUnavailable": "Service unavailable",
+  "errorServiceUnavailableDesc": "Service temporarily unavailable. The server may be starting up — please try again shortly.",
   "fileActionAttachmentDataDecoded": "Attachment data could not be decoded.",
   "fileActionAttachmentPathEmpty": "Attachment path is empty.",
   "fileActionAttachmentPayloadEmpty": "Attachment payload is empty.",
   "fileActionAttachmentProvideValid": "Attachment does not provide a valid location.",
   "fileActionAttachmentSavedDevice": "Attachment could not be saved on this device.",
-  "fileActionAttachmentSavedOutputFile": "Anexo salvo em {path} e aberto.",
-  "fileActionAttachmentSavedOutputFile2": "Anexo salvo em {path}.",
-  "fileActionAttachmentSavedSavedPath": "Anexo salvo em {savedPath}.",
+  "fileActionAttachmentSavedOutputFile": "Attachment saved to {path} and opened.",
+  "fileActionAttachmentSavedOutputFile2": "Attachment saved to {path}.",
+  "fileActionAttachmentSavedSavedPath": "Attachment saved to {savedPath}.",
   "fileActionLocalAttachmentFound": "Local attachment was not found on this device.",
   "fileActionSaveCanceled": "Save canceled.",
   "fileActionUnableOpenLocal": "Unable to open the local attachment.",
@@ -1491,7 +469,7 @@
   "filesFilesFound": "No files found",
   "filesHideSidebar": "Ocultar barra de Arquivos",
   "filesNames": "Names",
-  "filesOpenFilesFileState": "Arquivos abertos ({length})",
+  "filesOpenFilesFileState": "Open files ({length})",
   "filesQuickOpen": "Abertura Rápida",
   "filesQuickOpenFile": "Quick Open File",
   "filesRefresh": "Atualizar arquivos",
@@ -1501,20 +479,23 @@
   "logsClear": "Limpar logs",
   "logsCloseSearch": "Fechar busca",
   "logsCopyFiltered": "Copiar logs filtrados",
+  "logsFilterAll": "All",
   "logsLevel": "Level",
+  "logsNoLogsYet": "No logs captured yet.",
+  "logsNoMatchingLogs": "No logs match the current filters.",
   "logsSearch": "Buscar logs",
-  "logsShowingOrderedLength": "Mostrando {length} de {length2} entradas",
+  "logsShowingOrderedLength": "Showing {length} of {length2} entries",
   "logsTimeRange": "Time range",
-  "mathExpressionLabel": "Matemática",
+  "mathExpressionLabel": "Math",
   "mermaidCopySourceTooltip": "Copy source",
   "mermaidDiagramLabel": "Mermaid Diagram",
   "modelAuto": "Automático",
   "modelChooseAgent": "Choose agent",
   "modelFavorites": "Favorites",
-  "modelLabelBaseEnglish": "Base (Inglês)",
-  "modelLabelParakeet": "Parakeet V3 (25 idiomas europeus)",
+  "modelLabelBaseEnglish": "Base (English)",
+  "modelLabelParakeet": "Parakeet V3 (25 European languages)",
   "modelLabelSenseVoice": "SenseVoice (zh/en/ja/ko/yue)",
-  "modelLabelTinyEnglish": "Tiny (Inglês)",
+  "modelLabelTinyEnglish": "Tiny (English)",
   "modelLoadingModels": "Carregando modelos",
   "modelModelsFound": "No models found",
   "modelRetryModels": "Tentar modelos novamente",
@@ -1527,7 +508,7 @@
   "msgEnterUsernameToSave": "Digite um nome de usuário para salvar um nome de conversa personalizado do OpenCode.",
   "msgFailedToSendMessage": "Falha ao enviar mensagem. Rascunho mantido para nova tentativa.",
   "msgFailedToStartVoiceInput": "Falha ao iniciar entrada de voz",
-  "msgFilePathNotFound": "Arquivo não encontrado: {path}",
+  "msgFilePathNotFound": "File not found: {path}",
   "msgFilteredLogsCopied": "Logs filtrados copiados para a área de transferência",
   "msgInfoAgent": "Agente",
   "msgInfoCompaction": "Compactação",
@@ -1540,7 +521,7 @@
   "msgInfoProvider": "Provedor: {providerId}",
   "msgInfoRetry": "Tentativa",
   "msgInfoSnapshot": "Snapshot",
-  "msgInfoSubtaskPartAgent": "Subtarefa ({agent})",
+  "msgInfoSubtaskPartAgent": "Subtask ({agent})",
   "msgInfoTokens": "Tokens: {total}",
   "msgInfoUndoThisTurn": "Desfazer este turno",
   "msgInfoView": "Ver",
@@ -1561,119 +542,119 @@
   "notifConversationUpdates": "Atualizações de conversa",
   "notifNotificationsArriveReopening": "If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.",
   "notifResponseRunningKeep": "When a response is running, keep realtime active briefly after you leave the app.",
-  "notifSelectedSoundLabel": "Selecionado: {soundLabel}",
-  "notificationAgentFinished": "O agente terminou a resposta atual.",
-  "notificationConversationUpdates": "Atualizações da conversa",
-  "notificationOpenToClear": "Abra esta conversa para limpar as notificações relacionadas.",
-  "notificationSession": "Sessão",
-  "notificationSoundLoadFailed": "Falha ao carregar os sons do sistema Android",
+  "notifSelectedSoundLabel": "Selected: {soundLabel}",
+  "notificationAgentFinished": "Agent finished the current response.",
+  "notificationConversationUpdates": "Conversation updates",
+  "notificationOpenToClear": "Open this conversation to clear related notifications.",
+  "notificationSession": "Session",
+  "notificationSoundLoadFailed": "Failed to load Android system sounds",
   "onboardingAIGeneratedTitles": "AI generated titles",
   "onboardingAddServerLater": "You can add a server later in Settings > Servers.",
-  "onboardingAddedButHealthCheckFailed": "Servidor adicionado, mas a verificação de integridade falhou. Ele ainda pode estar iniciando.",
+  "onboardingAddedButHealthCheckFailed": "Server added but health check failed. It may still be starting up.",
   "onboardingAlmostInstallOpenCode": "You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.",
-  "onboardingAppProviderLocalSetupLogsLength": "{length} linhas de log de configuração e {length2} eventos de configuração estão disponíveis na tela de depuração de configuração separada.",
+  "onboardingAppProviderLocalSetupLogsLength": "{length} setup log lines and {length2} setup events are available in the separate setup debug screen.",
   "onboardingAuthenticate": "Authenticate",
-  "onboardingAvailable": "disponível",
-  "onboardingAvailableOnlyDesktop": "Disponível apenas para desktop (Linux/macOS/Windows).",
-  "onboardingBasicAuthTip": "Ative o Basic Auth apenas se o seu servidor OpenCode estiver protegido por senha.",
+  "onboardingAvailable": "available",
+  "onboardingAvailableOnlyDesktop": "Available only on desktop (Linux/macOS/Windows).",
+  "onboardingBasicAuthTip": "Enable Basic Auth only if your OpenCode server is password-protected.",
   "onboardingChooseAnotherPath": "Choose another path",
-  "onboardingChooseHowToSetup": "Escolha como configurar seu servidor",
+  "onboardingChooseHowToSetup": "Choose how to set up your server",
   "onboardingClear": "Limpar",
-  "onboardingCloudflareAuthFailed": "A autenticação do Cloudflare Access falhou.",
+  "onboardingCloudflareAuthFailed": "Cloudflare Access authentication failed.",
   "onboardingCodeWalkAppOpenCode": "CodeWalk is the app. OpenCode is the engine it connects to.",
   "onboardingConnectRunningServer": "Connect to a running server",
   "onboardingConnectionIssue": "Connection issue",
-  "onboardingConnectionSaved": "Conexão com o servidor salva com sucesso.",
+  "onboardingConnectionSaved": "Server connection saved successfully.",
   "onboardingConnectionTips": "Connection tips",
-  "onboardingConnectionUpdated": "Conexão com o servidor atualizada com sucesso.",
-  "onboardingContinue": "Continuar",
+  "onboardingConnectionUpdated": "Server connection updated successfully.",
+  "onboardingContinue": "Continue",
   "onboardingContinueServerURL": "Continue to server URL",
   "onboardingCopyLoginURL": "Copy login URL",
-  "onboardingCouldNotVerify": "Não foi posible verificar a conexão com o servidor.",
+  "onboardingCouldNotVerify": "Could not verify the server connection.",
   "onboardingDefaultURLEmulator": "Default URL, emulator loopback, auth, and debug help.",
-  "onboardingDesktopOnlyDiagnose": "Apenas desktop: o {appName} pode diagnosticar, instalar e executar o OpenCode para você.",
+  "onboardingDesktopOnlyDiagnose": "Desktop only: {appName} can diagnose, install, and run OpenCode for you.",
   "onboardingDetailedSetupEvents": "Detailed setup events were captured for troubleshooting.",
   "onboardingDonShowAgain": "Don''t show again",
-  "onboardingDone": "Concluído",
-  "onboardingEditServer": "Editar servidor",
-  "onboardingEditServerConnection": "Editar conexão do servidor",
-  "onboardingEmulatorRemap": "No emulador Android, localhost e 127.0.0.1 são remapeados para 10.0.2.2 automaticamente.",
-  "onboardingEnterServerUrl": "Digite a URL do servidor",
+  "onboardingDone": "Done",
+  "onboardingEditServer": "Edit server",
+  "onboardingEditServerConnection": "Edit server connection",
+  "onboardingEmulatorRemap": "On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.",
+  "onboardingEnterServerUrl": "Enter a server URL",
   "onboardingExisting": "Use Existing",
   "onboardingExplainInstallOpenCode": "Explain how to install OpenCode, start the server, and then connect from CodeWalk.",
-  "onboardingFailed": "Falhou",
+  "onboardingFailed": "Failed",
   "onboardingGoodOptionDesktop": "Good first option on desktop",
-  "onboardingHealthCheckFailedMayBeStarting": "A verificação de integridade do servidor falhou. Ele ainda pode estar iniciando.",
+  "onboardingHealthCheckFailedMayBeStarting": "Server health check failed. It may still be starting up.",
   "onboardingInstallBinary": "Install Binary",
   "onboardingInstallBun": "Install via Bun",
   "onboardingInstallBunOpenCode": "Install Bun + OpenCode",
   "onboardingInstallNpm": "Install via npm",
   "onboardingInstallRunOpenCode": "Install and run OpenCode directly from CodeWalk on desktop.",
-  "onboardingInvalidUrl": "URL inválida",
+  "onboardingInvalidUrl": "Invalid URL",
   "onboardingLabel": "Rótulo (opcional)",
   "onboardingLabelHint": "Meu servidor",
-  "onboardingLatestOutputAppProvider": "Última saída: {localServerLastOutput}",
+  "onboardingLatestOutputAppProvider": "Latest output: {localServerLastOutput}",
   "onboardingLetCodeWalkSet": "Let CodeWalk set it up locally",
-  "onboardingLocalServerSetup": "Configuração do servidor local",
+  "onboardingLocalServerSetup": "Local server setup",
   "onboardingManagedLocalServer": "Managed local server",
   "onboardingManagedLocalServer2": "Managed local server mode is available only on desktop builds (Linux/macOS/Windows).",
-  "onboardingNeedsOpenCodeServer": "O {appName} precisa de um servidor OpenCode antes de poder ajudar com o seu código.",
-  "onboardingNotAvailable": "não disponível",
-  "onboardingNotWritable": "não gravável",
+  "onboardingNeedsOpenCodeServer": "{appName} needs an OpenCode server before it can help with your code.",
+  "onboardingNotAvailable": "not available",
+  "onboardingNotWritable": "not writable",
   "onboardingOpenCode": "What is OpenCode?",
   "onboardingOpenCodeRunningDevice": "I already have OpenCode running on this device or somewhere on my network.",
   "onboardingOpenCodeRunsLocally": "OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.",
   "onboardingOpenTailscaleLogin": "Could not open Tailscale login URL.",
   "onboardingPassword": "Senha",
   "onboardingPasswordRequired": "Enter password",
-  "onboardingPickSetupPath": "Escolha o caminho de configuração que corresponde à sua configuração atual do OpenCode.",
-  "onboardingReachable": "alcançável",
-  "onboardingReady": "Pronto",
+  "onboardingPickSetupPath": "Pick the setup path that matches your current OpenCode setup.",
+  "onboardingReachable": "reachable",
+  "onboardingReady": "Ready",
   "onboardingRecommendedOrderTry": "Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.",
   "onboardingRefreshChecks": "Refresh Checks",
-  "onboardingRunDiagnosticsToVerify": "Execute diagnósticos para verificar os requisitos locais do OpenCode.",
-  "onboardingSaveAndTest": "Salvar e testar",
-  "onboardingServerConnectedReady": "Seu servidor está conectado e pronto para uso.",
-  "onboardingServerConnection": "Conexão do servidor",
-  "onboardingServerSettingsSaved": "As configurações do servidor foram salvas e as verificações de integridade foram atualizadas.",
-  "onboardingServerSetup": "Configuração do servidor",
-  "onboardingServerUpdated": "Servidor atualizado",
+  "onboardingRunDiagnosticsToVerify": "Run diagnostics to verify local OpenCode requirements.",
+  "onboardingSaveAndTest": "Save and test",
+  "onboardingServerConnectedReady": "Your server is connected and ready to use.",
+  "onboardingServerConnection": "Server connection",
+  "onboardingServerSettingsSaved": "Your server settings were saved and health checks were refreshed.",
+  "onboardingServerSetup": "Server setup",
+  "onboardingServerUpdated": "Server updated",
   "onboardingServerUrl": "URL do servidor",
-  "onboardingSetup": "Configuração",
-  "onboardingSetupWizard": "Assistente de configuração",
+  "onboardingSetup": "Setup",
+  "onboardingSetupWizard": "Setup wizard",
   "onboardingShowSetupSteps": "Show me the setup steps",
   "onboardingShowSetupSteps2": "Show setup steps",
   "onboardingSkip": "Skip for now",
   "onboardingSkipSetup": "Skip setup?",
   "onboardingStart": "Start",
-  "onboardingStartUsing": "Começar a usar o {appName}",
-  "onboardingStarting": "Iniciando",
+  "onboardingStartUsing": "Start using {appName}",
+  "onboardingStarting": "Starting",
   "onboardingStop": "Stop",
-  "onboardingStopped": "Parado",
-  "onboardingStopping": "Parando",
-  "onboardingSuggestedUrl": "URL sugerida para o servidor OpenCode local: {url}",
-  "onboardingTailscaleAdminApproval": "Aprovação do administrador do Tailscale necessária",
-  "onboardingTailscaleAuthAfterSave": "O Tailscale irá autenticar após salvar",
-  "onboardingTailscaleAuthAfterSaveTest": "Depois de salvar e testar este servidor, o {appName} abrirá o login do Tailscale se este dispositivo ainda não estiver autenticado.",
-  "onboardingTailscaleConnected": "Tailscale conectado",
-  "onboardingTailscaleConnecting": "Tailscale conectando",
-  "onboardingTailscaleConnectionFailed": "Falha na conexão do Tailscale",
-  "onboardingTailscaleLoginRequired": "Login do Tailscale necessário",
-  "onboardingTailscaleOpenLoginUrl": "Abra a URL de login para adicionar este dispositivo à sua tailnet. Se o navegador não abrir, copie a URL abaixo.",
-  "onboardingTailscaleUnsupported": "Tailscale não suportado",
-  "onboardingTestConnection": "Testar conexão",
-  "onboardingTesting": "Testando...",
-  "onboardingUnreachable": "inalcançável",
+  "onboardingStopped": "Stopped",
+  "onboardingStopping": "Stopping",
+  "onboardingSuggestedUrl": "Suggested local OpenCode server URL: {url}",
+  "onboardingTailscaleAdminApproval": "Tailscale admin approval required",
+  "onboardingTailscaleAuthAfterSave": "Tailscale will authenticate after saving",
+  "onboardingTailscaleAuthAfterSaveTest": "After you save and test this server, {appName} will open Tailscale login if this device is not authenticated yet.",
+  "onboardingTailscaleConnected": "Tailscale connected",
+  "onboardingTailscaleConnecting": "Tailscale connecting",
+  "onboardingTailscaleConnectionFailed": "Tailscale connection failed",
+  "onboardingTailscaleLoginRequired": "Tailscale login required",
+  "onboardingTailscaleOpenLoginUrl": "Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.",
+  "onboardingTailscaleUnsupported": "Tailscale unsupported",
+  "onboardingTestConnection": "Test connection",
+  "onboardingTesting": "Testing...",
+  "onboardingUnreachable": "unreachable",
   "onboardingUseBasicAuth": "Use Basic Auth",
   "onboardingUsername": "Usuário",
   "onboardingUsernameRequired": "Enter username",
   "onboardingUsesServerTitle": "Uses your server''s title agent to name conversations",
-  "onboardingUsingDetectedCommand": "Usando o comando OpenCode detectado.",
+  "onboardingUsingDetectedCommand": "Using detected OpenCode command.",
   "onboardingViewSetupDebug": "View setup debug",
-  "onboardingWelcomeTo": "Bem-vindo ao {appName}",
+  "onboardingWelcomeTo": "Welcome to {appName}",
   "onboardingWindowsTipInstalling": "Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.",
-  "onboardingWritable": "gravável",
-  "onboardingYoureAllSet": "Está tudo pronto!",
+  "onboardingWritable": "writable",
+  "onboardingYoureAllSet": "You''re all set!",
   "permissionAllowOnce": "Permitir Uma Vez",
   "permissionAlways": "Sempre",
   "permissionBack": "Voltar",
@@ -1693,6 +674,10 @@
   "quotaSaving": "Salvando...",
   "quotaWorkspaceId": "ID do Workspace",
   "serverClearOAuth": "Clear OAuth",
+  "serverConnectionAttention": "Server connection needs attention.",
+  "serverHealthHealthy": "Healthy",
+  "serverHealthUnhealthy": "Unhealthy",
+  "serverHealthUnknown": "Unknown",
   "serverOAuthAuthFailed": "OAuth authentication failed",
   "serverOAuthChip": "OAuth",
   "serverOAuthNotSupported": "Cloudflare Access OAuth is not supported on this platform",
@@ -1703,58 +688,100 @@
   "serversAddLeastOpenCode": "Add at least one OpenCode server to start using the app.",
   "serversAddServer": "Add Server",
   "serversCancel": "Cancel",
+  "serversCannotActivateUnhealthy": "Cannot activate an unhealthy server",
   "serversCheckHealth": "Check Health",
   "serversClearDefault": "Clear Default",
-  "serversCommandAppProviderLocalServerCommandPath": "Comando: {localServerCommandPath}",
+  "serversCommandAppProviderLocalServerCommandPath": "Command: {localServerCommandPath}",
   "serversCopy": "Copy",
   "serversDefault": "Default",
   "serversDelete": "Delete",
   "serversDeleteServer": "Delete server",
+  "serversDesktopModeExplanation": "Desktop mode can launch and manage `opencode serve` directly from CodeWalk.",
   "serversEdit": "Edit",
   "serversLocalOpenCodeServer": "Local OpenCode Server",
   "serversManagedModeAvailable": "This managed mode is available only on desktop builds (Linux/macOS/Windows).",
+  "serversNoServersFound": "No servers found",
   "serversRefreshHealth": "Refresh Health",
-  "serversRemoveProfileDisplayName": "Remover \"{displayName}\"?",
+  "serversRemoveProfileDisplayName": "Remove \"{displayName}\"?",
+  "serversSearchActiveHint": "Search active server",
   "serversServersConfigured": "No servers configured",
   "serversSetActive": "Set Active",
   "serversSetDefault": "Set Default",
   "serversSetupDebug": "Setup Debug",
   "serversSetupWizard": "Setup Wizard",
+  "serversTailscaleAdminApprovalRequired": "Tailscale admin approval required",
+  "serversTailscaleAuthRequired": "Tailscale authentication required",
+  "serversTailscaleConnectExplanation": "Tailscale will connect when this active profile is used.",
+  "serversTailscaleConnected": "Tailscale connected",
+  "serversTailscaleConnecting": "Tailscale connecting",
+  "serversTailscaleConnectionFailed": "Tailscale connection failed",
+  "serversTailscaleDisconnected": "Tailscale disconnected",
+  "serversTailscaleLoginExplanation": "Open the Tailscale login URL to add this device to your tailnet.",
+  "serversTailscaleTrafficExplanation": "OpenCode traffic for this active profile is routed through Tailscale.",
+  "serversTailscaleUnsupported": "Tailscale unsupported",
+  "serversUnhealthyActivateError": "This server is unhealthy. Use check health or edit settings before activating.",
   "sessionActionArchived": "arquivada",
   "sessionActionDeleted": "excluída",
   "sessionActionForked": "bifurcada",
   "sessionActionUnarchived": "desarquivada",
   "sessionCancelRename": "Cancelar renomeação",
-  "sessionCopyLink": "Copiar link",
+  "sessionChildrenCount": "Children: {count}",
+  "sessionCompactContext": "Compact context",
+  "sessionCopyLink": "Copiar Link",
   "sessionDelete": "Excluir",
   "sessionDeleteTitle": "Excluir Conversa",
   "sessionDiffChangedFile": "Arquivo alterado",
   "sessionDiffContentNotCaptured": "File content not captured by the server",
   "sessionDiffFilesChanged": "{count, plural, =1{1 file changed} other{{count} files changed}}",
+  "sessionDiffFilesCount": "Diff files: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} lines added -{removed} lines removed",
   "sessionDiffLinesCollapsed": "{count} lines collapsed — tap to expand",
-  "sessionDiffReview": "Review changes",
+  "sessionDiffReview": "Revisar alterações",
   "sessionDiffSplit": "Split",
   "sessionDiffSummary": "Summary",
   "sessionDiffUnified": "Unified",
-  "sessionExportAssistant": "Assistente",
-  "sessionExportError": "Erro:",
-  "sessionExportInput": "Entrada:",
-  "sessionExportOutput": "Saída:",
-  "sessionExportUntitled": "Sessão sem título",
-  "sessionExportUser": "Usuário",
+  "sessionExportAssistant": "Assistant",
+  "sessionExportCanceled": "Session export canceled",
+  "sessionExportDebugJson": "Export debug JSON",
+  "sessionExportDebugJsonErrorClipboard": "Could not save file; debug JSON copied to clipboard",
+  "sessionExportDebugJsonSaved": "Debug JSON export saved",
+  "sessionExportDebugJsonTitle": "Export session as debug JSON",
+  "sessionExportError": "Error:",
+  "sessionExportInput": "Input:",
+  "sessionExportMarkdown": "Export Markdown",
+  "sessionExportMarkdownErrorClipboard": "Could not save file; Markdown copied to clipboard",
+  "sessionExportMarkdownSaved": "Markdown export saved",
+  "sessionExportMarkdownTitle": "Export session as Markdown",
+  "sessionExportOutput": "Output:",
+  "sessionExportUntitled": "Untitled session",
+  "sessionExportUser": "User",
   "sessionFailedRename": "Falha ao renomear conversa",
   "sessionFailedUpdateArchive": "Falha ao atualizar estado de arquivamento",
   "sessionFailedUpdateSharing": "Falha ao atualizar estado de compartilhamento",
   "sessionFork": "Bifurcar",
+  "sessionForkFailed": "Failed to fork conversation",
+  "sessionForked": "Conversation forked",
+  "sessionHasError": "\"{title}\" has an error.",
+  "sessionHasNewReply": "\"{title}\" has a new reply.",
   "sessionKeyboardShortcuts": "Atalhos de teclado",
+  "sessionNeedsInput": "\"{title}\" needs your input.",
+  "sessionNoCachedConversations": "No cached conversations yet",
+  "sessionNoConversationsInProject": "No conversations in this project.",
   "sessionNotAvailable": "A conversa ainda não está disponível para este projeto",
+  "sessionOpenProjectToLoad": "Open project to load conversations.",
   "sessionRename": "Renomear",
   "sessionRenameHint": "Digite o novo nome da conversa",
   "sessionRenameTitle": "Renomear Conversa",
   "sessionSaveTitle": "Salvar título",
+  "sessionShare": "Share session",
   "sessionShareLinkCopied": "Link de compartilhamento copiado",
+  "sessionShareLinkUnavailable": "Share link unavailable for this session",
+  "sessionShared": "Conversation shared",
+  "sessionSyncing": "Syncing conversations...",
   "sessionTitleHint": "Título da conversa",
+  "sessionUnshare": "Unshare session",
+  "sessionUnshared": "Conversation unshared",
+  "sessionViewTasks": "View tasks",
   "settingsAboutCheckForUpdates": "Verificar atualizações",
   "settingsAboutCheckOnOpen": "Verificar atualizações ao abrir",
   "settingsAboutCheckOnOpenDescription": "Verificar automaticamente quando o app iniciar",
@@ -1806,8 +833,8 @@
   "settingsAppearanceDensitySpacious": "Espaçosa",
   "settingsAppearanceDescription": "Densidade e visibilidade dos balões da timeline",
   "settingsAppearanceLight": "Claro",
-  "settingsAppearanceMathRendering": "Renderização de matemática",
-  "settingsAppearanceMathRenderingDescription": "Renderizar expressões matemáticas LaTeX como equações tipografadas nas mensagens de chat.",
+  "settingsAppearanceMathRendering": "Math rendering",
+  "settingsAppearanceMathRenderingDescription": "Render LaTeX math expressions ($…$ and $$…$$) as typeset equations in chat messages.",
   "settingsAppearanceNoPresets": "Nenhuma paleta encontrada",
   "settingsAppearanceOpenCodePresets": "Presets OpenCode",
   "settingsAppearancePresetHelper": "Espelha a lista oficial de temas integrados do OpenCode Web.",
@@ -1879,6 +906,11 @@
   "settingsBehaviorTitle": "Comportamento",
   "settingsBehaviorUsernameFallback": "O OpenCode usa o nome de usuário do sistema porque `username` não está definido.",
   "settingsBehaviorUsernamePatchCaveat": "Redefinir `username` de volta ao padrão do sistema ainda requer editar a config fora do app porque atualizações de patch `/config` não podem remover chaves.",
+  "settingsConfigRefreshFailed": "Updated the server setting, but could not refresh chat providers.",
+  "settingsConfigUpdateDeferred": "CodeWalk will apply this OpenCode setting after the current response finishes.",
+  "settingsConversationUsername": "Conversation username",
+  "settingsDefaultAgent": "Default agent",
+  "settingsDefaultModel": "Default model",
   "settingsLanguageDescription": "Escolha o idioma usado pelo CodeWalk. O padrão do sistema segue o idioma do dispositivo.",
   "settingsLanguageEmptyText": "Nenhum idioma encontrado",
   "settingsLanguageFieldHelper": "Aplica imediatamente e persiste após reiniciar.",
@@ -1887,7 +919,8 @@
   "settingsLanguageSystemDefault": "Padrão do sistema",
   "settingsLanguageTitle": "Idioma",
   "settingsLogsDescription": "Diagnóstico em tempo de execução e dados de solução de problemas",
-  "settingsLogsTitle": "Registros",
+  "settingsLogsTitle": "Logs",
+  "settingsNoAgentsFound": "No agents found",
   "settingsNotificationsAgentSubtitle": "Quando uma resposta termina",
   "settingsNotificationsAgentUpdates": "Atualizações do agente",
   "settingsNotificationsAnotherConversation": "Outra conversa",
@@ -1939,6 +972,8 @@
   "settingsNotificationsSystemSoundPickerTitle": "Escolher som do sistema",
   "settingsNotificationsTitle": "Notificações",
   "settingsNotificationsWhenClosing": "Ao fechar a janela",
+  "settingsOpenCodeAutoUpdate": "OpenCode auto-update",
+  "settingsOpenCodeSharingDefault": "OpenCode sharing default",
   "settingsReadAloudEnabled": "Read aloud",
   "settingsReadAloudEnabledDescription": "Show a read-aloud button on assistant messages.",
   "settingsReadAloudPitch": "Pitch",
@@ -1949,6 +984,11 @@
   "settingsReadAloudSpeedDescription": "Adjust the speaking rate.",
   "settingsReadAloudVoice": "Voice",
   "settingsReadAloudVoiceHint": "Select a voice for read-aloud.",
+  "settingsSearchAutoUpdateMode": "Search auto-update mode",
+  "settingsSearchDefaultAgent": "Search default agent",
+  "settingsSearchDefaultModel": "Search default model",
+  "settingsSearchSharingMode": "Search sharing mode",
+  "settingsSearchSmallModel": "Search small model",
   "settingsServersActive": "Ativo",
   "settingsServersChooseActive": "Escolher servidor ativo",
   "settingsServersDefault": "Padrão",
@@ -1961,12 +1001,19 @@
   "settingsShortcutsReset": "Redefinir atalho",
   "settingsShortcutsSearch": "Buscar atalhos",
   "settingsShortcutsTitle": "Atalhos",
-  "settingsSoundPickerNotAvailable": "O seletor de sons do sistema não está disponível nesta plataforma.",
+  "settingsSmallModel": "Small model",
+  "settingsSmallModelResetExplanation": "Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.",
+  "settingsSmallModelUnsetExplanation": "OpenCode automatic fallback is active because `small_model` is unset.",
+  "settingsSoundPickerNotAvailable": "System sound picker is not available on this platform.",
   "settingsSpeechDescription": "Motor, tempo de silêncio e opções de modelo",
   "settingsSpeechRefreshStatus": "Atualizar status",
   "settingsSpeechSilenceTimeout": "Tempo de silêncio: {value}s",
   "settingsSpeechTitle": "Fala para texto",
   "settingsTitle": "Configurações",
+  "settingsUsernameClearHint": "Clearing the OpenCode conversation username still requires editing config outside the app.",
+  "settingsUsernameEnterHint": "Enter a username to save a custom OpenCode conversation name.",
+  "settingsUsernameResetExplanation": "Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.",
+  "settingsUsernameUnsetExplanation": "OpenCode uses the system username because `username` is unset.",
   "setupDebugBun": "Bun",
   "setupDebugBun2": "Bun",
   "setupDebugCapturedSetupDetails": "No captured setup details yet",
@@ -2011,56 +1058,56 @@
   "setupDebugTitle": "Focado na configuração do OpenCode",
   "setupDebugWSL": "WSL",
   "setupDebugWsl": "WSL",
-  "shortcutCloseApp": "Fechar aplicativo",
-  "shortcutCloseAppDesc": "Fechar o aplicativo usando o comportamento de fechamento da plataforma",
-  "shortcutFocusCloseDrawer": "Focar/fechar painel",
-  "shortcutFocusCloseDrawerDesc": "Focar entrada por padrão, ou fechar painel quando aberto",
-  "shortcutFocusInput": "Focar entrada",
-  "shortcutFocusInputDesc": "Mover o foco para a entrada de texto",
-  "shortcutGroupApplication": "Aplicativo",
-  "shortcutGroupGeneral": "Geral",
-  "shortcutGroupModelAndAgent": "Modelo e agente",
-  "shortcutGroupNavigation": "Navegação",
+  "shortcutCloseApp": "Close application",
+  "shortcutCloseAppDesc": "Close app using platform close behavior",
+  "shortcutFocusCloseDrawer": "Focus/close drawer",
+  "shortcutFocusCloseDrawerDesc": "Focus composer by default, or close drawer when open",
+  "shortcutFocusInput": "Focus input",
+  "shortcutFocusInputDesc": "Move focus to the prompt input",
+  "shortcutGroupApplication": "Application",
+  "shortcutGroupGeneral": "General",
+  "shortcutGroupModelAndAgent": "Model and agent",
+  "shortcutGroupNavigation": "Navigation",
   "shortcutGroupPrompt": "Prompt",
-  "shortcutGroupSession": "Sessão",
-  "shortcutNewConversation": "Nova conversa",
-  "shortcutNewConversationDesc": "Criar uma nova sessão de chat",
-  "shortcutNextAgent": "Próximo agente",
-  "shortcutNextAgentDesc": "Alternar para o próximo agente disponível",
-  "shortcutNextRecentModel": "Próximo modelo recente",
-  "shortcutNextRecentModelDesc": "Alternar entre os modelos usados recentemente",
-  "shortcutNextVariant": "Próxima variante",
-  "shortcutNextVariantDesc": "Alternar entre as variantes de modelo disponíveis",
-  "shortcutOpenSettings": "Abrir configurações",
-  "shortcutOpenSettingsDesc": "Abrir a página de configurações",
-  "shortcutPreviousAgent": "Agente anterior",
-  "shortcutPreviousAgentDesc": "Alternar para o agente anterior disponível",
-  "shortcutQuickOpenFiles": "Abertura rápida de arquivos",
-  "shortcutQuickOpenFilesDesc": "Abrir busca rápida de arquivos",
-  "shortcutQuitApp": "Sair do aplicativo",
-  "shortcutQuitAppDesc": "Forçar a saída do aplicativo",
-  "shortcutRefreshData": "Atualizar dados",
-  "shortcutRefreshDataDesc": "Atualizar os dados do chat atual",
-  "shortcutStopResponse": "Parar resposta",
-  "shortcutStopResponseDesc": "Parar resposta ativa (enquanto responde)",
-  "shortcutToggleVoiceInput": "Alternar entrada de voz",
-  "shortcutToggleVoiceInputDesc": "Iniciar ou parar o ditado de voz no editor",
+  "shortcutGroupSession": "Session",
+  "shortcutNewConversation": "New conversation",
+  "shortcutNewConversationDesc": "Create a new chat session",
+  "shortcutNextAgent": "Next agent",
+  "shortcutNextAgentDesc": "Cycle to next available agent",
+  "shortcutNextRecentModel": "Next recent model",
+  "shortcutNextRecentModelDesc": "Cycle through recently used models",
+  "shortcutNextVariant": "Next variant",
+  "shortcutNextVariantDesc": "Cycle through available model variants",
+  "shortcutOpenSettings": "Open settings",
+  "shortcutOpenSettingsDesc": "Open settings page",
+  "shortcutPreviousAgent": "Previous agent",
+  "shortcutPreviousAgentDesc": "Cycle to previous available agent",
+  "shortcutQuickOpenFiles": "Quick open files",
+  "shortcutQuickOpenFilesDesc": "Open file quick search",
+  "shortcutQuitApp": "Quit application",
+  "shortcutQuitAppDesc": "Force-exit the app",
+  "shortcutRefreshData": "Refresh data",
+  "shortcutRefreshDataDesc": "Refresh current chat data",
+  "shortcutStopResponse": "Stop active response",
+  "shortcutStopResponseDesc": "Stop active response (while responding)",
+  "shortcutToggleVoiceInput": "Toggle voice input",
+  "shortcutToggleVoiceInputDesc": "Start or stop speech-to-text in the composer",
   "shortcutsApply": "Apply",
-  "shortcutsConflictConflict": "Conflito com {conflict}",
+  "shortcutsConflictConflict": "Conflict with {conflict}",
   "shortcutsKeyboardShortcuts": "Keyboard shortcuts",
   "shortcutsReset": "Reset all",
   "shortcutsSearchEditBindings": "Search, edit bindings, and resolve conflicts before saving.",
-  "shortcutsSetShortcutWidget": "Definir atalho: {label}",
+  "shortcutsSetShortcutWidget": "Set shortcut: {label}",
   "shortcutsTheseBindingsStored": "These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.",
   "speechAutoStopSilence": "Auto-stop silence timeout",
   "speechChooseRecognitionEngine": "Choose the recognition engine, silence timeout, and model options.",
-  "speechDesktopOnly": "{service} está disponível apenas na versão desktop.",
+  "speechDesktopOnly": "{service} is available on desktop only.",
   "speechDownload": "Download",
   "speechEngine": "Engine",
   "speechInstalledLanguages": "Installed languages",
   "speechListeningStopsAutomatically": "Listening stops automatically after this many seconds of silence.",
-  "speechMicPermissionDisabled": "A permissão do microfone está desativada.",
-  "speechModelFilesIncomplete": "Os arquivos de modelo do {service} estão incompletos.",
+  "speechMicPermissionDisabled": "Microphone permission is disabled.",
+  "speechModelFilesIncomplete": "{service} model files are incomplete.",
   "speechMoonshine": "Moonshine",
   "speechMoonshineModelsDesktop": "Moonshine models (desktop)",
   "speechMoonshineStaysDownloadable": "Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.",
@@ -2073,7 +1120,7 @@
   "speechParakeetStaysDownloadable": "Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.",
   "speechPickLanguagePacks": "Pick language packs and download/remove models for on-device recognition.",
   "speechRemove": "Remove",
-  "speechRuntimeFailed": "O tempo de execução do {service} falhou ao inicializar.",
+  "speechRuntimeFailed": "{service} runtime failed to initialize.",
   "speechSelectSherpaAbove": "Select Sherpa above to manage language packs and download models.",
   "speechSenseVoice": "SenseVoice",
   "speechSenseVoiceModelsDesktop": "SenseVoice models (desktop)",
@@ -2082,25 +1129,42 @@
   "speechSherpaExperimentalFail": "Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.",
   "speechSherpaModelsLinux": "Sherpa models (Linux)",
   "speechSpeechText": "Speech to text",
-  "speechUnavailableOnPlatform": "A fala do {service} não está disponível nesta plataforma.",
+  "speechUnavailableOnPlatform": "{service} speech is unavailable on this platform.",
+  "statusConnected": "Connected",
+  "statusDelayed": "Delayed",
+  "statusFailed": "Failed",
+  "statusOffline": "Offline",
+  "statusOnline": "Online",
+  "statusReconnecting": "Reconnecting",
+  "statusStarting": "Starting",
+  "statusStopped": "Stopped",
+  "statusStopping": "Stopping",
+  "statusSyncDelayed": "Sync delayed",
   "tailscaleNoPeers": "No peers found",
-  "tailscaleNotSupportedOnPlatform": "O Tailscale não é suportado nesta plataforma.",
-  "tailscaleNotSupportedOnWindows": "O Tailscale não é suportado no Windows.",
+  "tailscaleNotSupportedOnPlatform": "Tailscale is not supported on this platform.",
+  "tailscaleNotSupportedOnWindows": "Tailscale is not supported on Windows.",
   "tailscalePeerOffline": "offline",
   "tailscaleSelectPeer": "Select a Tailscale peer",
-  "tailscaleWaitingAdminApproval": "Este nó do Tailscale está aguardando aprovação do administrador.",
+  "tailscaleWaitingAdminApproval": "This Tailscale node is waiting for admin approval.",
   "terminalClose": "Fechar terminal",
-  "terminalConnectingTo": "Conectando ao terminal do {serverName}...",
-  "terminalConnectionFailed": "Falha na conexão do terminal: {error}",
-  "terminalDisconnected": "Terminal desconectado.",
+  "terminalConnectingTo": "Connecting to {serverName} terminal...",
+  "terminalConnectionFailed": "Terminal connection failed: {error}",
+  "terminalDisconnected": "Terminal disconnected.",
+  "terminalEmbeddedUnavailable": "Embedded terminal is not available on this runtime yet. Keep using composer shell mode for one-shot commands or open the terminal from a supported CodeWalk app runtime for {serverName}.",
+  "terminalHide": "Hide terminal",
+  "terminalMaximize": "Maximize",
   "terminalMinimize": "Minimizar terminal",
-  "terminalNotAvailableYet": "O terminal incorporado ainda não está disponível neste tempo de execução.",
-  "terminalOpenProjectFirst": "Abra uma pasta de projeto antes de iniciar o terminal do servidor.",
-  "terminalOpenToConnect": "Abra o Terminal para se conectar ao terminal do projeto do servidor.",
+  "terminalNotAvailableYet": "Embedded terminal is not available on this runtime yet.",
+  "terminalOpen": "Open terminal",
+  "terminalOpenInfo": "Open terminal info",
+  "terminalOpenProjectFirst": "Open a project folder before starting the server terminal.",
+  "terminalOpenToConnect": "Open Terminal to connect to the server project terminal.",
   "terminalReconnect": "Reconectar terminal",
-  "terminalSelectServer": "Selecione um servidor ativo antes de abrir o Terminal.",
-  "terminalSessionClosed": "Sessão de terminal encerrada.",
+  "terminalRestoreSize": "Restore size",
+  "terminalSelectServer": "Select an active server before opening Terminal.",
+  "terminalSessionClosed": "Terminal session closed.",
   "terminalTerminal": "Terminal",
+  "terminalTitle": "Terminal",
   "terminalTryAgain": "Tentar novamente",
   "toolAwaitingInput": "Aguardando entrada",
   "toolEditing": "Editando",
@@ -2116,11 +1180,11 @@
   "toolPresentationReadingFile": "Reading file",
   "toolPresentationRunning": "Running",
   "toolPresentationRunningCommand": "Running command",
-  "toolPresentationRunningTool": "Executando {toolName}",
+  "toolPresentationRunningTool": "Running {toolName}",
   "toolPresentationSearching": "Searching",
   "toolPresentationSearchingCode": "Searching code",
   "toolPresentationSearchingWeb": "Searching the web",
-  "toolPresentationTool": "Ferramenta",
+  "toolPresentationTool": "Tool",
   "toolPresentationUpdatingTaskList": "Updating task list",
   "toolPresentationUpdatingTasks": "Updating tasks",
   "toolPresentationWaitingInput": "Waiting for your input",
@@ -2149,6 +1213,7 @@
   "useTailscale": "Use Tailscale",
   "useTailscaleSubtitle": "Routes traffic through the Tailscale network without a system VPN.",
   "useTailscaleUnsupported": "Tailscale is not supported on this platform.",
+  "utilityTitle": "Utility",
   "workspaceBrowseDirs": "Navegar diretórios",
   "workspaceChooseFolderOpen": "Choose any folder to open as project context.",
   "workspaceCloseProject": "Fechar {project}",
@@ -2158,226 +1223,5 @@
   "workspaceProjectDirectory": "Diretório do projeto",
   "workspaceProjectHint": "/repo/meu-projeto",
   "workspaceRemoveFromHistory": "Remover {name} do histórico",
-  "workspaceSuggestions": "Suggestions",
-  "chatChooseModel": "Escolher modelo",
-  "chatStartVoiceInput": "Iniciar entrada de voz",
-  "chatStopVoiceInput": "Parar entrada de voz",
-  "chatStartingVoiceInput": "Iniciando entrada de voz",
-  "chatComposerPlaceholder": "Digite suas necessidades...",
-  "chatPermissionAutoApproveOn": "Aprovação automática de permissão ativada",
-  "chatPermissionAutoApproveOff": "Aprovação automática de permissão desativada",
-  "chatModelLockedSubConversation": "Modelo bloqueado na subconversa",
-  "chatComposerHintShell": "Comando shell (Esc para sair)",
-  "utilityTitle": "Utilitário",
-  "statusOffline": "Offline",
-  "statusOnline": "Online",
-  "statusConnected": "Conectado",
-  "statusReconnecting": "Reconectando",
-  "statusSyncDelayed": "Sincronização atrasada",
-  "statusDelayed": "Atrasado",
-  "chatActiveServerUnhealthyLabel": "Servidor ativo não está saudável",
-  "chatWaitingForNetworkConnection": "Aguardando conexão de rede...",
-  "serverHealthHealthy": "Saudável",
-  "serverHealthUnhealthy": "Não saudável",
-  "serverHealthUnknown": "Desconhecido",
-  "sessionUnshare": "Parar de compartilhar",
-  "sessionShare": "Compartilhar sessão",
-  "sessionExportMarkdown": "Exportar Markdown",
-  "sessionExportDebugJson": "Exportar JSON de depuração",
-  "sessionViewTasks": "Ver tarefas",
-  "sessionCompactContext": "Compactar contexto",
-  "sessionUnshared": "Conversação não compartilhada",
-  "sessionShared": "Conversação compartilhada",
-  "sessionShareLinkUnavailable": "Link indisponível para esta sessão",
-  "sessionExportMarkdownTitle": "Exportar sessão como Markdown",
-  "sessionExportDebugJsonTitle": "Exportar sessão como JSON de depuração",
-  "sessionExportCanceled": "Exportação cancelada",
-  "sessionExportMarkdownSaved": "Exportação Markdown salva",
-  "sessionExportDebugJsonSaved": "Exportação JSON de depuração salva",
-  "sessionExportMarkdownErrorClipboard": "Não foi possível salvar; Markdown copiado para área de transferência",
-  "sessionExportDebugJsonErrorClipboard": "Não foi possível salvar; JSON de depuração copiado para área de transferência",
-  "terminalHide": "Ocultar terminal",
-  "terminalOpen": "Abrir terminal",
-  "terminalOpenInfo": "Abrir informações do terminal",
-  "chatNoSessionSelected": "Selecione ou crie uma conversa",
-  "chatWelcomeMessage": "Olá! Sou seu assistente de IA.",
-  "chatWelcomeSubmessage": "Como posso ajudar você hoje?",
-  "cannedAppendAtCursor": "Anexar ao cursor",
-  "cannedReplace": "Substituir",
-  "chatMessageAttachedFile": "Arquivo anexado",
-  "chatMessageThinking": "Pensando",
-  "chatMessageShow": "Mostrar",
-  "chatMessageMore": "Mais",
-  "chatMessageLess": "Menos",
-  "chatMessageDetails": "Detalhes",
-  "chatMessageToolInput": "Entrada",
-  "chatMessageToolCommand": "Comando",
-  "chatMessageToolRunningCount": "{count} em execução",
-  "chatMessageToolQueuedCount": "{count} na fila",
-  "chatMessageToolOutputTruncated": "Visualização truncada para estabilidade.",
-  "chatMessageToolCommandTruncated": "Visualização do comando truncada.",
-  "chatMessageToolInputTruncated": "Visualização da entrada truncada.",
-  "chatMessageToolDiffOmitted": "Visualização diff omitida: carga muito grande.",
-  "terminalTitle": "Terminal",
-  "chatCouldNotRefreshSession": "Não foi possível atualizar esta conversa",
-  "chatMainConversationUnavailable": "A conversa principal ainda não está disponível.",
-  "chatFailedToRefreshSubConversations": "Falha ao atualizar subconversas. Tente novamente.",
-  "chatNoSubConversationFound": "Nenhuma subconversa encontrada.",
-  "errorAnErrorOccurred": "Ocorreu um erro",
-  "serverConnectionAttention": "A conexão do servidor precisa de atenção.",
-  "sessionHasError": "\"{title}\" tem um erro.",
-  "sessionNeedsInput": "\"{title}\" precisa de sua entrada.",
-  "sessionHasNewReply": "\"{title}\" tem uma nova resposta.",
-  "sessionSyncing": "Sincronizando conversas...",
-  "behaviorCellularDataSaverActive": "O economizador de dados móveis está ativo.",
-  "sessionNoCachedConversations": "Nenhuma conversa em cache",
-  "sessionForkFailed": "Falha ao bifurcar conversa",
-  "sessionForked": "Conversa bifurcada",
-  "sessionNoConversationsInProject": "Nenhuma conversa neste projeto.",
-  "sessionOpenProjectToLoad": "Abra o projeto para carregar conversas.",
-  "sessionChildrenCount": "Subconversas: {count}",
-  "sessionDiffFilesCount": "Arquivos diff: {count}",
-  "compactionAutomatic": "automático",
-  "compactionManual": "manual",
-  "chatMessageShowLessCompact": "Menos",
-  "chatMessageShowLess": "Mostrar menos",
-  "chatMessageShowMoreCompact": "Mais",
-  "chatMessageShowMore": "Mostrar mais",
-  "chatChooseAgent": "Selecionar agente",
-  "chatEffortLockedSubConversation": "Esforço bloqueado na subconversa",
-  "chatChooseEffort": "Escolher esforço",
-  "chatServerSelectedModel": "Modelo selecionado pelo servidor",
-  "chatFailedToRefreshProviders": "Falha ao atualizar provedores e modelos",
-  "cannedAddTitle": "Adicionar resposta rápida",
-  "cannedEditTitle": "Editar resposta rápida",
-  "cannedTextLabel": "Texto",
-  "cannedAppendAtCursorSubtitle": "Desligado = substituir texto atual",
-  "cannedSendAutomaticallySubtitle": "Enviar imediatamente após inserir",
-  "cannedScopeGlobalSubtitle": "Desativar para item apenas do projeto",
-  "cannedScopeGlobalUnavailableSubtitle": "Apenas projeto indisponível neste contexto",
-  "commonFile": "Arquivo",
-  "serversSearchActiveHint": "Pesquisar servidor ativo",
-  "serversNoServersFound": "Nenhum servidor encontrado",
-  "serversUnhealthyActivateError": "Este servidor não está saudável. Verifique a saúde ou edite as configurações antes de ativar.",
-  "serversTailscaleConnected": "Tailscale conectado",
-  "serversTailscaleConnecting": "Tailscale conectando",
-  "serversTailscaleAuthRequired": "Autenticação Tailscale necessária",
-  "serversTailscaleAdminApprovalRequired": "Aprovação do administrador Tailscale necessária",
-  "serversTailscaleConnectionFailed": "Conexão Tailscale falhou",
-  "serversTailscaleUnsupported": "Tailscale não suportado",
-  "serversTailscaleDisconnected": "Tailscale desconectado",
-  "serversTailscaleLoginExplanation": "Abra o URL de login do Tailscale para adicionar este dispositivo ao seu tailnet.",
-  "serversTailscaleTrafficExplanation": "O tráfego do OpenCode para este perfil ativo é roteado através do Tailscale.",
-  "serversTailscaleConnectExplanation": "O Tailscale conectará quando este perfil ativo for usado.",
-  "statusStarting": "Iniciando",
-  "statusStopping": "Parando",
-  "statusFailed": "Falhou",
-  "statusStopped": "Parado",
-  "serversDesktopModeExplanation": "O modo desktop pode iniciar e gerenciar `opencode serve` diretamente do CodeWalk.",
-  "serversCannotActivateUnhealthy": "Não é possível ativar um servidor não saudável",
-  "commonCopiedToClipboard": "Copiado para a área de transferência",
-  "chatUndoNothing": "Nada para desfazer nesta sessão",
-  "chatRedoNothing": "Nada para refazer nesta sessão",
-  "chatStatusPatching": "Aplicando patch",
-  "chatStatusPatchingOneFile": "Aplicando patch em 1 arquivo",
-  "chatStatusPatchingMultipleFiles": "Aplicando patch em {count} arquivos",
-  "chatStatusThinking": "Pensando...",
-  "chatStatusSubsession": "Subsessão",
-  "chatStatusBusy": "Status: Ocupado",
-  "chatStatusRetry": "Status: Repetir",
-  "chatStatusRetryCount": "Status: Repetir #{count}",
-  "appShellUpdateInstalledRestartRequired": "Atualização instalada. Reinicialização necessária para aplicar a nova versão.",
-  "appShellUpdateInstalledRestartApp": "Atualização instalada. Reinicie o aplicativo para aplicar.",
-  "chatTourProjectsConversations": "Use este botão para abrir seus projetos e conversas.",
-  "chatTourSwitchFolders": "Use este botão para trocar pastas de projeto e contexto.",
-  "chatTourSidebarProjectTools": "Use este menu para mostrar a barra lateral de conversas e ferramentas de projeto.",
-  "chatActionNext": "Próximo",
-  "chatShortcutsNewConversation": "Nova conversa",
-  "chatShortcutsRefreshChat": "Atualizar dados do chat",
-  "chatShortcutsFocusInput": "Focar entrada de mensagem",
-  "chatShortcutsStartStopVoice": "Iniciar ou parar entrada de voz",
-  "chatShortcutsQuickOpen": "Abrir arquivos rapidamente",
-  "chatShortcutsOpenSettings": "Abrir configurações",
-  "chatShortcutsCycleModels": "Ciclar modelos recentes",
-  "chatShortcutsCycleVariant": "Ciclar variante do modelo",
-  "chatShortcutsFocusInputCloseDrawer": "Focar entrada (ou fechar gaveta quando aberta)",
-  "chatShortcutsNextAgent": "Próximo agente",
-  "chatShortcutsPreviousAgent": "Agente anterior",
-  "chatShortcutsCloseApp": "Fechar aplicativo usando comportamento da plataforma",
-  "chatShortcutsForceExit": "Forçar saída do aplicativo",
-  "chatShortcutsStopResponse": "Parar resposta ativa (enquanto responde)",
-  "chatTipMentionFiles": "Dica: Use @ para mencionar arquivos em seu prompt",
-  "chatTipRenameConversation": "Dica: Toque no título para renomear uma conversa",
-  "chatTipShellCommands": "Dica: Use ! no início para executar comandos shell",
-  "chatTipSlashCommands": "Dica: Use / para acessar comandos de barra",
-  "chatTipLongPressSend": "Dica: Pressione e segure Enviar para inserir uma nova linha",
-  "chatTipContextKnob": "Dica: Toque no botão de contexto para ver detalhes de uso",
-  "chatTipBeSpecific": "Dica: Seja específico — prompts curtos recebem respostas mais rápidas",
-  "chatTipStepByStep": "Dica: Peça passo a passo ao depurar problemas complexos",
-  "chatTipProvideContext": "Dica: Forneça contexto — cole mensagens de erro e logs",
-  "chatTipBreakTasks": "Dica: Divida tarefas grandes em prompts menores",
-  "chatFailedToLoadDirectories": "Falha ao carregar diretórios",
-  "logsFilterAll": "Todos",
-  "logsNoLogsYet": "Nenhum log capturado ainda.",
-  "logsNoMatchingLogs": "Nenhum log corresponde aos filtros atuais.",
-  "settingsDefaultModel": "Modelo padrão",
-  "settingsSearchDefaultModel": "Buscar modelo padrão",
-  "settingsDefaultAgent": "Agente padrão",
-  "settingsSearchDefaultAgent": "Buscar agente padrão",
-  "settingsNoAgentsFound": "Nenhum agente encontrado",
-  "settingsConversationUsername": "Nome de usuário da conversa",
-  "settingsUsernameUnsetExplanation": "O OpenCode usa o nome de usuário do sistema porque `username` não está definido.",
-  "settingsUsernameResetExplanation": "Redefinir `username` de volta para o padrão do sistema ainda requer edição da configuração fora do aplicativo porque as atualizações de patch `/config` não podem remover chaves.",
-  "chatHelpMessage": "Use @ para menções, ! para shell, / para comandos",
-  "terminalEmbeddedUnavailable": "Terminal incorporado ainda não está disponível neste tempo de execução. Continue usando o modo shell do compositor para comandos únicos ou abra o terminal de um tempo de execução do aplicativo CodeWalk suportado para {serverName}.",
-  "chatFailedToLoadFile": "Falha ao carregar o arquivo",
-  "chatMentionFileSubtitle": "arquivo",
-  "chatMentionSymbolSubtitle": "símbolo",
-  "chatMentionAgentSubtitle": "agente",
-  "chatCommandSourceGeneric": "comando",
-  "chatCommandSourceProject": "projeto",
-  "chatCommandDescriptionProject": "Comando do projeto",
-  "settingsSmallModel": "Modelo pequeno",
-  "settingsSearchSmallModel": "Buscar modelo pequeno",
-  "settingsSmallModelUnsetExplanation": "O fallback automático do OpenCode está ativo porque `small_model` não está definido.",
-  "settingsSmallModelResetExplanation": "Redefinir `small_model` de volta para o fallback automático ainda requer edição da configuração fora do aplicativo porque as atualizações de patch `/config` não podem remover chaves.",
-  "settingsOpenCodeAutoUpdate": "Atualização automática do OpenCode",
-  "settingsSearchAutoUpdateMode": "Buscar modo de atualização automática",
-  "settingsOpenCodeSharingDefault": "Padrão de compartilhamento do OpenCode",
-  "settingsSearchSharingMode": "Buscar modo de compartilhamento",
-  "chatHistoryHideEarlier": "Ocultar mensagens anteriores",
-  "chatHistoryShowEarlier": "Mostrar mensagens anteriores",
-  "chatHistoryMessagesHidden": "{count} mensagens ocultas antes da compactação {label}",
-  "chatWorkHide": "Ocultar",
-  "chatWorkExpand": "Expandir",
-  "chatWorkShow": "Mostrar",
-  "chatWorkMessageOne": "1 mensagem de trabalho",
-  "chatWorkMessagesMultiple": "{count} mensagens de trabalho",
-  "chatWorkBoundedPanelExplanation": "A atividade mais recente da ferramenta permanece dentro deste painel limitado para manter a visualização do chat estável.",
-  "chatConversation": "Conversa",
-  "chatPageStatusContextCompacted": "Contexto compactado",
-  "chatPageStatusFailedToCompactContext": "Falha ao compactar contexto",
-  "chatPageStatusCompactingContextNow": "Compactando contexto agora...",
-  "chatPageStatusAutomaticCompactionExplanation": "A compactação automática acontece à medida que o uso do contexto cresce.",
-  "chatPageStatusCompacting": "Compactando...",
-  "chatPageStatusCompactNow": "Compactar agora",
-  "chatPageStatusServer": "Servidor",
-  "chatMessageSaveFile": "Salvar arquivo",
-  "chatMessageOpenFile": "Abrir arquivo",
-  "chatMessageThinkingProcess": "Processo de Pensamento",
-  "chatMessageToolCall": "1 chamada de ferramenta",
-  "chatMessageToolCalls": "{count} chamadas de ferramenta",
-  "chatMessageRunningTask": "Executando tarefa",
-  "chatMessageToolStatusQueued": "Na fila",
-  "chatMessageToolStatusInProgress": "Em progresso",
-  "chatMessageToolStatusNeedsAttention": "Precisa de atenção",
-  "terminalRestoreSize": "Restaurar tamanho",
-  "terminalMaximize": "Maximizar",
-  "behaviorDataSaverActive": "Ativo agora em dados móveis.",
-  "behaviorDataSaverWaiting": "Aguardando a próxima janela de sincronização de dados móveis.",
-  "behaviorDataSaverCellularOnly": "Aplica-se apenas quando a conexão é celular/móvel.",
-  "settingsUsernameEnterHint": "Digite um nome de usuário para salvar um nome de conversa personalizado do OpenCode.",
-  "settingsUsernameClearHint": "Limpar o nome de usuário da conversa do OpenCode ainda requer a edição da configuração fora do aplicativo.",
-  "settingsConfigUpdateDeferred": "O CodeWalk aplicará esta configuração do OpenCode após o término da resposta atual.",
-  "settingsConfigRefreshFailed": "Configuração do servidor atualizada, mas não foi possível atualizar os provedores de chat."
+  "workspaceSuggestions": "Suggestions"
 }

@@ -96,3 +96,13 @@ Description: The "Rate limits" popup now shows Codex's Weekly Limit immediately 
 Implemented: Modified `quota_provider_group_row.dart` to check whether the provider is Codex — Codex groups start expanded, all others remain collapsed. Extended the existing collapse tests to cover Codex expanded-by-default behavior.
 
 Commits: 474a6b51, 098cb14c, 66a931f6
+
+### Feature 12: Full i18n Localization — ✅ Completed
+
+Description: Full i18n coverage for 14 languages and test stabilization. Includes AR, BN, DE, EN, ES, FR, HI, IT, JA, KO, PT, RU, UR, and ZH.
+
+Commits: d28fe82b
+
+- [x] 12.01 Implement full coverage for 14 languages — Commit hash: d28fe82b
+- [x] 12.02 Stabilize i18n tests — Commit hash: d28fe82b
+

@@ -14,8 +14,11 @@ final _locales = const {
 };
 
 String _escapeArb(String value) {
-  return value
+  // Normalize existing doubled quotes back to single ones first to prevent compounding
+  final normalized = value.replaceAll("''", "'");
+  return normalized
       .replaceAll(r'\', r'\\')
+      .replaceAll('"', r'\"')
       .replaceAll("'", "''")
       .replaceAll('\n', r'\n')
       .replaceAll('\t', r'\t');
@@ -48,7 +51,14 @@ String _buildEnArb() {
       buf.writeln('    "placeholders": {');
       for (var p = 0; p < placeholders.length; p++) {
         final ph = placeholders[p];
-        buf.write('      "$ph": { "type": "String" }');
+        var type = 'String';
+        if (RegExp(r'^(count|total|length|length2|inSeconds|usagePercent|added|removed|index|current|limit|code)$', caseSensitive: false).hasMatch(ph) ||
+            value.contains('{${ph}, plural,')) {
+          type = 'int';
+        } else if (ph.toLowerCase() == 'cost') {
+          type = 'double';
+        }
+        buf.write('      "$ph": { "type": "$type" }');
         if (p < placeholders.length - 1) buf.write(',');
         buf.writeln();
       }
