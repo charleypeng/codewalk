@@ -149,7 +149,10 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 - `dart tool/i18n/generate_arb.dart` overwrites all `.arb` files from `arb_strings.dart` **only** — any keys present in the `.arb` files but missing from `arb_strings.dart` are permanently lost.
 - **Never run `generate_arb.dart` globally** unless `arb_strings.dart` has been fully synchronized with every key that exists in the `.arb` files.
-- **Safe alternative**: edit `.arb` files directly (e.g. via `sed`), then run `flutter gen-l10n` to regenerate Dart localizations only.
+- **Safe translation workflow**: To safely translate/align keys without loss:
+  1. Run `python3 tool/i18n/generate_translation_payload.py <locale>` to extract missing keys as a JSON payload.
+  2. Translate the generated JSON file (e.g. `missing_<locale>.json`).
+  3. Run `python3 tool/i18n/merge_back_translations.py <locale> <translated_json_path>` to merge them safely back into `arb_strings.dart` and automatically regenerate localizations.
 - If `generate_arb.dart` is accidentally run, recover with `git checkout -- lib/l10n/app_*.arb` and re-apply changes manually.
 
 ### Flutter PATH in subagent shells
