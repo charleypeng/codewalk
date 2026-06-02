@@ -382,33 +382,34 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get behaviorOfficialOpenCodePermission =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      'La política oficial de permisos de OpenCode se configura en `opencode.json` con reglas allow/ask/deny por herramienta. CodeWalk conserva las tarjetas oficiales de solicitud de permisos y añade una excepción ADR-023 aprobada: el interruptor de auto-aprobación del composer responde con `Always` y `remember: true` incondicionalmente para crear autorizaciones duraderas con ámbito de sesión, y mantiene el mismo canal de continuidad con ámbito de hilo activo en el worker Android en segundo plano.';
 
   @override
-  String get behaviorOpenCodeBackedDefaults => 'OpenCode-backed defaults';
+  String get behaviorOpenCodeBackedDefaults =>
+      'Valores predeterminados basados en OpenCode';
 
   @override
   String get behaviorPermissionHandlingProvenance =>
-      'Permission handling provenance';
+      'Procedencia del manejo de permisos';
 
   @override
   String get behaviorPermissionsVariantReasoning =>
-      'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.';
+      'Los permisos y la paridad de variante/razonamiento se mantienen separados hasta que su interfaz de usuario pueda preservar la configuración avanzada de forma segura.';
 
   @override
   String get behaviorPrimaryAgentAgent =>
-      'Primary agent used when no agent is explicitly chosen.';
+      'Agente principal utilizado cuando no se elige ningún agente explícitamente.';
 
   @override
-  String get behaviorRefreshDefaults => 'Refresh defaults';
+  String get behaviorRefreshDefaults => 'Actualizar valores predeterminados';
 
   @override
   String get behaviorSharedAcrossOpenCode =>
-      'Shared across OpenCode clients through config.';
+      'Compartido entre clientes de OpenCode a través de la configuración.';
 
   @override
   String get behaviorTheseValuesWrite =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      'Estos valores se escriben en `/config` en el servidor activo y coinciden con la configuración global compartida oficial de OpenCode.';
 
   @override
   String get cannedAddTitle => 'Agregar respuesta rápida';
@@ -421,7 +422,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Desactivado = reemplazar texto actual';
 
   @override
-  String get cannedAttachFiles => 'Attach files';
+  String get cannedAttachFiles => 'Adjuntar archivos';
 
   @override
   String get cannedEditTitle => 'Editar respuesta rápida';
@@ -433,10 +434,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cannedNoSuggestions => 'Sin sugerencias';
 
   @override
-  String get cannedOffMeansReplace => 'Off means replace current composer text';
+  String get cannedOffMeansReplace =>
+      'Desactivado significa reemplazar el texto actual del editor';
 
   @override
-  String get cannedQuickReply => 'New quick reply';
+  String get cannedQuickReply => 'Nueva respuesta rápida';
 
   @override
   String get cannedReplace => 'Reemplazar';
@@ -455,7 +457,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cannedSendImmediatelyInserting =>
-      'Send immediately after inserting this quick reply';
+      'Enviar inmediatamente después de insertar esta respuesta rápida';
 
   @override
   String get cannedTextLabel => 'Texto';
@@ -465,7 +467,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatActiveServerUnhealthy =>
-      'Active server is unhealthy. Sends will try once and fail fast until recovery.';
+      'El servidor activo no es saludable. Los envíos lo intentarán una vez y fallarán rápido hasta la recuperación.';
 
   @override
   String get chatActiveServerUnhealthyLabel =>
@@ -476,21 +478,21 @@ class AppLocalizationsEs extends AppLocalizations {
       'Agregue un servidor para comenzar a chatear.';
 
   @override
-  String get chatAppBarMoreActions => 'More actions';
+  String get chatAppBarMoreActions => 'Más acciones';
 
   @override
-  String get chatAppBarPinAction => 'Pin to app bar';
+  String get chatAppBarPinAction => 'Fijar a la barra de la aplicación';
 
   @override
   String get chatAppBarPinDescription =>
-      'This action will stay visible outside the menu.';
+      'Esta acción permanecerá visible fuera del menú.';
 
   @override
-  String get chatAppBarUnpinAction => 'Unpin from app bar';
+  String get chatAppBarUnpinAction => 'Desfijar de la barra de la aplicación';
 
   @override
   String get chatAppBarUnpinDescription =>
-      'This action will move back into the menu.';
+      'Esta acción volverá a colocarse dentro del menú.';
 
   @override
   String chatBadgeConversationError(String title) {
@@ -519,11 +521,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatBadgeSyncing => 'Sincronizando conversaciones...';
 
   @override
-  String get chatCachedConversationsYet => 'No cached conversations yet';
+  String get chatCachedConversationsYet =>
+      'Aún no hay conversaciones guardadas';
 
   @override
   String get chatChangedFilesAvailable =>
-      'No changed files are available for this session.';
+      'No hay archivos modificados disponibles para esta sesión.';
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(int length) {
@@ -534,14 +537,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatChooseAgent => 'Seleccionar agente';
 
   @override
-  String get chatChooseDirectory => 'Choose Directory';
+  String get chatChooseDirectory => 'Elegir directorio';
 
   @override
   String get chatChooseEffort => 'Elegir esfuerzo';
 
   @override
   String get chatChooseFolderOpen =>
-      'Choose a folder to open as project context.';
+      'Elija una carpeta para abrir como contexto del proyecto.';
 
   @override
   String get chatChooseModel => 'Elegir modelo';
@@ -594,7 +597,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo actualizar la conversación';
 
   @override
-  String get chatCurrent => 'Use current';
+  String get chatCurrent => 'Usar actual';
 
   @override
   String chatDescriptionChildren(int count) {
@@ -661,10 +664,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatDescriptionVoiceInput => 'Iniciar o detener entrada de voz';
 
   @override
-  String get chatDiffFiles => 'Diff files: 0';
+  String get chatDiffFiles => 'Archivos de diff: 0';
 
   @override
-  String get chatDisplay => 'Display';
+  String get chatDisplay => 'Visualización';
 
   @override
   String get chatDisplayToggles => 'Opciones de visualización';
@@ -697,7 +700,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error al actualizar subconversaciones. Intenta de nuevo.';
 
   @override
-  String get chatFailedToStopResponse => 'Failed to stop current response';
+  String get chatFailedToStopResponse => 'Error al detener la respuesta actual';
 
   @override
   String get chatFileExplorerContents => 'Contenidos';
@@ -715,7 +718,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatFilterArchived => 'Archivadas';
 
   @override
-  String get chatFilterDirectories => 'Filter directories';
+  String get chatFilterDirectories => 'Filtrar directorios';
 
   @override
   String get chatFilterSessions => 'Filtrar sesiones';
@@ -744,7 +747,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatHelloAssistant => '¡Hola! Soy tu asistente de IA';
 
   @override
-  String get chatHelp => 'How can I help you?';
+  String get chatHelp => '¿Cómo puedo ayudarte?';
 
   @override
   String get chatHelpMessage =>
@@ -779,13 +782,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatLatestToolActivity =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+      'La actividad de herramienta más reciente permanece dentro de este panel delimitado para mantener estable la vista del chat.';
 
   @override
   String get chatLoadMore => 'Cargar más';
 
   @override
-  String get chatLoadingProjectContext => 'Loading project context...';
+  String get chatLoadingProjectContext => 'Cargando contexto del proyecto...';
 
   @override
   String get chatMainConversationUnavailable =>
@@ -813,10 +816,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatMessageLess => 'Menos';
 
   @override
-  String get chatMessageMessagePartUnavailable => 'Message part unavailable';
+  String get chatMessageMessagePartUnavailable =>
+      'Parte del mensaje no disponible';
 
   @override
-  String get chatMessageMetadataAvailable => 'No metadata available';
+  String get chatMessageMetadataAvailable => 'No hay metadatos disponibles';
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
@@ -835,7 +839,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get chatMessageRewindEdit => 'Rewind and edit from here';
+  String get chatMessageRewindEdit => 'Rebobinar y editar desde aquí';
 
   @override
   String get chatMessageRunningTask => 'Ejecutando tarea';
@@ -914,7 +918,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatMessageToolStatusQueued => 'En cola';
 
   @override
-  String get chatMessageYou => 'You';
+  String get chatMessageYou => 'Tú';
 
   @override
   String get chatModelLockedSubConversation =>
@@ -950,7 +954,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatOpenProject => 'Abrir proyecto';
 
   @override
-  String get chatOpenProjectFolder => 'Open project folder...';
+  String get chatOpenProjectFolder => 'Abrir carpeta del proyecto...';
 
   @override
   String get chatOpenProjectToLoad =>
@@ -1078,10 +1082,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatRefresh => 'Actualizar';
 
   @override
-  String get chatRefreshConversation => 'Could not refresh this conversation';
+  String get chatRefreshConversation =>
+      'No se pudo actualizar esta conversación';
 
   @override
-  String get chatRefreshProjects => 'Refresh projects';
+  String get chatRefreshProjects => 'Actualizar proyectos';
 
   @override
   String get chatRefreshSessionDetails => 'Actualizar detalles de sesión';
@@ -1095,7 +1100,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatRetry => 'Reintentar';
 
   @override
-  String get chatRetry2 => 'Retry';
+  String get chatRetry2 => 'Reintentar';
 
   @override
   String get chatRetryRefresh => 'Reintentar actualización';
@@ -1108,7 +1113,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Volver a la conversación principal';
 
   @override
-  String get chatReviewChanges => 'Review changes';
+  String get chatReviewChanges => 'Revisar cambios';
 
   @override
   String get chatSearchConversations => 'Buscar conversaciones';
@@ -1131,14 +1136,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatSearchTimeline => 'Buscar en la cronología';
 
   @override
-  String get chatSelectDirectory => 'Select directory';
+  String get chatSelectDirectory => 'Seleccionar directorio';
 
   @override
   String get chatSelectOrCreate =>
       'Seleccione o cree una conversación para comenzar a chatear';
 
   @override
-  String get chatSelectProjectBelow => 'Select a project below.';
+  String get chatSelectProjectBelow => 'Seleccione un proyecto a continuación.';
 
   @override
   String get chatServerSelectedModel => 'Modelo seleccionado por el servidor';
@@ -1157,11 +1162,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get chatSessionConversations => 'No conversations';
+  String get chatSessionConversations => 'Sin conversaciones';
 
   @override
   String get chatSessionCreateConversationStart =>
-      'Create a new conversation to start chatting';
+      'Cree una nueva conversación para comenzar a chatear';
 
   @override
   String chatSessionsLength(int length) {
@@ -1172,7 +1177,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatSetUpServer => 'Configurar servidor';
 
   @override
-  String get chatSettings => 'Settings';
+  String get chatSettings => 'Configuraciones';
 
   @override
   String get chatShortcutsCloseApp =>
@@ -1280,11 +1285,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get chatTasks => 'Tasks';
+  String get chatTasks => 'Tareas';
 
   @override
   String get chatTasksAvailableSession =>
-      'No tasks are available for this session.';
+      'No hay tareas disponibles para esta sesión.';
 
   @override
   String get chatTipBeSpecific =>
@@ -1515,30 +1520,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorFormatAuthenticationFailedReconnect =>
-      'Authentication failed. Reconnect the provider and try again.';
+      'Autenticación fallida. Vuelva a conectar el proveedor e inténtelo de nuevo.';
 
   @override
   String get errorFormatProviderTemporarilyUnavailable =>
-      'Provider temporarily unavailable. Try again shortly.';
+      'Proveedor temporalmente no disponible. Inténtelo de nuevo en breve.';
 
   @override
   String get errorFormatQuotaExceededCheck =>
-      'Quota exceeded. Check your provider plan or billing.';
+      'Cupo excedido. Verifique el plan de su proveedor o la facturación.';
 
   @override
   String get errorFormatRateLimitExceeded =>
-      'Rate limit exceeded. Wait a moment and try again.';
+      'Límite de velocidad excedido. Espere un momento e inténtelo de nuevo.';
 
   @override
-  String get errorFormatServerErrorPlease => 'Server error. Please try again.';
+  String get errorFormatServerErrorPlease =>
+      'Error del servidor. Por favor, inténtelo de nuevo.';
 
   @override
   String get errorFormatServiceTemporarilyUnavailable =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      'Servicio temporalmente no disponible. El servidor podría estar iniciándose; inténtelo de nuevo en breve.';
 
   @override
   String get errorFormatUnableReachServer =>
-      'Unable to reach the server. Check connection and server status.';
+      'No se puede establecer conexión con el servidor. Compruebe la conexión y el estado del servidor.';
 
   @override
   String get errorProviderUnavailable => 'Proveedor no disponible';
@@ -1577,21 +1583,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fileActionAttachmentDataDecoded =>
-      'Attachment data could not be decoded.';
+      'Los datos del adjunto no pudieron decodificarse.';
 
   @override
-  String get fileActionAttachmentPathEmpty => 'Attachment path is empty.';
+  String get fileActionAttachmentPathEmpty => 'La ruta del adjunto está vacía.';
 
   @override
-  String get fileActionAttachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get fileActionAttachmentPayloadEmpty =>
+      'La carga útil del adjunto está vacía.';
 
   @override
   String get fileActionAttachmentProvideValid =>
-      'Attachment does not provide a valid location.';
+      'El adjunto no proporciona una ubicación válida.';
 
   @override
   String get fileActionAttachmentSavedDevice =>
-      'Attachment could not be saved on this device.';
+      'El adjunto no pudo guardarse en este dispositivo.';
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
@@ -1610,38 +1617,38 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fileActionLocalAttachmentFound =>
-      'Local attachment was not found on this device.';
+      'El adjunto local no se encontró en este dispositivo.';
 
   @override
-  String get fileActionSaveCanceled => 'Save canceled.';
+  String get fileActionSaveCanceled => 'Guardado cancelado.';
 
   @override
-  String get fileActionUnableOpenLocal =>
-      'Unable to open the local attachment.';
+  String get fileActionUnableOpenLocal => 'No se pudo abrir el adjunto local.';
 
   @override
-  String get filesAddChat => 'Add to chat';
+  String get filesAddChat => 'Añadir al chat';
 
   @override
-  String get filesBinaryFilePreview => 'Binary file preview is not available.';
+  String get filesBinaryFilePreview =>
+      'La vista previa de archivos binarios no está disponible.';
 
   @override
-  String get filesClear => 'Clear';
+  String get filesClear => 'Limpiar';
 
   @override
-  String get filesContents => 'Contents';
+  String get filesContents => 'Contenido';
 
   @override
-  String get filesFileEmpty => 'File is empty.';
+  String get filesFileEmpty => 'El archivo está vacío.';
 
   @override
-  String get filesFilesFound => 'No files found';
+  String get filesFilesFound => 'No se encontraron archivos';
 
   @override
   String get filesHideSidebar => 'Ocultar barra de Archivos';
 
   @override
-  String get filesNames => 'Names';
+  String get filesNames => 'Nombres';
 
   @override
   String filesOpenFilesFileState(int length) {
@@ -1652,7 +1659,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get filesQuickOpen => 'Apertura Rápida';
 
   @override
-  String get filesQuickOpenFile => 'Quick Open File';
+  String get filesQuickOpenFile => 'Apertura rápida de archivo';
 
   @override
   String get filesRefresh => 'Actualizar archivos';
@@ -1664,7 +1671,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get filesTitle => 'Archivos';
 
   @override
-  String get logsAppLogs => 'App Logs';
+  String get logsAppLogs => 'Registros de la App';
 
   @override
   String get logsClear => 'Limpiar registros';
@@ -1679,7 +1686,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get logsFilterAll => 'Todos';
 
   @override
-  String get logsLevel => 'Level';
+  String get logsLevel => 'Nivel';
 
   @override
   String get logsNoLogsYet => 'No hay registros capturados aún.';
@@ -1697,25 +1704,25 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get logsTimeRange => 'Time range';
+  String get logsTimeRange => 'Rango de tiempo';
 
   @override
   String get mathExpressionLabel => 'Matemáticas';
 
   @override
-  String get mermaidCopySourceTooltip => 'Copy source';
+  String get mermaidCopySourceTooltip => 'Copiar código fuente';
 
   @override
-  String get mermaidDiagramLabel => 'Mermaid Diagram';
+  String get mermaidDiagramLabel => 'Diagrama de Mermaid';
 
   @override
   String get modelAuto => 'Automático';
 
   @override
-  String get modelChooseAgent => 'Choose agent';
+  String get modelChooseAgent => 'Elegir agente';
 
   @override
-  String get modelFavorites => 'Favorites';
+  String get modelFavorites => 'Favoritos';
 
   @override
   String get modelLabelBaseEnglish => 'Base (Inglés)';
@@ -1733,7 +1740,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get modelLoadingModels => 'Cargando modelos';
 
   @override
-  String get modelModelsFound => 'No models found';
+  String get modelModelsFound => 'No se encontraron modelos';
 
   @override
   String get modelRetryModels => 'Reintentar modelos';
@@ -1844,31 +1851,32 @@ class AppLocalizationsEs extends AppLocalizations {
   String get msgNoValidFilesSelected => 'No se seleccionaron archivos válidos';
 
   @override
-  String get msgReadAloud => 'Read aloud';
+  String get msgReadAloud => 'Leer en voz alta';
 
   @override
   String get msgReadAloudNotAvailable =>
-      'Text-to-speech is not available on this device.';
+      'La síntesis de voz no está disponible en este dispositivo.';
 
   @override
   String get msgSetupDebugCopied =>
       'Debug de configuración de OpenCode copiado';
 
   @override
-  String get msgShareAsImage => 'Share as image';
+  String get msgShareAsImage => 'Compartir como imagen';
 
   @override
-  String get msgShareAsImageFailed => 'Could not share message as image.';
+  String get msgShareAsImageFailed =>
+      'No se pudo compartir el mensaje como imagen.';
 
   @override
-  String get msgShareAsImageSubject => 'CodeWalk message';
+  String get msgShareAsImageSubject => 'Mensaje de CodeWalk';
 
   @override
   String get msgShareAsImageTooTall =>
-      'Message is too long to share as an image.';
+      'El mensaje es demasiado largo para ser compartido como imagen.';
 
   @override
-  String get msgStopReadAloud => 'Stop reading';
+  String get msgStopReadAloud => 'Detener lectura';
 
   @override
   String get msgSystemSoundPickerUnavailable =>
@@ -1883,18 +1891,19 @@ class AppLocalizationsEs extends AppLocalizations {
       'Entrada de voz no disponible en este dispositivo';
 
   @override
-  String get notifAndroidBatteryOptimization => 'Android battery optimization';
+  String get notifAndroidBatteryOptimization =>
+      'Optimización de batería de Android';
 
   @override
   String get notifConversationUpdates => 'Actualizaciones de conversación';
 
   @override
   String get notifNotificationsArriveReopening =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      'Si las notificaciones solo llegan al abrir la aplicación, permita que CodeWalk se ejecute sin optimización de batería en este dispositivo.';
 
   @override
   String get notifResponseRunningKeep =>
-      'When a response is running, keep realtime active briefly after you leave the app.';
+      'Cuando una respuesta esté en curso, mantenga el tiempo real activo brevemente después de salir de la aplicación.';
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
@@ -1921,11 +1930,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error al cargar los sonidos del sistema Android';
 
   @override
-  String get onboardingAIGeneratedTitles => 'AI generated titles';
+  String get onboardingAIGeneratedTitles => 'Títulos generados por IA';
 
   @override
   String get onboardingAddServerLater =>
-      'You can add a server later in Settings > Servers.';
+      'Puede añadir un servidor más tarde en Ajustes > Servidores.';
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
@@ -1933,7 +1942,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingAlmostInstallOpenCode =>
-      'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.';
+      'Ya casi está. Instale OpenCode primero, luego conecte CodeWalk a la URL del servidor.';
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
@@ -1941,7 +1950,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get onboardingAuthenticate => 'Authenticate';
+  String get onboardingAuthenticate => 'Autenticar';
 
   @override
   String get onboardingAvailable => 'disponible';
@@ -1955,7 +1964,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Habilite la autenticación básica solo si su servidor OpenCode está protegido por contraseña.';
 
   @override
-  String get onboardingChooseAnotherPath => 'Choose another path';
+  String get onboardingChooseAnotherPath => 'Elegir otro camino';
 
   @override
   String get onboardingChooseHowToSetup => 'Elija cómo configurar su servidor';
@@ -1969,20 +1978,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingCodeWalkAppOpenCode =>
-      'CodeWalk is the app. OpenCode is the engine it connects to.';
+      'CodeWalk es la aplicación. OpenCode es el motor al que se conecta.';
 
   @override
-  String get onboardingConnectRunningServer => 'Connect to a running server';
+  String get onboardingConnectRunningServer =>
+      'Conectarse a un servidor en ejecución';
 
   @override
-  String get onboardingConnectionIssue => 'Connection issue';
+  String get onboardingConnectionIssue => 'Problema de conexión';
 
   @override
   String get onboardingConnectionSaved =>
       'Conexión al servidor guardada con éxito.';
 
   @override
-  String get onboardingConnectionTips => 'Connection tips';
+  String get onboardingConnectionTips => 'Consejos de conexión';
 
   @override
   String get onboardingConnectionUpdated =>
@@ -1992,10 +2002,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingContinue => 'Continuar';
 
   @override
-  String get onboardingContinueServerURL => 'Continue to server URL';
+  String get onboardingContinueServerURL => 'Continuar a la URL del servidor';
 
   @override
-  String get onboardingCopyLoginURL => 'Copy login URL';
+  String get onboardingCopyLoginURL => 'Copiar URL de inicio de sesión';
 
   @override
   String get onboardingCouldNotVerify =>
@@ -2003,7 +2013,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingDefaultURLEmulator =>
-      'Default URL, emulator loopback, auth, and debug help.';
+      'URL predeterminada, loopback del emulador, autenticación y ayuda de depuración.';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
@@ -2012,10 +2022,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingDetailedSetupEvents =>
-      'Detailed setup events were captured for troubleshooting.';
+      'Se capturaron eventos de configuración detallados para la solución de problemas.';
 
   @override
-  String get onboardingDonShowAgain => 'Don\'t show again';
+  String get onboardingDonShowAgain => 'No volver a mostrar';
 
   @override
   String get onboardingDone => 'Hecho';
@@ -2034,37 +2044,38 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingEnterServerUrl => 'Ingrese la URL del servidor';
 
   @override
-  String get onboardingExisting => 'Use Existing';
+  String get onboardingExisting => 'Usar existente';
 
   @override
   String get onboardingExplainInstallOpenCode =>
-      'Explain how to install OpenCode, start the server, and then connect from CodeWalk.';
+      'Explica cómo instalar OpenCode, iniciar el servidor y luego conectarse desde CodeWalk.';
 
   @override
   String get onboardingFailed => 'Falló';
 
   @override
-  String get onboardingGoodOptionDesktop => 'Good first option on desktop';
+  String get onboardingGoodOptionDesktop =>
+      'Buena primera opción en escritorio';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
       'La comprobación de salud del servidor falló. Puede que aún se esté iniciando.';
 
   @override
-  String get onboardingInstallBinary => 'Install Binary';
+  String get onboardingInstallBinary => 'Instalar binario';
 
   @override
-  String get onboardingInstallBun => 'Install via Bun';
+  String get onboardingInstallBun => 'Instalar mediante Bun';
 
   @override
-  String get onboardingInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get onboardingInstallBunOpenCode => 'Instalar Bun + OpenCode';
 
   @override
-  String get onboardingInstallNpm => 'Install via npm';
+  String get onboardingInstallNpm => 'Instalar mediante npm';
 
   @override
   String get onboardingInstallRunOpenCode =>
-      'Install and run OpenCode directly from CodeWalk on desktop.';
+      'Instale y ejecute el servidor de OpenCode directamente desde CodeWalk en el escritorio.';
 
   @override
   String get onboardingInvalidUrl => 'URL inválida';
@@ -2081,17 +2092,18 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get onboardingLetCodeWalkSet => 'Let CodeWalk set it up locally';
+  String get onboardingLetCodeWalkSet =>
+      'Permitir que CodeWalk lo configure localmente';
 
   @override
   String get onboardingLocalServerSetup => 'Configuración del servidor local';
 
   @override
-  String get onboardingManagedLocalServer => 'Managed local server';
+  String get onboardingManagedLocalServer => 'Servidor local gestionado';
 
   @override
   String get onboardingManagedLocalServer2 =>
-      'Managed local server mode is available only on desktop builds (Linux/macOS/Windows).';
+      'El modo de servidor local gestionado está disponible solo en compilaciones de escritorio (Linux/macOS/Windows).';
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
@@ -2105,25 +2117,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingNotWritable => 'no escribible';
 
   @override
-  String get onboardingOpenCode => 'What is OpenCode?';
+  String get onboardingOpenCode => '¿Qué es OpenCode?';
 
   @override
   String get onboardingOpenCodeRunningDevice =>
-      'I already have OpenCode running on this device or somewhere on my network.';
+      'Ya tengo OpenCode ejecutándose en este dispositivo o en algún lugar de mi red.';
 
   @override
   String get onboardingOpenCodeRunsLocally =>
-      'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.';
+      'OpenCode se ejecuta localmente o en un servidor y potencia las funciones de codificación de IA dentro de CodeWalk. Si OpenCode ya se está ejecutando, conéctese a él. Si no, elija una de las rutas de configuración guiadas a continuación.';
 
   @override
   String get onboardingOpenTailscaleLogin =>
-      'Could not open Tailscale login URL.';
+      'No se pudo abrir la URL de inicio de sesión de Tailscale.';
 
   @override
   String get onboardingPassword => 'Contraseña';
 
   @override
-  String get onboardingPasswordRequired => 'Enter password';
+  String get onboardingPasswordRequired => 'Introduzca la contraseña';
 
   @override
   String get onboardingPickSetupPath =>
@@ -2137,10 +2149,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingRecommendedOrderTry =>
-      'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.';
+      'Orden recomendado: intente Instalar Bun + OpenCode si desea que CodeWalk prepare todo por usted. Use Existente si OpenCode ya está instalado.';
 
   @override
-  String get onboardingRefreshChecks => 'Refresh Checks';
+  String get onboardingRefreshChecks => 'Actualizar comprobaciones';
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
@@ -2176,19 +2188,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingSetupWizard => 'Asistente de configuración';
 
   @override
-  String get onboardingShowSetupSteps => 'Show me the setup steps';
+  String get onboardingShowSetupSteps => 'Mostrar los pasos de configuración';
 
   @override
-  String get onboardingShowSetupSteps2 => 'Show setup steps';
+  String get onboardingShowSetupSteps2 => 'Mostrar pasos de configuración';
 
   @override
-  String get onboardingSkip => 'Skip for now';
+  String get onboardingSkip => 'Omitir por ahora';
 
   @override
-  String get onboardingSkipSetup => 'Skip setup?';
+  String get onboardingSkipSetup => '¿Omitir configuración?';
 
   @override
-  String get onboardingStart => 'Start';
+  String get onboardingStart => 'Iniciar';
 
   @override
   String onboardingStartUsing(String appName) {
@@ -2199,7 +2211,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingStarting => 'Iniciando';
 
   @override
-  String get onboardingStop => 'Stop';
+  String get onboardingStop => 'Detener';
 
   @override
   String get onboardingStopped => 'Detenido';
@@ -2256,24 +2268,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingUnreachable => 'inalcanzable';
 
   @override
-  String get onboardingUseBasicAuth => 'Use Basic Auth';
+  String get onboardingUseBasicAuth => 'Usar autenticación básica';
 
   @override
   String get onboardingUsername => 'Usuario';
 
   @override
-  String get onboardingUsernameRequired => 'Enter username';
+  String get onboardingUsernameRequired => 'Introduzca el usuario';
 
   @override
   String get onboardingUsesServerTitle =>
-      'Uses your server\'s title agent to name conversations';
+      'Utiliza el agente de títulos de su servidor para nombrar las conversaciones';
 
   @override
   String get onboardingUsingDetectedCommand =>
       'Usando el comando OpenCode detectado.';
 
   @override
-  String get onboardingViewSetupDebug => 'View setup debug';
+  String get onboardingViewSetupDebug => 'Ver depuración de la configuración';
 
   @override
   String onboardingWelcomeTo(String appName) {
@@ -2282,7 +2294,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingWindowsTipInstalling =>
-      'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.';
+      'Consejo para Windows: después de instalar, haga clic en Actualizar comprobaciones. Si la detección sigue fallando, vuelva a abrir CodeWalk para recargar los cambios de PATH.';
 
   @override
   String get onboardingWritable => 'escribible';
@@ -2309,25 +2321,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get permissionReopen => 'Reabrir';
 
   @override
-  String get questionAnswerSelected => 'No answer selected.';
+  String get questionAnswerSelected => 'Ninguna respuesta seleccionada.';
 
   @override
-  String get questionCommaSeparatedValues => 'Comma-separated values';
+  String get questionCommaSeparatedValues => 'Valores separados por comas';
 
   @override
   String get questionQuestionGroupMarked =>
-      'Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.';
+      'Grupo de preguntas marcado como rechazado. Puede continuar chateando y reabrir este grupo en cualquier momento antes de confirmar.';
 
   @override
-  String get questionQuestionRequest => 'Question request';
+  String get questionQuestionRequest => 'Solicitud de pregunta';
 
   @override
   String get questionQuestionsProvidedSubmit =>
-      'No questions provided. You can submit an empty response.';
+      'No se proporcionaron preguntas. Puede enviar una respuesta vacía.';
 
   @override
   String get questionReviewAnswersSubmitting =>
-      'Review your answers before submitting.';
+      'Revise sus respuestas antes de enviarlas.';
 
   @override
   String get quotaAuthCookie => 'Cookie de autenticación';
@@ -2348,7 +2360,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get quotaWorkspaceId => 'ID del Espacio de Trabajo';
 
   @override
-  String get serverClearOAuth => 'Clear OAuth';
+  String get serverClearOAuth => 'Limpiar OAuth';
 
   @override
   String get serverConnectionAttention =>
@@ -2364,46 +2376,46 @@ class AppLocalizationsEs extends AppLocalizations {
   String get serverHealthUnknown => 'Desconocido';
 
   @override
-  String get serverOAuthAuthFailed => 'OAuth authentication failed';
+  String get serverOAuthAuthFailed => 'Error de autenticación OAuth';
 
   @override
   String get serverOAuthChip => 'OAuth';
 
   @override
   String get serverOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth no es compatible en esta plataforma';
 
   @override
-  String get serverReauthenticate => 'Re-authenticate';
+  String get serverReauthenticate => 'Volver a autenticar';
 
   @override
   String get serverTailscaleChip => 'Tailscale';
 
   @override
-  String get serversActive => 'Active';
+  String get serversActive => 'Activo';
 
   @override
-  String get serversActiveServer => 'Active Server';
+  String get serversActiveServer => 'Servidor Activo';
 
   @override
   String get serversAddLeastOpenCode =>
-      'Add at least one OpenCode server to start using the app.';
+      'Añada al menos un servidor de OpenCode para empezar a usar la aplicación.';
 
   @override
-  String get serversAddServer => 'Add Server';
+  String get serversAddServer => 'Añadir Servidor';
 
   @override
-  String get serversCancel => 'Cancel';
+  String get serversCancel => 'Cancelar';
 
   @override
   String get serversCannotActivateUnhealthy =>
       'No se puede activar un servidor no saludable';
 
   @override
-  String get serversCheckHealth => 'Check Health';
+  String get serversCheckHealth => 'Comprobar salud';
 
   @override
-  String get serversClearDefault => 'Clear Default';
+  String get serversClearDefault => 'Limpar Predeterminado';
 
   @override
   String serversCommandAppProviderLocalServerCommandPath(
@@ -2413,36 +2425,36 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get serversCopy => 'Copy';
+  String get serversCopy => 'Copiar';
 
   @override
-  String get serversDefault => 'Default';
+  String get serversDefault => 'Predeterminado';
 
   @override
-  String get serversDelete => 'Delete';
+  String get serversDelete => 'Eliminar';
 
   @override
-  String get serversDeleteServer => 'Delete server';
+  String get serversDeleteServer => 'Eliminar servidor';
 
   @override
   String get serversDesktopModeExplanation =>
       'El modo escritorio puede iniciar y gestionar `opencode serve` directamente desde CodeWalk.';
 
   @override
-  String get serversEdit => 'Edit';
+  String get serversEdit => 'Editar';
 
   @override
-  String get serversLocalOpenCodeServer => 'Local OpenCode Server';
+  String get serversLocalOpenCodeServer => 'Servidor de OpenCode Local';
 
   @override
   String get serversManagedModeAvailable =>
-      'This managed mode is available only on desktop builds (Linux/macOS/Windows).';
+      'Este modo gestionado está disponible solo en compilaciones de escritorio (Linux/macOS/Windows).';
 
   @override
   String get serversNoServersFound => 'No se encontraron servidores';
 
   @override
-  String get serversRefreshHealth => 'Refresh Health';
+  String get serversRefreshHealth => 'Actualizar salud';
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
@@ -2453,19 +2465,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get serversSearchActiveHint => 'Buscar servidor activo';
 
   @override
-  String get serversServersConfigured => 'No servers configured';
+  String get serversServersConfigured => 'No hay servidores configurados';
 
   @override
-  String get serversSetActive => 'Set Active';
+  String get serversSetActive => 'Establecer como activo';
 
   @override
-  String get serversSetDefault => 'Set Default';
+  String get serversSetDefault => 'Establecer como predeterminado';
 
   @override
-  String get serversSetupDebug => 'Setup Debug';
+  String get serversSetupDebug => 'Depuración de la Configuración';
 
   @override
-  String get serversSetupWizard => 'Setup Wizard';
+  String get serversSetupWizard => 'Asistente de Configuración';
 
   @override
   String get serversTailscaleAdminApprovalRequired =>
@@ -2539,19 +2551,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDeleteTitle => 'Eliminar Conversación';
 
   @override
-  String get sessionDiffChangedFile => 'Changed file';
+  String get sessionDiffChangedFile => 'Archivo cambiado';
 
   @override
   String get sessionDiffContentNotCaptured =>
-      'File content not captured by the server';
+      'Contenido del archivo no capturado por el servidor';
 
   @override
   String sessionDiffFilesChanged(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count files changed',
-      one: '1 file changed',
+      other: '$count archivos cambiados',
+      one: '1 archivo cambiado',
     );
     return '$_temp0';
   }
@@ -2563,25 +2575,25 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String sessionDiffLinesAddedRemoved(int added, int removed) {
-    return '+$added lines added -$removed lines removed';
+    return '+$added líneas añadidas -$removed líneas eliminadas';
   }
 
   @override
   String sessionDiffLinesCollapsed(int count) {
-    return '$count lines collapsed — tap to expand';
+    return '$count líneas colapsadas — toque para expandir';
   }
 
   @override
-  String get sessionDiffReview => 'Review changes';
+  String get sessionDiffReview => 'Revisar cambios';
 
   @override
-  String get sessionDiffSplit => 'Split';
+  String get sessionDiffSplit => 'Dividido';
 
   @override
-  String get sessionDiffSummary => 'Summary';
+  String get sessionDiffSummary => 'Resumen';
 
   @override
-  String get sessionDiffUnified => 'Unified';
+  String get sessionDiffUnified => 'Unificado';
 
   @override
   String get sessionExportAssistant => 'Asistente';
@@ -3411,36 +3423,38 @@ class AppLocalizationsEs extends AppLocalizations {
       'Predeterminado de intercambio de OpenCode';
 
   @override
-  String get settingsReadAloudEnabled => 'Read aloud';
+  String get settingsReadAloudEnabled => 'Leer en voz alta';
 
   @override
   String get settingsReadAloudEnabledDescription =>
-      'Show a read-aloud button on assistant messages.';
+      'Mostrar un botón de lectura en voz alta en los mensajes del asistente.';
 
   @override
-  String get settingsReadAloudPitch => 'Pitch';
+  String get settingsReadAloudPitch => 'Tono';
 
   @override
-  String get settingsReadAloudPitchDescription => 'Adjust the voice pitch.';
+  String get settingsReadAloudPitchDescription => 'Ajustar el tono de la voz.';
 
   @override
   String get settingsReadAloudSectionDescription =>
-      'Read assistant responses aloud. Configure speed, pitch, and voice.';
+      'Leer las respuestas del asistente en voz alta. Configure la velocidad, el tono y la voz.';
 
   @override
-  String get settingsReadAloudSectionTitle => 'Text to speech';
+  String get settingsReadAloudSectionTitle => 'Síntesis de voz';
 
   @override
-  String get settingsReadAloudSpeed => 'Speed';
+  String get settingsReadAloudSpeed => 'Velocidad';
 
   @override
-  String get settingsReadAloudSpeedDescription => 'Adjust the speaking rate.';
+  String get settingsReadAloudSpeedDescription =>
+      'Ajustar la velocidad de habla.';
 
   @override
-  String get settingsReadAloudVoice => 'Voice';
+  String get settingsReadAloudVoice => 'Voz';
 
   @override
-  String get settingsReadAloudVoiceHint => 'Select a voice for read-aloud.';
+  String get settingsReadAloudVoiceHint =>
+      'Seleccione una voz para la lectura.';
 
   @override
   String get settingsSearchAutoUpdateMode =>
@@ -3552,56 +3566,62 @@ class AppLocalizationsEs extends AppLocalizations {
   String get setupDebugBun2 => 'Bun';
 
   @override
-  String get setupDebugCapturedSetupDetails => 'No captured setup details yet';
+  String get setupDebugCapturedSetupDetails =>
+      'No hay detalles de configuración capturados aún';
 
   @override
-  String get setupDebugCapturedSetupLogs => 'Captured setup logs';
+  String get setupDebugCapturedSetupLogs =>
+      'Registros de configuración capturados';
 
   @override
   String get setupDebugClear => 'Limpiar debug de configuración';
 
   @override
-  String get setupDebugClearSetupDebug => 'Clear setup debug';
+  String get setupDebugClearSetupDebug =>
+      'Limpiar depuración de la configuración';
 
   @override
   String get setupDebugCodeWalkCaptureEnough =>
-      'If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:';
+      'Si CodeWalk no captura suficiente contexto, verifique los registros de OpenCode y los puntos finales de salud directamente:';
 
   @override
   String get setupDebugCommandPath => 'Ruta del comando';
 
   @override
-  String get setupDebugCommandPath2 => 'Command path';
+  String get setupDebugCommandPath2 => 'Ruta del comando';
 
   @override
   String get setupDebugCopy => 'Copiar debug de configuración';
 
   @override
-  String get setupDebugCopySetupDebug => 'Copy setup debug';
+  String get setupDebugCopySetupDebug =>
+      'Copiar depuración de la configuración';
 
   @override
-  String get setupDebugCurrentStatus => 'Current status';
+  String get setupDebugCurrentStatus => 'Estado actual';
 
   @override
-  String get setupDebugDiagnosticsLoading => 'Diagnostics are still loading.';
+  String get setupDebugDiagnosticsLoading =>
+      'Los diagnósticos aún se están cargando.';
 
   @override
   String get setupDebugEnvironment => 'Diagnóstico del entorno';
 
   @override
-  String get setupDebugEnvironmentDiagnostics => 'Environment diagnostics';
+  String get setupDebugEnvironmentDiagnostics => 'Diagnóstico del entorno';
 
   @override
-  String get setupDebugFocusedOpenCodeSetup => 'Focused on OpenCode setup';
+  String get setupDebugFocusedOpenCodeSetup =>
+      'Enfocado en la configuración de OpenCode';
 
   @override
   String get setupDebugInstallDir => 'Directorio de instalación';
 
   @override
-  String get setupDebugInstallDirectory => 'Install directory';
+  String get setupDebugInstallDirectory => 'Directorio de instalación';
 
   @override
-  String get setupDebugLatestLocalServer => 'Latest local server output';
+  String get setupDebugLatestLocalServer => 'Última salida del servidor local';
 
   @override
   String get setupDebugLogs => 'Registros de configuración capturados';
@@ -3610,13 +3630,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get setupDebugManual => 'Solución de problemas manual';
 
   @override
-  String get setupDebugManualTroubleshooting => 'Manual troubleshooting';
+  String get setupDebugManualTroubleshooting => 'Solución de problemas manual';
 
   @override
   String get setupDebugNetwork => 'Red';
 
   @override
-  String get setupDebugNetwork2 => 'Network';
+  String get setupDebugNetwork2 => 'Red';
 
   @override
   String get setupDebugNoDetails =>
@@ -3641,21 +3661,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get setupDebugOpenCode2 => 'OpenCode';
 
   @override
-  String get setupDebugOpenCodeSetupDebug => 'OpenCode Setup Debug';
+  String get setupDebugOpenCodeSetupDebug =>
+      'Depuración de la Configuración de OpenCode';
 
   @override
   String get setupDebugPlatform => 'Plataforma';
 
   @override
-  String get setupDebugPlatform2 => 'Platform';
+  String get setupDebugPlatform2 => 'Plataforma';
 
   @override
   String get setupDebugRunDiagnosticsTry =>
-      'Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.';
+      'Ejecute diagnósticos, intente un método de instalación o intente un flujo de configuración para capturar detalles específicos de la solución de problemas de OpenCode aquí.';
 
   @override
   String get setupDebugScreenCoversOpenCode =>
-      'This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.';
+      'Esta pantalla solo cubre la instalación de OpenCode, diagnósticos y solución de problemas de configuración local. Use Registros de la App para problemas generales de ejecución de CodeWalk.';
 
   @override
   String get setupDebugServerOutput => 'Última salida del servidor local';
@@ -3672,7 +3693,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get setupDebugTimeline => 'Línea de tiempo';
 
   @override
-  String get setupDebugTimeline2 => 'Timeline';
+  String get setupDebugTimeline2 => 'Línea de tiempo';
 
   @override
   String get setupDebugTitle => 'Enfocado en la configuración de OpenCode';
@@ -3793,7 +3814,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Iniciar o detener dictado de voz en el editor';
 
   @override
-  String get shortcutsApply => 'Apply';
+  String get shortcutsApply => 'Aplicar';
 
   @override
   String shortcutsConflictConflict(String conflict) {
@@ -3801,14 +3822,14 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get shortcutsKeyboardShortcuts => 'Keyboard shortcuts';
+  String get shortcutsKeyboardShortcuts => 'Atajos de teclado';
 
   @override
-  String get shortcutsReset => 'Reset all';
+  String get shortcutsReset => 'Restaurar todo';
 
   @override
   String get shortcutsSearchEditBindings =>
-      'Search, edit bindings, and resolve conflicts before saving.';
+      'Busque, edite combinaciones de teclas y resuelva conflictos antes de guardar.';
 
   @override
   String shortcutsSetShortcutWidget(String label) {
@@ -3817,14 +3838,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shortcutsTheseBindingsStored =>
-      'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.';
+      'Estas combinaciones de teclas se almacenan en CodeWalk para la ejecución actual de la aplicación y no editan los atajos de teclado `tui.json` de OpenCode.';
 
   @override
-  String get speechAutoStopSilence => 'Auto-stop silence timeout';
+  String get speechAutoStopSilence =>
+      'Tiempo de espera de silencio para parada automática';
 
   @override
   String get speechChooseRecognitionEngine =>
-      'Choose the recognition engine, silence timeout, and model options.';
+      'Elija el motor de reconocimiento, el tiempo de espera de silencio y las opciones de modelo.';
 
   @override
   String speechDesktopOnly(String service) {
@@ -3832,17 +3854,17 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get speechDownload => 'Download';
+  String get speechDownload => 'Descargar';
 
   @override
-  String get speechEngine => 'Engine';
+  String get speechEngine => 'Motor';
 
   @override
-  String get speechInstalledLanguages => 'Installed languages';
+  String get speechInstalledLanguages => 'Idiomas instalados';
 
   @override
   String get speechListeningStopsAutomatically =>
-      'Listening stops automatically after this many seconds of silence.';
+      'La escucha se detiene automáticamente después de esta cantidad de segundos de silencio.';
 
   @override
   String get speechMicPermissionDisabled =>
@@ -3857,43 +3879,44 @@ class AppLocalizationsEs extends AppLocalizations {
   String get speechMoonshine => 'Moonshine';
 
   @override
-  String get speechMoonshineModelsDesktop => 'Moonshine models (desktop)';
+  String get speechMoonshineModelsDesktop =>
+      'Modelos de Moonshine (escritorio)';
 
   @override
   String get speechMoonshineStaysDownloadable =>
-      'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.';
+      'Moonshine permanece disponible para descargar fuera de la aplicación. Elija un modelo para este dispositivo de escritorio y elimínelo más tarde si desea recuperar el espacio.';
 
   @override
-  String get speechNative => 'Native';
+  String get speechNative => 'Nativo';
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.';
+      'El STT nativo está desactivado en Linux en esta aplicación. Parakeet es el motor predeterminado para nuevas instalaciones.';
 
   @override
   String get speechNativeSTTWorks =>
-      'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.';
+      'El STT nativo funciona en Windows cuando los servicios de voz del sistema operativo están habilitados. Si la inicialización nativa falla, CodeWalk vuelve automáticamente a Sherpa. Compruebe la privacidad del micrófono en Windows, el reconocimiento de voz en línea y los paquetes de idiomas de voz instalados.';
 
   @override
   String get speechNativeStartsFaster =>
-      'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.';
+      'El nativo se inicia más rápido. Sherpa se ejecuta completamente en el dispositivo con una configuración más pesada y un control de modelo más profundo.';
 
   @override
   String get speechParakeet => 'Parakeet';
 
   @override
-  String get speechParakeetModelsDesktop => 'Parakeet models (desktop)';
+  String get speechParakeetModelsDesktop => 'Modelos de Parakeet (escritorio)';
 
   @override
   String get speechParakeetStaysDownloadable =>
-      'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.';
+      'Parakeet permanece disponible para descargar fuera de la aplicación. Actualmente ofrece un modelo multilingüe optimizado para 25 idiomas europeos.';
 
   @override
   String get speechPickLanguagePacks =>
-      'Pick language packs and download/remove models for on-device recognition.';
+      'Elija paquetes de idiomas y descargue/elimine modelos para el reconocimiento local en el dispositivo.';
 
   @override
-  String get speechRemove => 'Remove';
+  String get speechRemove => 'Eliminar';
 
   @override
   String speechRuntimeFailed(String service) {
@@ -3902,30 +3925,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get speechSelectSherpaAbove =>
-      'Select Sherpa above to manage language packs and download models.';
+      'Seleccione Sherpa arriba para administrar los paquetes de idiomas y descargar modelos.';
 
   @override
   String get speechSenseVoice => 'SenseVoice';
 
   @override
-  String get speechSenseVoiceModelsDesktop => 'SenseVoice models (desktop)';
+  String get speechSenseVoiceModelsDesktop =>
+      'Modelos de SenseVoice (escritorio)';
 
   @override
   String get speechSenseVoiceStaysDownloadable =>
-      'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.';
+      'SenseVoice permanece disponible para descargar fuera de la aplicación. Es la opción de escritorio más sólida aquí para chino, cantonés, japonés, coreano e inglés.';
 
   @override
   String get speechSherpa => 'Sherpa';
 
   @override
   String get speechSherpaExperimentalFail =>
-      'Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.';
+      'Sherpa es experimental y puede fallar en algunos dispositivos. Prefiera Nativo si desea el comportamiento más estable.';
 
   @override
-  String get speechSherpaModelsLinux => 'Sherpa models (Linux)';
+  String get speechSherpaModelsLinux => 'Modelos de Sherpa (Linux)';
 
   @override
-  String get speechSpeechText => 'Speech to text';
+  String get speechSpeechText => 'Voz a texto';
 
   @override
   String speechUnavailableOnPlatform(String service) {
@@ -3963,7 +3987,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statusSyncDelayed => 'Sincronización retrasada';
 
   @override
-  String get tailscaleNoPeers => 'No peers found';
+  String get tailscaleNoPeers => 'No se encontraron pares (peers)';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
@@ -3974,10 +3998,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tailscale no es compatible con Windows.';
 
   @override
-  String get tailscalePeerOffline => 'offline';
+  String get tailscalePeerOffline => 'desconectado';
 
   @override
-  String get tailscaleSelectPeer => 'Select a Tailscale peer';
+  String get tailscaleSelectPeer => 'Seleccione un par de Tailscale';
 
   @override
   String get tailscaleWaitingAdminApproval =>
@@ -4069,31 +4093,31 @@ class AppLocalizationsEs extends AppLocalizations {
   String get toolFindingFiles => 'Buscando archivos';
 
   @override
-  String get toolPresentationAwaitingInput => 'Awaiting input';
+  String get toolPresentationAwaitingInput => 'Esperando entrada';
 
   @override
-  String get toolPresentationEditing => 'Editing';
+  String get toolPresentationEditing => 'Editando';
 
   @override
-  String get toolPresentationEditingFiles => 'Editing files';
+  String get toolPresentationEditingFiles => 'Editando archivos';
 
   @override
-  String get toolPresentationFinding => 'Finding';
+  String get toolPresentationFinding => 'Buscando';
 
   @override
-  String get toolPresentationFindingFiles => 'Finding files';
+  String get toolPresentationFindingFiles => 'Buscando archivos';
 
   @override
-  String get toolPresentationReading => 'Reading';
+  String get toolPresentationReading => 'Leyendo';
 
   @override
-  String get toolPresentationReadingFile => 'Reading file';
+  String get toolPresentationReadingFile => 'Leyendo archivo';
 
   @override
-  String get toolPresentationRunning => 'Running';
+  String get toolPresentationRunning => 'Ejecutando';
 
   @override
-  String get toolPresentationRunningCommand => 'Running command';
+  String get toolPresentationRunningCommand => 'Ejecutando comando';
 
   @override
   String toolPresentationRunningTool(String toolName) {
@@ -4101,31 +4125,31 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get toolPresentationSearching => 'Searching';
+  String get toolPresentationSearching => 'Buscando';
 
   @override
-  String get toolPresentationSearchingCode => 'Searching code';
+  String get toolPresentationSearchingCode => 'Buscando código';
 
   @override
-  String get toolPresentationSearchingWeb => 'Searching the web';
+  String get toolPresentationSearchingWeb => 'Buscando en la web';
 
   @override
   String get toolPresentationTool => 'Herramienta';
 
   @override
-  String get toolPresentationUpdatingTaskList => 'Updating task list';
+  String get toolPresentationUpdatingTaskList => 'Actualizando lista de tareas';
 
   @override
-  String get toolPresentationUpdatingTasks => 'Updating tasks';
+  String get toolPresentationUpdatingTasks => 'Actualizando tareas';
 
   @override
-  String get toolPresentationWaitingInput => 'Waiting for your input';
+  String get toolPresentationWaitingInput => 'Esperando su entrada';
 
   @override
-  String get toolPresentationWriting => 'Writing';
+  String get toolPresentationWriting => 'Escribiendo';
 
   @override
-  String get toolPresentationWritingFile => 'Writing file';
+  String get toolPresentationWritingFile => 'Escribiendo archivo';
 
   @override
   String get toolReading => 'Leyendo';
@@ -4179,26 +4203,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trayShow => 'Mostrar';
 
   @override
-  String get useOAuthCloudflareAccess => 'Use OAuth (Cloudflare Access)';
+  String get useOAuthCloudflareAccess => 'Usar OAuth (Cloudflare Access)';
 
   @override
   String get useOAuthCloudflareAccessSubtitle =>
-      'Opens a browser for Cloudflare Access Managed OAuth.';
+      'Abre el navegador para el OAuth gestionado de Cloudflare Access.';
 
   @override
   String get useOAuthCloudflareAccessUnsupported =>
-      'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.';
+      'El OAuth de Cloudflare Access no está disponible en esta plataforma. Use Autenticación Básica en su lugar.';
 
   @override
-  String get useTailscale => 'Use Tailscale';
+  String get useTailscale => 'Usar Tailscale';
 
   @override
   String get useTailscaleSubtitle =>
-      'Routes traffic through the Tailscale network without a system VPN.';
+      'Enruta el tráfico a través de la red Tailscale sin una VPN del sistema.';
 
   @override
   String get useTailscaleUnsupported =>
-      'Tailscale is not supported on this platform.';
+      'Tailscale no es compatible en esta plataforma.';
 
   @override
   String get utilityTitle => 'Utilidad';
@@ -4208,7 +4232,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get workspaceChooseFolderOpen =>
-      'Choose any folder to open as project context.';
+      'Elija cualquier carpeta para abrir como contexto del proyecto.';
 
   @override
   String workspaceCloseProject(String project) {
@@ -4219,10 +4243,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get workspaceFilterDirs => 'Filtrar directorios';
 
   @override
-  String get workspaceOpenFolder => 'Open folder';
+  String get workspaceOpenFolder => 'Abrir carpeta';
 
   @override
-  String get workspaceOpenProjectFolder => 'Open project folder';
+  String get workspaceOpenProjectFolder => 'Abrir carpeta del proyecto';
 
   @override
   String get workspaceProjectDirectory => 'Directorio del proyecto';
@@ -4236,5 +4260,5 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get workspaceSuggestions => 'Suggestions';
+  String get workspaceSuggestions => 'Sugerencias';
 }

@@ -53,7 +53,9 @@ for i in range(len(locales_indices)):
     
     block_content = trans_part[start:end]
     # Extract keys and values inside this block
-    map_content = block_content.split('{')[1].split('},')[0]
+    start_idx = block_content.find('{')
+    end_idx = block_content.rfind('}')
+    map_content = block_content[start_idx+1:end_idx]
     
     # Parse key-value pairs
     kv_pairs = {}

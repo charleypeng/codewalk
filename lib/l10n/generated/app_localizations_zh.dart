@@ -317,15 +317,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get behaviorDataSaverActive => 'Active now on mobile data.';
+  String get behaviorDataSaverActive => '当前已在移动数据网络上激活。';
 
   @override
-  String get behaviorDataSaverCellularOnly =>
-      'Only applies when the connection is cellular/mobile.';
+  String get behaviorDataSaverCellularOnly => '仅在蜂窝/移动网络连接时适用。';
 
   @override
-  String get behaviorDataSaverWaiting =>
-      'Waiting for the next mobile-data sync window.';
+  String get behaviorDataSaverWaiting => '正在等待下一个移动数据同步窗口。';
 
   @override
   String get behaviorDisabled => '已禁用';
@@ -341,33 +339,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get behaviorOfficialOpenCodePermission =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      '官方 OpenCode 权限策略在 `opencode.json` 中配置，针对每个工具有 允许/询问/拒绝 规则。CodeWalk 保留了官方的权限请求卡片，并添加了一个经批准的 ADR-023 异常：编辑器（composer）自动批准开关无条件回复 `Always` 且 `remember: true`，以创建持久的会话范围授权，并在 Android 后台工作进程中保持相同的线程范围连续性路径处于活动状态。';
 
   @override
-  String get behaviorOpenCodeBackedDefaults => 'OpenCode-backed defaults';
+  String get behaviorOpenCodeBackedDefaults => 'OpenCode 支持的默认设置';
 
   @override
-  String get behaviorPermissionHandlingProvenance =>
-      'Permission handling provenance';
+  String get behaviorPermissionHandlingProvenance => '权限处理来源';
 
   @override
   String get behaviorPermissionsVariantReasoning =>
-      'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.';
+      '权限与变体/推理对齐在 UI 能够安全保留高级配置之前将保持分离。';
 
   @override
-  String get behaviorPrimaryAgentAgent =>
-      'Primary agent used when no agent is explicitly chosen.';
+  String get behaviorPrimaryAgentAgent => '在未显式选择智能体时使用的主要智能体。';
 
   @override
-  String get behaviorRefreshDefaults => 'Refresh defaults';
+  String get behaviorRefreshDefaults => '刷新默认值';
 
   @override
-  String get behaviorSharedAcrossOpenCode =>
-      'Shared across OpenCode clients through config.';
+  String get behaviorSharedAcrossOpenCode => '通过配置在 OpenCode 客户端之间共享。';
 
   @override
   String get behaviorTheseValuesWrite =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      '这些值会写入活动服务器上的 `/config` 并与官方 OpenCode 共享配置匹配。';
 
   @override
   String get cannedAddTitle => '添加快捷回复';
@@ -379,7 +374,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cannedAppendAtCursorSubtitle => '关闭 = 替换当前编辑器文本';
 
   @override
-  String get cannedAttachFiles => 'Attach files';
+  String get cannedAttachFiles => '附加文件';
 
   @override
   String get cannedEditTitle => '编辑快捷回复';
@@ -388,13 +383,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cannedNewQuickReply => '新快速回复';
 
   @override
-  String get cannedNoSuggestions => 'No suggestions';
+  String get cannedNoSuggestions => '无建议';
 
   @override
-  String get cannedOffMeansReplace => 'Off means replace current composer text';
+  String get cannedOffMeansReplace => '关闭表示替换当前编辑器文本';
 
   @override
-  String get cannedQuickReply => 'New quick reply';
+  String get cannedQuickReply => '新建快速回复';
 
   @override
   String get cannedReplace => '替换';
@@ -409,8 +404,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cannedSendAutomaticallySubtitle => '插入此快速回复后立即发送';
 
   @override
-  String get cannedSendImmediatelyInserting =>
-      'Send immediately after inserting this quick reply';
+  String get cannedSendImmediatelyInserting => '插入此快速回复后立即发送';
 
   @override
   String get cannedTextLabel => '文本';
@@ -419,31 +413,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatActionNext => '下一步';
 
   @override
-  String get chatActiveServerUnhealthy =>
-      'Active server is unhealthy. Sends will try once and fail fast until recovery.';
+  String get chatActiveServerUnhealthy => '活动服务器处于亚健康状态。在恢复之前，发送将尝试一次并快速失败。';
 
   @override
   String get chatActiveServerUnhealthyLabel => '当前服务器状态异常';
 
   @override
-  String get chatAddServerToStart => 'Add a server to start chatting.';
+  String get chatAddServerToStart => '添加服务器以开始聊天。';
 
   @override
-  String get chatAppBarMoreActions => 'More actions';
+  String get chatAppBarMoreActions => '更多操作';
 
   @override
-  String get chatAppBarPinAction => 'Pin to app bar';
+  String get chatAppBarPinAction => '固定到应用栏';
 
   @override
-  String get chatAppBarPinDescription =>
-      'This action will stay visible outside the menu.';
+  String get chatAppBarPinDescription => '此操作将保持在菜单外可见。';
 
   @override
-  String get chatAppBarUnpinAction => 'Unpin from app bar';
+  String get chatAppBarUnpinAction => '从应用栏取消固定';
 
   @override
-  String get chatAppBarUnpinDescription =>
-      'This action will move back into the menu.';
+  String get chatAppBarUnpinDescription => '此操作将移回菜单中。';
 
   @override
   String chatBadgeConversationError(String title) {
@@ -470,11 +461,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatBadgeSyncing => '正在同步会话...';
 
   @override
-  String get chatCachedConversationsYet => 'No cached conversations yet';
+  String get chatCachedConversationsYet => '暂无缓存的对话';
 
   @override
-  String get chatChangedFilesAvailable =>
-      'No changed files are available for this session.';
+  String get chatChangedFilesAvailable => '此会话没有可用的更改文件。';
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(int length) {
@@ -485,20 +475,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatChooseAgent => '选择代理';
 
   @override
-  String get chatChooseDirectory => 'Choose Directory';
+  String get chatChooseDirectory => '选择目录';
 
   @override
   String get chatChooseEffort => '选择努力程度';
 
   @override
-  String get chatChooseFolderOpen =>
-      'Choose a folder to open as project context.';
+  String get chatChooseFolderOpen => '选择一个文件夹作为项目上下文打开。';
 
   @override
   String get chatChooseModel => '选择模型';
 
   @override
-  String get chatClose => 'Close';
+  String get chatClose => '关闭';
 
   @override
   String chatCloseProject(String project) {
@@ -518,7 +507,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatCommandSourceProject => '项目';
 
   @override
-  String get chatCompactContext => 'Compact Context';
+  String get chatCompactContext => '紧凑上下文';
 
   @override
   String get chatComposerHintShell => 'Shell命令（按Esc退出）';
@@ -527,13 +516,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatComposerPlaceholder => '输入您的需求...';
 
   @override
-  String get chatConversation => 'Conversation';
+  String get chatConversation => '会话';
 
   @override
-  String get chatConversations => 'Conversations';
+  String get chatConversations => '会话';
 
   @override
-  String get chatConversationsPane => 'Conversations';
+  String get chatConversationsPane => '会话';
 
   @override
   String chatCostLabel(double cost) {
@@ -544,7 +533,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatCouldNotRefreshSession => '无法刷新此对话';
 
   @override
-  String get chatCurrent => 'Use current';
+  String get chatCurrent => '使用当前';
 
   @override
   String chatDescriptionChildren(int count) {
@@ -606,13 +595,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatDescriptionVoiceInput => '开始或停止语音输入';
 
   @override
-  String get chatDiffFiles => 'Diff files: 0';
+  String get chatDiffFiles => '差异文件：0';
 
   @override
-  String get chatDisplay => 'Display';
+  String get chatDisplay => '显示';
 
   @override
-  String get chatDisplayToggles => 'Display toggles';
+  String get chatDisplayToggles => '显示开关';
 
   @override
   String get chatDoubleESCStop => '双击ESC停止';
@@ -639,7 +628,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatFailedToRefreshSubConversations => '刷新子对话失败，请重试。';
 
   @override
-  String get chatFailedToStopResponse => 'Failed to stop current response';
+  String get chatFailedToStopResponse => '无法停止当前响应';
 
   @override
   String get chatFileExplorerContents => '内容';
@@ -648,19 +637,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatFileExplorerNames => '名称';
 
   @override
-  String get chatFilterActive => 'Active';
+  String get chatFilterActive => '活跃';
 
   @override
-  String get chatFilterAll => 'All';
+  String get chatFilterAll => '全部';
 
   @override
-  String get chatFilterArchived => 'Archived';
+  String get chatFilterArchived => '已归档';
 
   @override
-  String get chatFilterDirectories => 'Filter directories';
+  String get chatFilterDirectories => '过滤目录';
 
   @override
-  String get chatFilterSessions => 'Filter sessions';
+  String get chatFilterSessions => '筛选会话';
 
   @override
   String get chatForkFailed => '派生会话失败';
@@ -669,10 +658,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatForked => '已派生会话';
 
   @override
-  String get chatGoToFirst => 'Go to first message';
+  String get chatGoToFirst => '转到第一条消息';
 
   @override
-  String get chatGoToLatest => 'Go to latest message';
+  String get chatGoToLatest => '转到最新消息';
 
   @override
   String chatGroupMessageCountMessages(
@@ -683,49 +672,48 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatHelloAssistant => 'Hello! I am your AI assistant';
+  String get chatHelloAssistant => '你好！我是你的 AI 助手';
 
   @override
-  String get chatHelp => 'How can I help you?';
+  String get chatHelp => '我能帮您做点什么？';
 
   @override
   String get chatHelpMessage => '使用 @ 提及，! 运行 shell，/ 运行命令';
 
   @override
-  String get chatHideConversationsSidebar => 'Hide Conversations sidebar';
+  String get chatHideConversationsSidebar => '隐藏会话侧边栏';
 
   @override
-  String get chatHideUtilitySidebar => 'Hide Utility sidebar';
+  String get chatHideUtilitySidebar => '隐藏实用工具侧边栏';
 
   @override
-  String get chatHistoryCollapsed => 'Previous history is collapsed';
+  String get chatHistoryCollapsed => '先前的历史记录已折叠';
 
   @override
-  String get chatHistoryHideEarlier => 'Hide earlier messages';
+  String get chatHistoryHideEarlier => '隐藏较早的消息';
 
   @override
   String chatHistoryMessagesHidden(int count, String label) {
-    return '$count messages hidden before $label compaction';
+    return '在 $label 压缩前已隐藏 $count 条消息';
   }
 
   @override
-  String get chatHistoryShowEarlier => 'Show earlier messages';
+  String get chatHistoryShowEarlier => '显示较早的消息';
 
   @override
-  String get chatKeepWorking => 'Keep working';
+  String get chatKeepWorking => '继续工作';
 
   @override
   String get chatLargeContentSkipped => '为了稳定性，已跳过超大或格式错误的内容。';
 
   @override
-  String get chatLatestToolActivity =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+  String get chatLatestToolActivity => '最新的工具活动将保留在此受限面板内，以保持聊天视口稳定。';
 
   @override
-  String get chatLoadMore => 'Load more';
+  String get chatLoadMore => '加载更多';
 
   @override
-  String get chatLoadingProjectContext => 'Loading project context...';
+  String get chatLoadingProjectContext => '正在加载项目上下文...';
 
   @override
   String get chatMainConversationUnavailable => '主对话尚不可用。';
@@ -752,10 +740,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatMessageLess => '收起';
 
   @override
-  String get chatMessageMessagePartUnavailable => 'Message part unavailable';
+  String get chatMessageMessagePartUnavailable => '消息部分不可用';
 
   @override
-  String get chatMessageMetadataAvailable => 'No metadata available';
+  String get chatMessageMetadataAvailable => '无可用元数据';
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
@@ -766,7 +754,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatMessageMore => '更多';
 
   @override
-  String get chatMessageOpenFile => 'Open file';
+  String get chatMessageOpenFile => '打开文件';
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
@@ -774,13 +762,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatMessageRewindEdit => 'Rewind and edit from here';
+  String get chatMessageRewindEdit => '从此处回退并编辑';
 
   @override
-  String get chatMessageRunningTask => 'Running task';
+  String get chatMessageRunningTask => '正在运行的任务';
 
   @override
-  String get chatMessageSaveFile => 'Save file';
+  String get chatMessageSaveFile => '保存文件';
 
   @override
   String get chatMessageShow => '显示';
@@ -801,14 +789,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatMessageThinking => '思考中';
 
   @override
-  String get chatMessageThinkingProcess => 'Thinking Process';
+  String get chatMessageThinkingProcess => '思考过程';
 
   @override
-  String get chatMessageToolCall => '1 tool call';
+  String get chatMessageToolCall => '1 次工具调用';
 
   @override
   String chatMessageToolCalls(int count) {
-    return '$count tool calls';
+    return '$count 次工具调用';
   }
 
   @override
@@ -840,34 +828,34 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatMessageToolStatusInProgress => 'In progress';
+  String get chatMessageToolStatusInProgress => '进行中';
 
   @override
-  String get chatMessageToolStatusNeedsAttention => 'Needs attention';
+  String get chatMessageToolStatusNeedsAttention => '需要注意';
 
   @override
-  String get chatMessageToolStatusQueued => 'Queued';
+  String get chatMessageToolStatusQueued => '已排队';
 
   @override
-  String get chatMessageYou => 'You';
+  String get chatMessageYou => '您';
 
   @override
   String get chatModelLockedSubConversation => '模型在子对话中已锁定';
 
   @override
-  String get chatNewChat => 'New Chat';
+  String get chatNewChat => '新聊天';
 
   @override
-  String get chatNewChatTourDescription => 'Start a new conversation here.';
+  String get chatNewChatTourDescription => '在此处开始新会话。';
 
   @override
-  String get chatNewChatTourTitle => 'New chat';
+  String get chatNewChatTourTitle => '新聊天';
 
   @override
   String get chatNoConversationsInProject => '此项目中没有会话。';
 
   @override
-  String get chatNoServerYet => 'No server configured yet';
+  String get chatNoServerYet => '尚未配置服务器';
 
   @override
   String get chatNoSessionSelected => '选择或创建一个对话开始聊天';
@@ -876,13 +864,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatNoSubConversationFound => '未找到此任务的子对话。';
 
   @override
-  String get chatOpenFiles => 'Open Files';
+  String get chatOpenFiles => '打开的文件';
 
   @override
   String get chatOpenProject => '打开项目';
 
   @override
-  String get chatOpenProjectFolder => 'Open project folder...';
+  String get chatOpenProjectFolder => '打开项目文件夹...';
 
   @override
   String get chatOpenProjectToLoad => '打开项目以加载会话。';
@@ -892,19 +880,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatPageStatusAutomaticCompactionExplanation =>
-      'Automatic compaction happens as context usage grows.';
+      '随着上下文用量的增加，将自动进行压缩。';
 
   @override
-  String get chatPageStatusCompactNow => 'Compact now';
+  String get chatPageStatusCompactNow => '立即压缩';
 
   @override
-  String get chatPageStatusCompacting => 'Compacting...';
+  String get chatPageStatusCompacting => '正在压缩...';
 
   @override
-  String get chatPageStatusCompactingContextNow => 'Compacting context now...';
+  String get chatPageStatusCompactingContextNow => '正在压缩上下文...';
 
   @override
-  String get chatPageStatusContextCompacted => 'Context compacted';
+  String get chatPageStatusContextCompacted => '上下文已压缩';
 
   @override
   String get chatPageStatusContextUsage => '上下文使用';
@@ -913,8 +901,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatPageStatusCost => '费用';
 
   @override
-  String get chatPageStatusFailedToCompactContext =>
-      'Failed to compact context';
+  String get chatPageStatusFailedToCompactContext => '无法压缩上下文';
 
   @override
   String get chatPageStatusLimit => '限额';
@@ -926,7 +913,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatPageStatusSaver => '节省';
 
   @override
-  String get chatPageStatusServer => 'Server';
+  String get chatPageStatusServer => '服务器';
 
   @override
   String get chatPageStatusSwitchServer => '切换服务器';
@@ -949,7 +936,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatPermissionAutoApproveOn => '权限自动批准已开启';
 
   @override
-  String get chatProjectContext => 'Project Context';
+  String get chatProjectContext => '项目上下文';
 
   @override
   String get chatProjectContext2 => '项目上下文';
@@ -988,28 +975,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatReasoning => '推理中...';
 
   @override
-  String get chatRecentSessions => 'Recent sessions';
+  String get chatRecentSessions => '最近会话';
 
   @override
-  String get chatRecentSessionsToggle => 'Recent sessions';
+  String get chatRecentSessionsToggle => '最近会话';
 
   @override
-  String get chatRedoLastTurn => 'Redo last undone turn';
+  String get chatRedoLastTurn => '重做上一步';
 
   @override
   String get chatRedoNothing => '此会话中没有可重做的操作';
 
   @override
-  String get chatRefresh => 'Refresh';
+  String get chatRefresh => '刷新';
 
   @override
-  String get chatRefreshConversation => 'Could not refresh this conversation';
+  String get chatRefreshConversation => '无法刷新此对话';
 
   @override
-  String get chatRefreshProjects => 'Refresh projects';
+  String get chatRefreshProjects => '刷新项目';
 
   @override
-  String get chatRefreshSessionDetails => 'Refresh session details';
+  String get chatRefreshSessionDetails => '刷新会话详情';
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
@@ -1017,58 +1004,57 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatRetry => 'Retry';
+  String get chatRetry => '重试';
 
   @override
-  String get chatRetry2 => 'Retry';
+  String get chatRetry2 => '重试';
 
   @override
-  String get chatRetryRefresh => 'Retry refresh';
+  String get chatRetryRefresh => '重试刷新';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest => '正在重试模型请求...';
 
   @override
-  String get chatReturnToMainConversation => 'Return to main conversation';
+  String get chatReturnToMainConversation => '返回主会话';
 
   @override
-  String get chatReviewChanges => 'Review changes';
+  String get chatReviewChanges => '审查更改';
 
   @override
-  String get chatSearchConversations => 'Search conversations';
+  String get chatSearchConversations => '搜索会话';
 
   @override
-  String get chatSearchNextResult => 'Next result';
+  String get chatSearchNextResult => '下一个结果';
 
   @override
-  String get chatSearchNoResults => 'No results';
+  String get chatSearchNoResults => '无结果';
 
   @override
-  String get chatSearchPreviousResult => 'Previous result';
+  String get chatSearchPreviousResult => '上一个结果';
 
   @override
   String chatSearchResultCount(int current, int total) {
-    return 'Message $current of $total';
+    return '第 $current 条消息，共 $total 条';
   }
 
   @override
-  String get chatSearchTimeline => 'Search timeline';
+  String get chatSearchTimeline => '搜索时间线';
 
   @override
-  String get chatSelectDirectory => 'Select directory';
+  String get chatSelectDirectory => '选择目录';
 
   @override
-  String get chatSelectOrCreate =>
-      'Select or create a conversation to start chatting';
+  String get chatSelectOrCreate => '选择或创建一个会话以开始聊天';
 
   @override
-  String get chatSelectProjectBelow => 'Select a project below.';
+  String get chatSelectProjectBelow => '在下方选择一个项目。';
 
   @override
   String get chatServerSelectedModel => '服务器选择的模型';
 
   @override
-  String get chatSessionActions => 'Session actions';
+  String get chatSessionActions => '会话操作';
 
   @override
   String chatSessionChatSessionSession(String title) {
@@ -1081,11 +1067,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatSessionConversations => 'No conversations';
+  String get chatSessionConversations => '无对话';
 
   @override
-  String get chatSessionCreateConversationStart =>
-      'Create a new conversation to start chatting';
+  String get chatSessionCreateConversationStart => '创建一个新对话以开始聊天';
 
   @override
   String chatSessionsLength(int length) {
@@ -1093,10 +1078,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatSetUpServer => 'Set up server';
+  String get chatSetUpServer => '设置服务器';
 
   @override
-  String get chatSettings => 'Settings';
+  String get chatSettings => '设置';
 
   @override
   String get chatShortcutsCloseApp => '使用平台关闭行为关闭应用';
@@ -1144,19 +1129,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatSidebarAccess => '侧边栏访问';
 
   @override
-  String get chatSortMostRecent => 'Most Recent';
+  String get chatSortMostRecent => '最新';
 
   @override
-  String get chatSortOldest => 'Oldest';
+  String get chatSortOldest => '最早';
 
   @override
-  String get chatSortRecent => 'Recent';
+  String get chatSortRecent => '最近';
 
   @override
-  String get chatSortSessions => 'Sort sessions';
+  String get chatSortSessions => '排序会话';
 
   @override
-  String get chatSortTitle => 'Title';
+  String get chatSortTitle => '标题';
 
   @override
   String get chatStartVoiceInput => '开始语音输入';
@@ -1201,11 +1186,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatTasks => 'Tasks';
+  String get chatTasks => '任务';
 
   @override
-  String get chatTasksAvailableSession =>
-      'No tasks are available for this session.';
+  String get chatTasksAvailableSession => '此会话没有可用的任务。';
 
   @override
   String get chatTipBeSpecific => '提示：请具体一些 — 简短的提示词能获得更快的回答';
@@ -1238,7 +1222,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTipStepByStep => '提示：在调试复杂问题时要求逐步进行';
 
   @override
-  String get chatToggleSidebars => 'Toggle sidebars';
+  String get chatToggleSidebars => '切换侧边栏';
 
   @override
   String chatTokensLabel(int total) {
@@ -1255,13 +1239,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTourSwitchFolders => '使用此按钮切换项目文件夹和上下文。';
 
   @override
-  String get chatUndoLastTurn => 'Undo last turn';
+  String get chatUndoLastTurn => '撤销上一步';
 
   @override
   String get chatUndoNothing => '此会话中没有可撤销的操作';
 
   @override
-  String get chatUseCurrent => 'Use current';
+  String get chatUseCurrent => '使用当前';
 
   @override
   String get chatWaitingForNetworkConnection => '等待网络连接...';
@@ -1273,43 +1257,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatWelcomeSubmessage => '今天我能为您做些什么？';
 
   @override
-  String get chatWorkBoundedPanelExplanation =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+  String get chatWorkBoundedPanelExplanation => '最新的工具活动将保持在此限定面板内，以保持聊天视口稳定。';
 
   @override
-  String get chatWorkExpand => 'Expand';
+  String get chatWorkExpand => '展开';
 
   @override
-  String get chatWorkHide => 'Hide';
+  String get chatWorkHide => '隐藏';
 
   @override
-  String get chatWorkMessageOne => '1 work message';
+  String get chatWorkMessageOne => '1 条工作消息';
 
   @override
   String chatWorkMessagesMultiple(int count) {
-    return '$count work messages';
+    return '$count 条工作消息';
   }
 
   @override
-  String get chatWorkShow => 'Show';
+  String get chatWorkShow => '显示';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => '取消';
 
   @override
   String get commonCopiedToClipboard => '已复制到剪贴板';
 
   @override
-  String get commonDelete => 'Delete';
+  String get commonDelete => '删除';
 
   @override
   String get commonFile => '文件';
 
   @override
-  String get commonReset => 'Reset';
+  String get commonReset => '重置';
 
   @override
-  String get commonSave => 'Save';
+  String get commonSave => '保存';
 
   @override
   String get compactionAutomatic => '自动';
@@ -1318,91 +1301,91 @@ class AppLocalizationsZh extends AppLocalizations {
   String get compactionManual => '手动';
 
   @override
-  String get composerAddAttachment => 'Add attachment';
+  String get composerAddAttachment => '添加附件';
 
   @override
-  String get composerAttachFiles => 'Attach files';
+  String get composerAttachFiles => '附加文件';
 
   @override
-  String get composerCannedAppendAtCursor => 'Append at cursor';
+  String get composerCannedAppendAtCursor => '在光标处追加';
 
   @override
-  String get composerCannedLabel => 'Label (optional)';
+  String get composerCannedLabel => '标签（可选）';
 
   @override
-  String get composerCannedNoReplies => 'No quick replies yet.';
+  String get composerCannedNoReplies => '暂无快速回复。';
 
   @override
-  String get composerCannedReplace => 'Replace';
+  String get composerCannedReplace => '替换';
 
   @override
-  String get composerCannedSave => 'Save';
+  String get composerCannedSave => '保存';
 
   @override
-  String get composerCannedScopeGlobal => 'Global';
+  String get composerCannedScopeGlobal => '全局';
 
   @override
-  String get composerCannedScopeProject => 'Project-only';
+  String get composerCannedScopeProject => '仅项目';
 
   @override
-  String get composerCannedSendAutomatically => 'Send automatically';
+  String get composerCannedSendAutomatically => '自动发送';
 
   @override
-  String get composerCannedText => 'Text';
+  String get composerCannedText => '文本';
 
   @override
-  String get composerChatInput => 'Chat input';
+  String get composerChatInput => '聊天输入';
 
   @override
-  String get composerDeleteAction => 'Delete';
+  String get composerDeleteAction => '删除';
 
   @override
-  String get composerEdit => 'Edit';
+  String get composerEdit => '编辑';
 
   @override
-  String get composerExtras => 'Extras';
+  String get composerExtras => '附加功能';
 
   @override
-  String get composerNewQuickReply => 'New quick reply';
+  String get composerNewQuickReply => '新建快速回复';
 
   @override
-  String get composerSelectImages => 'Select Images';
+  String get composerSelectImages => '选择图片';
 
   @override
-  String get composerSelectPdf => 'Select PDF';
+  String get composerSelectPdf => '选择 PDF';
 
   @override
-  String get composerSend => 'Send';
+  String get composerSend => '发送';
 
   @override
-  String get composerShellMode => 'Shell mode';
+  String get composerShellMode => 'Shell 模式';
 
   @override
-  String get dialogDownload => 'Download';
+  String get dialogDownload => '下载';
 
   @override
-  String get dialogLanguage => 'Language';
+  String get dialogLanguage => '语言';
 
   @override
-  String get dialogMoonshineModelSize => 'Model size';
+  String get dialogMoonshineModelSize => '模型大小';
 
   @override
-  String get dialogMoonshineVoiceSetup => 'Moonshine Voice Setup';
+  String get dialogMoonshineVoiceSetup => 'Moonshine 语音设置';
 
   @override
-  String get dialogParakeetModel => 'Parakeet model';
+  String get dialogParakeetModel => 'Parakeet 模型';
 
   @override
-  String get dialogParakeetVoiceSetup => 'Parakeet Voice Setup';
+  String get dialogParakeetVoiceSetup => 'Parakeet 语音设置';
 
   @override
-  String get dialogSenseVoiceModel => 'SenseVoice model';
+  String get dialogSenseVoiceModel => 'SenseVoice 模型';
 
   @override
-  String get dialogSenseVoiceSetup => 'SenseVoice Setup';
+  String get dialogSenseVoiceSetup => 'SenseVoice 设置';
 
   @override
-  String get dialogVoiceInputSetup => 'Voice Input Setup';
+  String get dialogVoiceInputSetup => '语音输入设置';
 
   @override
   String get errorAnErrorOccurred => '发生了一个错误';
@@ -1420,31 +1403,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorConnectionFailedDesc => '无法连接到服务器。请检查网络连接和服务器状态。';
 
   @override
-  String get errorFormatAuthenticationFailedReconnect =>
-      'Authentication failed. Reconnect the provider and try again.';
+  String get errorFormatAuthenticationFailedReconnect => '身份验证失败。请重新连接提供商并重试。';
 
   @override
-  String get errorFormatProviderTemporarilyUnavailable =>
-      'Provider temporarily unavailable. Try again shortly.';
+  String get errorFormatProviderTemporarilyUnavailable => '提供商暂时不可用。请稍后重试。';
 
   @override
-  String get errorFormatQuotaExceededCheck =>
-      'Quota exceeded. Check your provider plan or billing.';
+  String get errorFormatQuotaExceededCheck => '用量配额已超。请检查您的提供商方案或账单。';
 
   @override
-  String get errorFormatRateLimitExceeded =>
-      'Rate limit exceeded. Wait a moment and try again.';
+  String get errorFormatRateLimitExceeded => '已达到速率限制。请稍等片刻后重试。';
 
   @override
-  String get errorFormatServerErrorPlease => 'Server error. Please try again.';
+  String get errorFormatServerErrorPlease => '服务器错误。请重试。';
 
   @override
   String get errorFormatServiceTemporarilyUnavailable =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      '服务暂时不可用。服务器可能正在启动，请稍后重试。';
 
   @override
-  String get errorFormatUnableReachServer =>
-      'Unable to reach the server. Check connection and server status.';
+  String get errorFormatUnableReachServer => '无法连接到服务器。请检查网络连接和服务器状态。';
 
   @override
   String get errorProviderUnavailable => '提供商不可用';
@@ -1477,22 +1455,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorServiceUnavailableDesc => '服务暂时不可用。服务器可能正在启动，请稍后再试。';
 
   @override
-  String get fileActionAttachmentDataDecoded =>
-      'Attachment data could not be decoded.';
+  String get fileActionAttachmentDataDecoded => '无法解码附件数据。';
 
   @override
-  String get fileActionAttachmentPathEmpty => 'Attachment path is empty.';
+  String get fileActionAttachmentPathEmpty => '附件路径为空。';
 
   @override
-  String get fileActionAttachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get fileActionAttachmentPayloadEmpty => '附件有效负载为空。';
 
   @override
-  String get fileActionAttachmentProvideValid =>
-      'Attachment does not provide a valid location.';
+  String get fileActionAttachmentProvideValid => '附件未提供有效位置。';
 
   @override
-  String get fileActionAttachmentSavedDevice =>
-      'Attachment could not be saved on this device.';
+  String get fileActionAttachmentSavedDevice => '附件无法在此设备上保存。';
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
@@ -1510,39 +1485,37 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get fileActionLocalAttachmentFound =>
-      'Local attachment was not found on this device.';
+  String get fileActionLocalAttachmentFound => '在此设备上未找到本地附件。';
 
   @override
-  String get fileActionSaveCanceled => 'Save canceled.';
+  String get fileActionSaveCanceled => '保存已取消。';
 
   @override
-  String get fileActionUnableOpenLocal =>
-      'Unable to open the local attachment.';
+  String get fileActionUnableOpenLocal => '无法打开本地附件。';
 
   @override
-  String get filesAddChat => 'Add to chat';
+  String get filesAddChat => '添加到聊天';
 
   @override
-  String get filesBinaryFilePreview => 'Binary file preview is not available.';
+  String get filesBinaryFilePreview => '二进制文件预览不可用。';
 
   @override
-  String get filesClear => 'Clear';
+  String get filesClear => '清除';
 
   @override
-  String get filesContents => 'Contents';
+  String get filesContents => '内容';
 
   @override
-  String get filesFileEmpty => 'File is empty.';
+  String get filesFileEmpty => '文件为空。';
 
   @override
-  String get filesFilesFound => 'No files found';
+  String get filesFilesFound => '未找到文件';
 
   @override
-  String get filesHideSidebar => 'Hide Files sidebar';
+  String get filesHideSidebar => '隐藏文件侧边栏';
 
   @override
-  String get filesNames => 'Names';
+  String get filesNames => '名称';
 
   @override
   String filesOpenFilesFileState(int length) {
@@ -1550,37 +1523,37 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get filesQuickOpen => 'Quick Open';
+  String get filesQuickOpen => '快速打开';
 
   @override
-  String get filesQuickOpenFile => 'Quick Open File';
+  String get filesQuickOpenFile => '快速打开文件';
 
   @override
-  String get filesRefresh => 'Refresh files';
+  String get filesRefresh => '刷新文件';
 
   @override
-  String get filesSearchHint => 'Search files by name or path';
+  String get filesSearchHint => '按名称或路径搜索文件';
 
   @override
-  String get filesTitle => 'Files';
+  String get filesTitle => '文件';
 
   @override
-  String get logsAppLogs => 'App Logs';
+  String get logsAppLogs => '应用日志';
 
   @override
-  String get logsClear => 'Clear logs';
+  String get logsClear => '清除日志';
 
   @override
-  String get logsCloseSearch => 'Close search';
+  String get logsCloseSearch => '关闭搜索';
 
   @override
-  String get logsCopyFiltered => 'Copy filtered logs';
+  String get logsCopyFiltered => '复制已过滤的日志';
 
   @override
   String get logsFilterAll => '全部';
 
   @override
-  String get logsLevel => 'Level';
+  String get logsLevel => '级别';
 
   @override
   String get logsNoLogsYet => '尚未捕获日志。';
@@ -1589,7 +1562,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsNoMatchingLogs => '没有符合当前过滤条件的日志。';
 
   @override
-  String get logsSearch => 'Search logs';
+  String get logsSearch => '搜索日志';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
@@ -1597,25 +1570,25 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get logsTimeRange => 'Time range';
+  String get logsTimeRange => '时间范围';
 
   @override
   String get mathExpressionLabel => '数学';
 
   @override
-  String get mermaidCopySourceTooltip => 'Copy source';
+  String get mermaidCopySourceTooltip => '复制源码';
 
   @override
-  String get mermaidDiagramLabel => 'Mermaid Diagram';
+  String get mermaidDiagramLabel => 'Mermaid 图表';
 
   @override
-  String get modelAuto => 'Auto';
+  String get modelAuto => '自动';
 
   @override
-  String get modelChooseAgent => 'Choose agent';
+  String get modelChooseAgent => '选择智能体';
 
   @override
-  String get modelFavorites => 'Favorites';
+  String get modelFavorites => '收藏夹';
 
   @override
   String get modelLabelBaseEnglish => '基础 (英语)';
@@ -1630,75 +1603,71 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelLabelTinyEnglish => 'Tiny (英语)';
 
   @override
-  String get modelLoadingModels => 'Loading models';
+  String get modelLoadingModels => '正在加载模型';
 
   @override
-  String get modelModelsFound => 'No models found';
+  String get modelModelsFound => '未找到模型';
 
   @override
-  String get modelRetryModels => 'Retry models';
+  String get modelRetryModels => '重试加载模型';
 
   @override
-  String get modelSearchHint => 'Search model or provider';
+  String get modelSearchHint => '搜索模型或提供商';
 
   @override
-  String get msgBatterySettingsFailed =>
-      'Could not open Android battery optimization settings.';
+  String get msgBatterySettingsFailed => '无法打开 Android 电池优化设置。';
 
   @override
   String get msgBatterySettingsOpened =>
-      'Android battery settings opened. Allow unrestricted battery for CodeWalk.';
+      'Android 电池设置已打开。请允许 CodeWalk 使用不受限制的电池。';
 
   @override
-  String get msgClearUsernameNeedsConfigEdit =>
-      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+  String get msgClearUsernameNeedsConfigEdit => '清除 OpenCode 对话用户名仍需在应用外部编辑配置。';
 
   @override
-  String get msgCommandCopied => 'Command copied';
+  String get msgCommandCopied => '命令已复制';
 
   @override
-  String get msgCopiedToClipboard => 'Copied to clipboard';
+  String get msgCopiedToClipboard => '已复制到剪贴板';
 
   @override
-  String get msgEnterUsernameToSave =>
-      'Enter a username to save a custom OpenCode conversation name.';
+  String get msgEnterUsernameToSave => '输入用户名以保存自定义的 OpenCode 对话名称。';
 
   @override
-  String get msgFailedToSendMessage =>
-      'Failed to send message. Draft kept for retry.';
+  String get msgFailedToSendMessage => '发送消息失败。草稿已保留以供重试。';
 
   @override
-  String get msgFailedToStartVoiceInput => 'Failed to start voice input';
+  String get msgFailedToStartVoiceInput => '启动语音输入失败';
 
   @override
   String msgFilePathNotFound(String path) {
-    return 'File not found: $path';
+    return '未找到文件：$path';
   }
 
   @override
-  String get msgFilteredLogsCopied => 'Filtered logs copied to clipboard';
+  String get msgFilteredLogsCopied => '已过滤的日志已复制到剪贴板';
 
   @override
-  String get msgInfoAgent => 'Agent';
+  String get msgInfoAgent => '智能体';
 
   @override
-  String get msgInfoCompaction => 'Compaction';
+  String get msgInfoCompaction => '压缩';
 
   @override
   String msgInfoCost(double cost) {
-    return 'Cost: \$$cost';
+    return '费用: \\\$$cost';
   }
 
   @override
-  String get msgInfoMessageInfo => 'Message Info';
+  String get msgInfoMessageInfo => '消息信息';
 
   @override
   String msgInfoModel(String modelId) {
-    return 'Model: $modelId';
+    return '模型: $modelId';
   }
 
   @override
-  String get msgInfoNoMetadata => 'No metadata available';
+  String get msgInfoNoMetadata => '无可用元数据';
 
   @override
   String msgInfoPartDescriptionModel(String description, String model) {
@@ -1706,18 +1675,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get msgInfoPatch => 'Patch';
+  String get msgInfoPatch => '补丁';
 
   @override
   String msgInfoProvider(String providerId) {
-    return 'Provider: $providerId';
+    return '提供商: $providerId';
   }
 
   @override
-  String get msgInfoRetry => 'Retry';
+  String get msgInfoRetry => '重试';
 
   @override
-  String get msgInfoSnapshot => 'Snapshot';
+  String get msgInfoSnapshot => '快照';
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
@@ -1726,73 +1695,66 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String msgInfoTokens(int total) {
-    return 'Tokens: $total';
+    return 'Token数: $total';
   }
 
   @override
-  String get msgInfoUndoThisTurn => 'Undo this turn';
+  String get msgInfoUndoThisTurn => '撤销此轮';
 
   @override
-  String get msgInfoView => 'View';
+  String get msgInfoView => '查看';
 
   @override
-  String get msgNoSystemSoundsFound =>
-      'No system sound was found on this device.';
+  String get msgNoSystemSoundsFound => '在此设备上未找到系统声音。';
 
   @override
-  String get msgNoValidFilesSelected => 'No valid files were selected';
+  String get msgNoValidFilesSelected => '未选择有效的文件';
 
   @override
-  String get msgReadAloud => 'Read aloud';
+  String get msgReadAloud => '朗读';
 
   @override
-  String get msgReadAloudNotAvailable =>
-      'Text-to-speech is not available on this device.';
+  String get msgReadAloudNotAvailable => '此设备上文字转语音不可用。';
 
   @override
-  String get msgSetupDebugCopied => 'OpenCode setup debug copied to clipboard';
+  String get msgSetupDebugCopied => 'OpenCode 设置调试信息已复制到剪贴板';
 
   @override
-  String get msgShareAsImage => 'Share as image';
+  String get msgShareAsImage => '作为图片分享';
 
   @override
-  String get msgShareAsImageFailed => 'Could not share message as image.';
+  String get msgShareAsImageFailed => '无法将消息作为图片分享。';
 
   @override
-  String get msgShareAsImageSubject => 'CodeWalk message';
+  String get msgShareAsImageSubject => 'CodeWalk 消息';
 
   @override
-  String get msgShareAsImageTooTall =>
-      'Message is too long to share as an image.';
+  String get msgShareAsImageTooTall => '消息太长，无法作为图片分享。';
 
   @override
-  String get msgStopReadAloud => 'Stop reading';
+  String get msgStopReadAloud => '停止朗读';
 
   @override
-  String get msgSystemSoundPickerUnavailable =>
-      'System sound picker is not available on this platform.';
+  String get msgSystemSoundPickerUnavailable => '此平台不支持系统声音选择器。';
 
   @override
-  String get msgUpdatedButRefreshFailed =>
-      'Updated the server setting, but could not refresh chat providers.';
+  String get msgUpdatedButRefreshFailed => '已更新服务器设置，但无法刷新聊天提供商。';
 
   @override
-  String get msgVoiceInputUnavailable =>
-      'Voice input is unavailable on this device';
+  String get msgVoiceInputUnavailable => '此设备上语音输入不可用';
 
   @override
-  String get notifAndroidBatteryOptimization => 'Android battery optimization';
+  String get notifAndroidBatteryOptimization => 'Android 电池优化';
 
   @override
-  String get notifConversationUpdates => 'Conversation updates';
+  String get notifConversationUpdates => '对话更新';
 
   @override
   String get notifNotificationsArriveReopening =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      '如果通知仅在重新打开应用时到达，请允许 CodeWalk 在此设备上无优化运行。';
 
   @override
-  String get notifResponseRunningKeep =>
-      'When a response is running, keep realtime active briefly after you leave the app.';
+  String get notifResponseRunningKeep => '当响应正在运行时，离开应用后短时间内保持实时状态激活。';
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
@@ -1815,18 +1777,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notificationSoundLoadFailed => '无法加载 Android 系统声音';
 
   @override
-  String get onboardingAIGeneratedTitles => 'AI generated titles';
+  String get onboardingAIGeneratedTitles => 'AI 生成的标题';
 
   @override
-  String get onboardingAddServerLater =>
-      'You can add a server later in Settings > Servers.';
+  String get onboardingAddServerLater => '您稍后可以在 设置 > 服务器 中添加服务器。';
 
   @override
   String get onboardingAddedButHealthCheckFailed => '已添加服务器，但健康检查失败。它可能仍在启动中。';
 
   @override
   String get onboardingAlmostInstallOpenCode =>
-      'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.';
+      '您就快完成了。请先安装 OpenCode，然后将 CodeWalk 连接 to 服务器 URL。';
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
@@ -1834,7 +1795,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get onboardingAuthenticate => 'Authenticate';
+  String get onboardingAuthenticate => '认证';
 
   @override
   String get onboardingAvailable => '可用';
@@ -1846,32 +1807,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingBasicAuthTip => '仅当您的 OpenCode 服务器受密码保护时才启用基本身份验证。';
 
   @override
-  String get onboardingChooseAnotherPath => 'Choose another path';
+  String get onboardingChooseAnotherPath => '选择其他路径';
 
   @override
   String get onboardingChooseHowToSetup => '选择如何设置您的服务器';
 
   @override
-  String get onboardingClear => 'Clear';
+  String get onboardingClear => '清除';
 
   @override
   String get onboardingCloudflareAuthFailed => 'Cloudflare Access 身份验证失败。';
 
   @override
-  String get onboardingCodeWalkAppOpenCode =>
-      'CodeWalk is the app. OpenCode is the engine it connects to.';
+  String get onboardingCodeWalkAppOpenCode => 'CodeWalk 是应用，OpenCode 是它连接的引擎。';
 
   @override
-  String get onboardingConnectRunningServer => 'Connect to a running server';
+  String get onboardingConnectRunningServer => '连接到正在运行的服务器';
 
   @override
-  String get onboardingConnectionIssue => 'Connection issue';
+  String get onboardingConnectionIssue => '连接问题';
 
   @override
   String get onboardingConnectionSaved => '服务器连接保存成功。';
 
   @override
-  String get onboardingConnectionTips => 'Connection tips';
+  String get onboardingConnectionTips => '连接提示';
 
   @override
   String get onboardingConnectionUpdated => '服务器连接更新成功。';
@@ -1880,17 +1840,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingContinue => '继续';
 
   @override
-  String get onboardingContinueServerURL => 'Continue to server URL';
+  String get onboardingContinueServerURL => '继续前往服务器 URL';
 
   @override
-  String get onboardingCopyLoginURL => 'Copy login URL';
+  String get onboardingCopyLoginURL => '复制登录 URL';
 
   @override
   String get onboardingCouldNotVerify => '无法验证服务器连接。';
 
   @override
-  String get onboardingDefaultURLEmulator =>
-      'Default URL, emulator loopback, auth, and debug help.';
+  String get onboardingDefaultURLEmulator => '默认 URL、模拟器回环、身份验证和调试帮助。';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
@@ -1898,11 +1857,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get onboardingDetailedSetupEvents =>
-      'Detailed setup events were captured for troubleshooting.';
+  String get onboardingDetailedSetupEvents => '已捕获详细的设置事件以进行排障。';
 
   @override
-  String get onboardingDonShowAgain => 'Don\'t show again';
+  String get onboardingDonShowAgain => '不再显示';
 
   @override
   String get onboardingDone => '完成';
@@ -1921,45 +1879,44 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingEnterServerUrl => '输入服务器 URL';
 
   @override
-  String get onboardingExisting => 'Use Existing';
+  String get onboardingExisting => '使用现有';
 
   @override
   String get onboardingExplainInstallOpenCode =>
-      'Explain how to install OpenCode, start the server, and then connect from CodeWalk.';
+      '解释如何安装 OpenCode、启动服务器，然后从 CodeWalk 连接。';
 
   @override
   String get onboardingFailed => '失败';
 
   @override
-  String get onboardingGoodOptionDesktop => 'Good first option on desktop';
+  String get onboardingGoodOptionDesktop => '桌面端不错的首选';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting => '服务器健康检查失败。它可能仍在启动中。';
 
   @override
-  String get onboardingInstallBinary => 'Install Binary';
+  String get onboardingInstallBinary => '安装二进制文件';
 
   @override
-  String get onboardingInstallBun => 'Install via Bun';
+  String get onboardingInstallBun => '通过 Bun 安装';
 
   @override
-  String get onboardingInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get onboardingInstallBunOpenCode => '安装 Bun + OpenCode';
 
   @override
-  String get onboardingInstallNpm => 'Install via npm';
+  String get onboardingInstallNpm => '通过 npm 安装';
 
   @override
-  String get onboardingInstallRunOpenCode =>
-      'Install and run OpenCode directly from CodeWalk on desktop.';
+  String get onboardingInstallRunOpenCode => '在桌面端直接从 CodeWalk 安装并运行 OpenCode。';
 
   @override
   String get onboardingInvalidUrl => '无效的 URL';
 
   @override
-  String get onboardingLabel => 'Label (optional)';
+  String get onboardingLabel => '标签（可选）';
 
   @override
-  String get onboardingLabelHint => 'My server';
+  String get onboardingLabelHint => '我的服务器';
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
@@ -1967,17 +1924,17 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get onboardingLetCodeWalkSet => 'Let CodeWalk set it up locally';
+  String get onboardingLetCodeWalkSet => '让 CodeWalk 在本地进行设置';
 
   @override
   String get onboardingLocalServerSetup => '本地服务器设置';
 
   @override
-  String get onboardingManagedLocalServer => 'Managed local server';
+  String get onboardingManagedLocalServer => '托管的本地服务器';
 
   @override
   String get onboardingManagedLocalServer2 =>
-      'Managed local server mode is available only on desktop builds (Linux/macOS/Windows).';
+      '托管本地服务器模式仅在桌面构建版本（Linux/macOS/Windows）上可用。';
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
@@ -1991,25 +1948,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingNotWritable => '不可写';
 
   @override
-  String get onboardingOpenCode => 'What is OpenCode?';
+  String get onboardingOpenCode => '什么是 OpenCode？';
 
   @override
-  String get onboardingOpenCodeRunningDevice =>
-      'I already have OpenCode running on this device or somewhere on my network.';
+  String get onboardingOpenCodeRunningDevice => '我已经在此设备或网络中的其他地方运行了 OpenCode。';
 
   @override
   String get onboardingOpenCodeRunsLocally =>
-      'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.';
+      'OpenCode 在本地或服务器上运行，并为 CodeWalk 内部的 AI 编程功能提供支持。如果 OpenCode 已经运行，请连接到它。如果未运行，请选择以下引导设置路径之一。';
 
   @override
-  String get onboardingOpenTailscaleLogin =>
-      'Could not open Tailscale login URL.';
+  String get onboardingOpenTailscaleLogin => '无法打开 Tailscale 登录 URL。';
 
   @override
-  String get onboardingPassword => 'Password';
+  String get onboardingPassword => '密码';
 
   @override
-  String get onboardingPasswordRequired => 'Enter password';
+  String get onboardingPasswordRequired => '输入密码';
 
   @override
   String get onboardingPickSetupPath => '选择与您当前的 OpenCode 设置匹配的设置路径。';
@@ -2022,10 +1977,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboardingRecommendedOrderTry =>
-      'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.';
+      '推荐顺序：如果您希望 CodeWalk 为您引导一切，请尝试“安装 Bun + OpenCode”。如果已安装 OpenCode，请使用“使用现有”。';
 
   @override
-  String get onboardingRefreshChecks => 'Refresh Checks';
+  String get onboardingRefreshChecks => '刷新检查';
 
   @override
   String get onboardingRunDiagnosticsToVerify => '运行诊断以验证本地 OpenCode 要求。';
@@ -2049,7 +2004,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingServerUpdated => '服务器已更新';
 
   @override
-  String get onboardingServerUrl => 'Server URL';
+  String get onboardingServerUrl => '服务器 URL';
 
   @override
   String get onboardingSetup => '设置';
@@ -2058,19 +2013,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingSetupWizard => '设置向导';
 
   @override
-  String get onboardingShowSetupSteps => 'Show me the setup steps';
+  String get onboardingShowSetupSteps => '向我显示设置步骤';
 
   @override
-  String get onboardingShowSetupSteps2 => 'Show setup steps';
+  String get onboardingShowSetupSteps2 => '显示设置步骤';
 
   @override
-  String get onboardingSkip => 'Skip for now';
+  String get onboardingSkip => '暂时跳过';
 
   @override
-  String get onboardingSkipSetup => 'Skip setup?';
+  String get onboardingSkipSetup => '跳过设置？';
 
   @override
-  String get onboardingStart => 'Start';
+  String get onboardingStart => '开始';
 
   @override
   String onboardingStartUsing(String appName) {
@@ -2081,7 +2036,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingStarting => '正在启动';
 
   @override
-  String get onboardingStop => 'Stop';
+  String get onboardingStop => '停止';
 
   @override
   String get onboardingStopped => '已停止';
@@ -2134,23 +2089,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingUnreachable => '不可达';
 
   @override
-  String get onboardingUseBasicAuth => 'Use Basic Auth';
+  String get onboardingUseBasicAuth => '使用基本身份验证';
 
   @override
-  String get onboardingUsername => 'Username';
+  String get onboardingUsername => '用户名';
 
   @override
-  String get onboardingUsernameRequired => 'Enter username';
+  String get onboardingUsernameRequired => '输入用户名';
 
   @override
-  String get onboardingUsesServerTitle =>
-      'Uses your server\'s title agent to name conversations';
+  String get onboardingUsesServerTitle => '使用您服务器的标题智能体为会话命名';
 
   @override
   String get onboardingUsingDetectedCommand => '使用检测到的 OpenCode 命令。';
 
   @override
-  String get onboardingViewSetupDebug => 'View setup debug';
+  String get onboardingViewSetupDebug => '查看设置调试';
 
   @override
   String onboardingWelcomeTo(String appName) {
@@ -2159,7 +2113,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboardingWindowsTipInstalling =>
-      'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.';
+      'Windows 提示：安装后，单击“刷新检查”。如果检测仍然失败，请重新打开 CodeWalk 以重新加载 PATH 更改。';
 
   @override
   String get onboardingWritable => '可写';
@@ -2168,64 +2122,62 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingYoureAllSet => '一切就绪！';
 
   @override
-  String get permissionAllowOnce => 'Allow Once';
+  String get permissionAllowOnce => '仅允许一次';
 
   @override
-  String get permissionAlways => 'Always';
+  String get permissionAlways => '总是允许';
 
   @override
-  String get permissionBack => 'Back';
+  String get permissionBack => '返回';
 
   @override
-  String get permissionConfirmReject => 'Confirm Reject';
+  String get permissionConfirmReject => '确认拒绝';
 
   @override
-  String get permissionReject => 'Reject';
+  String get permissionReject => '拒绝';
 
   @override
-  String get permissionReopen => 'Reopen';
+  String get permissionReopen => '重新打开';
 
   @override
-  String get questionAnswerSelected => 'No answer selected.';
+  String get questionAnswerSelected => '未选择答案。';
 
   @override
-  String get questionCommaSeparatedValues => 'Comma-separated values';
+  String get questionCommaSeparatedValues => '逗号分隔值';
 
   @override
   String get questionQuestionGroupMarked =>
-      'Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.';
+      '问题组已被标记为拒绝。在确认之前，您可以继续聊天并随时重新打开此组。';
 
   @override
-  String get questionQuestionRequest => 'Question request';
+  String get questionQuestionRequest => '问题请求';
 
   @override
-  String get questionQuestionsProvidedSubmit =>
-      'No questions provided. You can submit an empty response.';
+  String get questionQuestionsProvidedSubmit => '未提供问题。您可以提交空响应。';
 
   @override
-  String get questionReviewAnswersSubmitting =>
-      'Review your answers before submitting.';
+  String get questionReviewAnswersSubmitting => '在提交前核对您的答案。';
 
   @override
-  String get quotaAuthCookie => 'Auth cookie';
+  String get quotaAuthCookie => '认证 Cookie';
 
   @override
-  String get quotaForget => 'Forget';
+  String get quotaForget => '忘记';
 
   @override
-  String get quotaOpenCodeGoUsage => 'OpenCode Go usage';
+  String get quotaOpenCodeGoUsage => 'OpenCode Go 用量';
 
   @override
-  String get quotaOpenDashboard => 'Open OpenCode dashboard';
+  String get quotaOpenDashboard => '打开 OpenCode 仪表板';
 
   @override
-  String get quotaSaving => 'Saving...';
+  String get quotaSaving => '正在保存...';
 
   @override
-  String get quotaWorkspaceId => 'Workspace ID';
+  String get quotaWorkspaceId => '工作区 ID';
 
   @override
-  String get serverClearOAuth => 'Clear OAuth';
+  String get serverClearOAuth => '清除 OAuth';
 
   @override
   String get serverConnectionAttention => '服务器连接需要注意。';
@@ -2240,45 +2192,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverHealthUnknown => '未知';
 
   @override
-  String get serverOAuthAuthFailed => 'OAuth authentication failed';
+  String get serverOAuthAuthFailed => 'OAuth 身份验证失败';
 
   @override
   String get serverOAuthChip => 'OAuth';
 
   @override
-  String get serverOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+  String get serverOAuthNotSupported => '此平台不支持 Cloudflare Access OAuth';
 
   @override
-  String get serverReauthenticate => 'Re-authenticate';
+  String get serverReauthenticate => '重新进行身份验证';
 
   @override
   String get serverTailscaleChip => 'Tailscale';
 
   @override
-  String get serversActive => 'Active';
+  String get serversActive => '活动';
 
   @override
-  String get serversActiveServer => 'Active Server';
+  String get serversActiveServer => '活动服务器';
 
   @override
-  String get serversAddLeastOpenCode =>
-      'Add at least one OpenCode server to start using the app.';
+  String get serversAddLeastOpenCode => '添加至少一个 OpenCode 服务器以开始使用该应用。';
 
   @override
-  String get serversAddServer => 'Add Server';
+  String get serversAddServer => '添加服务器';
 
   @override
-  String get serversCancel => 'Cancel';
+  String get serversCancel => '取消';
 
   @override
   String get serversCannotActivateUnhealthy => '无法激活不健康的服务器';
 
   @override
-  String get serversCheckHealth => 'Check Health';
+  String get serversCheckHealth => '检查运行状况';
 
   @override
-  String get serversClearDefault => 'Clear Default';
+  String get serversClearDefault => '清除默认值';
 
   @override
   String serversCommandAppProviderLocalServerCommandPath(
@@ -2288,36 +2238,36 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get serversCopy => 'Copy';
+  String get serversCopy => '复制';
 
   @override
-  String get serversDefault => 'Default';
+  String get serversDefault => '默认';
 
   @override
-  String get serversDelete => 'Delete';
+  String get serversDelete => '删除';
 
   @override
-  String get serversDeleteServer => 'Delete server';
+  String get serversDeleteServer => '删除服务器';
 
   @override
   String get serversDesktopModeExplanation =>
       '桌面模式可以直接从 CodeWalk 启动和管理 `opencode serve`。';
 
   @override
-  String get serversEdit => 'Edit';
+  String get serversEdit => '编辑';
 
   @override
-  String get serversLocalOpenCodeServer => 'Local OpenCode Server';
+  String get serversLocalOpenCodeServer => '本地 OpenCode 服务器';
 
   @override
   String get serversManagedModeAvailable =>
-      'This managed mode is available only on desktop builds (Linux/macOS/Windows).';
+      '此托管模式仅在桌面构建版本（Linux/macOS/Windows）上可用。';
 
   @override
   String get serversNoServersFound => '未找到服务器';
 
   @override
-  String get serversRefreshHealth => 'Refresh Health';
+  String get serversRefreshHealth => '刷新运行状况';
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
@@ -2328,19 +2278,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversSearchActiveHint => '搜索活动服务器';
 
   @override
-  String get serversServersConfigured => 'No servers configured';
+  String get serversServersConfigured => '未配置服务器';
 
   @override
-  String get serversSetActive => 'Set Active';
+  String get serversSetActive => '设为活动';
 
   @override
-  String get serversSetDefault => 'Set Default';
+  String get serversSetDefault => '设为默认';
 
   @override
-  String get serversSetupDebug => 'Setup Debug';
+  String get serversSetupDebug => '设置调试';
 
   @override
-  String get serversSetupWizard => 'Setup Wizard';
+  String get serversSetupWizard => '设置向导';
 
   @override
   String get serversTailscaleAdminApprovalRequired => '需要 Tailscale 管理员批准';
@@ -2378,19 +2328,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversUnhealthyActivateError => '此服务器不健康。请在激活前检查运行状况或编辑设置。';
 
   @override
-  String get sessionActionArchived => 'archived';
+  String get sessionActionArchived => '已归档';
 
   @override
-  String get sessionActionDeleted => 'deleted';
+  String get sessionActionDeleted => '已删除';
 
   @override
-  String get sessionActionForked => 'forked';
+  String get sessionActionForked => '已派生';
 
   @override
-  String get sessionActionUnarchived => 'unarchived';
+  String get sessionActionUnarchived => '已取消归档';
 
   @override
-  String get sessionCancelRename => 'Cancel rename';
+  String get sessionCancelRename => '取消重命名';
 
   @override
   String sessionChildrenCount(int count) {
@@ -2404,25 +2354,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionCopyLink => '复制共享链接';
 
   @override
-  String get sessionDelete => 'Delete';
+  String get sessionDelete => '删除';
 
   @override
-  String get sessionDeleteTitle => 'Delete Conversation';
+  String get sessionDeleteTitle => '删除对话';
 
   @override
-  String get sessionDiffChangedFile => 'Changed file';
+  String get sessionDiffChangedFile => '已更改的文件';
 
   @override
-  String get sessionDiffContentNotCaptured =>
-      'File content not captured by the server';
+  String get sessionDiffContentNotCaptured => '服务器未捕获文件内容';
 
   @override
   String sessionDiffFilesChanged(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count files changed',
-      one: '1 file changed',
+      other: '$count 个文件已更改',
+      one: '1 个文件已更改',
     );
     return '$_temp0';
   }
@@ -2434,25 +2383,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String sessionDiffLinesAddedRemoved(int added, int removed) {
-    return '+$added lines added -$removed lines removed';
+    return '新增 +$added 行，删除 -$removed 行';
   }
 
   @override
   String sessionDiffLinesCollapsed(int count) {
-    return '$count lines collapsed — tap to expand';
+    return '已折叠 $count 行 — 点击以展开';
   }
 
   @override
-  String get sessionDiffReview => 'Review changes';
+  String get sessionDiffReview => '审查更改';
 
   @override
-  String get sessionDiffSplit => 'Split';
+  String get sessionDiffSplit => '分栏';
 
   @override
-  String get sessionDiffSummary => 'Summary';
+  String get sessionDiffSummary => '摘要';
 
   @override
-  String get sessionDiffUnified => 'Unified';
+  String get sessionDiffUnified => '统一';
 
   @override
   String get sessionExportAssistant => '助手';
@@ -2500,16 +2449,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionExportUser => '用户';
 
   @override
-  String get sessionFailedRename => 'Failed to rename conversation';
+  String get sessionFailedRename => '重命名对话失败';
 
   @override
-  String get sessionFailedUpdateArchive => 'Failed to update archive state';
+  String get sessionFailedUpdateArchive => '更新归档状态失败';
 
   @override
-  String get sessionFailedUpdateSharing => 'Failed to update sharing state';
+  String get sessionFailedUpdateSharing => '更新共享状态失败';
 
   @override
-  String get sessionFork => 'Fork';
+  String get sessionFork => '派生';
 
   @override
   String get sessionForkFailed => '复制对话失败';
@@ -2528,7 +2477,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get sessionKeyboardShortcuts => 'Keyboard shortcuts';
+  String get sessionKeyboardShortcuts => '键盘快捷键';
 
   @override
   String sessionNeedsInput(String title) {
@@ -2542,29 +2491,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionNoConversationsInProject => '此项目中没有对话。';
 
   @override
-  String get sessionNotAvailable =>
-      'Conversation is not available for this project yet';
+  String get sessionNotAvailable => '此项目暂不可用该对话';
 
   @override
   String get sessionOpenProjectToLoad => '打开项目以加载对话。';
 
   @override
-  String get sessionRename => 'Rename';
+  String get sessionRename => '重命名';
 
   @override
-  String get sessionRenameHint => 'Enter new conversation name';
+  String get sessionRenameHint => '输入新的对话名称';
 
   @override
-  String get sessionRenameTitle => 'Rename Conversation';
+  String get sessionRenameTitle => '重命名对话';
 
   @override
-  String get sessionSaveTitle => 'Save title';
+  String get sessionSaveTitle => '保存标题';
 
   @override
   String get sessionShare => '共享会话';
 
   @override
-  String get sessionShareLinkCopied => 'Share link copied';
+  String get sessionShareLinkCopied => '共享链接已复制';
 
   @override
   String get sessionShareLinkUnavailable => '此会话的共享链接不可用';
@@ -2576,7 +2524,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionSyncing => '正在同步对话...';
 
   @override
-  String get sessionTitleHint => 'Conversation title';
+  String get sessionTitleHint => '对话标题';
 
   @override
   String get sessionUnshare => '取消共享会话';
@@ -2588,180 +2536,167 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionViewTasks => '查看任务';
 
   @override
-  String get settingsAboutCheckForUpdates => 'Check for updates';
+  String get settingsAboutCheckForUpdates => '检查更新';
 
   @override
-  String get settingsAboutCheckOnOpen => 'Check for updates on open';
+  String get settingsAboutCheckOnOpen => '打开时检查更新';
 
   @override
-  String get settingsAboutCheckOnOpenDescription =>
-      'Automatically check when the app starts';
+  String get settingsAboutCheckOnOpenDescription => '应用启动时自动检查';
 
   @override
-  String get settingsAboutChecking => 'Checking...';
+  String get settingsAboutChecking => '正在检查...';
 
   @override
-  String get settingsAboutDescription => 'Version, updates and links';
+  String get settingsAboutDescription => '版本、更新和链接';
 
   @override
-  String get settingsAboutDismiss => 'Dismiss';
+  String get settingsAboutDismiss => '忽略';
 
   @override
   String settingsAboutDownloading(String percent) {
-    return 'Downloading... $percent%';
+    return '正在下载... $percent%';
   }
 
   @override
-  String get settingsAboutEraseAllData => 'Erase all data and restart';
+  String get settingsAboutEraseAllData => '清除所有数据并重启';
 
   @override
-  String get settingsAboutInstallUpdate => 'Install update';
+  String get settingsAboutInstallUpdate => '安装更新';
 
   @override
-  String get settingsAboutInstalling => 'Installing...';
+  String get settingsAboutInstalling => '正在安装...';
 
   @override
   String settingsAboutLatestVersion(String version) {
-    return 'v$version is the latest version';
+    return 'v$version 是最新版本';
   }
 
   @override
-  String get settingsAboutLoading => 'Loading...';
+  String get settingsAboutLoading => '加载中...';
 
   @override
-  String get settingsAboutReplayChatTour => 'Replay chat tour';
+  String get settingsAboutReplayChatTour => '重放聊天向导';
 
   @override
-  String get settingsAboutReplayChatTourDescription =>
-      'Close settings and show the guided chat walkthrough';
+  String get settingsAboutReplayChatTourDescription => '关闭设置并显示向导聊天演示';
 
   @override
-  String get settingsAboutResetApp => 'Reset app';
+  String get settingsAboutResetApp => '重置应用';
 
   @override
-  String get settingsAboutResetAppQuestion => 'Reset app?';
+  String get settingsAboutResetAppQuestion => '重置应用？';
 
   @override
-  String get settingsAboutResetAppWarning =>
-      'This will erase all servers, settings, and cached data. This action cannot be undone.';
+  String get settingsAboutResetAppWarning => '这将清除所有服务器、设置和缓存的数据。此操作无法撤销。';
 
   @override
-  String get settingsAboutRetryInstall => 'Retry install';
+  String get settingsAboutRetryInstall => '重试安装';
 
   @override
-  String get settingsAboutTapToCheck => 'Tap to check for new versions';
+  String get settingsAboutTapToCheck => '点击以检查新版本';
 
   @override
-  String get settingsAboutTitle => 'About';
+  String get settingsAboutTitle => '关于';
 
   @override
-  String get settingsAboutUpToDate => 'You\'re up to date';
+  String get settingsAboutUpToDate => '已是最新版本';
 
   @override
   String settingsAboutUpdateAvailable(String version) {
-    return 'Update available: v$version';
+    return '有可用更新: v$version';
   }
 
   @override
-  String get settingsAboutUpdateInstalled =>
-      'Update installed. Restart the app to apply.';
+  String get settingsAboutUpdateInstalled => '更新已安装。重启应用以应用更改。';
 
   @override
-  String get settingsAboutVersion => 'Version';
+  String get settingsAboutVersion => '版本';
 
   @override
   String settingsAboutVersionBuild(String buildNumber, String version) {
-    return '$version (build $buildNumber)';
+    return '$version (构建号 $buildNumber)';
   }
 
   @override
-  String get settingsAppearanceAmoledDark => 'AMOLED dark mode';
+  String get settingsAppearanceAmoledDark => 'AMOLED 深色模式';
 
   @override
-  String get settingsAppearanceAmoledDarkActive =>
-      'Use pure black surfaces while dark mode is active.';
+  String get settingsAppearanceAmoledDarkActive => '在深色模式处于活动状态时使用纯黑表面。';
 
   @override
-  String get settingsAppearanceAmoledDarkInactive =>
-      'Switch to dark mode to enable AMOLED surfaces.';
+  String get settingsAppearanceAmoledDarkInactive => '切换到深色模式以启用 AMOLED 表面。';
 
   @override
-  String get settingsAppearanceBrandColor => 'Brand color';
+  String get settingsAppearanceBrandColor => '品牌颜色';
 
   @override
-  String get settingsAppearanceBrandColorDynamicBlocked =>
-      'Disable wallpaper colors to pick a brand color.';
+  String get settingsAppearanceBrandColorDynamicBlocked => '禁用壁纸颜色以选择品牌颜色。';
 
   @override
-  String get settingsAppearanceBrandColorNormal =>
-      'Pick a seed color for the app palette.';
+  String get settingsAppearanceBrandColorNormal => '为应用调色板选择种子颜色。';
 
   @override
   String get settingsAppearanceBrandColorPresetBlocked =>
-      'Switch to CodeWalk Classic to pick a brand color.';
+      '切换到 CodeWalk 经典以选择品牌颜色。';
 
   @override
-  String get settingsAppearanceCodeWalkClassic => 'CodeWalk Classic';
+  String get settingsAppearanceCodeWalkClassic => 'CodeWalk 经典';
 
   @override
-  String get settingsAppearanceComposerTips => 'Composer tips';
+  String get settingsAppearanceComposerTips => 'Composer 提示';
 
   @override
-  String get settingsAppearanceComposerTipsDescription =>
-      'Show or hide rotating tips while the assistant is reasoning.';
+  String get settingsAppearanceComposerTipsDescription => '在助手进行推理时显示或隐藏循环提示。';
 
   @override
-  String get settingsAppearanceContrast => 'Contrast';
+  String get settingsAppearanceContrast => '对比度';
 
   @override
-  String get settingsAppearanceContrastDynamicBlocked =>
-      'Disable wallpaper colors to adjust contrast.';
+  String get settingsAppearanceContrastDynamicBlocked => '禁用壁纸颜色以调节对比度。';
 
   @override
-  String get settingsAppearanceContrastHigh => 'High';
+  String get settingsAppearanceContrastHigh => '较高';
 
   @override
-  String get settingsAppearanceContrastNormal =>
-      'Adjust the contrast level of the color scheme.';
+  String get settingsAppearanceContrastNormal => '调节配色方案的对比度级别。';
 
   @override
   String get settingsAppearanceContrastPresetBlocked =>
-      'Switch to CodeWalk Classic to adjust contrast.';
+      '切换到 CodeWalk 经典以调节对比度。';
 
   @override
-  String get settingsAppearanceContrastReduced => 'Reduced';
+  String get settingsAppearanceContrastReduced => '较低';
 
   @override
-  String get settingsAppearanceDark => 'Dark';
+  String get settingsAppearanceDark => '深色';
 
   @override
-  String get settingsAppearanceDensity => 'Density';
+  String get settingsAppearanceDensity => '密度';
 
   @override
-  String get settingsAppearanceDensityDense => 'Dense';
+  String get settingsAppearanceDensityDense => '高密度';
 
   @override
-  String get settingsAppearanceDensityDescription =>
-      'Apply spacing and component density across the app.';
+  String get settingsAppearanceDensityDescription => '在整个应用中应用间距和组件密度。';
 
   @override
-  String get settingsAppearanceDensityExtraDense => 'Extra Dense';
+  String get settingsAppearanceDensityExtraDense => '极高密度';
 
   @override
-  String get settingsAppearanceDensityExtraSpacious => 'Extra Spacious';
+  String get settingsAppearanceDensityExtraSpacious => '极宽松';
 
   @override
-  String get settingsAppearanceDensityNormal => 'Normal';
+  String get settingsAppearanceDensityNormal => '标准';
 
   @override
-  String get settingsAppearanceDensitySpacious => 'Spacious';
+  String get settingsAppearanceDensitySpacious => '宽松';
 
   @override
-  String get settingsAppearanceDescription =>
-      'Density and timeline bubble visibility';
+  String get settingsAppearanceDescription => '密度和时间线气泡可见性';
 
   @override
-  String get settingsAppearanceLight => 'Light';
+  String get settingsAppearanceLight => '浅色';
 
   @override
   String get settingsAppearanceMathRendering => '数学公式渲染';
@@ -2771,262 +2706,248 @@ class AppLocalizationsZh extends AppLocalizations {
       '在聊天消息中将 LaTeX 数学表达式渲染为排版公式。';
 
   @override
-  String get settingsAppearanceNoPresets => 'No preset palettes found';
+  String get settingsAppearanceNoPresets => '未找到预设调色板';
 
   @override
-  String get settingsAppearanceOpenCodePresets => 'OpenCode Presets';
+  String get settingsAppearanceOpenCodePresets => 'OpenCode 预设';
 
   @override
-  String get settingsAppearancePresetHelper =>
-      'Mirrors the official OpenCode Web built-in theme list.';
+  String get settingsAppearancePresetHelper => '镜像官方 OpenCode Web 内置主题列表。';
 
   @override
   String get settingsAppearancePresetNote =>
-      'Theme colors now follow the official OpenCode Web registry and drive markdown/code surfaces too.';
+      '主题颜色现在遵循官方 OpenCode Web 注册表，并同时驱动 markdown/代码表面。';
 
   @override
-  String get settingsAppearancePresetPalette => 'Preset palette';
+  String get settingsAppearancePresetPalette => '预设调色板';
 
   @override
-  String get settingsAppearanceSearchPreset => 'Search preset palette';
+  String get settingsAppearanceSearchPreset => '搜索预设调色板';
 
   @override
-  String get settingsAppearanceSectionDescription =>
-      'Tune visual density and message surfaces for your workflow.';
+  String get settingsAppearanceSectionDescription => '调整工作流的视觉密度 and 消息表面。';
 
   @override
-  String get settingsAppearanceSectionTitle => 'Appearance';
+  String get settingsAppearanceSectionTitle => '外观';
 
   @override
-  String get settingsAppearanceSystem => 'System';
+  String get settingsAppearanceSystem => '系统';
 
   @override
-  String get settingsAppearanceTaskList => 'Task list';
+  String get settingsAppearanceTaskList => '任务列表';
 
   @override
-  String get settingsAppearanceTaskListDescription =>
-      'Show or hide the session task list widget.';
+  String get settingsAppearanceTaskListDescription => '显示或隐藏会话任务列表小部件。';
 
   @override
-  String get settingsAppearanceTheme => 'Theme';
+  String get settingsAppearanceTheme => '主题';
 
   @override
   String get settingsAppearanceThemeDescription =>
-      'Choose light, dark, or system mode, then keep the CodeWalk classic palette or switch to an OpenCode preset.';
+      '选择浅色、深色或系统模式，然后保留 CodeWalk 经典调色板或切换到 OpenCode 预设。';
 
   @override
-  String get settingsAppearanceThinkingBubbles => 'Thinking bubbles';
+  String get settingsAppearanceThinkingBubbles => '思考气泡';
 
   @override
-  String get settingsAppearanceThinkingBubblesDescription =>
-      'Show or hide reasoning blocks in assistant messages.';
+  String get settingsAppearanceThinkingBubblesDescription => '在助手消息中显示或隐藏推理块。';
 
   @override
-  String get settingsAppearanceTitle => 'Appearance';
+  String get settingsAppearanceTitle => '外观';
 
   @override
-  String get settingsAppearanceToolCallBubbles => 'Tool call bubbles';
+  String get settingsAppearanceToolCallBubbles => '工具调用气泡';
 
   @override
   String get settingsAppearanceToolCallBubblesDescription =>
-      'Show or hide tool execution cards in assistant messages.';
+      '在助手消息中显示或隐藏工具执行卡片。';
 
   @override
-  String get settingsAppearanceWallpaperColors => 'Use wallpaper colors';
+  String get settingsAppearanceWallpaperColors => '使用壁纸颜色';
 
   @override
-  String get settingsAppearanceWallpaperNormal =>
-      'Extract color scheme from your device wallpaper.';
+  String get settingsAppearanceWallpaperNormal => '从您的设备壁纸中提取配色方案。';
 
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
-      'Switch to CodeWalk Classic to use wallpaper colors.';
+      '切换到 CodeWalk 经典以使用壁纸颜色。';
 
   @override
-  String get settingsBack => 'Back';
+  String get settingsBack => '返回';
 
   @override
   String get settingsBehaviorAutoupdateCaveat =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+      '使用“关于”来进行 CodeWalk 版本检查。此设置仅镜像了官方 OpenCode 的 `autoupdate` 配置。';
 
   @override
   String get settingsBehaviorAutoupdateHelp =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+      '控制上游 OpenCode 运行时更新，而不是 CodeWalk 应用的更新检查。';
 
   @override
-  String get settingsBehaviorCellularDataSaver => 'Cellular data saver';
+  String get settingsBehaviorCellularDataSaver => '蜂窝数据节省程序';
 
   @override
   String get settingsBehaviorConfigDeferred =>
-      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+      'CodeWalk 将在当前响应结束后应用此 OpenCode 设置。';
 
   @override
   String settingsBehaviorConfigUpdateFailed(String field) {
-    return 'Could not update the OpenCode $field.';
+    return '无法更新 OpenCode $field。';
   }
 
   @override
-  String get settingsBehaviorConversationUsername => 'Conversation username';
+  String get settingsBehaviorConversationUsername => '会话用户名';
 
   @override
   String get settingsBehaviorConversationUsernameHelp =>
-      'Custom display name shown in conversations instead of the system username.';
+      '会话中显示的自定义显示名称，而不是系统用户名。';
 
   @override
-  String get settingsBehaviorDataSaverActive => 'Active now on mobile data.';
+  String get settingsBehaviorDataSaverActive => '当前已在移动数据上激活。';
 
   @override
-  String get settingsBehaviorDataSaverCellularOnly =>
-      'Only applies when the connection is cellular/mobile.';
+  String get settingsBehaviorDataSaverCellularOnly => '仅在连接为蜂窝/移动网络时适用。';
 
   @override
   String get settingsBehaviorDataSaverDescription =>
-      'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes.';
+      '通过停止后台下载并限制前台自动刷新，减少自动移动数据的使用。';
 
   @override
-  String get settingsBehaviorDataSaverWaiting =>
-      'Waiting for the next mobile-data sync window.';
+  String get settingsBehaviorDataSaverWaiting => '正在等待下一个移动数据同步窗口。';
 
   @override
-  String get settingsBehaviorDefaultAgent => 'Default agent';
+  String get settingsBehaviorDefaultAgent => '默认 agent';
 
   @override
-  String get settingsBehaviorDefaultAgentHelp =>
-      'Primary agent used when no agent is explicitly chosen.';
+  String get settingsBehaviorDefaultAgentHelp => '在未明确选择 agent 时使用的主要 agent。';
 
   @override
-  String get settingsBehaviorDefaultModel => 'Default model';
+  String get settingsBehaviorDefaultModel => '默认模型';
 
   @override
-  String get settingsBehaviorDefaultModelHelp =>
-      'Shared across OpenCode clients through config.';
+  String get settingsBehaviorDefaultModelHelp => '通过配置在 OpenCode 客户端之间共享。';
 
   @override
-  String get settingsBehaviorDescription =>
-      'OpenCode defaults, provenance, and composer sync safety';
+  String get settingsBehaviorDescription => 'OpenCode 默认设置、凭证以及 composer 同步安全';
 
   @override
-  String get settingsBehaviorEnableDataSaver => 'Enable cellular data saver';
+  String get settingsBehaviorEnableDataSaver => '启用蜂窝数据节省程序';
 
   @override
-  String get settingsBehaviorMultiDeviceSync =>
-      'Enable experimental multi-device sync';
+  String get settingsBehaviorMultiDeviceSync => '启用实验性多设备同步';
 
   @override
   String get settingsBehaviorMultiDeviceSyncDescription =>
-      'Sync composer selection (agent/model/variant) with the active server config.';
+      '将 composer 选择（agent/model/variant）与活动服务器配置同步。';
 
   @override
   String get settingsBehaviorMultiDeviceSyncWarning =>
-      'Can abort ongoing sessions when working in more than one session at the same time.';
+      '在同时进行多个会话时，可能会中止正在进行的会话。';
 
   @override
-  String get settingsBehaviorNoAgents => 'No agents found';
+  String get settingsBehaviorNoAgents => '未找到 agent';
 
   @override
-  String get settingsBehaviorNoModels => 'No models found';
+  String get settingsBehaviorNoModels => '未找到模型';
 
   @override
-  String get settingsBehaviorOpenCodeAutoupdate => 'OpenCode auto-update';
+  String get settingsBehaviorOpenCodeAutoupdate => 'OpenCode 自动更新';
 
   @override
-  String get settingsBehaviorOpenCodeDefaults => 'OpenCode-backed defaults';
+  String get settingsBehaviorOpenCodeDefaults => '由 OpenCode 支持的默认设置';
 
   @override
   String get settingsBehaviorOpenCodeDefaultsDescription =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      '这些值会写入活动服务器上的 `/config`，并与官方 OpenCode 共享配置匹配。';
 
   @override
-  String get settingsBehaviorOpenCodeSnapshots => 'OpenCode snapshots';
+  String get settingsBehaviorOpenCodeSnapshots => 'OpenCode 快照';
 
   @override
   String get settingsBehaviorOpenCodeSnapshotsDescription =>
-      'Keep upstream git-backed snapshots enabled for undo/redo and recovery history.';
+      '保持启用上游基于 git 的快照，以支持撤销/重做和恢复历史记录。';
 
   @override
   String get settingsBehaviorPermissionDeferred =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+      '高级权限规则编辑目前不在“设置”中，并推迟到以后的对等性工作。';
 
   @override
-  String get settingsBehaviorPermissionProvenance =>
-      'Permission handling provenance';
+  String get settingsBehaviorPermissionProvenance => '权限处理凭证';
 
   @override
   String get settingsBehaviorPermissionProvenanceDescription =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      '官方 OpenCode 权限策略在 `opencode.json` 中配置，每个工具有允许/询问/拒绝规则。CodeWalk 保留了官方的权限请求卡，并添加了一个经过批准的 ADR-023 例外：composer 自动批准切换无条件地以 `Always` 和 `remember: true` 进行回复，以创建持久的会话范围授权，并在 Android 后台工作进程中保持相同的线程范围连续性路径处于活动状态。';
 
   @override
-  String get settingsBehaviorRefreshDefaults => 'Refresh defaults';
+  String get settingsBehaviorRefreshDefaults => '刷新默认值';
 
   @override
-  String get settingsBehaviorSaveUsername => 'Save username';
+  String get settingsBehaviorSaveUsername => '保存用户名';
 
   @override
-  String get settingsBehaviorSearchAutoupdate => 'Search auto-update mode';
+  String get settingsBehaviorSearchAutoupdate => '搜索自动更新模式';
 
   @override
-  String get settingsBehaviorSearchDefaultAgent => 'Search default agent';
+  String get settingsBehaviorSearchDefaultAgent => '搜索默认 agent';
 
   @override
-  String get settingsBehaviorSearchDefaultModel => 'Search default model';
+  String get settingsBehaviorSearchDefaultModel => '搜索默认模型';
 
   @override
-  String get settingsBehaviorSearchShareMode => 'Search sharing mode';
+  String get settingsBehaviorSearchShareMode => '搜索共享模式';
 
   @override
-  String get settingsBehaviorSearchSmallModel => 'Search small model';
+  String get settingsBehaviorSearchSmallModel => '搜索小型模型';
 
   @override
-  String get settingsBehaviorShareMode => 'OpenCode sharing default';
+  String get settingsBehaviorShareMode => 'OpenCode 默认共享方式';
 
   @override
   String get settingsBehaviorShareModeCaveat =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode\'s default sharing policy.';
+      '使用聊天级别的共享操作现在发布一个会话。此设置仅会更改 OpenCode 的默认共享策略。';
 
   @override
   String get settingsBehaviorShareModeHelp =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+      '控制官方全局的 `share` 配置，而不是单个聊天的共享按钮。';
 
   @override
-  String get settingsBehaviorSmallModel => 'Small model';
+  String get settingsBehaviorSmallModel => '小型模型';
 
   @override
-  String get settingsBehaviorSmallModelAutoFallback => 'Automatic fallback';
+  String get settingsBehaviorSmallModelAutoFallback => '自动回退';
 
   @override
   String get settingsBehaviorSmallModelFallbackActive =>
-      'OpenCode automatic fallback is active because `small_model` is unset.';
+      '由于未设置 `small_model`，OpenCode 自动回退已激活。';
 
   @override
-  String get settingsBehaviorSmallModelHelp =>
-      'Used for lightweight tasks like title generation.';
+  String get settingsBehaviorSmallModelHelp => '用于轻量级任务，例如标题生成。';
 
   @override
   String get settingsBehaviorSmallModelResetCaveat =>
-      'Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '将 `small_model` 重置为自动回退仍需要从应用外部编辑配置，因为 `/config` 补丁更新无法移除键。';
 
   @override
   String get settingsBehaviorSnapshotCaveat =>
-      'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.';
+      '这控制的是 OpenCode 快照存储和撤销/重做支持，而不是 CodeWalk 本地缓存快照。';
 
   @override
-  String get settingsBehaviorTitle => 'Behavior';
+  String get settingsBehaviorTitle => '行为';
 
   @override
   String get settingsBehaviorUsernameFallback =>
-      'OpenCode uses the system username because `username` is unset.';
+      '由于未设置 `username`，OpenCode 将使用系统用户名。';
 
   @override
   String get settingsBehaviorUsernamePatchCaveat =>
-      'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '将 `username` 重置为系统默认值仍需要从应用外部编辑配置，因为 `/config` 补丁更新无法移除键。';
 
   @override
-  String get settingsConfigRefreshFailed =>
-      'Updated the server setting, but could not refresh chat providers.';
+  String get settingsConfigRefreshFailed => '已更新服务器设置，但无法刷新聊天提供商。';
 
   @override
   String get settingsConfigUpdateDeferred =>
-      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+      'CodeWalk 将在当前响应完成后应用此 OpenCode 设置。';
 
   @override
   String get settingsConversationUsername => '对话用户名';
@@ -3038,31 +2959,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsDefaultModel => '默认模型';
 
   @override
-  String get settingsLanguageDescription =>
-      'Choose the language used by CodeWalk. System default follows your device language.';
+  String get settingsLanguageDescription => '选择 CodeWalk 使用的语言。系统默认会遵循您的设备语言。';
 
   @override
-  String get settingsLanguageEmptyText => 'No languages found';
+  String get settingsLanguageEmptyText => '未找到语言';
 
   @override
-  String get settingsLanguageFieldHelper =>
-      'Applies immediately and persists across restarts.';
+  String get settingsLanguageFieldHelper => '立即生效并跨重启持久化。';
 
   @override
-  String get settingsLanguageFieldLabel => 'App language';
+  String get settingsLanguageFieldLabel => '应用语言';
 
   @override
-  String get settingsLanguageSearchHint => 'Search languages';
+  String get settingsLanguageSearchHint => '搜索语言';
 
   @override
-  String get settingsLanguageSystemDefault => 'System default';
+  String get settingsLanguageSystemDefault => '系统默认';
 
   @override
-  String get settingsLanguageTitle => 'Language';
+  String get settingsLanguageTitle => '语言';
 
   @override
-  String get settingsLogsDescription =>
-      'Runtime diagnostics and troubleshooting data';
+  String get settingsLogsDescription => '运行时诊断和故障排除数据';
 
   @override
   String get settingsLogsTitle => 'Registros';
@@ -3071,182 +2989,166 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNoAgentsFound => '未找到智能体';
 
   @override
-  String get settingsNotificationsAgentSubtitle => 'When a response finishes';
+  String get settingsNotificationsAgentSubtitle => '当响应结束时';
 
   @override
-  String get settingsNotificationsAgentUpdates => 'Agent updates';
+  String get settingsNotificationsAgentUpdates => 'Agent 更新';
 
   @override
-  String get settingsNotificationsAnotherConversation => 'Another conversation';
+  String get settingsNotificationsAnotherConversation => '另一个会话';
 
   @override
-  String get settingsNotificationsAppInBackground => 'App in background';
+  String get settingsNotificationsAppInBackground => '应用在后台';
 
   @override
-  String get settingsNotificationsBackgroundAlerts =>
-      'Android background alerts';
+  String get settingsNotificationsBackgroundAlerts => 'Android 后台警报';
 
   @override
-  String get settingsNotificationsBackgroundBehavior => 'Background behavior';
+  String get settingsNotificationsBackgroundBehavior => '后台行为';
 
   @override
   String get settingsNotificationsBackgroundBehaviorDescription =>
-      'Choose how CodeWalk behaves after the app leaves the foreground.';
+      '选择 CodeWalk 在应用离开前台后的行为方式。';
 
   @override
   String get settingsNotificationsBackgroundDescription =>
-      'Use low-data background monitoring for response completions, permission requests, questions, and errors while the app is not on screen.';
+      '在应用未处于屏幕前端时，对响应完成、权限请求、问题和错误使用低数据后台监控。';
 
   @override
-  String get settingsNotificationsBackgroundToggle =>
-      'Background alerts on Android';
+  String get settingsNotificationsBackgroundToggle => 'Android 后台警报';
 
   @override
   String get settingsNotificationsBackgroundToggleDescription =>
-      'Turn off all Android background checks and hide the persistent monitor notification.';
+      '关闭所有 Android 后台检查并隐藏持久的监控通知。';
 
   @override
   String get settingsNotificationsBatteryDescription =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      '如果通知仅在重新打开应用时到达，请允许 CodeWalk 在此设备上不受优化限制运行。';
 
   @override
-  String get settingsNotificationsBatteryDisabled =>
-      'Battery optimization is disabled for CodeWalk.';
+  String get settingsNotificationsBatteryDisabled => '已为 CodeWalk 禁用电池优化。';
 
   @override
-  String get settingsNotificationsBatteryEnabled =>
-      'Battery optimization is enabled. Some devices may delay background alerts.';
+  String get settingsNotificationsBatteryEnabled => '已启用电池优化。某些设备可能会延迟后台警报。';
 
   @override
-  String get settingsNotificationsBatteryOptimization =>
-      'Android battery optimization';
+  String get settingsNotificationsBatteryOptimization => 'Android 电池优化';
 
   @override
-  String get settingsNotificationsBatteryUnknown =>
-      'Could not read battery optimization status yet.';
+  String get settingsNotificationsBatteryUnknown => '尚无法读取电池优化状态。';
 
   @override
-  String get settingsNotificationsChooseAudioFile => 'Choose audio file';
+  String get settingsNotificationsChooseAudioFile => '选择音频文件';
 
   @override
-  String get settingsNotificationsChooseSystemSound => 'Choose system sound';
+  String get settingsNotificationsChooseSystemSound => '选择系统声音';
 
   @override
-  String get settingsNotificationsCloseToTray => 'Close to tray';
+  String get settingsNotificationsCloseToTray => '关闭至系统托盘';
 
   @override
-  String get settingsNotificationsCloseToTrayDescription =>
-      'Hide window and keep running in system tray.';
+  String get settingsNotificationsCloseToTrayDescription => '隐藏窗口并继续在系统托盘中运行。';
 
   @override
-  String get settingsNotificationsDescription =>
-      'Per-category notify and sound controls';
+  String get settingsNotificationsDescription => '按类别的通知和声音控制';
 
   @override
-  String get settingsNotificationsDisableOptimization => 'Disable optimization';
+  String get settingsNotificationsDisableOptimization => '禁用优化';
 
   @override
-  String get settingsNotificationsErrors => 'Errors';
+  String get settingsNotificationsErrors => '错误';
 
   @override
-  String get settingsNotificationsErrorsSubtitle =>
-      'When a session reports a failure';
+  String get settingsNotificationsErrorsSubtitle => '当会话报告失败时';
 
   @override
-  String get settingsNotificationsJustClose => 'Just close';
+  String get settingsNotificationsJustClose => '直接关闭';
 
   @override
-  String get settingsNotificationsJustCloseDescription =>
-      'Exit the application completely.';
+  String get settingsNotificationsJustCloseDescription => '完全退出应用程序。';
 
   @override
-  String get settingsNotificationsKeepLive => 'Keep alerts live for 3 min';
+  String get settingsNotificationsKeepLive => '保持警报活跃 3 分钟';
 
   @override
   String get settingsNotificationsKeepLiveDescription =>
-      'When a response is already running, keep realtime active briefly after leaving the app.';
+      '当响应已在运行时，在退出应用后简短保持实时连接活跃。';
 
   @override
-  String get settingsNotificationsLocal => 'Local';
+  String get settingsNotificationsLocal => '本地';
 
   @override
-  String get settingsNotificationsMinimizeWhenClose => 'Minimize when close';
+  String get settingsNotificationsMinimizeWhenClose => '关闭时最小化';
 
   @override
   String get settingsNotificationsMinimizeWhenCloseDescription =>
-      'Minimize to taskbar/dock and keep running.';
+      '最小化到任务栏/程序坞并继续运行。';
 
   @override
-  String get settingsNotificationsNoCondition =>
-      'If no condition is selected, alerts are allowed in any context.';
+  String get settingsNotificationsNoCondition => '如果未选择任何条件，则在任何上下文中均允许警报。';
 
   @override
-  String get settingsNotificationsNotify => 'Notify';
+  String get settingsNotificationsNotify => '通知';
 
   @override
-  String get settingsNotificationsNotifyOnlyWhen => 'Notify only when';
+  String get settingsNotificationsNotifyOnlyWhen => '仅当以下情况时通知';
 
   @override
-  String get settingsNotificationsOpenBatterySettings =>
-      'Open battery settings';
+  String get settingsNotificationsOpenBatterySettings => '打开电池设置';
 
   @override
-  String get settingsNotificationsPermissions => 'Permissions and questions';
+  String get settingsNotificationsPermissions => '权限与问题';
 
   @override
-  String get settingsNotificationsPermissionsSubtitle =>
-      'When tools request your input';
+  String get settingsNotificationsPermissionsSubtitle => '当工具请求您的输入时';
 
   @override
-  String get settingsNotificationsPreview => 'Preview';
+  String get settingsNotificationsPreview => '预览';
 
   @override
-  String get settingsNotificationsRefreshStatus => 'Refresh status';
+  String get settingsNotificationsRefreshStatus => '刷新状态';
 
   @override
-  String get settingsNotificationsSearchSoundType => 'Search sound type';
+  String get settingsNotificationsSearchSoundType => '搜索声音类型';
 
   @override
-  String get settingsNotificationsSectionDescription =>
-      'Control when alerts appear and when they can play sound.';
+  String get settingsNotificationsSectionDescription => '控制提醒出现的时间以及何时可以播放声音。';
 
   @override
-  String get settingsNotificationsSectionTitle => 'Notifications';
+  String get settingsNotificationsSectionTitle => '通知';
 
   @override
   String settingsNotificationsSelectedSound(String label) {
-    return 'Selected: $label';
+    return '已选择: $label';
   }
 
   @override
-  String get settingsNotificationsServer => 'Server';
+  String get settingsNotificationsServer => '服务器';
 
   @override
-  String get settingsNotificationsSound => 'Sound';
+  String get settingsNotificationsSound => '声音';
 
   @override
-  String get settingsNotificationsSoundOnlyWhen => 'Sound only when';
+  String get settingsNotificationsSoundOnlyWhen => '仅当以下情况时播放声音';
 
   @override
-  String get settingsNotificationsSoundType => 'Sound type';
+  String get settingsNotificationsSoundType => '声音类型';
 
   @override
-  String get settingsNotificationsSyncInfo =>
-      'Some category on/off toggles are synced from /config on the active server.';
+  String get settingsNotificationsSyncInfo => '某些类别的开关已与活动服务器上的 /config 同步。';
 
   @override
   String get settingsNotificationsSyncInfoLocal =>
-      'Current server does not expose notification toggles in /config; local values are active.';
+      '当前服务器未在 /config 中暴露通知开关；本地值处于活动状态。';
 
   @override
-  String get settingsNotificationsSystemSoundPickerTitle =>
-      'Choose system sound';
+  String get settingsNotificationsSystemSoundPickerTitle => '选择系统声音';
 
   @override
-  String get settingsNotificationsTitle => 'Notifications';
+  String get settingsNotificationsTitle => '通知';
 
   @override
-  String get settingsNotificationsWhenClosing => 'When closing the window';
+  String get settingsNotificationsWhenClosing => '当关闭窗口时';
 
   @override
   String get settingsOpenCodeAutoUpdate => 'OpenCode 自动更新';
@@ -3255,36 +3157,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsOpenCodeSharingDefault => 'OpenCode 默认共享';
 
   @override
-  String get settingsReadAloudEnabled => 'Read aloud';
+  String get settingsReadAloudEnabled => '朗读';
 
   @override
-  String get settingsReadAloudEnabledDescription =>
-      'Show a read-aloud button on assistant messages.';
+  String get settingsReadAloudEnabledDescription => '在助手消息上显示朗读按钮。';
 
   @override
-  String get settingsReadAloudPitch => 'Pitch';
+  String get settingsReadAloudPitch => '音调';
 
   @override
-  String get settingsReadAloudPitchDescription => 'Adjust the voice pitch.';
+  String get settingsReadAloudPitchDescription => '调整语音音调。';
 
   @override
-  String get settingsReadAloudSectionDescription =>
-      'Read assistant responses aloud. Configure speed, pitch, and voice.';
+  String get settingsReadAloudSectionDescription => '朗读助手响应。配置语速、音调和语音。';
 
   @override
-  String get settingsReadAloudSectionTitle => 'Text to speech';
+  String get settingsReadAloudSectionTitle => '文字转语音';
 
   @override
-  String get settingsReadAloudSpeed => 'Speed';
+  String get settingsReadAloudSpeed => '语速';
 
   @override
-  String get settingsReadAloudSpeedDescription => 'Adjust the speaking rate.';
+  String get settingsReadAloudSpeedDescription => '调整说话语速。';
 
   @override
-  String get settingsReadAloudVoice => 'Voice';
+  String get settingsReadAloudVoice => '语音';
 
   @override
-  String get settingsReadAloudVoiceHint => 'Select a voice for read-aloud.';
+  String get settingsReadAloudVoiceHint => '选择用于朗读的语音。';
 
   @override
   String get settingsSearchAutoUpdateMode => '搜索自动更新模式';
@@ -3302,41 +3202,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSearchSmallModel => '搜索小模型';
 
   @override
-  String get settingsServersActive => 'Active';
+  String get settingsServersActive => '活动';
 
   @override
-  String get settingsServersChooseActive => 'Choose active server';
+  String get settingsServersChooseActive => '选择活动服务器';
 
   @override
-  String get settingsServersDefault => 'Default';
+  String get settingsServersDefault => '默认';
 
   @override
-  String get settingsServersDescription =>
-      'OpenCode servers and health routing';
+  String get settingsServersDescription => 'OpenCode 服务器和健康路由';
 
   @override
-  String get settingsServersTitle => 'Servers';
+  String get settingsServersTitle => '服务器';
 
   @override
-  String get settingsSetupWizard => 'Setup Wizard';
+  String get settingsSetupWizard => '设置向导';
 
   @override
-  String get settingsShortcutsDescription => 'Portable app key bindings';
+  String get settingsShortcutsDescription => '便携式应用按键绑定';
 
   @override
-  String get settingsShortcutsEdit => 'Edit shortcut';
+  String get settingsShortcutsEdit => '编辑快捷键';
 
   @override
-  String get settingsShortcutsKeyboard => 'Keyboard shortcuts';
+  String get settingsShortcutsKeyboard => '键盘快捷键';
 
   @override
-  String get settingsShortcutsReset => 'Reset shortcut';
+  String get settingsShortcutsReset => '重置快捷键';
 
   @override
-  String get settingsShortcutsSearch => 'Search shortcuts';
+  String get settingsShortcutsSearch => '搜索快捷键';
 
   @override
-  String get settingsShortcutsTitle => 'Shortcuts';
+  String get settingsShortcutsTitle => '快捷键';
 
   @override
   String get settingsSmallModel => '小模型';
@@ -3353,30 +3252,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSoundPickerNotAvailable => '系统声音选择器在此平台上不可用。';
 
   @override
-  String get settingsSpeechDescription =>
-      'Engine, silence timeout, and model options';
+  String get settingsSpeechDescription => '引擎、静音超时和模型选项';
 
   @override
-  String get settingsSpeechRefreshStatus => 'Refresh status';
+  String get settingsSpeechRefreshStatus => '刷新状态';
 
   @override
   String settingsSpeechSilenceTimeout(String value) {
-    return 'Silence timeout: ${value}s';
+    return '静音超时: $value秒';
   }
 
   @override
-  String get settingsSpeechTitle => 'Speech to text';
+  String get settingsSpeechTitle => '语音转文本';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => '设置';
 
   @override
-  String get settingsUsernameClearHint =>
-      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+  String get settingsUsernameClearHint => '清除 OpenCode 会话用户名后，仍需在应用外部编辑配置。';
 
   @override
-  String get settingsUsernameEnterHint =>
-      'Enter a username to save a custom OpenCode conversation name.';
+  String get settingsUsernameEnterHint => '输入用户名以保存自定义 OpenCode 会话名称。';
 
   @override
   String get settingsUsernameResetExplanation =>
@@ -3393,74 +3289,74 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setupDebugBun2 => 'Bun';
 
   @override
-  String get setupDebugCapturedSetupDetails => 'No captured setup details yet';
+  String get setupDebugCapturedSetupDetails => '尚无捕获的设置详情';
 
   @override
-  String get setupDebugCapturedSetupLogs => 'Captured setup logs';
+  String get setupDebugCapturedSetupLogs => '已捕获的设置日志';
 
   @override
-  String get setupDebugClear => 'Clear setup debug';
+  String get setupDebugClear => '清除设置调试信息';
 
   @override
-  String get setupDebugClearSetupDebug => 'Clear setup debug';
+  String get setupDebugClearSetupDebug => '清除设置调试';
 
   @override
   String get setupDebugCodeWalkCaptureEnough =>
-      'If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:';
+      '如果 CodeWalk 未捕获到足够的上下文，请直接检查官方 OpenCode 日志和运行状况端点：';
 
   @override
-  String get setupDebugCommandPath => 'Command path';
+  String get setupDebugCommandPath => '命令路径';
 
   @override
-  String get setupDebugCommandPath2 => 'Command path';
+  String get setupDebugCommandPath2 => '命令路径';
 
   @override
-  String get setupDebugCopy => 'Copy setup debug';
+  String get setupDebugCopy => '复制设置调试信息';
 
   @override
-  String get setupDebugCopySetupDebug => 'Copy setup debug';
+  String get setupDebugCopySetupDebug => '复制设置调试';
 
   @override
-  String get setupDebugCurrentStatus => 'Current status';
+  String get setupDebugCurrentStatus => '当前状态';
 
   @override
-  String get setupDebugDiagnosticsLoading => 'Diagnostics are still loading.';
+  String get setupDebugDiagnosticsLoading => '诊断仍在加载中。';
 
   @override
-  String get setupDebugEnvironment => 'Environment diagnostics';
+  String get setupDebugEnvironment => '环境诊断';
 
   @override
-  String get setupDebugEnvironmentDiagnostics => 'Environment diagnostics';
+  String get setupDebugEnvironmentDiagnostics => '环境诊断';
 
   @override
-  String get setupDebugFocusedOpenCodeSetup => 'Focused on OpenCode setup';
+  String get setupDebugFocusedOpenCodeSetup => '专注于 OpenCode 设置';
 
   @override
-  String get setupDebugInstallDir => 'Install directory';
+  String get setupDebugInstallDir => '安装目录';
 
   @override
-  String get setupDebugInstallDirectory => 'Install directory';
+  String get setupDebugInstallDirectory => '安装目录';
 
   @override
-  String get setupDebugLatestLocalServer => 'Latest local server output';
+  String get setupDebugLatestLocalServer => '最新本地服务器输出';
 
   @override
-  String get setupDebugLogs => 'Captured setup logs';
+  String get setupDebugLogs => '捕获的设置日志';
 
   @override
-  String get setupDebugManual => 'Manual troubleshooting';
+  String get setupDebugManual => '手动问题排查';
 
   @override
-  String get setupDebugManualTroubleshooting => 'Manual troubleshooting';
+  String get setupDebugManualTroubleshooting => '手动排障';
 
   @override
-  String get setupDebugNetwork => 'Network';
+  String get setupDebugNetwork => '网络';
 
   @override
-  String get setupDebugNetwork2 => 'Network';
+  String get setupDebugNetwork2 => '网络';
 
   @override
-  String get setupDebugNoDetails => 'No captured setup details yet';
+  String get setupDebugNoDetails => '暂未捕获到设置详情';
 
   @override
   String get setupDebugNode => 'Node.js';
@@ -3481,27 +3377,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setupDebugOpenCode2 => 'OpenCode';
 
   @override
-  String get setupDebugOpenCodeSetupDebug => 'OpenCode Setup Debug';
+  String get setupDebugOpenCodeSetupDebug => 'OpenCode 设置调试';
 
   @override
-  String get setupDebugPlatform => 'Platform';
+  String get setupDebugPlatform => '平台';
 
   @override
-  String get setupDebugPlatform2 => 'Platform';
+  String get setupDebugPlatform2 => '平台';
 
   @override
   String get setupDebugRunDiagnosticsTry =>
-      'Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.';
+      '运行诊断、尝试安装方法或尝试设置流程，以在此处捕获 OpenCode 特定的排障详情。';
 
   @override
   String get setupDebugScreenCoversOpenCode =>
-      'This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.';
+      '此屏幕仅涵盖 OpenCode 安装、诊断 and 本地设置排障。一般 CodeWalk 运行时问题请使用“应用日志”。';
 
   @override
-  String get setupDebugServerOutput => 'Latest local server output';
+  String get setupDebugServerOutput => '最新本地服务器输出';
 
   @override
-  String get setupDebugStatus => 'Current status';
+  String get setupDebugStatus => '当前状态';
 
   @override
   String setupDebugTimeEntrySource(String source, String time) {
@@ -3509,13 +3405,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get setupDebugTimeline => 'Timeline';
+  String get setupDebugTimeline => '时间线';
 
   @override
-  String get setupDebugTimeline2 => 'Timeline';
+  String get setupDebugTimeline2 => '时间线';
 
   @override
-  String get setupDebugTitle => 'Focused on OpenCode setup';
+  String get setupDebugTitle => '聚焦于 OpenCode 设置';
 
   @override
   String get setupDebugWSL => 'WSL';
@@ -3626,7 +3522,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shortcutToggleVoiceInputDesc => '在编辑器中开始或停止语音听写';
 
   @override
-  String get shortcutsApply => 'Apply';
+  String get shortcutsApply => '应用';
 
   @override
   String shortcutsConflictConflict(String conflict) {
@@ -3634,14 +3530,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get shortcutsKeyboardShortcuts => 'Keyboard shortcuts';
+  String get shortcutsKeyboardShortcuts => '键盘快捷键';
 
   @override
-  String get shortcutsReset => 'Reset all';
+  String get shortcutsReset => '全部重置';
 
   @override
-  String get shortcutsSearchEditBindings =>
-      'Search, edit bindings, and resolve conflicts before saving.';
+  String get shortcutsSearchEditBindings => '在保存前进行搜索、编辑绑定并解决冲突。';
 
   @override
   String shortcutsSetShortcutWidget(String label) {
@@ -3650,14 +3545,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get shortcutsTheseBindingsStored =>
-      'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.';
+      '这些绑定存储在 CodeWalk 中用于当前应用运行时，不会修改 OpenCode `tui.json` 按键绑定。';
 
   @override
-  String get speechAutoStopSilence => 'Auto-stop silence timeout';
+  String get speechAutoStopSilence => '自动停止静音超时';
 
   @override
-  String get speechChooseRecognitionEngine =>
-      'Choose the recognition engine, silence timeout, and model options.';
+  String get speechChooseRecognitionEngine => '选择识别引擎、静音超时和模型选项。';
 
   @override
   String speechDesktopOnly(String service) {
@@ -3665,17 +3559,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get speechDownload => 'Download';
+  String get speechDownload => '下载';
 
   @override
-  String get speechEngine => 'Engine';
+  String get speechEngine => '引擎';
 
   @override
-  String get speechInstalledLanguages => 'Installed languages';
+  String get speechInstalledLanguages => '已安装的语言';
 
   @override
-  String get speechListeningStopsAutomatically =>
-      'Listening stops automatically after this many seconds of silence.';
+  String get speechListeningStopsAutomatically => '静音达到此秒数后将自动停止聆听。';
 
   @override
   String get speechMicPermissionDisabled => '麦克风权限已禁用。';
@@ -3689,43 +3582,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speechMoonshine => 'Moonshine';
 
   @override
-  String get speechMoonshineModelsDesktop => 'Moonshine models (desktop)';
+  String get speechMoonshineModelsDesktop => 'Moonshine 模型（桌面端）';
 
   @override
   String get speechMoonshineStaysDownloadable =>
-      'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.';
+      'Moonshine 保持可下载状态，不包含在应用包中。为此桌面设备选择一个模型，如果日后需要收回空间，可以将其删除。';
 
   @override
-  String get speechNative => 'Native';
+  String get speechNative => '原生';
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.';
+      '在此应用的 Linux 系统上已禁用原生 STT。Parakeet 是新安装的默认引擎。';
 
   @override
   String get speechNativeSTTWorks =>
-      'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.';
+      '在启用操作系统语音服务时，原生 STT 可以在 Windows 上工作。如果原生初始化失败，CodeWalk 会自动回退到 Sherpa。请检查 Windows 麦克风隐私、联机语音识别以及已安装的语音语言包。';
 
   @override
   String get speechNativeStartsFaster =>
-      'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.';
+      '原生引擎启动更快。Sherpa 完全在设备上运行，具有更繁重的设置和更深度的模型控制。';
 
   @override
   String get speechParakeet => 'Parakeet';
 
   @override
-  String get speechParakeetModelsDesktop => 'Parakeet models (desktop)';
+  String get speechParakeetModelsDesktop => 'Parakeet 模型（桌面端）';
 
   @override
   String get speechParakeetStaysDownloadable =>
-      'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.';
+      'Parakeet 保持可下载状态，不包含在应用包中。它目前提供一个针对 25 种欧洲语言优化的多语言模型。';
 
   @override
-  String get speechPickLanguagePacks =>
-      'Pick language packs and download/remove models for on-device recognition.';
+  String get speechPickLanguagePacks => '选择语言包并下载/删除模型以进行设备端识别。';
 
   @override
-  String get speechRemove => 'Remove';
+  String get speechRemove => '移除';
 
   @override
   String speechRuntimeFailed(String service) {
@@ -3733,31 +3625,30 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get speechSelectSherpaAbove =>
-      'Select Sherpa above to manage language packs and download models.';
+  String get speechSelectSherpaAbove => '在上方选择 Sherpa 以管理语言包并下载模型。';
 
   @override
   String get speechSenseVoice => 'SenseVoice';
 
   @override
-  String get speechSenseVoiceModelsDesktop => 'SenseVoice models (desktop)';
+  String get speechSenseVoiceModelsDesktop => 'SenseVoice 模型（桌面端）';
 
   @override
   String get speechSenseVoiceStaysDownloadable =>
-      'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.';
+      'SenseVoice 保持可下载状态，不包含在应用包中。它是此处针对中文、粤语、日语、韩语和英语最强劲的桌面端选项。';
 
   @override
   String get speechSherpa => 'Sherpa';
 
   @override
   String get speechSherpaExperimentalFail =>
-      'Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.';
+      'Sherpa 是实验性的，在某些设备上可能会失败。如果您希望获得最稳定的行为，请首选“原生”。';
 
   @override
-  String get speechSherpaModelsLinux => 'Sherpa models (Linux)';
+  String get speechSherpaModelsLinux => 'Sherpa 模型（Linux）';
 
   @override
-  String get speechSpeechText => 'Speech to text';
+  String get speechSpeechText => '语音转文本';
 
   @override
   String speechUnavailableOnPlatform(String service) {
@@ -3795,7 +3686,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statusSyncDelayed => '同步延迟';
 
   @override
-  String get tailscaleNoPeers => 'No peers found';
+  String get tailscaleNoPeers => '未找到对等节点';
 
   @override
   String get tailscaleNotSupportedOnPlatform => '此平台不支持 Tailscale。';
@@ -3804,16 +3695,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tailscaleNotSupportedOnWindows => 'Windows 不支持 Tailscale。';
 
   @override
-  String get tailscalePeerOffline => 'offline';
+  String get tailscalePeerOffline => '离线';
 
   @override
-  String get tailscaleSelectPeer => 'Select a Tailscale peer';
+  String get tailscaleSelectPeer => '选择一个 Tailscale 对等节点';
 
   @override
   String get tailscaleWaitingAdminApproval => '此 Tailscale 节点正在等待管理员批准。';
 
   @override
-  String get terminalClose => 'Close terminal';
+  String get terminalClose => '关闭终端';
 
   @override
   String terminalConnectingTo(String serverName) {
@@ -3837,10 +3728,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalHide => '隐藏终端';
 
   @override
-  String get terminalMaximize => 'Maximize';
+  String get terminalMaximize => '最大化';
 
   @override
-  String get terminalMinimize => 'Minimize terminal';
+  String get terminalMinimize => '最小化终端';
 
   @override
   String get terminalNotAvailableYet => '嵌入式终端在此运行时中尚不可用。';
@@ -3858,10 +3749,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalOpenToConnect => '打开终端以连接到服务器项目终端。';
 
   @override
-  String get terminalReconnect => 'Reconnect terminal';
+  String get terminalReconnect => '重新连接终端';
 
   @override
-  String get terminalRestoreSize => 'Restore size';
+  String get terminalRestoreSize => '还原大小';
 
   @override
   String get terminalSelectServer => '在打开终端之前，请选择一个活动服务器。';
@@ -3870,55 +3761,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get terminalSessionClosed => '终端会话已关闭。';
 
   @override
-  String get terminalTerminal => 'Terminal';
+  String get terminalTerminal => '终端';
 
   @override
   String get terminalTitle => '终端';
 
   @override
-  String get terminalTryAgain => 'Try again';
+  String get terminalTryAgain => '重试';
 
   @override
-  String get toolAwaitingInput => 'Awaiting input';
+  String get toolAwaitingInput => '等待输入';
 
   @override
-  String get toolEditing => 'Editing';
+  String get toolEditing => '编辑中';
 
   @override
-  String get toolEditingFiles => 'Editing files';
+  String get toolEditingFiles => '正在编辑文件';
 
   @override
-  String get toolFinding => 'Finding';
+  String get toolFinding => '查找中';
 
   @override
-  String get toolFindingFiles => 'Finding files';
+  String get toolFindingFiles => '正在查找文件';
 
   @override
-  String get toolPresentationAwaitingInput => 'Awaiting input';
+  String get toolPresentationAwaitingInput => '等待输入';
 
   @override
-  String get toolPresentationEditing => 'Editing';
+  String get toolPresentationEditing => '正在编辑';
 
   @override
-  String get toolPresentationEditingFiles => 'Editing files';
+  String get toolPresentationEditingFiles => '正在编辑文件';
 
   @override
-  String get toolPresentationFinding => 'Finding';
+  String get toolPresentationFinding => '正在查找';
 
   @override
-  String get toolPresentationFindingFiles => 'Finding files';
+  String get toolPresentationFindingFiles => '正在查找文件';
 
   @override
-  String get toolPresentationReading => 'Reading';
+  String get toolPresentationReading => '正在读取';
 
   @override
-  String get toolPresentationReadingFile => 'Reading file';
+  String get toolPresentationReadingFile => '正在读取文件';
 
   @override
-  String get toolPresentationRunning => 'Running';
+  String get toolPresentationRunning => '正在运行';
 
   @override
-  String get toolPresentationRunningCommand => 'Running command';
+  String get toolPresentationRunningCommand => '正在运行命令';
 
   @override
   String toolPresentationRunningTool(String toolName) {
@@ -3926,140 +3817,137 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get toolPresentationSearching => 'Searching';
+  String get toolPresentationSearching => '正在搜索';
 
   @override
-  String get toolPresentationSearchingCode => 'Searching code';
+  String get toolPresentationSearchingCode => '正在搜索代码';
 
   @override
-  String get toolPresentationSearchingWeb => 'Searching the web';
+  String get toolPresentationSearchingWeb => '正在搜索网页';
 
   @override
   String get toolPresentationTool => '工具';
 
   @override
-  String get toolPresentationUpdatingTaskList => 'Updating task list';
+  String get toolPresentationUpdatingTaskList => '正在更新任务列表';
 
   @override
-  String get toolPresentationUpdatingTasks => 'Updating tasks';
+  String get toolPresentationUpdatingTasks => '正在更新任务';
 
   @override
-  String get toolPresentationWaitingInput => 'Waiting for your input';
+  String get toolPresentationWaitingInput => '等待您的输入';
 
   @override
-  String get toolPresentationWriting => 'Writing';
+  String get toolPresentationWriting => '正在写入';
 
   @override
-  String get toolPresentationWritingFile => 'Writing file';
+  String get toolPresentationWritingFile => '正在写入文件';
 
   @override
-  String get toolReading => 'Reading';
+  String get toolReading => '读取中';
 
   @override
-  String get toolReadingFile => 'Reading file';
+  String get toolReadingFile => '正在读取文件';
 
   @override
-  String get toolRunning => 'Running';
+  String get toolRunning => '运行中';
 
   @override
-  String get toolRunningCommand => 'Running command';
+  String get toolRunningCommand => '正在运行命令';
 
   @override
-  String get toolRunningTask => 'Running task';
+  String get toolRunningTask => '正在运行任务';
 
   @override
-  String get toolSearching => 'Searching';
+  String get toolSearching => '搜索中';
 
   @override
-  String get toolSearchingCode => 'Searching code';
+  String get toolSearchingCode => '正在搜索代码';
 
   @override
-  String get toolSearchingWeb => 'Searching the web';
+  String get toolSearchingWeb => '正在搜索网页';
 
   @override
-  String get toolUpdatingTaskList => 'Updating task list';
+  String get toolUpdatingTaskList => '正在更新任务列表';
 
   @override
-  String get toolUpdatingTasks => 'Updating tasks';
+  String get toolUpdatingTasks => '正在更新任务';
 
   @override
-  String get toolWaitingForInput => 'Waiting for your input';
+  String get toolWaitingForInput => '等待您的输入';
 
   @override
-  String get toolWriting => 'Writing';
+  String get toolWriting => '写入中';
 
   @override
-  String get toolWritingFile => 'Writing file';
+  String get toolWritingFile => '正在写入文件';
 
   @override
-  String get tourBack => 'Back';
+  String get tourBack => '返回';
 
   @override
-  String get tourSkip => 'Skip';
+  String get tourSkip => '跳过';
 
   @override
-  String get trayQuit => 'Quit';
+  String get trayQuit => '退出';
 
   @override
-  String get trayShow => 'Show';
+  String get trayShow => '显示';
 
   @override
-  String get useOAuthCloudflareAccess => 'Use OAuth (Cloudflare Access)';
+  String get useOAuthCloudflareAccess => '使用 OAuth (Cloudflare Access)';
 
   @override
   String get useOAuthCloudflareAccessSubtitle =>
-      'Opens a browser for Cloudflare Access Managed OAuth.';
+      '打开浏览器以进行 Cloudflare Access 托管式 OAuth。';
 
   @override
   String get useOAuthCloudflareAccessUnsupported =>
-      'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.';
+      '此平台不支持 Cloudflare Access OAuth。请改用基本身份验证。';
 
   @override
-  String get useTailscale => 'Use Tailscale';
+  String get useTailscale => '使用 Tailscale';
 
   @override
-  String get useTailscaleSubtitle =>
-      'Routes traffic through the Tailscale network without a system VPN.';
+  String get useTailscaleSubtitle => '在没有系统 VPN 的情况下通过 Tailscale 网络路由流量。';
 
   @override
-  String get useTailscaleUnsupported =>
-      'Tailscale is not supported on this platform.';
+  String get useTailscaleUnsupported => '此平台不支持 Tailscale。';
 
   @override
   String get utilityTitle => '实用工具';
 
   @override
-  String get workspaceBrowseDirs => 'Browse directories';
+  String get workspaceBrowseDirs => '浏览目录';
 
   @override
-  String get workspaceChooseFolderOpen =>
-      'Choose any folder to open as project context.';
+  String get workspaceChooseFolderOpen => '选择任意文件夹作为项目上下文打开。';
 
   @override
   String workspaceCloseProject(String project) {
-    return 'Close $project';
+    return '关闭 $project';
   }
 
   @override
-  String get workspaceFilterDirs => 'Filter directories';
+  String get workspaceFilterDirs => '过滤目录';
 
   @override
-  String get workspaceOpenFolder => 'Open folder';
+  String get workspaceOpenFolder => '打开文件夹';
 
   @override
-  String get workspaceOpenProjectFolder => 'Open project folder';
+  String get workspaceOpenProjectFolder => '打开项目文件夹';
 
   @override
-  String get workspaceProjectDirectory => 'Project directory';
+  String get workspaceProjectDirectory => '项目目录';
 
   @override
   String get workspaceProjectHint => '/repo/my-project';
 
   @override
   String workspaceRemoveFromHistory(String name) {
-    return 'Remove $name from history';
+    return '从历史记录中移除 $name';
   }
 
   @override
-  String get workspaceSuggestions => 'Suggestions';
+  String get workspaceSuggestions => '建议';
 }
