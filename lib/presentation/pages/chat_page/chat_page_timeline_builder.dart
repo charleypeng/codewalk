@@ -1225,7 +1225,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (chatProvider.state == ChatState.error &&
-        chatProvider.currentSession != null &&
+        chatProvider.currentSession == null &&
         chatProvider.messages.isEmpty) {
       final rawErrorMessage =
           chatProvider.errorMessage ?? context.l10n.errorAnErrorOccurred;
@@ -1265,7 +1265,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
     if (chatProvider.state == ChatState.error &&
         chatProvider.messages.isEmpty &&
-        chatProvider.currentSession == null) {
+        chatProvider.currentSession != null) {
       final rawErrorMessage =
           chatProvider.errorMessage ?? context.l10n.errorAnErrorOccurred;
       if (!_shouldInlineOfflineComposerBlock(
@@ -1289,7 +1289,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      context.l10n.chatCouldNotRefreshSession,
+                      context.l10n.chatRefreshConversation,
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),

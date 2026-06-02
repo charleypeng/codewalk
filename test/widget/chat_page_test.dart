@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:codewalk/core/config/feature_flags.dart';
 import 'package:codewalk/core/di/injection_container.dart' as di;
 import 'package:codewalk/core/errors/failures.dart';
+import 'package:codewalk/core/i18n/l10n_bridge.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
@@ -913,7 +914,7 @@ void main() {
       );
       expect(scaffoldState.isDrawerOpen, isTrue);
 
-      expect(find.text('Conversations'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatConversations), findsOneWidget);
 
       final targetSessionTile = find.byKey(
         const ValueKey<String>('chat_session_tile_ses_2'),
@@ -931,7 +932,7 @@ void main() {
         findsOneWidget,
       );
       expect(provider.currentSession?.id, 'ses_2');
-      expect(find.text('Conversations'), findsNothing);
+      expect(find.text(L10nBridge.current!.chatConversations), findsNothing);
       expect(scaffoldState.isDrawerOpen, isFalse);
     });
 
@@ -1738,7 +1739,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(provider.currentSession?.id, 'ses_other');
-        expect(find.text('Conversations'), findsNothing);
+        expect(find.text(L10nBridge.current!.chatConversations), findsNothing);
       },
     );
 
@@ -2004,7 +2005,7 @@ void main() {
       expect(find.text('Ctrl+M'), findsOneWidget);
       expect(find.text('Ctrl+T'), findsOneWidget);
       expect(find.text('Esc, Esc'), findsOneWidget);
-      expect(find.text('Conversations'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatConversations), findsOneWidget);
     });
 
     testWidgets('desktop sidebars can be hidden and restored from menu', (
@@ -2025,7 +2026,7 @@ void main() {
       await tester.pumpWidget(_testApp(provider, appProvider));
       await tester.pumpAndSettle();
 
-      expect(find.text('Conversations'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatConversations), findsOneWidget);
       expect(find.text('Files'), findsOneWidget);
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
 
@@ -2033,7 +2034,7 @@ void main() {
         find.byKey(const ValueKey<String>('hide_conversations_sidebar_button')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Conversations'), findsNothing);
+      expect(find.text(L10nBridge.current!.chatConversations), findsNothing);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('desktop_sidebars_menu_button')),
@@ -2046,7 +2047,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Conversations'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatConversations), findsOneWidget);
     });
 
     testWidgets('desktop sidebar toggles do not duplicate markdown code lines', (
@@ -5381,7 +5382,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Compact now'), findsOneWidget);
+    expect(find.text(L10nBridge.current!.chatPageStatusCompactNow), findsOneWidget);
     expect(find.text('Rate limits'), findsOneWidget);
     expect(find.text('Claude'), findsOneWidget);
     expect(find.text('OpenRouter'), findsOneWidget);
@@ -8301,7 +8302,7 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     await tester.pumpAndSettle();
 
     expect(find.text('Density and timeline bubble visibility'), findsNothing);
-    expect(find.text('Conversations'), findsOneWidget);
+    expect(find.text(L10nBridge.current!.chatConversations), findsOneWidget);
   });
 
   testWidgets('desktop shortcuts cycle recent model and variant', (
@@ -14020,9 +14021,9 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       await provider.loadMessages('ses_recoverable_error');
       await tester.pumpAndSettle();
 
-      expect(find.text('Could not refresh this conversation'), findsOneWidget);
-      expect(find.text('Keep working'), findsOneWidget);
-      expect(find.text('Retry refresh'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatRefreshConversation), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatKeepWorking), findsOneWidget);
+      expect(find.text(L10nBridge.current!.chatRetryRefresh), findsOneWidget);
       expect(find.text('Retry'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('chat_message_list')),
@@ -14076,8 +14077,8 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       await provider.loadMessages('ses_offline_block');
       await tester.pumpAndSettle();
 
-      expect(find.text('Could not refresh this conversation'), findsNothing);
-      expect(find.text('Retry refresh'), findsNothing);
+      expect(find.text(L10nBridge.current!.chatRefreshConversation), findsNothing);
+      expect(find.text(L10nBridge.current!.chatRetryRefresh), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('composer_block_reason_row')),
         findsOneWidget,
@@ -14145,8 +14146,8 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       await provider.loadMessages('ses_unhealthy_block');
       await tester.pumpAndSettle();
 
-      expect(find.text('Could not refresh this conversation'), findsNothing);
-      expect(find.text('Retry refresh'), findsNothing);
+      expect(find.text(L10nBridge.current!.chatRefreshConversation), findsNothing);
+      expect(find.text(L10nBridge.current!.chatRetryRefresh), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('composer_block_reason_row')),
         findsOneWidget,
@@ -14762,9 +14763,9 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     await tester.pump();
 
     expect(repository.abortSessionCallCount, 0);
-    expect(find.text('Double ESC to stop'), findsOneWidget);
+    expect(find.text(L10nBridge.current!.chatDoubleESCStop), findsOneWidget);
 
-    final hintFinder = find.text('Double ESC to stop');
+    final hintFinder = find.text(L10nBridge.current!.chatDoubleESCStop);
     final hintText = tester.widget<Text>(hintFinder);
     final hintContext = tester.element(hintFinder);
     expect(hintText.style?.fontWeight, FontWeight.w400);
@@ -14783,7 +14784,7 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pump();
 
-    expect(find.text('Double ESC to stop'), findsNothing);
+    expect(find.text(L10nBridge.current!.chatDoubleESCStop), findsNothing);
   });
 
   testWidgets('double ESC aborts active response with unfocused composer', (
@@ -14834,7 +14835,7 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     await tester.pump();
 
     expect(repository.abortSessionCallCount, 0);
-    expect(find.text('Double ESC to stop'), findsOneWidget);
+    expect(find.text(L10nBridge.current!.chatDoubleESCStop), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 300));
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);

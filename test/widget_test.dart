@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:codewalk/core/di/injection_container.dart' as di;
+import 'package:codewalk/core/i18n/l10n_bridge.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/chat_composer_draft.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
@@ -89,7 +90,7 @@ void main() {
     );
 
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.byTooltip('Start voice input'), findsOneWidget);
+    expect(find.byTooltip(L10nBridge.current!.chatStartVoiceInput), findsOneWidget);
     expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
     expect(find.byIcon(Symbols.keyboard_return_rounded), findsOneWidget);
 
@@ -1146,7 +1147,7 @@ void main() {
 
     final micButton = tester.widget<IconButton>(
       find.ancestor(
-        of: find.byTooltip('Start voice input'),
+        of: find.byTooltip(L10nBridge.current!.chatStartVoiceInput),
         matching: find.byType(IconButton),
       ),
     );
@@ -1176,7 +1177,7 @@ void main() {
 
     final micButton = tester.widget<IconButton>(
       find.ancestor(
-        of: find.byTooltip('Start voice input'),
+        of: find.byTooltip(L10nBridge.current!.chatStartVoiceInput),
         matching: find.byType(IconButton),
       ),
     );
