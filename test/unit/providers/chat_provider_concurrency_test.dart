@@ -793,7 +793,7 @@ void main() {
           provider = buildProvider(
             dioClient: dioClient,
             syncHealthCheckInterval: const Duration(seconds: 10),
-            abortSuppressionWindow: const Duration(milliseconds: 50),
+            abortSuppressionWindow: const Duration(milliseconds: 500),
           );
 
           final sendStreamController =
@@ -858,7 +858,7 @@ void main() {
             providerId: 'provider_b',
             modelId: 'model_b',
           );
-          await Future<void>.delayed(const Duration(milliseconds: 80));
+          await Future<void>.delayed(const Duration(milliseconds: 600));
 
           // Still blocked because session A has not published idle yet.
           expect(hasModelBPatch(), isFalse);

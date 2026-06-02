@@ -17,6 +17,7 @@ if command -v lcov >/dev/null 2>&1; then
     "lib/**/*.g.dart" \
     "**/generated_plugin_registrant.dart" \
     "lib/l10n/*" \
+    "lib/l10n/generated/*" \
     -o "$FILTERED_FILE" \
     --ignore-errors unused >/dev/null 2>&1 || {
     echo "lcov filtering failed, falling back to raw report."
