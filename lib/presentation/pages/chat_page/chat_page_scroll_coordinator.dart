@@ -33,7 +33,6 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
 
     if (distance <= _ChatPageState._scrollToBottomEpsilon) {
-      _suppressPostCompletionAutoSnap = false;
       if (_currentScrollOwner == _ScrollOwner.userDrag) {
         _setScrollOwner(_ScrollOwner.none);
       }

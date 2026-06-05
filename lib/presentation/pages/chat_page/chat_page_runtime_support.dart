@@ -415,7 +415,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _nextFrozenCompactionBoundaryId = null;
       _nextWasCompactingContext = false;
       _deferAssistantWorkCollapse = false;
-      _suppressPostCompletionAutoSnap = false;
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
       _restoreSettledAssistantWorkOwnership(
@@ -452,7 +451,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _nextWasCompactingContext = false;
       _wasCurrentSessionActivelyResponding = false;
       _deferAssistantWorkCollapse = false;
-      _suppressPostCompletionAutoSnap = false;
       _setScrollOwner(_ScrollOwner.none);
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
@@ -501,9 +499,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         compactionDecision.latestRevealableAssistantMessageId;
     final latestSettledAssistantWorkGroupId =
         compactionDecision.settledLatestAssistantWorkGroupId;
-    final latestTimelineMessageId = chatProvider.messages.isEmpty
-        ? null
-        : chatProvider.messages.last.id;
 
     if (isResponding) {
       _debugStartActiveTurnPassiveScrollTracking(sessionId);
@@ -512,7 +507,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       }
       _deferAssistantWorkCollapse =
           compactionDecision.shouldDeferLatestCollapse;
-      _suppressPostCompletionAutoSnap = false;
       _shouldRevealFinalAssistantOnCompletion = true;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
@@ -532,9 +526,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         _pendingFinalAssistantRevealAttempts = 0;
         if (latestRevealableAssistantMessageId != null &&
             _lastRevealedAssistantMessageId != latestRevealableAssistantMessageId) {
-          final latestMessage = chatProvider.messages.firstWhereOrNull(
-            (m) => m.id == latestRevealableAssistantMessageId,
-          );
+          ChatMessage? latestMessage;
+          for (final m in chatProvider.messages) {
+            if (m.id == latestRevealableAssistantMessageId) {
+              latestMessage = m;
+              break;
+            }
+          }
           if (latestMessage is AssistantMessage && latestMessage.isCompleted) {
             _lastRevealedAssistantMessageId = latestRevealableAssistantMessageId;
             if (_scrollFollowMode == _ScrollFollowMode.following) {
@@ -542,7 +540,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
               _pendingFinalAssistantRevealMessageId =
                   latestRevealableAssistantMessageId;
               _shouldRevealFinalAssistantOnCompletion = true;
-              _suppressPostCompletionAutoSnap = true;
               _traceFinalUi(
                 'viewport-policy-finished-schedule-final-reveal',
                 details:
@@ -969,7 +966,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _prepareForOutgoingUserMessage() {
-    _suppressPostCompletionAutoSnap = false;
     _deferAssistantWorkCollapse = true;
     _shouldRevealFinalAssistantOnCompletion = false;
     _pendingFinalAssistantRevealMessageId = null;
@@ -989,7 +985,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _jumpToLatestAndResumeAutoFollow() {
-    _suppressPostCompletionAutoSnap = false;
     _shouldRevealFinalAssistantOnCompletion = false;
     _pendingFinalAssistantRevealMessageId = null;
     _deferAssistantWorkCollapse = false;

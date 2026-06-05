@@ -30,7 +30,6 @@ extension _ChatPageLifecycle on _ChatPageState {
     final chatProvider = _chatProvider;
     if (chatProvider != null &&
         !chatProvider.isCurrentSessionActivelyResponding) {
-      _suppressPostCompletionAutoSnap = false;
       _shouldRevealFinalAssistantOnCompletion = false;
     }
     _scheduleAutoApprovePermissionDrain(reason: 'settings-changed');

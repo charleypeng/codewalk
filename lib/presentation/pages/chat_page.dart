@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -349,11 +348,7 @@ class _ChatPageState extends State<ChatPage>
   int _scrollToBottomRequestToken = 0;
   int _responseSettleFramesRemaining = 0;
   bool _wasCurrentSessionActivelyResponding = false;
-  // Cached values for _syncResponseViewportPolicy early-return guard.
-  int _lastSyncedMessagesVersion = -1;
-  bool _lastSyncedIsResponding = false;
   bool _deferAssistantWorkCollapse = false;
-  bool _suppressPostCompletionAutoSnap = false;
   bool _shouldRevealFinalAssistantOnCompletion = false;
   String? _pendingFinalAssistantRevealMessageId;
   String? _settledLatestAssistantWorkGroupId;
