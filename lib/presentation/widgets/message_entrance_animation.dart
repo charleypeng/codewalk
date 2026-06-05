@@ -192,7 +192,7 @@ class _PartEntranceAnimationState extends State<PartEntranceAnimation>
   @override
   void initState() {
     super.initState();
-    if (!widget.animate) {
+    if (!widget.animate || AppAnimations.messagePart == Duration.zero) {
       _completed = true;
     }
     _controller = AnimationController(
