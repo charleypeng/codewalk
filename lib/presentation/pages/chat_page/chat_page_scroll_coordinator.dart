@@ -229,13 +229,21 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
             continue;
           }
 
-          await _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: pass == 0
-                ? _ChatPageState._scrollToBottomFirstPassDuration
-                : _ChatPageState._scrollToBottomNextPassDuration,
-            curve: Curves.easeOut,
-          );
+          final targetDuration = pass == 0
+              ? _ChatPageState._scrollToBottomFirstPassDuration
+              : _ChatPageState._scrollToBottomNextPassDuration;
+
+          if (targetDuration == Duration.zero) {
+            _scrollController.jumpTo(
+              _scrollController.position.maxScrollExtent,
+            );
+          } else {
+            await _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: targetDuration,
+              curve: Curves.easeOut,
+            );
+          }
 
           if (!_canContinueScrollToBottomRequest(requestToken)) {
             return;

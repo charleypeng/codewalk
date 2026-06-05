@@ -687,12 +687,11 @@
 - **Then** main timeline entries appear directly without entrance transitions or stagger
 - **Then** existing history remains stable when reopening or switching sessions and does not replay arrival motion
 
-### Streamed tool parts animate inside visible assistant bubbles
+### Streamed tool parts render without slide motion
 
 - **Given** an assistant bubble is already visible and new tool/patch parts are appended during streaming
 - **When** those parts arrive
-- **Then** only newly appended parts use a short entrance transition inside the existing bubble
-- **Then** already-rendered parts do not restart their entrance animation on unrelated rebuilds
+- **Then** they fade in directly in their final position without any slide motion
 
 ### Reduced-motion accessibility disables entrance motion
 

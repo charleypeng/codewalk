@@ -204,7 +204,7 @@ class _PartEntranceAnimationState extends State<PartEntranceAnimation>
     );
     _slide = _controller.drive(
       Tween<Offset>(
-        begin: const Offset(0, 0.04),
+        begin: Offset.zero,
         end: Offset.zero,
       ).chain(CurveTween(curve: AppAnimations.standardCurve)),
     );

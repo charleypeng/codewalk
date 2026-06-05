@@ -16,7 +16,7 @@ class AppAnimations {
   // Per-role message entrance durations (WS4 bubble motion).
   static const Duration userBubble = Duration(milliseconds: 130);
   static const Duration assistantBubble = Duration(milliseconds: 180);
-  static const Duration messagePart = Duration(milliseconds: 180);
+  static const Duration messagePart = Duration.zero;
 
   // -- Stagger --
   static const Duration staggerDelay = Duration(milliseconds: 35);

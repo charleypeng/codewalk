@@ -76,7 +76,6 @@ import '../widgets/session_todo_list_widget.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings_page.dart';
 
-
 part 'chat_page_types_part.dart';
 part 'chat_page/chat_page_lifecycle.dart';
 part 'chat_page/chat_page_scroll_coordinator.dart';
@@ -186,12 +185,8 @@ class _ChatPageState extends State<ChatPage>
   static const double _jumpToFirstFabThreshold = 360;
   static const double _scrollToBottomEpsilon = 1;
   static const int _maxScrollToBottomPasses = 6;
-  static const Duration _scrollToBottomFirstPassDuration = Duration(
-    milliseconds: 260,
-  );
-  static const Duration _scrollToBottomNextPassDuration = Duration(
-    milliseconds: 140,
-  );
+  static const Duration _scrollToBottomFirstPassDuration = Duration.zero;
+  static const Duration _scrollToBottomNextPassDuration = Duration.zero;
   static const String _rootTreeCacheKey = '__root__';
   static const Duration _serverAlertGracePeriod = Duration(seconds: 10);
   static const Duration _unhealthySnackbarDebounce = Duration(seconds: 5);
@@ -223,9 +218,7 @@ class _ChatPageState extends State<ChatPage>
   );
   static const int _postOnboardingTourMaxAttempts = 20;
   static const double _composerStatusReservedHeight = 26;
-  static const Duration _finalAssistantRevealDuration = Duration(
-    milliseconds: 260,
-  );
+  static const Duration _finalAssistantRevealDuration = Duration.zero;
   static const double _finalAssistantRevealAlignment = 0.4;
   static const int _maxFinalAssistantRevealAttempts = 8;
   static const double _returnLatestRevealAlignment = 0.0;
@@ -233,17 +226,17 @@ class _ChatPageState extends State<ChatPage>
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   List<String> get _receivingTips => [
-        context.l10n.chatTipMentionFiles,
-        context.l10n.chatTipRenameConversation,
-        context.l10n.chatTipShellCommands,
-        context.l10n.chatTipSlashCommands,
-        context.l10n.chatTipLongPressSend,
-        context.l10n.chatTipContextKnob,
-        context.l10n.chatTipBeSpecific,
-        context.l10n.chatTipStepByStep,
-        context.l10n.chatTipProvideContext,
-        context.l10n.chatTipBreakTasks,
-      ];
+    context.l10n.chatTipMentionFiles,
+    context.l10n.chatTipRenameConversation,
+    context.l10n.chatTipShellCommands,
+    context.l10n.chatTipSlashCommands,
+    context.l10n.chatTipLongPressSend,
+    context.l10n.chatTipContextKnob,
+    context.l10n.chatTipBeSpecific,
+    context.l10n.chatTipStepByStep,
+    context.l10n.chatTipProvideContext,
+    context.l10n.chatTipBreakTasks,
+  ];
 
   final ScrollController _scrollController = ScrollController();
   final TimelineSearchService _timelineSearchService =
@@ -325,7 +318,8 @@ class _ChatPageState extends State<ChatPage>
   String? _trackedSessionId;
   String? _pendingInitialScrollSessionId;
   _ScrollFollowMode _scrollFollowMode = _ScrollFollowMode.following;
-  bool get _showScrollToLatestFab => _scrollFollowMode != _ScrollFollowMode.following;
+  bool get _showScrollToLatestFab =>
+      _scrollFollowMode != _ScrollFollowMode.following;
   String? _lastRevealedAssistantMessageId;
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
@@ -855,7 +849,8 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _setState(VoidCallback fn) {
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(fn);
@@ -1245,9 +1240,7 @@ class _ChatPageState extends State<ChatPage>
 
   void _showServerUnhealthyNotice() {
     _showChatPageSnackBar(
-      content: Text(
-        context.l10n.chatActiveServerUnhealthy,
-      ),
+      content: Text(context.l10n.chatActiveServerUnhealthy),
     );
   }
 
@@ -1995,7 +1988,7 @@ class _ChatPageState extends State<ChatPage>
                     drawer: (isMobile || (isMedium && !showConversationPane))
                         ? _buildSessionDrawer()
                         : null,
-                     body: Consumer<ChatProvider>(
+                    body: Consumer<ChatProvider>(
                       builder: (context, chatProvider, child) {
                         late final Widget content;
                         if (isMobile) {
@@ -2200,7 +2193,7 @@ class _ChatPageState extends State<ChatPage>
       settingsProvider.bindingFor(ShortcutAction.escape),
     );
     hints.add((
-          shortcut: '$escapeShortcut, $escapeShortcut',
+      shortcut: '$escapeShortcut, $escapeShortcut',
       description: context.l10n.chatShortcutsStopResponse,
     ));
     return hints;
@@ -2417,17 +2410,14 @@ class _ComposerStatusPresentation {
   const _ComposerStatusPresentation.dynamicReasoning(String label)
     : this._(type: _ComposerStatusType.dynamicReasoning, label: label);
 
-  _ComposerStatusPresentation.receiving({
-    required String label,
-  }) : this._(type: _ComposerStatusType.receiving, label: label);
+  _ComposerStatusPresentation.receiving({required String label})
+    : this._(type: _ComposerStatusType.receiving, label: label);
 
-  _ComposerStatusPresentation.retrying({
-    required String label,
-  }) : this._(type: _ComposerStatusType.retrying, label: label);
+  _ComposerStatusPresentation.retrying({required String label})
+    : this._(type: _ComposerStatusType.retrying, label: label);
 
-  _ComposerStatusPresentation.stopHint({
-    required String label,
-  }) : this._(type: _ComposerStatusType.stopHint, label: label);
+  _ComposerStatusPresentation.stopHint({required String label})
+    : this._(type: _ComposerStatusType.stopHint, label: label);
 
   _ComposerStatusPresentation.tip(String label)
     : this._(type: _ComposerStatusType.tip, label: label);
@@ -2863,8 +2853,4 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
   }
 }
 
-enum _ScrollFollowMode {
-  following,
-  pausedByUser,
-  reading,
-}
+enum _ScrollFollowMode { following, pausedByUser, reading }

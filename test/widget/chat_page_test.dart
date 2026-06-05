@@ -5383,7 +5383,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(L10nBridge.current!.chatPageStatusCompactNow), findsOneWidget);
+    expect(
+      find.text(L10nBridge.current!.chatPageStatusCompactNow),
+      findsOneWidget,
+    );
     expect(find.text('Rate limits'), findsOneWidget);
     expect(find.text('Claude'), findsOneWidget);
     expect(find.text('OpenRouter'), findsOneWidget);
@@ -6132,8 +6135,8 @@ void main() {
         ),
         findsOneWidget,
       );
-expect(repository.lastPermissionRequestId, 'perm_auto_sub_1');
-    expect(repository.lastPermissionReply, 'always');
+      expect(repository.lastPermissionRequestId, 'perm_auto_sub_1');
+      expect(repository.lastPermissionReply, 'always');
       expect(
         find.byKey(
           const ValueKey<String>(
@@ -6398,8 +6401,8 @@ expect(repository.lastPermissionRequestId, 'perm_auto_sub_1');
       );
       await tester.pumpAndSettle();
 
-expect(repository.lastPermissionRequestId, 'perm_manual_1');
-    expect(repository.lastPermissionReply, 'always');
+      expect(repository.lastPermissionRequestId, 'perm_manual_1');
+      expect(repository.lastPermissionReply, 'always');
       expect(
         find.byKey(
           const ValueKey<String>(
@@ -6758,8 +6761,8 @@ expect(repository.lastPermissionRequestId, 'perm_manual_1');
 
       await tester.pump(const Duration(milliseconds: 1200));
 
-expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
-    expect(repository.lastPermissionReply, 'always');
+      expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
+      expect(repository.lastPermissionReply, 'always');
       expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older pending user marker'), findsNothing);
       expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
@@ -14028,7 +14031,10 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       await provider.loadMessages('ses_recoverable_error');
       await tester.pumpAndSettle();
 
-      expect(find.text(L10nBridge.current!.chatRefreshConversation), findsOneWidget);
+      expect(
+        find.text(L10nBridge.current!.chatRefreshConversation),
+        findsOneWidget,
+      );
       expect(find.text(L10nBridge.current!.chatKeepWorking), findsOneWidget);
       expect(find.text(L10nBridge.current!.chatRetryRefresh), findsOneWidget);
       expect(find.text('Retry'), findsNothing);
@@ -14084,7 +14090,10 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       await provider.loadMessages('ses_offline_block');
       await tester.pumpAndSettle();
 
-      expect(find.text(L10nBridge.current!.chatRefreshConversation), findsNothing);
+      expect(
+        find.text(L10nBridge.current!.chatRefreshConversation),
+        findsNothing,
+      );
       expect(find.text(L10nBridge.current!.chatRetryRefresh), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('composer_block_reason_row')),
@@ -14153,7 +14162,10 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       await provider.loadMessages('ses_unhealthy_block');
       await tester.pumpAndSettle();
 
-      expect(find.text(L10nBridge.current!.chatRefreshConversation), findsNothing);
+      expect(
+        find.text(L10nBridge.current!.chatRefreshConversation),
+        findsNothing,
+      );
       expect(find.text(L10nBridge.current!.chatRetryRefresh), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('composer_block_reason_row')),
@@ -15463,8 +15475,12 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     },
   );
 
-  testWidgets('uses compact sidebar tour copy on small layouts', (tester) async {
-    await tester.pumpWidget(localizedMaterialApp(home: const SizedBox.shrink()));
+  testWidgets('uses compact sidebar tour copy on small layouts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedMaterialApp(home: const SizedBox.shrink()),
+    );
     await tester.pumpAndSettle();
     final context = tester.element(find.byType(SizedBox));
     final copy = postOnboardingSidebarTourCopy(
@@ -15480,22 +15496,27 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     );
   });
 
-  testWidgets('uses project-context tour copy on desktop layouts with sidebar', (tester) async {
-    await tester.pumpWidget(localizedMaterialApp(home: const SizedBox.shrink()));
-    await tester.pumpAndSettle();
-    final context = tester.element(find.byType(SizedBox));
-    final copy = postOnboardingSidebarTourCopy(
-      context: context,
-      isMobile: false,
-      showConversationPane: true,
-    );
+  testWidgets(
+    'uses project-context tour copy on desktop layouts with sidebar',
+    (tester) async {
+      await tester.pumpWidget(
+        localizedMaterialApp(home: const SizedBox.shrink()),
+      );
+      await tester.pumpAndSettle();
+      final context = tester.element(find.byType(SizedBox));
+      final copy = postOnboardingSidebarTourCopy(
+        context: context,
+        isMobile: false,
+        showConversationPane: true,
+      );
 
-    expect(copy.title, 'Open project');
-    expect(
-      copy.description,
-      'Use this button to switch project folders and context.',
-    );
-  });
+      expect(copy.title, 'Open project');
+      expect(
+        copy.description,
+        'Use this button to switch project folders and context.',
+      );
+    },
+  );
 }
 
 Future<void> _pumpUiFrames(WidgetTester tester) async {
