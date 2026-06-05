@@ -680,12 +680,12 @@
 - **When** text, code blocks, or tool calls render incrementally
 - **Then** the UI remains smooth without stuttering, freezing, or perceptible lag
 
-### New chat content enters progressively
+### New chat content updates progressively
 
 - **Given** the chat timeline receives new tail messages in the active session
 - **When** those entries are rendered
-- **Then** each new entry uses a short one-shot entrance transition with bounded stagger for clustered arrivals
-- **Then** existing history does not replay entrance animations when reopening or switching sessions
+- **Then** main timeline entries appear directly without entrance transitions or stagger
+- **Then** existing history remains stable when reopening or switching sessions and does not replay arrival motion
 
 ### Streamed tool parts animate inside visible assistant bubbles
 

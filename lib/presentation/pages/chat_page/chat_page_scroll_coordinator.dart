@@ -225,7 +225,8 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
             _scrollController.jumpTo(
               _scrollController.position.maxScrollExtent,
             );
-            break;
+            await WidgetsBinding.instance.endOfFrame;
+            continue;
           }
 
           await _scrollController.animateTo(

@@ -1481,21 +1481,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
     _pruneTimelineSearchMessageKeys(chatProvider.messages);
 
-    // Track the baseline so session switches do not classify loaded history as
-    // new. Main timeline arrivals intentionally render without entrance motion.
-    // Reset the baseline whenever the active session changes so that loading
-    // an existing conversation never animates its full history as "new".
-    final currentLength = timelineEntries.length;
-    final sessionChanged = currentSessionId != _animationBaselineSessionId;
-    if (sessionChanged) {
-      // Establish baseline for this session — existing messages are not new.
-      _animationBaselineSessionId = currentSessionId;
-      _previousTimelineLength = currentLength;
-    }
-    final prevLength = _previousTimelineLength;
-    if (currentLength != prevLength) {
-      _previousTimelineLength = currentLength;
-    }
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: _handleScrollMetricsChanged,
       child: CustomScrollView(

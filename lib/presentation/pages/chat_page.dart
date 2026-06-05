@@ -590,12 +590,6 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, _SessionTimelineEntriesCacheEntry>
   _sessionTimelineEntriesCache = <String, _SessionTimelineEntriesCacheEntry>{};
 
-  // Track timeline growth for message entrance animations (Phase 2.2).
-  // _animationBaselineSessionId records which session the baseline was set for,
-  // so switching sessions resets the baseline and avoids animating history.
-  int _previousTimelineLength = 0;
-  String? _animationBaselineSessionId;
-
   // Cache for _resolveSessionContextUsage (O(N) double-scan of messages).
   int _cachedContextUsageMsgCount = -1;
   String? _cachedContextUsageLastMsgId;
