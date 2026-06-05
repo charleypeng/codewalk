@@ -311,7 +311,7 @@ class ChatProvider extends ChangeNotifier {
   final Map<String, DateTime> _sessionUnreadCompletionTimestamps =
       <String, DateTime>{};
   final Set<String> _sessionErrorAttentionIds = <String>{};
-  final Set<String> _sseSettledToIdleSessionIds = <String>{};
+  final Map<String, DateTime> _sseSettledAtBySessionId = <String, DateTime>{};
   Map<String, List<ChatSession>> _sessionChildrenById =
       <String, List<ChatSession>>{};
   Map<String, List<SessionTodo>> _sessionTodoById =
@@ -1927,9 +1927,9 @@ class ChatProvider extends ChangeNotifier {
         // (the user may have switched sessions during the in-flight await).
         if (currentIdAtCall != null) {
           final currentStatus = _sessionStatusById[currentIdAtCall]?.type;
-          final sseSettledToIdle = _sseSettledToIdleSessionIds.remove(
-            currentIdAtCall,
-          );
+          final settledAt = _sseSettledAtBySessionId[currentIdAtCall];
+          final sseSettledToIdle = settledAt != null &&
+              DateTime.now().difference(settledAt) < const Duration(seconds: 4);
           const idle = SessionStatusType.idle;
           if (sseSettledToIdle &&
               (currentStatus == null || currentStatus == idle) &&
@@ -2006,15 +2006,10 @@ class ChatProvider extends ChangeNotifier {
     }
 
     try {
-      // Consume the SSE-settled-to-idle flag immediately (before any await)
-      // so it is not stolen by lingering unawaited loadSessionInsights calls
-      // from selectSession that interleave in the microtask queue. The flag
-      // is a strict one-shot: only the method that first checks it gets it.
       // Capture current session ID at the same time so the guard applies to
       // the session that was current when the request was made, not the one
       // current when the response arrives (user may switch during await).
       final currentIdAtCall = _currentSession?.id;
-      final guardSseSettled = _sseSettledToIdleSessionIds.remove(sessionId);
 
       final directory = projectProvider.currentDirectory;
       final projectId = projectProvider.currentProjectId;
@@ -2132,8 +2127,11 @@ class ChatProvider extends ChangeNotifier {
           // await above).
           if (currentIdAtCall != null) {
             final currentStatus = _sessionStatusById[currentIdAtCall]?.type;
+            final settledAt = _sseSettledAtBySessionId[currentIdAtCall];
+            final sseSettledToIdle = settledAt != null &&
+                DateTime.now().difference(settledAt) < const Duration(seconds: 4);
             const idle = SessionStatusType.idle;
-            if (guardSseSettled &&
+            if (sseSettledToIdle &&
                 (currentStatus == null || currentStatus == idle) &&
                 statusMap[currentIdAtCall]?.type == SessionStatusType.busy &&
                 hasCompletedRevealableAssistantMessage(
@@ -3940,7 +3938,7 @@ class ChatProvider extends ChangeNotifier {
               _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                 type: SessionStatusType.idle,
               );
-              _sseSettledToIdleSessionIds.add(streamSessionId);
+              _sseSettledAtBySessionId[streamSessionId] = DateTime.now();
               if (_currentSession?.id == streamSessionId) {
                 _markIncompleteAssistantMessagesAsCompleted(
                   sessionId: streamSessionId,
