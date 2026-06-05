@@ -425,19 +425,28 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       final provider = _providers.where((p) => p.id == providerId).firstOrNull;
       if (provider != null && provider.models.containsKey(modelId)) {
         final messageVariant = message.variant?.trim();
-        final resolvedVariant = (messageVariant != null && messageVariant.isNotEmpty)
-            ? messageVariant
-            : _resolveStoredVariantForSelection();
-        if (_selectedProviderId != providerId ||
-            _selectedModelId != modelId ||
-            _selectedVariantId != resolvedVariant) {
+
+        // Update provider/model first so stored variant resolution
+        // uses the new selection, not the old one.
+        if (_selectedProviderId != providerId || _selectedModelId != modelId) {
           _selectedProviderId = providerId;
           _selectedModelId = modelId;
-          _selectedVariantId = resolvedVariant;
+          _selectedVariantId = (messageVariant != null && messageVariant.isNotEmpty)
+              ? messageVariant
+              : _resolveStoredVariantForSelection();
           _lastSyncedRemoteVariantKey = null;
           changed = true;
         }
         _lastSyncedRemoteModelKey = _modelKey(providerId, modelId);
+
+        // If provider and model are already correct but the message declares
+        // a different variant, adopt it.
+        if (!changed && messageVariant != null && messageVariant.isNotEmpty &&
+            _selectedVariantId != messageVariant) {
+          _selectedVariantId = messageVariant;
+          _lastSyncedRemoteVariantKey = null;
+          changed = true;
+        }
       }
     }
 

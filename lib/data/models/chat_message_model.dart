@@ -15,6 +15,11 @@ class ChatMessageModel {
     // Manually handle completedTime
     final completedTime = _completedTimeFromJson(json['time']);
 
+    // Handle variant fallbacks from raw JSON if needed
+    final variant = model.variant ??
+        json['variantID'] as String? ??
+        json['variantId'] as String?;
+
     // Prepare parts and synthesize text from summary if needed
     final computedParts = List<MessagePartModel>.from(
       model.parts,
@@ -76,7 +81,7 @@ class ChatMessageModel {
       parts: computedParts,
       providerId: model.providerId,
       modelId: model.modelId,
-      variant: model.variant,
+      variant: variant,
       cost: model.cost,
       tokens: model.tokens,
       error: model.error,

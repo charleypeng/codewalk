@@ -19,9 +19,7 @@ ChatMessageModel _$ChatMessageModelFromJson(Map<String, dynamic> json) =>
           const [],
       providerId: json['providerID'] as String?,
       modelId: json['modelID'] as String?,
-      variant: json['variant'] as String? ??
-          json['variantID'] as String? ??
-          json['variantId'] as String?,
+      variant: json['variant'] as String?,
       cost: (json['cost'] as num?)?.toDouble(),
       tokens: json['tokens'] == null
           ? null
