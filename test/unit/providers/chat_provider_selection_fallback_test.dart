@@ -170,6 +170,40 @@ void main() {
     );
 
     test(
+      'fallback restores model variant from last AssistantMessage metadata',
+      () async {
+        const sessionId = 'ses_1';
+        final testMessages = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_1',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[],
+            providerId: 'anthropic',
+            modelId: 'claude-opus',
+            variant: 'think',
+            mode: 'code',
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1100),
+          ),
+        ];
+
+        await setupFullyInitialized(
+          getMessagesHandler: (projectId, sid, {directory, limit}) {
+            if (sid == sessionId) {
+              return Future.value(Right(testMessages));
+            }
+            return Future.value(const Right(<ChatMessage>[]));
+          },
+        );
+
+        expect(provider.selectedProviderId, 'anthropic');
+        expect(provider.selectedModelId, 'claude-opus');
+        expect(provider.selectedVariantId, 'think');
+        expect(provider.selectedAgentName, 'code');
+      },
+    );
+
+    test(
       'fallback is skipped when an explicit override already exists',
       () async {
         const sessionId = 'ses_1';
