@@ -1865,7 +1865,7 @@ When a user reopens an existing session, CodeWalk must restore the agent, model,
 Implement a three-tier selection restoration hierarchy with explicit-override precedence:
 
 1. **Explicit override** (highest priority): user-initiated selection changes stored in `_sessionSelectionOverridesByKey` with `isExplicit: true`. Never overridden by the fallback.
-2. **Message-derived fallback** (middle priority): `_restoreSelectionFromMessages()` scans the LRU session message cache backwards for the last `AssistantMessage` with valid `providerId`/`modelId`/`mode` metadata. Activated when:
+2. **Message-derived fallback** (middle priority): `_restoreSelectionFromMessages()` scans the LRU session message cache backwards for the last `AssistantMessage` with valid `providerId`/`modelId`/`mode`/`variant` metadata. Activated when:
    - No override exists for the session.
    - The existing override is stale (provider/model no longer in catalog, agent unresolvable).
    - The existing override was set non-explicitly (e.g. from config sync or session-switch continuity).
@@ -1892,7 +1892,7 @@ Key design decisions:
 - ✅ Explicit user selections are never overridden by the fallback mechanism.
 - ✅ Override promotion makes the message scan a one-time cost per session.
 - ⚠ The LRU cache may be empty on first visit (cold start) — the fallback silently returns `false` and global defaults apply until the first assistant message arrives.
-- ⚠ Variant is not available in server assistant message metadata — the fallback resolves variant from the persisted per-model map (`_resolveStoredVariantForSelection`) which may not match the server's actual variant if it was changed externally.
+- ✅ Variant is now parsed from the server assistant message `variant` metadata field, enabling accurate model-variant restoration alongside provider/model/mode.
 - ❌ The fallback scans backwards through all cached messages — for very long sessions with no metadata-bearing messages, this is O(n) with no early exit beyond the first match.
 
 ### Key Files
