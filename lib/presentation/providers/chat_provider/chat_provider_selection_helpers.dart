@@ -742,9 +742,11 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       changed = true;
     }
 
-    // Resolve variant from the persisted per-model map (variant is not
-    // returned by the server in assistant messages).
-    final resolvedVariant = _resolveStoredVariantForSelection();
+    // Resolve variant from the message variant if available, otherwise from the persisted per-model map.
+    final messageVariant = lastMetadataMessage.variant?.trim();
+    final resolvedVariant = (messageVariant != null && messageVariant.isNotEmpty)
+        ? messageVariant
+        : _resolveStoredVariantForSelection();
     if (_selectedVariantId != resolvedVariant) {
       _selectedVariantId = resolvedVariant;
       changed = true;
