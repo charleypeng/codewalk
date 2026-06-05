@@ -1978,6 +1978,7 @@ Consolidate the viewport state and scroll follow behavior to stabilize synchroni
 3. **Time-Windowed REST Status Guard**: Replace the one-shot `_sseSettledToIdleSessionIds` set with a time-windowed `_sseSettledAtBySessionId` map to suppress transient REST status busy pulses for 4 seconds after SSE completion.
 4. **Move Sync Concerns out of Build**: Extract the synchronization calls (`_syncSessionScrollState`, `_syncResponseViewportPolicy`, etc.) from the timeline build phase and call them sequentially inside `_handleChatProviderChanged` listener.
 5. **Robust Metric Snaps and Restores**: Simplify `_handleScrollMetricsChanged` to snap only during active responding updates, and add retry loops to `_consumeQueuedCachedViewportRestore` when scroll clients or layout are not yet ready.
+6. **No Entrance Motion on Timeline Entries**: Remove entrance animation from main timeline entries to prevent layout-phase animation side-effects from conflicting with scroll synchronization. Passive auto-follow uses non-animated `jumpTo` with bounded retry instead of animated scrolls, ensuring immediate viewport positioning without animation-induced metric drift.
 
 ### Rationale
 
@@ -1985,12 +1986,14 @@ Consolidate the viewport state and scroll follow behavior to stabilize synchroni
 - Monotonic Turn-Scoped Reveal Guard blocks redundant scroll jumps once a turn has settled.
 - Time-Windowed status merging provides defense-in-depth against transient SWR updates.
 - Moving sync logic out of build phase prevents layout-phase rebuild races.
+- Removing entrance animation from timeline entries eliminates a class of scroll metric drift where animation-driven size changes conflict with scroll snap/restore logic during streaming and passive auto-follow.
 
 ### Consequences
 
 - ✅ Viewport and scroll synchronization remains stable during active stream updates and SWR refreshes.
 - ✅ No layout shifts or scroll bounces occur on background resume or session switches.
 - ✅ Pagination, search navigation, and file explorer viewport ownership are fully preserved.
+- ✅ Main timeline entries render without entrance animation, eliminating animation-triggered scroll metric drift.
 - ⚠ Deferring `setState` to post-frame callback is required when scroll changes trigger state updates during layout.
 
 ### Key Files
