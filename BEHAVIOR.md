@@ -700,6 +700,13 @@
 - **When** new messages or streamed parts are rendered
 - **Then** entrance motion is skipped and content appears immediately without slide transitions
 
+### Main timeline messages appear without motion
+
+- **Given** the user is viewing the main chat timeline
+- **When** a new user, assistant, permission, retry, or grouped timeline entry is appended
+- **Then** the entry appears directly in its final position without slide, fade, scale, stagger, or other entrance motion
+- **Then** automatic bottom-follow keeps the newest entry anchored without animated scroll transitions
+
 ### Tool-only busy turns keep live follow behavior
 
 - **Given** the active session is still busy/retrying during a multi-step tool turn

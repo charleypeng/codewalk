@@ -1481,7 +1481,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
     _pruneTimelineSearchMessageKeys(chatProvider.messages);
 
-    // Determine which entries are new (for entrance animation.
+    // Track the baseline so session switches do not classify loaded history as
+    // new. Main timeline arrivals intentionally render without entrance motion.
     // Reset the baseline whenever the active session changes so that loading
     // an existing conversation never animates its full history as "new".
     final currentLength = timelineEntries.length;
@@ -1495,9 +1496,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (currentLength != prevLength) {
       _previousTimelineLength = currentLength;
     }
-    final animateNewEntries =
-        !sessionChanged && _scrollFollowMode == _ScrollFollowMode.following && currentLength > prevLength;
-
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: _handleScrollMetricsChanged,
       child: CustomScrollView(
@@ -1559,27 +1557,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     child = _buildRetryingMessageIndicator();
                   }
 
-                  // Animate only genuinely new entries at the tail.
-                  // Pass the message role for role-specific motion profiles.
-                  final isNewEntry = animateNewEntries && index >= prevLength;
-                  if (isNewEntry) {
-                    final shouldSuppressAssistantActiveTurnAnimation =
-                        entry is _TimelineMessageEntry &&
-                        _isMergeableAssistantToolOnlyMessage(entry.message) &&
-                        chatProvider.isCurrentSessionActivelyResponding;
-                    if (shouldSuppressAssistantActiveTurnAnimation) {
-                      return child;
-                    }
-                    final role = entry is _TimelineMessageEntry
-                        ? entry.message.role
-                        : null;
-                    final staggerIndex = index - prevLength;
-                    return MessageEntranceAnimation(
-                      role: role,
-                      staggerIndex: staggerIndex < 0 ? 0 : staggerIndex,
-                      child: child,
-                    );
-                  }
                   return child;
                 },
                 childCount: timelineEntries.length,

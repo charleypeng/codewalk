@@ -56,6 +56,7 @@ import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
+import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -8740,6 +8741,12 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     expect(
       find.textContaining('auto-follow should keep chat pinned'),
       findsOneWidget,
+    );
+    expect(
+      find.byType(MessageEntranceAnimation),
+      findsNothing,
+      reason:
+          'New main-timeline messages should appear without entrance motion.',
     );
     expect(find.byTooltip('Go to latest message'), findsNothing);
   });

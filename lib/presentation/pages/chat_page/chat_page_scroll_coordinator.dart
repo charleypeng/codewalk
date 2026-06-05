@@ -177,7 +177,8 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     if (force) {
       _scrollFollowMode = _ScrollFollowMode.following;
     }
-    final shouldScroll = force || _scrollFollowMode == _ScrollFollowMode.following;
+    final shouldScroll =
+        force || _scrollFollowMode == _ScrollFollowMode.following;
     if (!shouldScroll) {
       _markUnreadMessagesBelow();
       return;
@@ -218,10 +219,9 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
             break;
           }
 
-          // During auto-follow (streaming), snap small gaps instantly to avoid
-          // animation conflicts from rapid content updates that cancel/restart
-          // the 260ms animateTo every frame, causing visible jumps.
-          if (!force && distance <= _ChatPageState._nearBottomThreshold) {
+          // Automatic follow is a layout anchor, not a visual transition. Keep
+          // incoming message growth pinned without per-delta scroll motion.
+          if (!force) {
             _scrollController.jumpTo(
               _scrollController.position.maxScrollExtent,
             );
