@@ -66,6 +66,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 034 | Density-aware spacing tokens via `AppDensitySpacing` static helper — 5-tier `AppDensity` switch expressions for horizontal/vertical padding, gaps, content insets, chrome/composer convenience builders, replacing ~25 hardcoded EdgeInsets/SizedBox magic numbers | 1794–1849 |
 | 035 | Message-derived selection fallback with explicit-override precedence — 3-tier restoration (explicit override → message scan → global defaults), LRU cache-first backward scan, neutral-message filtering, isExplicit flag, override promotion on fallback success; OpenChamber parity for `restoreSessionStateFromMessages()` | 1852–1901 |
 | 036 | Userspace Tailscale transport with vendored `package:tailscale`, `hook/build.dart` no-op on Windows, `ServerProfile.tailscaleEnabled`, one node per process, active-profile-only transport, inactive health returns unknown, custom Dio HttpClientAdapter preserving SSE + cancellation, interactive auth UX via `AppProvider` reactive state + `authenticateTailscale()`, auth panels in onboarding/settings, no auto-launch of auth URLs, no Web/Windows | 1903–1960 |
+| 037 | Chat Viewport and Scroll/Follow Synchronization Revamp — consolidation of viewport flags to `_ScrollFollowMode`, turn-scoped reveal guard, time-windowed REST status guard, and build-phase sync extraction | 1964–2004 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -80,10 +81,10 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Chat Architecture | 181–278 |
 | Data & Domain Layers | 279–289 |
 | Key API/DataSource locations | 291–309 |
-| Main Commands | 311–333 |
-| Testing/Quality Gates | 335–361 |
-| Internationalization (i18n) | 363–373 |
-| Notes | 375–562 |
+| Main Commands | 314–336 |
+| Testing/Quality Gates | 338–364 |
+| Internationalization (i18n) | 366–378 |
+| Notes | 379–566 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

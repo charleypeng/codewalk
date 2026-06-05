@@ -40,6 +40,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-034: Density-Aware Spacing Tokens via `AppDensitySpacing` Static Helper
 - ADR-035: Message-Derived Selection Fallback with Explicit-Override Precedence
 - ADR-036: Userspace Tailscale Transport with Profile-Scoped Activation
+- ADR-037: Chat Viewport and Scroll/Follow Synchronization Revamp
 
 ---
 
@@ -1957,4 +1958,47 @@ Embed a `package:tailscale` userspace Tailscale node directly in the app process
 - `third_party/tailscale/` — vendored `package:tailscale` with patched `hook/build.dart` (no-op on Windows)
 - `lib/presentation/pages/onboarding/onboarding_wizard_page.dart` — Tailscale auth panel in onboarding flow
 - `lib/presentation/pages/settings/servers_settings_section.dart` — Tailscale auth panel in server settings
+
+---
+
+## ADR-037: Chat Viewport and Scroll/Follow Synchronization Revamp (2026-06-05)
+
+**Status**: Accepted
+
+### Context
+
+The chat viewport experienced race conditions where the screen bounced or jumped during streaming updates and SWR/REST status refreshes. The synchronization state was fragmented across ~12 boolean/enum flags, side-effects were executed inside the timeline builder, and transient REST status refreshes temporarily reported `busy` after `session.idle` completed, resetting settled states and re-triggering auto-scroll adjustments.
+
+### Decision
+
+Consolidate the viewport state and scroll follow behavior to stabilize synchronization:
+
+1. **_ScrollFollowMode Enum**: Define `following`, `pausedByUser`, and `reading` modes in a single enum to coordinate scroll tracking.
+2. **Turn-Scoped Reveal Guard**: Add `_lastRevealedAssistantMessageId` to `_ChatPageState` to lock the final assistant message of a turn from being re-revealed on subsequent status updates.
+3. **Time-Windowed REST Status Guard**: Replace the one-shot `_sseSettledToIdleSessionIds` set with a time-windowed `_sseSettledAtBySessionId` map to suppress transient REST status busy pulses for 4 seconds after SSE completion.
+4. **Move Sync Concerns out of Build**: Extract the synchronization calls (`_syncSessionScrollState`, `_syncResponseViewportPolicy`, etc.) from the timeline build phase and call them sequentially inside `_handleChatProviderChanged` listener.
+5. **Robust Metric Snaps and Restores**: Simplify `_handleScrollMetricsChanged` to snap only during active responding updates, and add retry loops to `_consumeQueuedCachedViewportRestore` when scroll clients or layout are not yet ready.
+
+### Rationale
+
+- Consolidating states into `_ScrollFollowMode` replaces fragmented boolean flags with a single state machine, preventing conflicting viewport states.
+- Monotonic Turn-Scoped Reveal Guard blocks redundant scroll jumps once a turn has settled.
+- Time-Windowed status merging provides defense-in-depth against transient SWR updates.
+- Moving sync logic out of build phase prevents layout-phase rebuild races.
+
+### Consequences
+
+- ✅ Viewport and scroll synchronization remains stable during active stream updates and SWR refreshes.
+- ✅ No layout shifts or scroll bounces occur on background resume or session switches.
+- ✅ Pagination, search navigation, and file explorer viewport ownership are fully preserved.
+- ⚠ Deferring `setState` to post-frame callback is required when scroll changes trigger state updates during layout.
+
+### Key Files
+
+- `lib/presentation/pages/chat_page.dart`
+- `lib/presentation/pages/chat_page/chat_page_runtime_support.dart`
+- `lib/presentation/pages/chat_page/chat_page_scroll_coordinator.dart`
+- `lib/presentation/pages/chat_page/chat_page_timeline_builder.dart`
+- `lib/presentation/pages/chat_page/chat_page_lifecycle.dart`
+- `lib/presentation/providers/chat_provider.dart`
 - Ref: e8ff8a78
