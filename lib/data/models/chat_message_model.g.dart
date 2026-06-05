@@ -19,6 +19,9 @@ ChatMessageModel _$ChatMessageModelFromJson(Map<String, dynamic> json) =>
           const [],
       providerId: json['providerID'] as String?,
       modelId: json['modelID'] as String?,
+      variant: json['variant'] as String? ??
+          json['variantID'] as String? ??
+          json['variantId'] as String?,
       cost: (json['cost'] as num?)?.toDouble(),
       tokens: json['tokens'] == null
           ? null
@@ -40,6 +43,7 @@ Map<String, dynamic> _$ChatMessageModelToJson(ChatMessageModel instance) =>
       'parts': instance.parts,
       'providerID': instance.providerId,
       'modelID': instance.modelId,
+      'variant': instance.variant,
       'cost': instance.cost,
       'tokens': instance.tokens,
       'error': instance.error,

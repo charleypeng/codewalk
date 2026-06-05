@@ -76,6 +76,7 @@ class ChatMessageModel {
       parts: computedParts,
       providerId: model.providerId,
       modelId: model.modelId,
+      variant: model.variant,
       cost: model.cost,
       tokens: model.tokens,
       error: model.error,
@@ -94,6 +95,7 @@ class ChatMessageModel {
     this.parts = const [],
     this.providerId,
     this.modelId,
+    this.variant,
     this.cost,
     this.tokens,
     this.error,
@@ -150,6 +152,7 @@ class ChatMessageModel {
   final String? providerId;
   @JsonKey(name: 'modelID')
   final String? modelId;
+  final String? variant;
   final double? cost;
   final MessageTokensModel? tokens;
   final MessageErrorModel? error;
@@ -205,6 +208,7 @@ class ChatMessageModel {
         completedTime: completedTime,
         providerId: providerId,
         modelId: modelId,
+        variant: variant,
         cost: cost,
         tokens: tokens?.toDomain(),
         error: error?.toDomain(),
@@ -230,6 +234,7 @@ class ChatMessageModel {
         parts: parts,
         providerId: message.providerId,
         modelId: message.modelId,
+        variant: message.variant,
         cost: message.cost,
         tokens: message.tokens != null
             ? MessageTokensModel.fromDomain(message.tokens!)
