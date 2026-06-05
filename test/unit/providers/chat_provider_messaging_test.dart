@@ -1818,6 +1818,7 @@ void main() {
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
         };
+        provider.clearSseSettledTimestamps();
         await provider.loadSessionInsights('ses_1', silent: true);
 
         expect(provider.isCurrentSessionActivelyResponding, isTrue);

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderBox, ScrollDirection;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -323,8 +325,9 @@ class _ChatPageState extends State<ChatPage>
   ServerHealthStatus _lastActiveServerHealthStatus = ServerHealthStatus.unknown;
   String? _trackedSessionId;
   String? _pendingInitialScrollSessionId;
-  bool _autoFollowToLatest = true;
-  bool _showScrollToLatestFab = false;
+  _ScrollFollowMode _scrollFollowMode = _ScrollFollowMode.following;
+  bool get _showScrollToLatestFab => _scrollFollowMode != _ScrollFollowMode.following;
+  String? _lastRevealedAssistantMessageId;
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
@@ -344,7 +347,6 @@ class _ChatPageState extends State<ChatPage>
   _CachedViewportRestoreTarget _pendingCachedViewportRestoreTarget =
       _CachedViewportRestoreTarget.none;
   int _scrollToBottomRequestToken = 0;
-  bool _manualScrollFollowPaused = false;
   int _responseSettleFramesRemaining = 0;
   bool _wasCurrentSessionActivelyResponding = false;
   // Cached values for _syncResponseViewportPolicy early-return guard.
@@ -370,7 +372,7 @@ class _ChatPageState extends State<ChatPage>
       AppLogger.debug(
         'Chat viewport owner: ${previousOwner.name} -> ${owner.name} '
         'session=${_chatProvider?.currentSession?.id ?? "-"} '
-        'autoFollow=$_autoFollowToLatest '
+        'followMode=${_scrollFollowMode.name} '
         'requestToken=$_scrollToBottomRequestToken',
       );
     }
@@ -388,10 +390,10 @@ class _ChatPageState extends State<ChatPage>
       _markUnreadMessagesBelow();
       return;
     }
-    if (_manualScrollFollowPaused) {
+    if (_scrollFollowMode != _ScrollFollowMode.following) {
       _traceFinalUi(
-        'passive-scroll-suppressed-manual-pause',
-        details: 'reason=$reason',
+        'passive-scroll-suppressed-not-following',
+        details: 'reason=$reason mode=${_scrollFollowMode.name}',
       );
       _markUnreadMessagesBelow();
       return;
@@ -403,14 +405,6 @@ class _ChatPageState extends State<ChatPage>
         'passive-scroll-suppressed-owner-active',
         details: 'reason=$reason owner=${_currentScrollOwner.name}',
       );
-      return;
-    }
-    if (!_autoFollowToLatest) {
-      _traceFinalUi(
-        'passive-scroll-suppressed-auto-follow-disabled',
-        details: 'reason=$reason',
-      );
-      _markUnreadMessagesBelow();
       return;
     }
     if (_chatProvider?.isCurrentSessionActivelyResponding == true) {
@@ -454,7 +448,7 @@ class _ChatPageState extends State<ChatPage>
         ? ''
         : ' details=${details.trim()}';
     AppLogger.info(
-      '$_traceFinalPrefix ui event=$event session=$sessionId responding=${provider?.isCurrentSessionActivelyResponding ?? false} state=${provider?.state.name ?? "-"} messages=${messages.length} last=$lastMessageId pendingFinal=${_pendingFinalAssistantRevealMessageId ?? "-"} settledFinal=${_finalAssistantRevealSettledMessageId ?? "-"} settledWorkGroup=${_settledLatestAssistantWorkGroupId ?? "-"} deferCollapse=$_deferAssistantWorkCollapse autoFollow=$_autoFollowToLatest$suffix',
+      '$_traceFinalPrefix ui event=$event session=$sessionId responding=${provider?.isCurrentSessionActivelyResponding ?? false} state=${provider?.state.name ?? "-"} messages=${messages.length} last=$lastMessageId pendingFinal=${_pendingFinalAssistantRevealMessageId ?? "-"} settledFinal=${_finalAssistantRevealSettledMessageId ?? "-"} settledWorkGroup=${_settledLatestAssistantWorkGroupId ?? "-"} deferCollapse=$_deferAssistantWorkCollapse followMode=${_scrollFollowMode.name}$suffix',
     );
   }
 
@@ -673,6 +667,7 @@ class _ChatPageState extends State<ChatPage>
       _chatProvider = nextChatProvider;
       _chatProvider?.addListener(_handleChatProviderChanged);
       _autoApprovePermissionCooldownIds.clear();
+      _handleChatProviderChanged();
     }
     _chatProvider?.setAppInForeground(_isAppInForeground);
     final nextAppProvider = context.read<AppProvider>();
@@ -871,7 +866,15 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _setState(VoidCallback fn) {
-    setState(fn);
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(fn);
+        }
+      });
+    } else {
+      setState(fn);
+    }
   }
 
   void _loadInitialData() {
@@ -2003,14 +2006,8 @@ class _ChatPageState extends State<ChatPage>
                     drawer: (isMobile || (isMedium && !showConversationPane))
                         ? _buildSessionDrawer()
                         : null,
-                    body: Consumer<ChatProvider>(
+                     body: Consumer<ChatProvider>(
                       builder: (context, chatProvider, child) {
-                        _syncSessionScrollState(chatProvider);
-                        _syncResponseViewportPolicy(chatProvider);
-                        _syncChatRouteActivity(chatProvider);
-                        _consumePendingUiNotice(chatProvider);
-                        _consumePendingHistoryComposerSync(chatProvider);
-                        _consumeRejectedDraft(chatProvider);
                         late final Widget content;
                         if (isMobile) {
                           content = _buildChatContent(
@@ -2875,4 +2872,10 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
       ),
     );
   }
+}
+
+enum _ScrollFollowMode {
+  following,
+  pausedByUser,
+  reading,
 }

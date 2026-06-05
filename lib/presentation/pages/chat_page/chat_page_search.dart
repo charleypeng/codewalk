@@ -163,9 +163,7 @@ extension _ChatPageSearch on _ChatPageState {
         (_timelineSearchCurrentIndex + delta + resultCount) % resultCount;
     _setState(() {
       _timelineSearchCurrentIndex = nextIndex;
-      _manualScrollFollowPaused = true;
-      _autoFollowToLatest = false;
-      _showScrollToLatestFab = true;
+      _scrollFollowMode = _ScrollFollowMode.pausedByUser;
       _hasUnreadMessagesBelow = false;
     });
     await _scrollToTimelineSearchResult(

@@ -18,69 +18,32 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     final userScrollDirection = _scrollController.position.userScrollDirection;
     _maybeLoadOlderMessagesFromTop(userScrollDirection: userScrollDirection);
 
-    if (_hasActiveUserScrollActivity() &&
-        userScrollDirection != ScrollDirection.idle) {
-      _setScrollOwner(_ScrollOwner.userDrag);
-      if (_distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
-        _manualScrollFollowPaused = true;
-      }
-    }
-
-    final nearBottom = _isNearBottom();
-    if (nearBottom) {
-      _suppressPostCompletionAutoSnap = false;
-      if (_distanceToBottom() <= _ChatPageState._scrollToBottomEpsilon) {
-        _manualScrollFollowPaused = false;
-      }
-      if (_currentScrollOwner == _ScrollOwner.userDrag) {
-        _setScrollOwner(_ScrollOwner.none);
-      }
-      if (_manualScrollFollowPaused) {
-        if (_autoFollowToLatest ||
-            (_showScrollToLatestFab &&
-                !_hasUnreadMessagesBelow &&
-                !_showScrollToFirstFab)) {
-          _setState(() {
-            _autoFollowToLatest = false;
-            _showScrollToLatestFab = false;
-            _showScrollToFirstFab = false;
-          });
-        }
-        return;
-      }
-      if (!_autoFollowToLatest ||
-          _showScrollToLatestFab ||
-          _hasUnreadMessagesBelow ||
-          _showScrollToFirstFab) {
-        _setState(() {
-          _autoFollowToLatest = true;
-          _showScrollToLatestFab = false;
-          _hasUnreadMessagesBelow = false;
-          _showScrollToFirstFab = false;
-        });
-      }
-      return;
-    }
-
     if (_isProgrammaticScrollInFlight) {
       return;
     }
 
-    final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
-    if (_autoFollowToLatest) {
-      if (userScrollDirection == ScrollDirection.idle) {
-        if (_currentScrollOwner == _ScrollOwner.userDrag) {
-          _setScrollOwner(_ScrollOwner.none);
-        }
-        return;
-      }
+    // Set userDrag owner when user is actively dragging
+    if (_hasActiveUserScrollActivity() &&
+        userScrollDirection != ScrollDirection.idle) {
       _setScrollOwner(_ScrollOwner.userDrag);
-      _setState(() {
-        _autoFollowToLatest = false;
-        _showScrollToLatestFab = true;
-        _hasUnreadMessagesBelow = false;
-        _showScrollToFirstFab = shouldShowJumpToFirst;
-      });
+    }
+
+    final distance = _distanceToBottom();
+    final nearBottom = _isNearBottom();
+    final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
+
+    if (distance <= _ChatPageState._scrollToBottomEpsilon) {
+      _suppressPostCompletionAutoSnap = false;
+      if (_currentScrollOwner == _ScrollOwner.userDrag) {
+        _setScrollOwner(_ScrollOwner.none);
+      }
+      if (_scrollFollowMode != _ScrollFollowMode.following) {
+        _setState(() {
+          _scrollFollowMode = _ScrollFollowMode.following;
+          _hasUnreadMessagesBelow = false;
+          _showScrollToFirstFab = shouldShowJumpToFirst;
+        });
+      }
       return;
     }
 
@@ -89,12 +52,27 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       _setScrollOwner(_ScrollOwner.none);
     }
 
-    if (!_showScrollToLatestFab ||
-        _showScrollToFirstFab != shouldShowJumpToFirst) {
-      _setState(() {
-        _showScrollToLatestFab = true;
-        _showScrollToFirstFab = shouldShowJumpToFirst;
-      });
+    // If user dragged/scrolled away from the very bottom, or if they scrolled past 200px
+    if (_currentScrollOwner == _ScrollOwner.userDrag || !nearBottom) {
+      if (_scrollFollowMode != _ScrollFollowMode.pausedByUser) {
+        _setState(() {
+          _scrollFollowMode = _ScrollFollowMode.pausedByUser;
+          _showScrollToFirstFab = shouldShowJumpToFirst;
+        });
+      } else {
+        if (_showScrollToFirstFab != shouldShowJumpToFirst) {
+          _setState(() {
+            _showScrollToFirstFab = shouldShowJumpToFirst;
+          });
+        }
+      }
+    } else {
+      // Not dragging and within 200px (but not at 0px)
+      if (_showScrollToFirstFab != shouldShowJumpToFirst) {
+        _setState(() {
+          _showScrollToFirstFab = shouldShowJumpToFirst;
+        });
+      }
     }
   }
 
@@ -197,7 +175,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
-    final shouldScroll = force || _autoFollowToLatest;
+    if (force) {
+      _scrollFollowMode = _ScrollFollowMode.following;
+    }
+    final shouldScroll = force || _scrollFollowMode == _ScrollFollowMode.following;
     if (!shouldScroll) {
       _markUnreadMessagesBelow();
       return;
@@ -283,13 +264,11 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
-    if (!_autoFollowToLatest ||
-        _showScrollToLatestFab ||
+    if (_scrollFollowMode != _ScrollFollowMode.following ||
         _hasUnreadMessagesBelow ||
         _showScrollToFirstFab) {
       _setState(() {
-        _autoFollowToLatest = true;
-        _showScrollToLatestFab = false;
+        _scrollFollowMode = _ScrollFollowMode.following;
         _hasUnreadMessagesBelow = false;
         _showScrollToFirstFab = false;
       });

@@ -1496,7 +1496,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       _previousTimelineLength = currentLength;
     }
     final animateNewEntries =
-        !sessionChanged && _autoFollowToLatest && currentLength > prevLength;
+        !sessionChanged && _scrollFollowMode == _ScrollFollowMode.following && currentLength > prevLength;
 
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: _handleScrollMetricsChanged,

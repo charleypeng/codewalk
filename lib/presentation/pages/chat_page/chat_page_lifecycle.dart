@@ -41,6 +41,15 @@ extension _ChatPageLifecycle on _ChatPageState {
   }
 
   void _handleChatProviderChanged() {
+    final provider = _chatProvider;
+    if (provider != null) {
+      _syncSessionScrollState(provider);
+      _syncResponseViewportPolicy(provider);
+      _syncChatRouteActivity(provider);
+      _consumePendingUiNotice(provider);
+      _consumePendingHistoryComposerSync(provider);
+      _consumeRejectedDraft(provider);
+    }
     _reconcileTimelineSearchForProviderChanged();
     _scheduleAutoApprovePermissionDrain(reason: 'chat-provider-changed');
     unawaited(
@@ -496,7 +505,7 @@ extension _ChatPageLifecycle on _ChatPageState {
       chatProvider.messages.lastOrNull?.id ?? '-',
       chatProvider.messages.length,
       chatProvider.isCurrentSessionActivelyResponding,
-      _autoFollowToLatest,
+      _scrollFollowMode.name,
     ].join('|');
     final now = DateTime.now();
     if (_lastReturnToChatAt != null &&
@@ -514,7 +523,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     _flushPendingPostOnboardingTourAutoStart();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
-    if (!_autoFollowToLatest || chatProvider.currentSession == null) {
+    if (_scrollFollowMode != _ScrollFollowMode.following || chatProvider.currentSession == null) {
       return;
     }
     if (_resumeRefreshViewportRestorePending &&

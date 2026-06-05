@@ -4612,4 +4612,9 @@ class ChatProvider extends ChangeNotifier {
     }
     _scheduleSessionUnreadHighlightTimer();
   }
+
+  @visibleForTesting
+  void clearSseSettledTimestamps() {
+    _sseSettledAtBySessionId.clear();
+  }
 }
