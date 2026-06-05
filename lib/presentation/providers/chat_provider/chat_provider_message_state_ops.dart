@@ -424,10 +424,16 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         modelId.isNotEmpty) {
       final provider = _providers.where((p) => p.id == providerId).firstOrNull;
       if (provider != null && provider.models.containsKey(modelId)) {
-        if (_selectedProviderId != providerId || _selectedModelId != modelId) {
+        final messageVariant = message.variant?.trim();
+        final resolvedVariant = (messageVariant != null && messageVariant.isNotEmpty)
+            ? messageVariant
+            : _resolveStoredVariantForSelection();
+        if (_selectedProviderId != providerId ||
+            _selectedModelId != modelId ||
+            _selectedVariantId != resolvedVariant) {
           _selectedProviderId = providerId;
           _selectedModelId = modelId;
-          _selectedVariantId = _resolveStoredVariantForSelection();
+          _selectedVariantId = resolvedVariant;
           _lastSyncedRemoteVariantKey = null;
           changed = true;
         }
