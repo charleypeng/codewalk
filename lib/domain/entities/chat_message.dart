@@ -40,6 +40,7 @@ class AssistantMessage extends ChatMessage {
     this.completedTime,
     this.providerId,
     this.modelId,
+    this.variant,
     this.cost,
     this.tokens,
     this.error,
@@ -50,6 +51,7 @@ class AssistantMessage extends ChatMessage {
   final DateTime? completedTime;
   final String? providerId;
   final String? modelId;
+  final String? variant;
   final double? cost;
   final MessageTokens? tokens;
   final MessageError? error;
@@ -65,6 +67,7 @@ class AssistantMessage extends ChatMessage {
     completedTime,
     providerId,
     modelId,
+    variant,
     cost,
     tokens,
     error,
