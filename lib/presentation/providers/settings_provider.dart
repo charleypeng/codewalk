@@ -193,6 +193,9 @@ class SettingsProvider extends ChangeNotifier {
   double get readAloudRate => _settings.readAloudRate;
   double get readAloudPitch => _settings.readAloudPitch;
   String? get readAloudVoice => _settings.readAloudVoice;
+  double get systemFontScale => _settings.systemFontScale;
+  double get chatFontScale => _settings.chatFontScale;
+  double get terminalFontSize => _settings.terminalFontSize;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -1027,6 +1030,36 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(readAloudVoice: () => effective);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSystemFontScale(double value) async {
+    final clamped = clampSystemFontScale(value);
+    if (_settings.systemFontScale == clamped) {
+      return;
+    }
+    _settings = _settings.copyWith(systemFontScale: clamped);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setChatFontScale(double value) async {
+    final clamped = clampChatFontScale(value);
+    if (_settings.chatFontScale == clamped) {
+      return;
+    }
+    _settings = _settings.copyWith(chatFontScale: clamped);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setTerminalFontSize(double value) async {
+    final clamped = clampTerminalFontSize(value);
+    if (_settings.terminalFontSize == clamped) {
+      return;
+    }
+    _settings = _settings.copyWith(terminalFontSize: clamped);
     notifyListeners();
     await _persist();
   }
