@@ -1192,6 +1192,28 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** those surfaces use theme-aware colors derived from the active OpenCode Web theme instead of a generic brightness-only fallback
 - **Then** changing the preset updates those markdown/code colors without requiring an app restart
 
+### Text size controls in Appearance
+
+- **Given** the user opens `Settings` > `Appearance` and scrolls to the `Text size` card
+- **When** the card is visible
+- **Then** the app exposes three independent sliders: `System`, `Conversation`, and `Terminal`
+- **Then** each slider shows its current value in percent (`%`) and the actual point size for the terminal slider
+- **When** the user moves the `System` slider
+- **Then** all CodeWalk UI text scales proportionally using a single global `MediaQuery` text scaler (Material `TextScaler.linear`) installed in the app shell
+- **Then** the value is clamped to the safe range `80%–160%` and the slider is reset to the closest valid value if the user drags past the limits
+- **When** the user moves the `Conversation` slider
+- **Then** only chat timeline messages and the composer input scale by that factor, multiplied on top of the system scale
+- **Then** settings, sidebar, and other surfaces outside the chat viewport are not affected
+- **Then** the value is clamped to the safe range `80%–160%`
+- **When** the user moves the `Terminal` slider
+- **Then** the embedded terminal font size updates live and the value is clamped to the safe range `9–22 pt`
+- **Then** the new terminal font size persists across sessions and the next time the terminal is opened
+- **When** any of the three sliders is moved
+- **Then** the new value is persisted to `ExperienceSettings` and survives app restart
+- **Then** the change is applied without restarting the active response, the active server, or the embedded terminal stream
+- **When** the app reads a stored value that is outside the supported range (for example a stale JSON snapshot)
+- **Then** the value is clamped to the safe min/max on load so the UI never receives an illegal scale
+
 ### Local persistence
 
 - **Given** the user changes any setting
