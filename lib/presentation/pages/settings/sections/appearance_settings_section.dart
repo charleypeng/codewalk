@@ -50,6 +50,12 @@ class AppearanceSettingsSection extends StatelessWidget {
           (value: AppDensity.spacious, label: context.l10n.settingsAppearanceDensitySpacious),
           (value: AppDensity.extraSpacious, label: context.l10n.settingsAppearanceDensityExtraSpacious),
         ];
+        final systemFontScale = settingsProvider.systemFontScale;
+        final chatFontScale = settingsProvider.chatFontScale;
+        final terminalFontSize = settingsProvider.terminalFontSize;
+        const systemFontDivisions = 8;
+        const chatFontDivisions = 8;
+        const terminalFontDivisions = 13;
         return ListView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
@@ -406,6 +412,74 @@ class AppearanceSettingsSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            // Text size card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.settingsAppearanceFontSize,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.l10n.settingsAppearanceFontSizeDescription,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    _FontSizeSliderRow(
+                      title: context.l10n.settingsAppearanceSystemFontScale,
+                      description:
+                          context.l10n.settingsAppearanceSystemFontScaleDescription,
+                      value: systemFontScale,
+                      min: kMinSystemFontScale,
+                      max: kMaxSystemFontScale,
+                      divisions: systemFontDivisions,
+                      valueLabel: '${(systemFontScale * 100).round()}%',
+                      valueKeySuffix: 'system',
+                      onChanged: (value) => unawaited(
+                        settingsProvider.setSystemFontScale(value),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FontSizeSliderRow(
+                      title: context.l10n.settingsAppearanceChatFontScale,
+                      description:
+                          context.l10n.settingsAppearanceChatFontScaleDescription,
+                      value: chatFontScale,
+                      min: kMinChatFontScale,
+                      max: kMaxChatFontScale,
+                      divisions: chatFontDivisions,
+                      valueLabel: '${(chatFontScale * 100).round()}%',
+                      valueKeySuffix: 'chat',
+                      onChanged: (value) => unawaited(
+                        settingsProvider.setChatFontScale(value),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FontSizeSliderRow(
+                      title: context.l10n.settingsAppearanceTerminalFontSize,
+                      description:
+                          context
+                              .l10n
+                              .settingsAppearanceTerminalFontSizeDescription,
+                      value: terminalFontSize,
+                      min: kMinTerminalFontSize,
+                      max: kMaxTerminalFontSize,
+                      divisions: terminalFontDivisions,
+                      valueLabel: '${terminalFontSize.toStringAsFixed(0)} pt',
+                      valueKeySuffix: 'terminal',
+                      onChanged: (value) => unawaited(
+                        settingsProvider.setTerminalFontSize(value),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Card(
               child: Column(
                 children: [
@@ -478,6 +552,73 @@ class AppearanceSettingsSection extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _FontSizeSliderRow extends StatelessWidget {
+  const _FontSizeSliderRow({
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.valueLabel,
+    required this.valueKeySuffix,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String description;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final String valueLabel;
+  final String valueKeySuffix;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: textTheme.titleSmall,
+              ),
+            ),
+            Text(
+              valueLabel,
+              key: ValueKey<String>(
+                'settings_font_size_value_$valueKeySuffix',
+              ),
+              style: textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: textTheme.bodySmall,
+        ),
+        Slider(
+          key: ValueKey<String>('settings_font_size_slider_$valueKeySuffix'),
+          value: value.clamp(min, max),
+          min: min,
+          max: max,
+          divisions: divisions,
+          label: valueLabel,
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }
