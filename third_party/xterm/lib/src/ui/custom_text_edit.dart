@@ -263,7 +263,9 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
     final previousText = _logicalText(previousValue);
     final currentText = _logicalText(currentValue);
 
-    if (currentText != previousText) {
+    if (_isPrimedDeleteDelta(previousValue, currentValue)) {
+      widget.onDelete();
+    } else if (currentText != previousText) {
       _emitEditingDelta(previousText, currentText);
     }
 
@@ -272,6 +274,20 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
       _connection?.setEditingState(_initEditingState);
       _currentEditingState = _initEditingState.copyWith();
     }
+  }
+
+  bool _isPrimedDeleteDelta(
+    TextEditingValue previousValue,
+    TextEditingValue currentValue,
+  ) {
+    if (!widget.deleteDetection) {
+      return false;
+    }
+
+    // Android soft keyboards may delete from xterm's primed hidden buffer
+    // instead of emitting a hardware Backspace key event.
+    return currentValue.text.length < previousValue.text.length &&
+        previousValue.text.startsWith(currentValue.text);
   }
 
   String _logicalText(TextEditingValue value) {

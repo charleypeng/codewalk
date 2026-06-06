@@ -159,6 +159,9 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
             keyboardType: defaultTargetPlatform == TargetPlatform.android
                 ? TextInputType.visiblePassword
                 : TextInputType.emailAddress,
+            // Mobile IMEs often do not emit a hardware backspace event; keep
+            // xterm's hidden edit buffer primed so delete deltas are detected.
+            deleteDetection: true,
           ),
         ),
       );
