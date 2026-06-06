@@ -27,8 +27,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
       serverId: activeServer.id,
       directory: projectProvider.currentDirectory,
     );
-    final isDeadState = _terminalController.state == CodewalkTerminalState.failed ||
-        _terminalController.state == CodewalkTerminalState.exited;
+    final isDeadState = _terminalController.isDeadState;
     if (!force && signature == _terminalSessionSignature && !isDeadState) {
       return;
     }

@@ -58,6 +58,9 @@ class CodewalkTerminalController extends ChangeNotifier {
   Terminal get terminal => _terminal;
   int get terminalGeneration => _terminalGeneration;
   CodewalkTerminalState get state => _state;
+  bool get isDeadState =>
+      _state == CodewalkTerminalState.failed ||
+      _state == CodewalkTerminalState.exited;
   String get statusMessage => _statusMessage;
 
   bool get supportsRemoteTerminal => !kIsWeb;
@@ -90,8 +93,6 @@ class CodewalkTerminalController extends ChangeNotifier {
     }
 
     final targetKey = '${serverProfile.id}\u0000$normalizedDirectory';
-    final isDeadState = _state == CodewalkTerminalState.failed ||
-        _state == CodewalkTerminalState.exited;
     final canReuseSession = !force &&
         _ptyId != null &&
         _targetKey == targetKey &&
@@ -127,6 +128,17 @@ class CodewalkTerminalController extends ChangeNotifier {
         _cursor = -1;
       }
 
+      final socket = await _socketOpener(
+        url: buildCodewalkTerminalSocketUrl(
+          baseUrl: serverProfile.url,
+          ptyId: createdPtyId,
+          directory: normalizedDirectory,
+          cursor: _cursor,
+        ),
+        headers: _authorizationHeaders(serverProfile),
+      );
+      _socket = socket;
+
       _utf8DecoderSink?.close();
       _utf8DecoderSink = const Utf8Decoder(allowMalformed: true).startChunkedConversion(
         _TerminalStringSink((decoded) {
@@ -142,17 +154,6 @@ class CodewalkTerminalController extends ChangeNotifier {
           }
         }),
       );
-
-      final socket = await _socketOpener(
-        url: buildCodewalkTerminalSocketUrl(
-          baseUrl: serverProfile.url,
-          ptyId: createdPtyId,
-          directory: normalizedDirectory,
-          cursor: _cursor,
-        ),
-        headers: _authorizationHeaders(serverProfile),
-      );
-      _socket = socket;
       late final StreamSubscription<List<int>> outputSubscription;
       var outputClosed = false;
 
@@ -184,6 +185,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           }
           unawaited(closeOutput());
           _socket = null;
+          _socketDone = null;
           _state = CodewalkTerminalState.failed;
           _statusMessage = 'Terminal connection failed: $error';
           _notify();
@@ -195,6 +197,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           return;
         }
         _socket = null;
+        _socketDone = null;
         await closeOutput();
         _state = CodewalkTerminalState.exited;
         _statusMessage = 'Terminal disconnected.';
