@@ -260,7 +260,9 @@ class CodewalkTerminalController extends ChangeNotifier {
     _closeUtf8Decoder();
     await socket?.close();
     await outputSubscription?.cancel();
-    await socketDone;
+    if (socket != null) {
+      await socketDone;
+    }
   }
 
   void _closeUtf8Decoder() {
