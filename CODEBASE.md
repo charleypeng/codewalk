@@ -353,6 +353,11 @@ test/unit/providers/                   # ChatProvider split tests (8 files, para
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
   chat_provider_selection_fallback_test.dart # Message-derived selection fallback tests (Feature 7): override isExplicit semantics, _restoreSelectionFromMessages() recovery paths, stale override → message fallback, non-explicit override → message fallback precedence
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
+test/unit/quota/                        # Quota/rate-limit unit tests (provider groups, TTL cache validation, shell fallback, pace utility)
+test/unit/services/                     # Platform and runtime service unit tests:
+  codewalk_terminal_controller_test.dart #   Terminal controller: server-side PTY lifecycle, WebSocket connectivity, resize debouncing, cursor tracking
+  codewalk_terminal_url_test.dart        #   WebSocket terminal URL construction
+  read_aloud_service_test.dart           #   Text-to-speech service lifecycle, options (pitch/rate/voice), and message tracking
 test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, plus desktop/mobile spacing coverage for ChatSessionList; includes toolbar undo/redo and slash-command parity coverage)
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
