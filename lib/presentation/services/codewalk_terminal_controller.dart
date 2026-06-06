@@ -20,14 +20,23 @@ enum CodewalkTerminalState {
   failed,
 }
 
+typedef CodewalkTerminalSocketOpener = Future<CodewalkTerminalSocketConnection> Function({
+  required Uri url,
+  Map<String, String>? headers,
+});
+
 class CodewalkTerminalController extends ChangeNotifier {
-  CodewalkTerminalController({TerminalRemoteDataSource? remoteDataSource})
-    : _remoteDataSource =
-          remoteDataSource ?? _UnavailableTerminalRemoteDataSource() {
+  CodewalkTerminalController({
+    TerminalRemoteDataSource? remoteDataSource,
+    CodewalkTerminalSocketOpener? socketOpener,
+  }) : _remoteDataSource =
+            remoteDataSource ?? _UnavailableTerminalRemoteDataSource(),
+       _socketOpener = socketOpener ?? openCodewalkTerminalSocket {
     _terminal = _createTerminal();
   }
 
   final TerminalRemoteDataSource _remoteDataSource;
+  final CodewalkTerminalSocketOpener _socketOpener;
 
   late Terminal _terminal;
   CodewalkTerminalSocketConnection? _socket;
@@ -111,7 +120,7 @@ class CodewalkTerminalController extends ChangeNotifier {
         _cursor = -1;
       }
 
-      final socket = await openCodewalkTerminalSocket(
+      final socket = await _socketOpener(
         url: buildCodewalkTerminalSocketUrl(
           baseUrl: serverProfile.url,
           ptyId: createdPtyId,
