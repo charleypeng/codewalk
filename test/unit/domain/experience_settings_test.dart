@@ -87,6 +87,92 @@ void main() {
     });
   });
 
+  group('font size fields', () {
+    test('default values match safe scale center and terminal default', () {
+      final defaults = ExperienceSettings.defaults();
+
+      expect(defaults.systemFontScale, 1.0);
+      expect(defaults.chatFontScale, 1.0);
+      expect(defaults.terminalFontSize, kDefaultTerminalFontSize);
+    });
+
+    test('toJson emits all three font size fields with numeric values', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        systemFontScale: 1.2,
+        chatFontScale: 1.4,
+        terminalFontSize: 16.0,
+      );
+
+      final json = settings.toJson();
+
+      expect(json['systemFontScale'], 1.2);
+      expect(json['chatFontScale'], 1.4);
+      expect(json['terminalFontSize'], 16.0);
+    });
+
+    test('round-trips font sizes through fromJson', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        systemFontScale: 0.9,
+        chatFontScale: 1.5,
+        terminalFontSize: 18.0,
+      );
+
+      final restored = ExperienceSettings.fromJson(settings.toJson());
+
+      expect(restored.systemFontScale, 0.9);
+      expect(restored.chatFontScale, 1.5);
+      expect(restored.terminalFontSize, 18.0);
+    });
+
+    test('clamps out-of-range values when parsing from json', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'systemFontScale': 5.0,
+        'chatFontScale': 0.1,
+        'terminalFontSize': 99.0,
+      });
+
+      expect(restored.systemFontScale, kMaxSystemFontScale);
+      expect(restored.chatFontScale, kMinChatFontScale);
+      expect(restored.terminalFontSize, kMaxTerminalFontSize);
+    });
+
+    test('falls back to defaults when keys are missing from json', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{});
+
+      expect(restored.systemFontScale, 1.0);
+      expect(restored.chatFontScale, 1.0);
+      expect(restored.terminalFontSize, kDefaultTerminalFontSize);
+    });
+
+    test('copyWith changes only the specified field', () {
+      final base = ExperienceSettings.defaults().copyWith(
+        systemFontScale: 1.2,
+        chatFontScale: 1.3,
+        terminalFontSize: 15.0,
+      );
+
+      final updated = base.copyWith(chatFontScale: 1.0);
+
+      expect(updated.systemFontScale, 1.2);
+      expect(updated.chatFontScale, 1.0);
+      expect(updated.terminalFontSize, 15.0);
+    });
+
+    test('clamp helpers expose the same min/max as the settings fields', () {
+      expect(clampSystemFontScale(0.1), kMinSystemFontScale);
+      expect(clampSystemFontScale(2.5), kMaxSystemFontScale);
+      expect(clampSystemFontScale(1.25), 1.25);
+
+      expect(clampChatFontScale(0.1), kMinChatFontScale);
+      expect(clampChatFontScale(2.5), kMaxChatFontScale);
+      expect(clampChatFontScale(0.9), 0.9);
+
+      expect(clampTerminalFontSize(2.0), kMinTerminalFontSize);
+      expect(clampTerminalFontSize(40.0), kMaxTerminalFontSize);
+      expect(clampTerminalFontSize(14.0), 14.0);
+    });
+  });
+
   group('shortcutActionsForRuntime', () {
     test('includes soft and hard exit on Android physical-keyboard flows', () {
       final actions = shortcutActionsForRuntime(
