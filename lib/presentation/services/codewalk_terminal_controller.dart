@@ -89,12 +89,18 @@ class CodewalkTerminalController extends ChangeNotifier {
     }
 
     final targetKey = '${serverProfile.id}\u0000$normalizedDirectory';
-    final canReuseSession = _ptyId != null && _targetKey == targetKey;
+    final isDeadState = _state == CodewalkTerminalState.failed ||
+        _state == CodewalkTerminalState.exited;
+    final canReuseSession = !force &&
+        _ptyId != null &&
+        _targetKey == targetKey &&
+        !isDeadState;
+
     if (!force && canReuseSession && _socket != null) {
       return;
     }
 
-    if (!canReuseSession) {
+    if (!canReuseSession || force) {
       await _terminateSession();
     } else {
       await _disconnectSocket();
@@ -184,7 +190,7 @@ class CodewalkTerminalController extends ChangeNotifier {
       });
     } catch (error) {
       _socket = null;
-      if (canReuseSession && createdPtyId != null) {
+      if (createdPtyId != null) {
         await _deleteRemotePty(createdPtyId, normalizedDirectory);
         if (_processToken != processToken) {
           return;
@@ -192,15 +198,6 @@ class CodewalkTerminalController extends ChangeNotifier {
         _ptyId = null;
         _targetKey = null;
         _cursor = -1;
-        return startShell(
-          serverProfile: serverProfile,
-          workingDirectory: normalizedDirectory,
-          force: false,
-        );
-      }
-      if (!canReuseSession && createdPtyId != null) {
-        await _deleteRemotePty(createdPtyId, normalizedDirectory);
-        _ptyId = null;
       }
       _state = CodewalkTerminalState.failed;
       _statusMessage = 'Terminal connection failed: $error';
