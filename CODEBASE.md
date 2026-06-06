@@ -272,7 +272,7 @@ lib/presentation/services/codewalk_terminal_socket.dart         # Conditional ex
 lib/presentation/services/codewalk_terminal_socket_io.dart      # IO implementation: `dart:io` WebSocket.connect with binary frame support (List<int> output stream)
 lib/presentation/services/codewalk_terminal_socket_stub.dart    # Non-IO platforms: throws UnsupportedError
 lib/presentation/services/codewalk_terminal_url.dart            # WebSocket URL builder: converts HTTP(S) base URL to ws(s):// + `/pty/{ptyId}/connect` with directory and cursor query params
-lib/presentation/widgets/codewalk_terminal_panel.dart           # Resizable terminal panel with reconnect/close/minimize/maximize controls, terminal-generation view rebinding, and fallback state (icon + "Try again" when not running)
+lib/presentation/widgets/codewalk_terminal_panel.dart           # Resizable terminal panel with reconnect/close/minimize/maximize controls, terminal-generation view rebinding, and fallback state (icon + "Try again" when not running); configures `TerminalView` with mobile `deleteDetection` for backspace input support on Android/iOS
 lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start, close/minimize/maximize actions, persisted panel height/maximize handling, and fallback info sheet when terminal is unsupported
 lib/presentation/pages/chat_page/chat_page_timeline_builder.dart # Main chat workspace layout: renders terminal full-width below the constrained chat column and hides composer-adjacent controls on compact/mobile while terminal is visible
 lib/domain/entities/experience_settings.dart                    # Persisted terminal visibility, height, maximize state, and read-aloud settings (readAloudEnabled, readAloudRate, readAloudPitch, readAloudVoice) inside shared experience settings
@@ -358,7 +358,7 @@ test/unit/services/                     # Platform and runtime service unit test
   codewalk_terminal_controller_test.dart #   Terminal controller: server-side PTY lifecycle, WebSocket connectivity, resize debouncing, cursor tracking
   codewalk_terminal_url_test.dart        #   WebSocket terminal URL construction
   read_aloud_service_test.dart           #   Text-to-speech service lifecycle, options (pitch/rate/voice), and message tracking
-test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, plus desktop/mobile spacing coverage for ChatSessionList; includes toolbar undo/redo and slash-command parity coverage)
+test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, and terminal mobile backspace simulation coverage)
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking; `pump_localized_app.dart` wraps widgets with all l10n delegates for locale-aware tests

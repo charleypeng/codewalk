@@ -822,6 +822,7 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Given** the user is on a compact/mobile chat layout
 - **When** the embedded terminal is open
 - **Then** CodeWalk hides the composer input area until the terminal is minimized or closed so the terminal can use the available screen space
+- **Then** mobile soft-keyboard Backspace sends a terminal backspace instead of being ignored while editing the current shell input
 - **Given** the user is on an unsupported platform
 - **When** the user taps the same terminal button
 - **Then** CodeWalk opens an informational sheet explaining that the embedded server terminal is unavailable there and points the user to composer shell mode instead
