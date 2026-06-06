@@ -78,6 +78,26 @@ const String kMoonshineModelBase = 'base';
 const String kParakeetModelDefault = 'parakeet-v3';
 const String kSenseVoiceModelDefault = 'sensevoice-2024-07-17';
 
+const double kMinSystemFontScale = 0.8;
+const double kMaxSystemFontScale = 1.6;
+const double kMinChatFontScale = 0.8;
+const double kMaxChatFontScale = 1.6;
+const double kMinTerminalFontSize = 9.0;
+const double kMaxTerminalFontSize = 22.0;
+const double kDefaultTerminalFontSize = 13.0;
+
+double clampSystemFontScale(double value) {
+  return value.clamp(kMinSystemFontScale, kMaxSystemFontScale);
+}
+
+double clampChatFontScale(double value) {
+  return value.clamp(kMinChatFontScale, kMaxChatFontScale);
+}
+
+double clampTerminalFontSize(double value) {
+  return value.clamp(kMinTerminalFontSize, kMaxTerminalFontSize);
+}
+
 class ShortcutDefinition {
   const ShortcutDefinition({
     required this.action,
@@ -606,6 +626,9 @@ class ExperienceSettings {
       readAloudRate: 0.5,
       readAloudPitch: 1.0,
       readAloudVoice: null,
+      systemFontScale: 1.0,
+      chatFontScale: 1.0,
+      terminalFontSize: kDefaultTerminalFontSize,
     );
   }
   const ExperienceSettings({
@@ -658,6 +681,9 @@ class ExperienceSettings {
     this.readAloudRate = 0.5,
     this.readAloudPitch = 1.0,
     this.readAloudVoice,
+    this.systemFontScale = 1.0,
+    this.chatFontScale = 1.0,
+    this.terminalFontSize = kDefaultTerminalFontSize,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -709,6 +735,9 @@ class ExperienceSettings {
   final double readAloudRate;
   final double readAloudPitch;
   final String? readAloudVoice;
+  final double systemFontScale;
+  final double chatFontScale;
+  final double terminalFontSize;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -760,6 +789,9 @@ class ExperienceSettings {
     double? readAloudRate,
     double? readAloudPitch,
     String? Function()? readAloudVoice,
+    double? systemFontScale,
+    double? chatFontScale,
+    double? terminalFontSize,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -828,6 +860,9 @@ class ExperienceSettings {
       readAloudVoice: readAloudVoice != null
           ? readAloudVoice()
           : this.readAloudVoice,
+      systemFontScale: systemFontScale ?? this.systemFontScale,
+      chatFontScale: chatFontScale ?? this.chatFontScale,
+      terminalFontSize: terminalFontSize ?? this.terminalFontSize,
     );
   }
 
@@ -919,6 +954,9 @@ class ExperienceSettings {
       'readAloudRate': readAloudRate,
       'readAloudPitch': readAloudPitch,
       if (readAloudVoice != null) 'readAloudVoice': readAloudVoice,
+      'systemFontScale': systemFontScale,
+      'chatFontScale': chatFontScale,
+      'terminalFontSize': terminalFontSize,
     };
   }
 
@@ -978,6 +1016,9 @@ class ExperienceSettings {
     var readAloudRate = defaults.readAloudRate;
     var readAloudPitch = defaults.readAloudPitch;
     String? readAloudVoice = defaults.readAloudVoice;
+    var systemFontScale = defaults.systemFontScale;
+    var chatFontScale = defaults.chatFontScale;
+    var terminalFontSize = defaults.terminalFontSize;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -1319,6 +1360,21 @@ class ExperienceSettings {
       readAloudVoice = readAloudVoiceJson.trim();
     }
 
+    final systemFontScaleJson = json['systemFontScale'];
+    if (systemFontScaleJson is num) {
+      systemFontScale = clampSystemFontScale(systemFontScaleJson.toDouble());
+    }
+
+    final chatFontScaleJson = json['chatFontScale'];
+    if (chatFontScaleJson is num) {
+      chatFontScale = clampChatFontScale(chatFontScaleJson.toDouble());
+    }
+
+    final terminalFontSizeJson = json['terminalFontSize'];
+    if (terminalFontSizeJson is num) {
+      terminalFontSize = clampTerminalFontSize(terminalFontSizeJson.toDouble());
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -1369,6 +1425,9 @@ class ExperienceSettings {
       readAloudRate: readAloudRate,
       readAloudPitch: readAloudPitch,
       readAloudVoice: readAloudVoice,
+      systemFontScale: systemFontScale,
+      chatFontScale: chatFontScale,
+      terminalFontSize: terminalFontSize,
     );
   }
 }
