@@ -1,204 +1,292 @@
-# Final Synthesized Execution Plan — Final Assistant Message Flicker Regression Fix
+# Final Synthesized Execution Plan — Simplify Embedded Terminal Implementation
 
-**Status**: Ready  
-**Date**: 2026-05-29  
-**Request**: Fix chat regression where the final assistant message flickers between complete and "still receiving" appearance in a loop after `session.idle` fires.
+## Execution Plan (Synthesized)
+
+> **This is an imperative execution directive, not a ranking or comparison.** Every decision below is final and resolved. Every detail needed for implementation is explicitly stated. A future executor with zero prior context must be able to implement the entire plan by reading this section alone. Conflicting alternatives from individual planners have been resolved — this plan contains one harmonious path, not options.
+
+### Status
+
+Ready
+
+### Problem
+
+The embedded terminal in CodeWalk is unreliable and frequently bugs out. Specifically:
+1. **Dead session reuse**: The controller (`CodewalkTerminalController`) reuses stale PTY session IDs (`_ptyId`) when the terminal is in a `failed` or `exited` state, leading to broken WebSocket connection attempts.
+2. **Force reconnect leaks**: Using the Reconnect button (`force: true`) only disconnects the WebSocket stream but fails to terminate/delete the PTY session on the server, resulting in PTY leaks and reconnects to stale sessions.
+3. **UTF-8 split chunk decoding**: Using stateless `utf8.decode()` on incoming WebSocket chunks corrupts multi-byte UTF-8 sequences (such as accented characters, non-ASCII symbols, and emojis) if a character's byte sequence is split across frame boundaries.
+4. **Unhandled resize exceptions**: When the PTY session is closed or unreachable, debounced `resizePty` API calls throw exceptions which escape the `Timer` callback and crash the application.
+
+### Objective
+
+Simplify and stabilize the embedded terminal implementation so it handles lifecycle transitions cleanly, decodes streamed output correctly without corruption, and remains crash-free during resize operations.
+
+### Context and Constraints
+
+- **Main Target File**: `lib/presentation/services/codewalk_terminal_controller.dart`
+- **Other Affected Files**:
+  - `lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart` (ensure signature cache doesn't block dead-session restarts)
+- **Quality Gates**: `make check` must pass cleanly.
+- **Rules**:
+  - Keep changes strictly client-side to satisfy ADR-023/ADR-027. Do not modify server-side contracts or PTY API endpoints.
+  - Do not modify the `xterm` third-party package itself.
+  - Test the controller deterministically via unit tests using constructor injection seams.
+
+### Decisions (Resolved)
+
+1. **PTY Session Reuse Policy**: Only reuse the PTY session when it is healthy and active. Dead states (`failed`, `exited`) must bypass reuse and trigger a fresh PTY creation.
+2. **Force Reconnect Policy**: When starting the shell with `force: true` (e.g. from a user-initiated Reconnect click), unconditionally terminate and delete the existing PTY session first, then spawn a fresh PTY.
+3. **Recursive Retry Removal**: Remove the recursive `startShell` call from the `catch` block on socket connection error. Unbounded retries cause infinite connection loops on persistent network errors. Instead, transition directly to `failed` and display a clear error message, letting the user manually click Reconnect.
+4. **Stateful Decoding Pattern**: Implement a per-connection stateful UTF-8 chunk decoder using `Utf8Decoder(allowMalformed: true).startChunkedConversion` mapped to a custom `StringSink` wrapper forwarding to `_terminal.write`. Store the decoder reference on the connection/listener scope (or reset it properly in the controller) to prevent state bleeding between sessions.
+5. **Debounce Resize Exception Swallowing**: Wrap `resizePty` in a `.catchError((_) {})` handler within the timer callback, and verify that the session identity (`_ptyId` and `_directory`) has not changed before calling the API.
 
 ---
 
-## Problem
+### Overview
 
-In CodeWalk (Flutter app for OpenCode AI agents), the final assistant message appears complete, then reverts to an incomplete/"still receiving" appearance, then comes back, then disappears again — in a visible loop. The regression was introduced by commit `f8d6c3c6c` ("fix: restore file path taps and settle chat send lifecycle") which changed the `session.idle` handler to unconditionally null `_activeMessageStreamSessionId` and immediately mark incomplete assistant messages as completed — without cancelling the still-alive send stream.
+We will update the terminal controller to prevent dead session reuse, clean up server-side PTYs on force reconnect, adopt a stateful UTF-8 decoder for stream output, and swallow exceptions during resize. We will also add a socket-opener injection seam to the constructor to allow thorough unit testing with fakes, and write unit tests in `test/unit/services/codewalk_terminal_controller_test.dart`.
 
-## Objective
+---
 
-The final assistant message must appear once as complete and remain stable — no flicker, no loop. The fix must:
-- Stop the exact failure mode (complete → incomplete → complete → loop)
-- Preserve the intentional `f8d6c3c6c` behavior (composer UI settles immediately on `session.idle`)
-- Follow ADR-023 (OpenCode contract-first): `message.updated` with `time.completed` is authoritative
-- Not break ADR-025 (assistant disclosure ownership) or ADR-028 (scroll ownership)
+### Steps
 
-## Context and Constraints
-
-- **Framework**: Flutter (Dart), Material You, responsive for desktop + mobile
-- **Send protocol**: `prompt_async` — no per-send SSE; delivery via provider-level SSE + polling fallback
-- **Key invariant**: `session.idle` is the terminal lifecycle signal per ADR-023
-- **Stream lifecycle**: `_messageSubscription` is NOT cancelled on `session.idle` — the stream drains in the background (by design)
-- **Message mutation**: `_updateOrAddMessage` at `chat_provider_message_state_ops.dart:332` performs `_messages[index] = message` — a blind replacement
-- **Ingress paths**: Send stream listener, `_fetchMessageFallback` (from SSE `message.updated`), debounced `_scheduleDebouncedMessageFallback` (from `message.part.updated`)
-- **Must pass**: `make check` (analyze + test)
-
-## Why This Plan
-
-12 independent AI planners (planDeepSeek4Flash, planDeepSeek4Pro, planFlash, planG31Pro, planGLM51, planMimo25, planMimo25Pro, planMiniMax25, planMiniMax27, planQwen35Plus, planQwen36Plus, planQwen37Max) all independently diagnosed the same root cause and converged on the same core fix: a **monotonic completion guard** in `_updateOrAddMessage`. The consensus across 12 independent reviews (Stage 2.2) strongly confirms this approach.
-
-The synthesized plan adds one lightweight secondary hardening (cancel debounced fallback timers on idle) that prevents unnecessary HTTP round-trips. All other proposed hardening layers (stream cancellation, generation increment, session-level timestamp gates, completed→completed merge, refreshActiveSessionView guards) were evaluated and **rejected** as either redundant with the core guard, risky to existing invariants, or over-engineered.
-
-**Rejected alternatives and why:**
-- **Stream cancellation on idle**: Would skip `onDone` cleanup (abort suppression, snapshot persist, insights load) — regresses `f8d6c3c6c`
-- **Generation increment on idle**: Existing test at line 1577 expects stream to deliver completed messages after idle — would break
-- **Session-level timestamp gate** (planMiniMax25): Blocks ALL mutations after idle, including authoritative `message.updated` — violates ADR-023
-- **Defensive completedTime copy** (planDeepSeek4Pro): Silently "repairs" stale data rather than rejecting it — masks real bugs
-- **Completed→completed merge** (planGLM51): Unnecessary complexity; server-authoritative complete message should replace entirely
-- **refreshActiveSessionView guard** (planMimo25): Too broad, touches unrelated reconciliation flows
-
-## Overview
-
-A **two-point fix**: 
-1. **Monotonic completion guard** in `_updateOrAddMessage` — prevents any incomplete `AssistantMessage` from overwriting a completed one (primary, covers all ingress paths)
-2. **Cancel debounced fallback timers** on `session.idle` — prevents unnecessary HTTP requests that would be rejected anyway (secondary optimization)
-
-Plus a regression test that directly reproduces the exact flicker failure mode and asserts stability.
-
-## Steps
-
-### Step 1: Add monotonic completion guard in `_updateOrAddMessage` (PRIMARY)
-
-- **File**: `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart`
-- **Location**: Lines 329-333, inside the `if (index != -1)` block, before `_messages[index] = message`
+#### 1. Add Socket Opener Test Seam to Controller
+- **Files**: `lib/presentation/services/codewalk_terminal_controller.dart`
 - **Details**:
+  Define a typedef at the top of the file:
+  ```dart
+  typedef CodewalkTerminalSocketOpener = Future<CodewalkTerminalSocketConnection> Function({
+    required Uri url,
+    Map<String, String>? headers,
+  });
+  ```
+  Add a private `_socketOpener` field to `CodewalkTerminalController` and expose it via the constructor (defaulting to the global `openCodewalkTerminalSocket`):
+  ```dart
+  class CodewalkTerminalController extends ChangeNotifier {
+    CodewalkTerminalController({
+      TerminalRemoteDataSource? remoteDataSource,
+      CodewalkTerminalSocketOpener? socketOpener,
+    }) : _remoteDataSource = remoteDataSource ?? _UnavailableTerminalRemoteDataSource(),
+         _socketOpener = socketOpener ?? openCodewalkTerminalSocket {
+      _terminal = _createTerminal();
+    }
+  
+    final TerminalRemoteDataSource _remoteDataSource;
+    final CodewalkTerminalSocketOpener _socketOpener;
+    ...
+  ```
+  Replace the direct call `openCodewalkTerminalSocket(...)` at line 114 with `_socketOpener(...)`.
+- **Validation**: Check that the project compiles using `make check`.
 
-```dart
-final index = _messages.indexWhere((m) => m.id == message.id);
-if (index != -1) {
-  // Monotonic completion guard (ADR-023): once an AssistantMessage has
-  // been marked completed (by session.idle → _markIncompleteAssistantMessagesAsCompleted,
-  // or by authoritative message.updated with time.completed), never allow a
-  // late incomplete event from the draining send stream or a stale fallback
-  // fetch to regress it. The guard lifts when the incoming message is also
-  // completed — allowing server-authoritative completedTime to replace the
-  // locally-synthesized one.
-  final existing = _messages[index];
-  if (existing is AssistantMessage &&
-      existing.isCompleted &&
-      message is AssistantMessage &&
-      !message.isCompleted) {
-    AppLogger.debug(
-      'Skipping incomplete overwrite of completed assistant message: '
-      '${message.id} (existing completedTime=${existing.completedTime})',
-    );
+#### 2. Update Reuse Logic and Simplify Catch Block
+- **Files**: `lib/presentation/services/codewalk_terminal_controller.dart`
+- **Details**:
+  Replace `canReuseSession` definition in `startShell` with state-aware checks:
+  ```dart
+  final targetKey = '${serverProfile.id}\u0000$normalizedDirectory';
+  final isDeadState = _state == CodewalkTerminalState.failed ||
+      _state == CodewalkTerminalState.exited;
+  final canReuseSession = !force &&
+      _ptyId != null &&
+      _targetKey == targetKey &&
+      !isDeadState;
+  
+  if (!force && canReuseSession && _socket != null) {
     return;
   }
-  _messages[index] = message;
-  _messagesVersion++;
-  // ... rest unchanged
-```
-
-- **Risk**: Low — guard only blocks the specific regression pattern (completed → incomplete downgrade for same message ID). All other paths flow through unchanged: incomplete → incomplete (streaming updates), incomplete → complete (first completion), complete → complete (authoritative server update).
-- **Coverage**: All three ingress paths (send stream, `_fetchMessageFallback`, debounced part fallback) converge at `_updateOrAddMessage` — single guard covers all.
-- **Source**: Universal consensus across all 12 first-round plans and all 12 second-pass reviews.
-
-### Step 2: Cancel debounced fallback timers on `session.idle` (SECONDARY)
-
-- **File**: `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart`
-- **Location**: Inside the `session.idle` handler, after line 408 (after `_markIncompleteAssistantMessagesAsCompleted`), within the `isCurrentSession` block
-- **Details**:
-
-```dart
-// Cancel pending debounced message fallback timers — session.idle is
-// the terminal signal; no further remote resolution is needed. This
-// prevents unnecessary HTTP GETs that the monotonic guard would discard.
-for (final entry in _messageFallbackDebounceById.entries.toList()) {
-  final messageId = entry.key;
-  final msgIndex = _messages.indexWhere((m) => m.id == messageId);
-  if (msgIndex != -1 && _messages[msgIndex].sessionId == sessionId) {
-    entry.value.cancel();
-    _messageFallbackDebounceById.remove(messageId);
+  
+  if (!canReuseSession || force) {
+    await _terminateSession();
+  } else {
+    await _disconnectSocket();
   }
-}
-```
+  ```
+  Unify cleanup and eliminate recursion in the catch block:
+  ```dart
+  } catch (error) {
+    _socket = null;
+    if (createdPtyId != null) {
+      await _deleteRemotePty(createdPtyId, normalizedDirectory);
+      if (_processToken != processToken) {
+        return;
+      }
+      _ptyId = null;
+      _targetKey = null;
+      _cursor = -1;
+    }
+    _state = CodewalkTerminalState.failed;
+    _statusMessage = 'Terminal connection failed: $error';
+    _notify();
+  }
+  ```
+- **Validation**: Make sure PTY sessions are deleted when force-reconnected.
 
-- **Risk**: Low — cancelled timers simply won't fire. The guard in Step 1 already protects against any that slip through. This is an optimization: it avoids the HTTP request entirely rather than filtering its result.
-- **Source**: planQwen37Max, endorsed by several second-pass reviews.
+#### 3. Integrate Stateful UTF-8 Decoder
+- **Files**: `lib/presentation/services/codewalk_terminal_controller.dart`
+- **Details**:
+  Add private class `_TerminalStringSink` at the bottom of the file (before `_UnavailableTerminalRemoteDataSource`):
+  ```dart
+  class _TerminalStringSink implements Sink<String> {
+    _TerminalStringSink(this._onData);
+    final void Function(String) _onData;
+  
+    @override
+    void add(String data) => _onData(data);
+  
+    @override
+    void close() {}
+  }
+  ```
+  Add a field `Sink<List<int>>? _utf8DecoderSink;` to the controller class.
+  In `startShell()`, right before calling `_socketOpener` inside the `try` block, initialize the decoder:
+  ```dart
+  _utf8DecoderSink?.close();
+  _utf8DecoderSink = const Utf8Decoder(allowMalformed: true).startChunkedConversion(
+    _TerminalStringSink((decoded) {
+      if (_processToken != processToken || decoded.isEmpty) {
+        return;
+      }
+      _terminal.write(decoded);
+      if (_state == CodewalkTerminalState.starting) {
+        _state = CodewalkTerminalState.running;
+        _statusMessage = 'Connected to ${serverProfile.displayName} in $normalizedDirectory';
+        _notify();
+      }
+    }),
+  );
+  ```
+  Update the WebSocket messages listener to feed incoming bytes into the decoder:
+  ```dart
+  outputSubscription = socket.messages.listen(
+    (bytes) {
+      if (_processToken != processToken) {
+        return;
+      }
+      if (_consumeCursorFrame(bytes)) {
+        return;
+      }
+      _utf8DecoderSink?.add(bytes);
+    },
+    ...
+  ```
+  Ensure the decoder sink is closed in all termination paths (`closeOutput()`, `_disconnectSocket()`, `_terminateSession()`, and `dispose()`):
+  ```dart
+  void _closeUtf8Decoder() {
+    _utf8DecoderSink?.close();
+    _utf8DecoderSink = null;
+  }
+  ```
+  Call `_closeUtf8Decoder()` inside `closeOutput()`, `_disconnectSocket()`, and `_terminateSession()`.
 
-### Step 3: Add regression test for the exact flicker failure mode
+#### 4. Guard and Handle Exceptions in Resize Callback
+- **Files**: `lib/presentation/services/codewalk_terminal_controller.dart`
+- **Details**:
+  Update `terminal.onResize` inside `_createTerminal` to use `.catchError` and check session identity:
+  ```dart
+  terminal.onResize = (width, height, _, _) {
+    final ptyId = _ptyId;
+    final directory = _directory;
+    if (ptyId == null || directory == null) {
+      return;
+    }
+    _resizeDebounceTimer?.cancel();
+    _resizeDebounceTimer = Timer(const Duration(milliseconds: 80), () {
+      if (_disposed || _ptyId != ptyId || _directory != directory) {
+        return;
+      }
+      unawaited(
+        _remoteDataSource
+            .resizePty(
+              ptyId: ptyId,
+              directory: directory,
+              rows: height,
+              cols: width,
+            )
+            .catchError((Object error) {
+              // Swallow resize exceptions on closed/unreachable PTYs
+            }),
+      );
+    });
+  };
+  ```
 
-- **File**: `test/unit/providers/chat_provider_realtime_test.dart`
-- **Location**: After the existing `'session.idle ends active composer state while send stream drains'` test (~line 1641)
-- **Test name**: `'monotonic completion guard: completed assistant message survives late incomplete stream event after session.idle'`
-- **Scenario**:
-  1. Set up send stream controller via `chatRepository.sendMessageHandler`
-  2. `sendMessage` → provider subscribes to stream
-  3. Deliver an INCOMPLETE assistant message (`completedTime == null`) through the stream
-  4. Emit `session.idle` SSE event → `_markIncompleteAssistantMessagesAsCompleted` stamps `completedTime`
-  5. Assert `provider.messages.last.isCompleted == true`
-  6. Deliver a LATE incomplete version of the same message ID through the stream (simulating stale polling snapshot)
-  7. **Assert**: message stays completed (`isCompleted == true`), `completedTime` unchanged
-  8. Deliver a COMPLETE version through the stream (simulating authoritative server update)
-  9. **Assert**: message IS updated to the new content (complete → complete allowed through guard)
+#### 5. Expose Dead States to ChatPage Signatures
+- **Files**: `lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart`
+- **Details**:
+  In `_startTerminalForCurrentProject`, prevent the signature match check from returning early if the controller is in a dead state (`failed` or `exited`):
+  ```dart
+  // Line ~30:
+  final isDeadState = _terminalController.state == CodewalkTerminalState.failed ||
+      _terminalController.state == CodewalkTerminalState.exited;
+  if (!force && signature == _terminalSessionSignature && !isDeadState) {
+    return;
+  }
+  ```
 
-- **Risk**: Low — uses existing test infrastructure (`FakeChatRepository`, `StreamController`, `emitEvent`)
-- Also add test: **`'debounced fallback timers cancelled on session.idle'`** — schedule a debounced fallback, fire `session.idle`, assert timer was cancelled and HTTP GET does not fire.
+#### 6. Add Controller Unit Tests
+- **Files**: `test/unit/services/codewalk_terminal_controller_test.dart`
+- **Details**:
+  Create the unit test file covering the test cases detailed in the Testing Strategy below.
 
-### Step 4: Run `make check`
+---
 
-- **Command**: `export PATH="$HOME/flutter/bin:$PATH" && make check`
-- **Validate**: All existing tests pass, new tests pass, zero analysis errors
-- **Risk**: None
+### Risks & Mitigations
 
-## Risks & Mitigations
+- **Risk: Memory leak from unclosed UTF-8 decoder**
+  - *Mitigation*: Ensure `_closeUtf8Decoder()` is called explicitly in all cleanups: `closeOutput()`, `_disconnectSocket()`, `_terminateSession()`, and `dispose()`.
+- **Risk: Swallowed resize errors hiding real bugs**
+  - *Mitigation*: Swallowing is appropriate here because resize fails asynchronously when the session closes. The actual connection status is handled authoritatively by the WebSocket listeners (`onError` / `done`), so ignoring resize failures is safe.
+- **Risk: Cursor-frame byte 0.0 rendering issues**
+  - *Mitigation*: Keep the `_consumeCursorFrame(bytes)` check ahead of the decoder sink call so it consumes the bytes and returns `true`, completely bypassing the UTF-8 decoder.
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| Guard blocks a legitimate update where server sends incomplete message after completed one for same ID | Low | ADR-023: `session.idle` is terminal. `message.updated` with `time.completed` is authoritative. An incomplete message after idle is a contract violation — rejecting it is correct. |
-| Guard prevents an intermediate streaming update that adds new parts before completion | None | Guard only fires when existing IS completed. During active streaming before idle, `existing.isCompleted` is false → guard does not fire. |
-| Timer cancellation could cancel a timer for a different session's message | Low | Guard at Step 2 checks `_messages[msgIndex].sessionId == sessionId` — only cancels timers for the idle session's messages. |
-| `make check` fails on ARM64 host | Low | `make check` (analyze + test) works fine on ARM64. Only `make android` is affected by the ARM64 build limitation. |
+---
 
-## Assumptions to Validate
+### Assumptions to Validate
 
-| Assumption | How to verify | If false |
-|------------|---------------|----------|
-| `_updateOrAddMessage` is the sole mutation bottleneck for full message replacements | Search all callers: `grep -rn "_updateOrAddMessage" lib/` | If another path directly mutates `_messages`, add a guard there too |
-| `_copyMessageWithParts` preserves `completedTime` from existing message | Read line 60 of `chat_provider_message_state_ops.dart` — `completedTime: message.completedTime` | If it does not, add a `message.part.updated` guard in event reducer |
-| `_messageFallbackDebounceById` field exists and stores `Timer` values | Read `chat_provider.dart` for field declaration | If field is named differently, adjust Step 2 accordingly |
-| Send stream IS NOT cancelled on `session.idle` | Read `chat_provider_event_reducer_ops.dart:375-425` — only `_activeMessageStreamSessionId = null` | If stream IS cancelled, the flicker cause is different — investigate `_fetchMessageFallback` as sole source |
+- **Assumption**: The server handles `deletePty` idempotently (returns success or 404 which is ignored).
+  - *Validation*: Confirmed in `TerminalRemoteDataSource.deletePty` implementation which catches `DioException` and ignores 404.
 
-## Decisions and Nuances
+---
 
-- **Guard is monotonic, not temporal**: The guard checks `existing.isCompleted && !incoming.isCompleted` — it does NOT compare timestamps or check "which arrived first." This is the simplest correct invariant: once `completedTime` is non-null, it stays non-null.
-- **No completed→completed merge**: When both messages are completed, the incoming message replaces entirely. ADR-023 says the server is authoritative — if the server says this is the final message, CodeWalk shows it as-is. No heuristic parts-length comparison.
-- **Helper method extraction NOT included**: Several plans proposed extracting a `_shouldSkipMessageUpdate` helper. For 6 lines of guard code, inlining is clearer and avoids unnecessary indirection. A helper can be extracted later if reused.
-- **Stream listener gate NOT included**: planDeepSeek4Pro's stream gate (`_activeMessageStreamSessionId != streamSessionId → return`) is semantically correct but redundant with the monotonic guard. The guard is the correct layer — no point guarding the transport when the data layer already protects.
-- **`_markIncompleteAssistantMessagesAsCompleted` double-call left as-is**: Lines 396 and 408 both call this method. Line 396 handles non-current sessions; line 408 handles current sessions. The method is idempotent. Consolidating adds risk for no functional gain.
+### Decisions and Nuances
 
-## Blockers and Open Questions
+- **Use of `const Utf8Decoder(allowMalformed: true)`**: Do not use `utf8.decoder` directly since it defaults to `allowMalformed: false` and would throw formatting exceptions on malformed byte inputs from the shell.
+- **Process Token Validation**: Sink string delivery checks `_processToken == processToken` before writing to the terminal to isolate stale WebSocket stream messages from newer shell starts.
 
-None. The fix is self-contained, well-understood, and has unanimous consensus across 12 independent planner reviews.
+---
 
-## Testing Strategy
+### Testing Strategy
 
-1. **Unit test (exact failure mode)**: Step 3 test — verifies the guard prevents the exact flicker scenario
-2. **Unit test (debounced timer cleanup)**: Step 3 test — verifies timers cancelled on idle
-3. **Existing test regression**: All existing `session.idle` tests must pass (`chat_provider_realtime_test.dart:1577-1640`, `chat_provider_session_ops_test.dart:1120-1148`)
-4. **`make check`**: Full analyze + test suite pass
-5. **Manual visual validation** (post-implementation): Send a message, observe the final assistant message appears once and stays stable — no flicker between complete/incomplete states
+Create a new unit test suite: `test/unit/services/codewalk_terminal_controller_test.dart`.
 
-## Execution Handoff
+Implement the following test cases:
+1. **Re-connection logic (force: true)**:
+   - Call `startShell` once.
+   - Call `startShell` with `force: true`.
+   - Assert `deletePty` was called on the first PTY session, and a new `createPty` was called for the second one.
+2. **Dead sessions are not reused**:
+   - Set state to `failed` or `exited` on the controller.
+   - Call `startShell` with `force: false` for the same target directory.
+   - Assert `createPty` is called (not reusing the old PTY).
+3. **Split UTF-8 decoding**:
+   - Emit `[0xE2]` and `[0x82, 0xAC]` (forming `€`).
+   - Verify terminal buffer prints `€` correctly, without replacement glyphs.
+4. **Resize exception safety**:
+   - Mock `resizePty` to throw an exception.
+   - Trigger a resize event on the terminal, wait for the debounce timer, and assert no unhandled exception is thrown.
 
-Starting point: `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart`, line 329.
+---
 
-First files to open:
-1. `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` (add guard at line 330)
-2. `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart` (add timer cleanup in `session.idle` handler)
-3. `test/unit/providers/chat_provider_realtime_test.dart` (add regression tests)
+### Execution Handoff
 
-Commands:
-```bash
-# After edits:
-export PATH="$HOME/flutter/bin:$PATH"
-make check
-```
+Start by implementing the modifications to `codewalk_terminal_controller.dart`. Then add the signature cache check to `chat_page_terminal_runtime.dart`, create the unit test file, and run `make check` to verify.
 
-## Out of Scope
+---
 
-- Cancelling `_messageSubscription` on `session.idle`
-- Incrementing `_messageStreamGeneration` on `session.idle`
-- Adding `_sessionIdleCurrentSessionAt` timestamp field
-- Changing `_markIncompleteAssistantMessagesAsCompleted` return type
-- Guarding `_fetchMessageFallback` separately (redundant with monotonic guard)
-- Guarding `refreshActiveSessionView` merge path
-- Guarding `message.part.updated` handler (uses `_copyMessageWithParts` which preserves `completedTime`)
+### Out of Scope
+
+- Modifying the PTY REST API contract.
+- Changing `xterm` dependency.
+- Layout or design modifications to the terminal panel widget.
 
 ---
 
@@ -206,105 +294,123 @@ make check
 
 ### Full-Planner Consensus Pass
 
-- **Selected full planners (Stage 2.2)**: All 12 first-round planners participated as evaluators (all passed the strict `full` gate in Stage 2.1)
-- **Skipped**: No — all 12 were preliminarily `full`
-- **Second-pass plans received**: 12 (planDeepSeek4Flash, planDeepSeek4Pro, planFlash, planG31Pro, planGLM51, planMimo25, planMimo25Pro, planMiniMax25, planMiniMax27, planQwen35Plus, planQwen36Plus, planQwen37Max)
-- **Detailed candidate summaries**: Each candidate plan sent into Stage 2.2 had a rich paragraph covering strategy, likely files/modules/tests, sequencing, risks, validation, unique insights, and omissions
-- **Consensus summary**: All 12 second-pass reviews confirmed the monotonic completion guard as the correct approach. planFlash and planG31Pro consistently appeared in top 3 across non-owner rankings for their minimal/surgical approach. planMiniMax25 consistently ranked bottom for its session-level timestamp gate. planDeepSeek4Pro's defensive copy approach was broadly rejected as over-complex. planMimo25's three-layer defense received mixed reviews — the guard layer was praised but the stream cancellation and refreshView guard layers were deemed too risky.
-- **Self-bias adjustment**: Each planner's ranking of its own plan was discounted. Non-owner average rank, non-owner top-3 frequency, and non-owner `full` judgments were the primary decision signals.
+- Selected full planners: `planCodex54`, `planCodex54mini`, `planCodex55`, `planFlash35`, `planGLM51`, `planKimi26`, `planMimo25`, `planNemoUltra`, `planO46`
+- Skipped: no
+- Second-pass plans received: 9
+- Detailed candidate summaries: Confirmed that each candidate summary sent in Stage 2.2 covered their core strategy, key files, sequencing, risks, and validation.
+- Consensus summary: All planners strongly agreed on tightening PTY reuse checks to reject dead states, terminating and deleting the remote PTY on `force: true`, using a stateful chunked UTF-8 decoder, swallowing resize errors inside the timer callback, and creating a socket-opener seam in the controller constructor for unit testing.
+- Self-bias adjustment: Owner-plan rankings were evaluated neutrally; plans were ranked solely on technical precision, completeness, and edge case safety.
 
 ### Consensus Evidence Table
 
 | Candidate | Exact failure-mode coverage | Implementation completeness | Validation of exact case | Risk/blocker handling | Dependency/API certainty | Full verdict | Critical objections |
 |-----------|-----------------------------|-----------------------------|--------------------------|-----------------------|--------------------------|--------------|---------------------|
-| planFlash | ✅ Guard blocks complete→incomplete | ✅ Minimal, 5 lines | ✅ Test covers exact flicker | ✅ Low risk, narrow guard | ✅ None | full | None |
-| planG31Pro | ✅ Same guard, ADR-023 anchored | ✅ Clear, well-documented | ✅ Test covers exact flicker | ✅ Low risk | ✅ None | full | None |
-| planGLM51 | ✅ Guard + complete→complete merge | ⚠️ Merge logic adds complexity | ✅ Test covers lifecycle | ⚠️ Merge heuristic risky | ✅ None | full | Merge heuristic could mask part-removal events |
-| planMiniMax27 | ✅ Guard, dead-code analysis | ✅ Simple guard | ✅ Test covers SSE after idle | ✅ Low risk | ✅ None | full | None |
-| planMimo25Pro | ✅ Guard, ingress mapping | ✅ Well-analyzed | ✅ Test covers stream after idle | ✅ Low risk | ✅ None | full | None |
-| planQwen36Plus | ✅ Guard, gen check analysis | ✅ Good analysis | ✅ Test covers exact flicker | ✅ Low risk | ✅ None | full | None |
-| planDeepSeek4Flash | ✅ Guard + notify consolidation | ⚠️ Return type change | ✅ Test covers exact flicker | ⚠️ Return type change touches 11 callers | ✅ None | full | Unnecessary refactor mixed with bug fix |
-| planQwen35Plus | ✅ Guard + helper + fetch guard | ⚠️ Two redundant injection points | ✅ Test covers exact flicker | ✅ Low risk | ✅ None | full | Redundant fetch guard |
-| planQwen37Max | ✅ Guard + fetch guard + timer cleanup | ✅ Three complementary layers | ✅ Three tests | ✅ Low risk | ✅ None | full | None |
-| planDeepSeek4Pro | ✅ Stream gate + defensive copy | ⚠️ Defensive copy masks bugs | ✅ Two tests | ⚠️ Defensive copy hides real issues | ✅ None | full | Defensive copy silences evidence of real bugs |
-| planMimo25 | ✅ Three layers | ⚠️ Over-engineered | ✅ Test covers lifecycle | ⚠️ Stream cancel loses onDone cleanup | ✅ None | full | Stream cancellation regresses f8d6c3c6c intent |
-| planMiniMax25 | ⚠️ Timestamp gate blocks ALL mutations | ⚠️ Too aggressive for current session | ❌ No test described | ⚠️ Blocks authoritative message.updated | ✅ None | not full | **Critical**: Blocks server-authoritative complete updates — violates ADR-023 |
+| planCodex54 | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planCodex54mini | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planCodex55 | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planFlash35 | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planGLM51 | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planKimi26 | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planMimo25 | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planNemoUltra | Pass | Pass | Pass | Pass | Pass | `full` | None |
+| planO46 | Pass | Pass | Pass | Pass | Pass | `full` | None |
 
 ### Vetoes, Blockers, and Overrides
 
-- **Critical objections raised**: 
-  - planMiniMax25: Session-level timestamp gate blocks ALL mutations after idle, including authoritative `message.updated` with `time.completed` — **violates ADR-023**. Rendering: **not full**, excluded from winner consideration.
-- **Resolved objections**: None unresolved that affect the winning approach.
-- **Unresolved objections**: None — all 11 full plans agree on the monotonic guard approach.
-- **Consensus overrides**: None. The synthesized plan follows the broad consensus.
-- **Scoring/voting role**: Ranking averages and top-3 frequency were advisory signals only. planFlash (most minimal) and planG31Pro (best ADR-023 anchoring) were the strongest by non-owner consensus. The final synthesized plan adopts the monotonic guard from all 11 full plans and adds timer cleanup (from planQwen37Max) as the only secondary hardening.
+- Critical objections raised: None
+- Resolved objections: N/A
+- Unresolved objections: None
+- Consensus overrides: None
+- Scoring/voting role: Averages and rankings were used as advisory signals to rank plans by technical precision and implementation details.
 
 ### Per-Planner Assessment
 
-#### planFlash
-- **Strengths**: Purest expression of the core fix. 5 lines, single file, minimal diff. Best simplicity-to-correctness ratio.
-- **Weaknesses**: No secondary hardening. Single guard covers all paths but leaves debounced timers running wastefully.
-- **Unique insights**: The fix is so minimal it's almost a one-liner — the guard IS the plan.
+### planCodex55
+- Strengths: Highly detailed, constructor injection for mock socket openers, identity checks in resize timer.
+- Weaknesses: None major.
+- Unique insights: Socket opener callback signature in constructor.
 
-#### planG31Pro
-- **Strengths**: Strongest ADR-023 anchoring. Explicitly frames the fix as a "monotonic completion invariant" — the correct mental model.
-- **Weaknesses**: Marginally more verbose than planFlash for the same fix.
-- **Unique insights**: The "monotonic completion" framing makes the fix self-documenting and auditable.
+### planCodex54
+- Strengths: Great lifecycle checks, cursor frame skip details, and clean stateful decoder sink setup.
+- Weaknesses: Kept recursive retry logic in catch block.
+- Unique insights: Detailed identity-guarding rules for resize.
 
-#### planGLM51
-- **Strengths**: Most detailed merge logic for completed→completed case. Addresses edge case where server delivers completed message with fewer parts than local.
-- **Weaknesses**: Merge heuristic (prefer longer parts list) could mask legitimate part removals. Adds ~15 lines over the minimal guard.
-- **Unique insights**: Identifies that completed→completed updates should be handled explicitly, not just allowed to pass through.
+### planCodex54mini
+- Strengths: Compact, correct, good regression test focus.
+- Weaknesses: Less detailed.
+- Unique insights: None.
 
-#### planQwen37Max
-- **Strengths**: Only plan to address debounced timer race. Three complementary layers. Comprehensive test coverage.
-- **Weaknesses**: The `_fetchMessageFallback` pre-guard is redundant with the `_updateOrAddMessage` guard.
-- **Unique insights**: Timer cleanup prevents HTTP requests that the guard would reject — optimization that saves round-trips.
+### planGLM51
+- Strengths: Clean `_Utf8ChunkedDecoder` composable helper class, `_disposed` checks in resize.
+- Weaknesses: Lacked constructor socket opener injection.
+- Unique insights: Multi-layer resize safety.
+
+### planKimi26
+- Strengths: `sessionIsAlive` state abstraction, custom decoder wrapper.
+- Weaknesses: Lighter on mock test setups.
+- Unique insights: Clean session state grouping.
+
+### planO46
+- Strengths: Forwarding sink implementation, good test case coverage.
+- Weaknesses: Less detail on process token isolation.
+- Unique insights: None.
+
+### planFlash35
+- Strengths: Correctly identifies all 4 bugs.
+- Weaknesses: Vague test strategy, lacks decoder close/flush details.
+- Unique insights: None.
+
+### planMimo25
+- Strengths: Conceptual coverage of all fixes.
+- Weaknesses: Missing details on unit tests.
+- Unique insights: None.
+
+### planNemoUltra
+- Strengths: Cleanup-focused, process token management.
+- Weaknesses: Stored decoder state at class level rather than per-connection.
+- Unique insights: ByteConversionSink usage.
 
 ### Failed Agents
 
-- **planKimi26**: Phase A empty response on both attempts — failed to respond to readiness probe
-- **planMiniMax27**: Phase B empty response on first attempt, succeeded on retry
+- `planG31Pro`: failed readiness handshake (Phase A).
+- `planDeepSeek4Flash`: failed/cancelled in Phase B.
+- `planDeepSeek4Pro`: failed/cancelled in Phase B.
+- `planMimo25Pro`: failed/cancelled in Phase B.
 
-### Why This Synthesized Plan Is Best
-- Adopts the universal monotonic guard from all 11 full plans
-- Adopts the debounced timer cleanup from planQwen37Max as lightweight optimization
-- Rejects all over-engineered/risky hardening layers (stream cancel, generation increment, timestamp gate, defensive copy, merge, refreshView guard)
-- 3 files changed, ~20 lines of new code, 2 new tests
-- Unanimous consensus support across 12 independent planner reviews
+### Why this synthesized plan is best
+
+- It implements constructor-injected socket opening, enabling pure unit tests with fake streams.
+- It tightens PTY reuse, prevents stale-session leakage, and resolves force reconnects correctly.
+- It decodes UTF-8 statefully and isolates cursor frames.
+- It swallows resize errors and guards against timer race conditions.
+- It eliminates the recursive connection loop bug.
 
 ### Best Individual Plan Verdict
-- **Winner**: planFlash (by non-owner cross-planner consensus)
-- **Why**: Simplest correct fix. Pure monotonic guard. 5 lines. Every non-owner review placed it in the top 3. The guard is universally recognized as necessary and sufficient.
-- **Trade-off notes**: planG31Pro has better documentation/ADR anchoring. planQwen37Max adds valuable timer cleanup. The synthesized plan incorporates the best of all three.
-- **Note**: Final synthesized plan combines the guard from planFlash/planG31Pro with the timer cleanup from planQwen37Max.
+
+- Winner: `planCodex55`
+- Why this plan ranked first: Complete coverage of all 4 bug requirements, correct stateful sink design, identity-guarded resize try/catch, and the constructor socket-opener seam for mock testing.
+- Trade-off notes: Combined with GLM51's `_disposed` guards and Codex54's cursor frame handling for maximum safety.
 
 ### Final Ranking Rationale
 
-- **Position 1 — planFlash**: Wins by non-owner consensus. Appeared in top 3 of 9 out of 12 non-owner rankings. Pure, minimal, correct. The canonical implementation of the consensus fix.
-- **Position 2 — planG31Pro**: Functionally identical to planFlash with stronger ADR-023 documentation. "Monotonic completion invariant" framing is the best mental model.
-- **Position 3 — planGLM51**: Guard + complete→complete merge. The merge adds complexity but addresses a real edge case. Higher complexity cost keeps it below the simpler plans.
-- **Position 4 — planMiniMax27**: Guard + dead-code analysis. Correct fix with good contextual analysis of the idle handler.
-- **Position 5 — planMimo25Pro**: Guard + thorough ingress path mapping. The mapping is excellent documentation but the fix is identical to planFlash.
-- **Position 6 — planQwen36Plus**: Guard + generation check gap analysis. Good analysis, same fix.
-- **Position 7 — planQwen37Max**: Guard + fetch guard + timer cleanup. Timer cleanup is valuable but the fetch guard is redundant.
-- **Position 8 — planQwen35Plus**: Helper + two guards. Helper adds indirection; second guard is redundant.
-- **Position 9 — planDeepSeek4Flash**: Guard + notify consolidation. Return type change is unnecessary refactor.
-- **Position 10 — planDeepSeek4Pro**: Stream gate + defensive copy. Defensive copy masks real bugs; stream gate is redundant with guard.
-- **Position 11 — planMimo25**: Three layers. Stream cancellation regresses f8d6c3c6c intent; refreshView guard is too broad.
-- **Position 12 — planMiniMax25**: Session-level timestamp gate. **Not full** — blocks authoritative `message.updated` with `time.completed`, violating ADR-023.
+- Position 1 — `planCodex55`: Top rank due to constructor injection socket seam, retry simplification, and robust try/catch resize logic.
+- Position 2 — `planCodex54`: Highly complete, but kept recursive retry in catch block.
+- Position 3 — `planCodex54mini`: Clean and correct, but less detailed.
+- Position 4 — `planGLM51`: Excellent helper class and resize guards, but lacked constructor socket injection seam.
+- Position 5 — `planKimi26`: Clean state abstraction, but lighter on socket mock details.
+- Position 6 — `planO46`: Correct direction, but less detailed on process token isolation.
+- Position 7 — `planFlash35`: Correct list of fixes, but lacks decoder flush and test injection details.
+- Position 8 — `planMimo25`: Lacked test specifics and implementation detail.
+- Position 9 — `planNemoUltra`: Class-level decoder sink is more error-prone than connection-scoped sink.
 
 ### Plan Ranking (Best to Worst)
 
-1. planFlash (full)
-2. planG31Pro (full)
-3. planGLM51 (full)
-4. planMiniMax27 (full)
-5. planMimo25Pro (full)
-6. planQwen36Plus (full)
-7. planQwen37Max (full)
-8. planQwen35Plus (full)
-9. planDeepSeek4Flash (full)
-10. planDeepSeek4Pro (full)
-11. planMimo25 (full)
-12. planMiniMax25
+1. planCodex55 (full)
+2. planCodex54 (full)
+3. planCodex54mini (full)
+4. planGLM51 (full)
+5. planKimi26 (full)
+6. planO46 (full)
+7. planFlash35 (full)
+8. planMimo25 (full)
+9. planNemoUltra (full)
