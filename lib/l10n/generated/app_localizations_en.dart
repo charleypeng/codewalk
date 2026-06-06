@@ -2860,6 +2860,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Switch to CodeWalk Classic to pick a brand color.';
 
   @override
+  String get settingsAppearanceChatFontScale => 'Conversation text size';
+
+  @override
+  String get settingsAppearanceChatFontScaleDescription =>
+      'Scale the chat message and composer text on top of the system text size.';
+
+  @override
   String get settingsAppearanceCodeWalkClassic => 'CodeWalk Classic';
 
   @override
@@ -2920,6 +2927,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Density and timeline bubble visibility';
 
   @override
+  String get settingsAppearanceFontSize => 'Text size';
+
+  @override
+  String get settingsAppearanceFontSizeDescription =>
+      'Adjust the size of system text, conversation text, and terminal text.';
+
+  @override
   String get settingsAppearanceLight => 'Light';
 
   @override
@@ -2960,11 +2974,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearanceSystem => 'System';
 
   @override
+  String get settingsAppearanceSystemFontScale => 'System text size';
+
+  @override
+  String get settingsAppearanceSystemFontScaleDescription =>
+      'Scale all text in the app shell, including menus, dialogs, and sidebars.';
+
+  @override
   String get settingsAppearanceTaskList => 'Task list';
 
   @override
   String get settingsAppearanceTaskListDescription =>
       'Show or hide the session task list widget.';
+
+  @override
+  String get settingsAppearanceTerminalFontSize => 'Terminal text size';
+
+  @override
+  String get settingsAppearanceTerminalFontSizeDescription =>
+      'Resize the embedded terminal font. Applies immediately to running sessions.';
 
   @override
   String get settingsAppearanceTheme => 'Theme';

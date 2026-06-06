@@ -2866,6 +2866,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'برانڈ کا رنگ منتخب کرنے کے لیے CodeWalk Classic پر جائیں۔';
 
   @override
+  String get settingsAppearanceChatFontScale => 'Conversation text size';
+
+  @override
+  String get settingsAppearanceChatFontScaleDescription =>
+      'Scale the chat message and composer text on top of the system text size.';
+
+  @override
   String get settingsAppearanceCodeWalkClassic => 'کوڈ واک کلاسک';
 
   @override
@@ -2926,6 +2933,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'کثافت اور ٹائم لائن ببل کی مرئیت';
 
   @override
+  String get settingsAppearanceFontSize => 'Text size';
+
+  @override
+  String get settingsAppearanceFontSizeDescription =>
+      'Adjust the size of system text, conversation text, and terminal text.';
+
+  @override
   String get settingsAppearanceLight => 'روشنی';
 
   @override
@@ -2966,11 +2980,25 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAppearanceSystem => 'سسٹم';
 
   @override
+  String get settingsAppearanceSystemFontScale => 'System text size';
+
+  @override
+  String get settingsAppearanceSystemFontScaleDescription =>
+      'Scale all text in the app shell, including menus, dialogs, and sidebars.';
+
+  @override
   String get settingsAppearanceTaskList => 'ٹاسک لسٹ';
 
   @override
   String get settingsAppearanceTaskListDescription =>
       'سیشن ٹاسک لسٹ ویجیٹ دکھائیں یا چھپائیں۔';
+
+  @override
+  String get settingsAppearanceTerminalFontSize => 'Terminal text size';
+
+  @override
+  String get settingsAppearanceTerminalFontSizeDescription =>
+      'Resize the embedded terminal font. Applies immediately to running sessions.';
 
   @override
   String get settingsAppearanceTheme => 'تھیم';

@@ -2690,6 +2690,13 @@ class AppLocalizationsZh extends AppLocalizations {
       '切换到 CodeWalk 经典以选择品牌颜色。';
 
   @override
+  String get settingsAppearanceChatFontScale => 'Conversation text size';
+
+  @override
+  String get settingsAppearanceChatFontScaleDescription =>
+      'Scale the chat message and composer text on top of the system text size.';
+
+  @override
   String get settingsAppearanceCodeWalkClassic => 'CodeWalk 经典';
 
   @override
@@ -2745,6 +2752,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppearanceDescription => '密度和时间线气泡可见性';
 
   @override
+  String get settingsAppearanceFontSize => 'Text size';
+
+  @override
+  String get settingsAppearanceFontSizeDescription =>
+      'Adjust the size of system text, conversation text, and terminal text.';
+
+  @override
   String get settingsAppearanceLight => '浅色';
 
   @override
@@ -2783,10 +2797,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppearanceSystem => '系统';
 
   @override
+  String get settingsAppearanceSystemFontScale => 'System text size';
+
+  @override
+  String get settingsAppearanceSystemFontScaleDescription =>
+      'Scale all text in the app shell, including menus, dialogs, and sidebars.';
+
+  @override
   String get settingsAppearanceTaskList => '任务列表';
 
   @override
   String get settingsAppearanceTaskListDescription => '显示或隐藏会话任务列表小部件。';
+
+  @override
+  String get settingsAppearanceTerminalFontSize => 'Terminal text size';
+
+  @override
+  String get settingsAppearanceTerminalFontSizeDescription =>
+      'Resize the embedded terminal font. Applies immediately to running sessions.';
 
   @override
   String get settingsAppearanceTheme => '主题';

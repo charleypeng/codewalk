@@ -2894,6 +2894,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Переключитесь на CodeWalk Classic, чтобы выбрать фирменный цвет.';
 
   @override
+  String get settingsAppearanceChatFontScale => 'Conversation text size';
+
+  @override
+  String get settingsAppearanceChatFontScaleDescription =>
+      'Scale the chat message and composer text on top of the system text size.';
+
+  @override
   String get settingsAppearanceCodeWalkClassic => 'CodeWalk Classic';
 
   @override
@@ -2954,6 +2961,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Плотность и видимость пузырей на шкале времени';
 
   @override
+  String get settingsAppearanceFontSize => 'Text size';
+
+  @override
+  String get settingsAppearanceFontSizeDescription =>
+      'Adjust the size of system text, conversation text, and terminal text.';
+
+  @override
   String get settingsAppearanceLight => 'Светлая';
 
   @override
@@ -2996,11 +3010,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsAppearanceSystem => 'Системная';
 
   @override
+  String get settingsAppearanceSystemFontScale => 'System text size';
+
+  @override
+  String get settingsAppearanceSystemFontScaleDescription =>
+      'Scale all text in the app shell, including menus, dialogs, and sidebars.';
+
+  @override
   String get settingsAppearanceTaskList => 'Список задач';
 
   @override
   String get settingsAppearanceTaskListDescription =>
       'Показывать или скрывать виджет списка задач сессии.';
+
+  @override
+  String get settingsAppearanceTerminalFontSize => 'Terminal text size';
+
+  @override
+  String get settingsAppearanceTerminalFontSizeDescription =>
+      'Resize the embedded terminal font. Applies immediately to running sessions.';
 
   @override
   String get settingsAppearanceTheme => 'Тема';

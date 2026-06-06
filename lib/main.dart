@@ -168,6 +168,7 @@ class MyApp extends StatelessWidget {
                 ThemeModeOption.dark => ThemeMode.dark,
                 ThemeModeOption.system => ThemeMode.system,
               };
+              final systemFontScale = settingsProvider.systemFontScale;
               return MaterialApp(
                 title: AppConstants.appName,
                 theme: AppTheme.lightFrom(
@@ -196,7 +197,13 @@ class MyApp extends StatelessWidget {
                 localeResolutionCallback: AppLocales.resolutionCallback,
                 builder: (context, child) {
                   L10nBridge.update(AppLocalizations.of(context));
-                  return child ?? const SizedBox.shrink();
+                  final mediaQuery = MediaQuery.of(context);
+                  final composedScaler = TextScaler.linear(systemFontScale);
+                  final scaledChild = MediaQuery(
+                    data: mediaQuery.copyWith(textScaler: composedScaler),
+                    child: child ?? const SizedBox.shrink(),
+                  );
+                  return scaledChild;
                 },
                 home: const AppShellPage(),
                 debugShowCheckedModeBanner: false,

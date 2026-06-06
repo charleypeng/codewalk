@@ -2748,6 +2748,13 @@ class AppLocalizationsKo extends AppLocalizations {
       '브랜드 색상을 선택하려면 CodeWalk 클래식으로 전환하세요.';
 
   @override
+  String get settingsAppearanceChatFontScale => 'Conversation text size';
+
+  @override
+  String get settingsAppearanceChatFontScaleDescription =>
+      'Scale the chat message and composer text on top of the system text size.';
+
+  @override
   String get settingsAppearanceCodeWalkClassic => 'CodeWalk 클래식';
 
   @override
@@ -2806,6 +2813,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAppearanceDescription => '간격 조밀도 및 타임라인 말풍선 표시 여부';
 
   @override
+  String get settingsAppearanceFontSize => 'Text size';
+
+  @override
+  String get settingsAppearanceFontSizeDescription =>
+      'Adjust the size of system text, conversation text, and terminal text.';
+
+  @override
   String get settingsAppearanceLight => '라이트';
 
   @override
@@ -2846,11 +2860,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAppearanceSystem => '시스템';
 
   @override
+  String get settingsAppearanceSystemFontScale => 'System text size';
+
+  @override
+  String get settingsAppearanceSystemFontScaleDescription =>
+      'Scale all text in the app shell, including menus, dialogs, and sidebars.';
+
+  @override
   String get settingsAppearanceTaskList => '작업 목록';
 
   @override
   String get settingsAppearanceTaskListDescription =>
       '세션 작업 목록 위젯의 표시 여부를 설정합니다.';
+
+  @override
+  String get settingsAppearanceTerminalFontSize => 'Terminal text size';
+
+  @override
+  String get settingsAppearanceTerminalFontSizeDescription =>
+      'Resize the embedded terminal font. Applies immediately to running sessions.';
 
   @override
   String get settingsAppearanceTheme => '테마';

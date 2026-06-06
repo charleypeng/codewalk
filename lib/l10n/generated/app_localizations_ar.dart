@@ -2824,6 +2824,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'قم بالتحويل إلى CodeWalk Classic لاختيار لون العلامة التجارية.';
 
   @override
+  String get settingsAppearanceChatFontScale => 'Conversation text size';
+
+  @override
+  String get settingsAppearanceChatFontScaleDescription =>
+      'Scale the chat message and composer text on top of the system text size.';
+
+  @override
   String get settingsAppearanceCodeWalkClassic =>
       'كود ووك الكلاسيكي (CodeWalk Classic)';
 
@@ -2885,6 +2892,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'الكثافة وظهور فقاعة المخطط الزمني';
 
   @override
+  String get settingsAppearanceFontSize => 'Text size';
+
+  @override
+  String get settingsAppearanceFontSizeDescription =>
+      'Adjust the size of system text, conversation text, and terminal text.';
+
+  @override
   String get settingsAppearanceLight => 'فاتح';
 
   @override
@@ -2926,11 +2940,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAppearanceSystem => 'النظام';
 
   @override
+  String get settingsAppearanceSystemFontScale => 'System text size';
+
+  @override
+  String get settingsAppearanceSystemFontScaleDescription =>
+      'Scale all text in the app shell, including menus, dialogs, and sidebars.';
+
+  @override
   String get settingsAppearanceTaskList => 'قائمة المهام';
 
   @override
   String get settingsAppearanceTaskListDescription =>
       'إظهار أو إخفاء عنصر واجهة مستخدم قائمة المهام للجلسة.';
+
+  @override
+  String get settingsAppearanceTerminalFontSize => 'Terminal text size';
+
+  @override
+  String get settingsAppearanceTerminalFontSizeDescription =>
+      'Resize the embedded terminal font. Applies immediately to running sessions.';
 
   @override
   String get settingsAppearanceTheme => 'السمة';

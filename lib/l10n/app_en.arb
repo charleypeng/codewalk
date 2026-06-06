@@ -3551,6 +3551,14 @@
   "@settingsAppearanceBrandColorPresetBlocked": {
     "description": "CodeWalk UI string — settingsAppearanceBrandColorPresetBlocked"
   },
+  "settingsAppearanceChatFontScale": "Conversation text size",
+  "@settingsAppearanceChatFontScale": {
+    "description": "CodeWalk UI string — settingsAppearanceChatFontScale"
+  },
+  "settingsAppearanceChatFontScaleDescription": "Scale the chat message and composer text on top of the system text size.",
+  "@settingsAppearanceChatFontScaleDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceChatFontScaleDescription"
+  },
   "settingsAppearanceCodeWalkClassic": "CodeWalk Classic",
   "@settingsAppearanceCodeWalkClassic": {
     "description": "CodeWalk UI string — settingsAppearanceCodeWalkClassic"
@@ -3623,6 +3631,14 @@
   "@settingsAppearanceDescription": {
     "description": "CodeWalk UI string — settingsAppearanceDescription"
   },
+  "settingsAppearanceFontSize": "Text size",
+  "@settingsAppearanceFontSize": {
+    "description": "CodeWalk UI string — settingsAppearanceFontSize"
+  },
+  "settingsAppearanceFontSizeDescription": "Adjust the size of system text, conversation text, and terminal text.",
+  "@settingsAppearanceFontSizeDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceFontSizeDescription"
+  },
   "settingsAppearanceLight": "Light",
   "@settingsAppearanceLight": {
     "description": "CodeWalk UI string — settingsAppearanceLight"
@@ -3671,6 +3687,14 @@
   "@settingsAppearanceSystem": {
     "description": "CodeWalk UI string — settingsAppearanceSystem"
   },
+  "settingsAppearanceSystemFontScale": "System text size",
+  "@settingsAppearanceSystemFontScale": {
+    "description": "CodeWalk UI string — settingsAppearanceSystemFontScale"
+  },
+  "settingsAppearanceSystemFontScaleDescription": "Scale all text in the app shell, including menus, dialogs, and sidebars.",
+  "@settingsAppearanceSystemFontScaleDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceSystemFontScaleDescription"
+  },
   "settingsAppearanceTaskList": "Task list",
   "@settingsAppearanceTaskList": {
     "description": "CodeWalk UI string — settingsAppearanceTaskList"
@@ -3678,6 +3702,14 @@
   "settingsAppearanceTaskListDescription": "Show or hide the session task list widget.",
   "@settingsAppearanceTaskListDescription": {
     "description": "CodeWalk UI string — settingsAppearanceTaskListDescription"
+  },
+  "settingsAppearanceTerminalFontSize": "Terminal text size",
+  "@settingsAppearanceTerminalFontSize": {
+    "description": "CodeWalk UI string — settingsAppearanceTerminalFontSize"
+  },
+  "settingsAppearanceTerminalFontSizeDescription": "Resize the embedded terminal font. Applies immediately to running sessions.",
+  "@settingsAppearanceTerminalFontSizeDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceTerminalFontSizeDescription"
   },
   "settingsAppearanceTheme": "Theme",
   "@settingsAppearanceTheme": {

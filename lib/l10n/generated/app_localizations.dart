@@ -5095,6 +5095,18 @@ abstract class AppLocalizations {
   /// **'Switch to CodeWalk Classic to pick a brand color.'**
   String get settingsAppearanceBrandColorPresetBlocked;
 
+  /// CodeWalk UI string — settingsAppearanceChatFontScale
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation text size'**
+  String get settingsAppearanceChatFontScale;
+
+  /// CodeWalk UI string — settingsAppearanceChatFontScaleDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Scale the chat message and composer text on top of the system text size.'**
+  String get settingsAppearanceChatFontScaleDescription;
+
   /// CodeWalk UI string — settingsAppearanceCodeWalkClassic
   ///
   /// In en, this message translates to:
@@ -5203,6 +5215,18 @@ abstract class AppLocalizations {
   /// **'Density and timeline bubble visibility'**
   String get settingsAppearanceDescription;
 
+  /// CodeWalk UI string — settingsAppearanceFontSize
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get settingsAppearanceFontSize;
+
+  /// CodeWalk UI string — settingsAppearanceFontSizeDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the size of system text, conversation text, and terminal text.'**
+  String get settingsAppearanceFontSizeDescription;
+
   /// CodeWalk UI string — settingsAppearanceLight
   ///
   /// In en, this message translates to:
@@ -5275,6 +5299,18 @@ abstract class AppLocalizations {
   /// **'System'**
   String get settingsAppearanceSystem;
 
+  /// CodeWalk UI string — settingsAppearanceSystemFontScale
+  ///
+  /// In en, this message translates to:
+  /// **'System text size'**
+  String get settingsAppearanceSystemFontScale;
+
+  /// CodeWalk UI string — settingsAppearanceSystemFontScaleDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Scale all text in the app shell, including menus, dialogs, and sidebars.'**
+  String get settingsAppearanceSystemFontScaleDescription;
+
   /// CodeWalk UI string — settingsAppearanceTaskList
   ///
   /// In en, this message translates to:
@@ -5286,6 +5322,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show or hide the session task list widget.'**
   String get settingsAppearanceTaskListDescription;
+
+  /// CodeWalk UI string — settingsAppearanceTerminalFontSize
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal text size'**
+  String get settingsAppearanceTerminalFontSize;
+
+  /// CodeWalk UI string — settingsAppearanceTerminalFontSizeDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Resize the embedded terminal font. Applies immediately to running sessions.'**
+  String get settingsAppearanceTerminalFontSizeDescription;
 
   /// CodeWalk UI string — settingsAppearanceTheme
   ///
