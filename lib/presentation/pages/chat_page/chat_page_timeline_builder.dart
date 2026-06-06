@@ -78,7 +78,39 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         ],
       );
     }
+    final chatFontScale = settingsProvider.chatFontScale;
+    if (chatFontScale != 1.0) {
+      final mediaQuery = MediaQuery.of(context);
+      final combinedScale = mediaQuery.textScaler.scale(1.0) * chatFontScale;
+      messageWidget = MediaQuery(
+        key: ValueKey<String>('chat_message_font_scale_${message.id}'),
+        data: mediaQuery.copyWith(
+          textScaler: TextScaler.linear(combinedScale),
+        ),
+        child: messageWidget,
+      );
+    }
     return messageWidget;
+  }
+
+  Widget _wrapWithChatFontScale({
+    required BuildContext context,
+    required SettingsProvider settingsProvider,
+    required Widget child,
+  }) {
+    final chatFontScale = settingsProvider.chatFontScale;
+    if (chatFontScale == 1.0) {
+      return child;
+    }
+    final mediaQuery = MediaQuery.of(context);
+    final combinedScale = mediaQuery.textScaler.scale(1.0) * chatFontScale;
+    return MediaQuery(
+      key: const ValueKey<String>('chat_input_font_scale'),
+      data: mediaQuery.copyWith(
+        textScaler: TextScaler.linear(combinedScale),
+      ),
+      child: child,
+    );
   }
 
   Map<String, TaskToolChildSummary> _buildTaskToolChildSummaries({
@@ -661,11 +693,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                 chatProvider.currentSession?.id;
                             final projectProvider = context
                                 .read<ProjectProvider>();
-                            return ChatInputWidget(
-                              key: ValueKey(
-                                'chat_input_${currentSessionId ?? 'draft'}',
-                              ),
-                              onSendMessage: (submission) async {
+                            return _wrapWithChatFontScale(
+                              context: context,
+                              settingsProvider: settingsProvider,
+                              child: ChatInputWidget(
+                                key: ValueKey(
+                                  'chat_input_${currentSessionId ?? 'draft'}',
+                                ),
+                                onSendMessage: (submission) async {
                                 Future<void>
                                 clearComposerContextIfNeeded() async {
                                   if (_fileContextItems.isNotEmpty) {
@@ -763,6 +798,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                   });
                                 }
                               },
+                            ),
                             );
                           },
                         ),

@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
-import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../core/i18n/l10n_context.dart';
+import '../providers/settings_provider.dart';
 import '../services/codewalk_terminal_controller.dart';
 
 class CodewalkTerminalPanel extends StatefulWidget {
@@ -146,6 +148,9 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
     if (state == CodewalkTerminalState.running ||
         state == CodewalkTerminalState.starting ||
         state == CodewalkTerminalState.exited) {
+      final terminalFontSize = context.select<SettingsProvider, double>(
+        (settings) => settings.terminalFontSize,
+      );
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
         child: KeyedSubtree(
@@ -164,6 +169,7 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
             deleteDetection:
                 defaultTargetPlatform == TargetPlatform.android ||
                 defaultTargetPlatform == TargetPlatform.iOS,
+            textStyle: TerminalStyle(fontSize: terminalFontSize),
           ),
         ),
       );
