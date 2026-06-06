@@ -53,6 +53,7 @@ class CodewalkTerminalController extends ChangeNotifier {
   int _processToken = 0;
   int _terminalGeneration = 0;
   bool _disposed = false;
+  Sink<List<int>>? _utf8DecoderSink;
 
   Terminal get terminal => _terminal;
   int get terminalGeneration => _terminalGeneration;
@@ -126,6 +127,22 @@ class CodewalkTerminalController extends ChangeNotifier {
         _cursor = -1;
       }
 
+      _utf8DecoderSink?.close();
+      _utf8DecoderSink = const Utf8Decoder(allowMalformed: true).startChunkedConversion(
+        _TerminalStringSink((decoded) {
+          if (_processToken != processToken || decoded.isEmpty) {
+            return;
+          }
+          _terminal.write(decoded);
+          if (_state == CodewalkTerminalState.starting) {
+            _state = CodewalkTerminalState.running;
+            _statusMessage =
+                'Connected to ${serverProfile.displayName} in $normalizedDirectory';
+            _notify();
+          }
+        }),
+      );
+
       final socket = await _socketOpener(
         url: buildCodewalkTerminalSocketUrl(
           baseUrl: serverProfile.url,
@@ -148,6 +165,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           _outputSubscription = null;
         }
         await outputSubscription.cancel();
+        _closeUtf8Decoder();
       }
 
       outputSubscription = socket.messages.listen(
@@ -158,13 +176,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           if (_consumeCursorFrame(bytes)) {
             return;
           }
-          _terminal.write(utf8.decode(bytes, allowMalformed: true));
-          if (_state == CodewalkTerminalState.starting) {
-            _state = CodewalkTerminalState.running;
-            _statusMessage =
-                'Connected to ${serverProfile.displayName} in $normalizedDirectory';
-            _notify();
-          }
+          _utf8DecoderSink?.add(bytes);
         },
         onError: (Object error, StackTrace stackTrace) {
           if (_processToken != processToken) {
@@ -226,6 +238,7 @@ class CodewalkTerminalController extends ChangeNotifier {
     final directory = _directory;
     _resizeDebounceTimer?.cancel();
     _resizeDebounceTimer = null;
+    _closeUtf8Decoder();
     await _disconnectSocket();
     _targetKey = null;
     _ptyId = null;
@@ -244,9 +257,15 @@ class CodewalkTerminalController extends ChangeNotifier {
     _socket = null;
     _outputSubscription = null;
     _socketDone = null;
+    _closeUtf8Decoder();
     await socket?.close();
     await outputSubscription?.cancel();
     await socketDone;
+  }
+
+  void _closeUtf8Decoder() {
+    _utf8DecoderSink?.close();
+    _utf8DecoderSink = null;
   }
 
   Future<void> _deleteRemotePty(String ptyId, String directory) async {
@@ -328,6 +347,17 @@ class CodewalkTerminalController extends ChangeNotifier {
     unawaited(_terminateSession());
     super.dispose();
   }
+}
+
+class _TerminalStringSink implements Sink<String> {
+  _TerminalStringSink(this._onData);
+  final void Function(String) _onData;
+
+  @override
+  void add(String data) => _onData(data);
+
+  @override
+  void close() {}
 }
 
 class _UnavailableTerminalRemoteDataSource implements TerminalRemoteDataSource {
