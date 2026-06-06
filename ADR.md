@@ -1996,6 +1996,10 @@ Consolidate the viewport state and scroll follow behavior to stabilize synchroni
 - ✅ Main timeline entries render without entrance animation, eliminating animation-triggered scroll metric drift.
 - ⚠ Deferring `setState` to post-frame callback is required when scroll changes trigger state updates during layout.
 
+**Note** (commits `6bda4ac`, `89aef8e`): Reader-owned viewport state is now preserved when active incoming response updates arrive below the visible reading position:
+1. **Passive auto-follow respects reading-mode viewport** — streaming response content that grows below the user's visible reading position no longer yanks the viewport downward; auto-follow only engages when the user is already at or near the bottom.
+2. **Reader-owned scroll position is stable across active-turn content growth** — the viewport anchor is maintained while the user is reading earlier content, even as new tokens or tool-call bubbles append below.
+
 ### Key Files
 
 - `lib/presentation/pages/chat_page.dart`

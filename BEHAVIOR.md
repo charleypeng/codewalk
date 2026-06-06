@@ -741,6 +741,7 @@
 - **Given** the final assistant response is already visible
 - **When** the user is reading without sending new input
 - **Then** the chat does not perform autonomous jump/scroll corrections
+- **Then** if active response updates or new messages arrive below the visible reading position, the viewport stays anchored where the user was reading and only the unread/latest affordance updates
 - **Then** auto-follow resumes only after explicit user intent (e.g., sending a new message or tapping `Go to latest`)
 - **Then** once the final response settles, shrink-correction may clean up empty space below the last message, but only after the active-turn viewport owner has been released
 
