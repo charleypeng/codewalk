@@ -320,13 +320,20 @@ class CodewalkTerminalController extends ChangeNotifier {
       }
       _resizeDebounceTimer?.cancel();
       _resizeDebounceTimer = Timer(const Duration(milliseconds: 80), () {
+        if (_disposed || _ptyId != ptyId || _directory != directory) {
+          return;
+        }
         unawaited(
-          _remoteDataSource.resizePty(
-            ptyId: ptyId,
-            directory: directory,
-            rows: height,
-            cols: width,
-          ),
+          _remoteDataSource
+              .resizePty(
+                ptyId: ptyId,
+                directory: directory,
+                rows: height,
+                cols: width,
+              )
+              .catchError((Object error) {
+                // Swallow resize exceptions on closed/unreachable PTYs
+              }),
         );
       });
     };
