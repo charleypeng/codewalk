@@ -161,7 +161,9 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
                 : TextInputType.emailAddress,
             // Mobile IMEs often do not emit a hardware backspace event; keep
             // xterm's hidden edit buffer primed so delete deltas are detected.
-            deleteDetection: true,
+            deleteDetection:
+                defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS,
           ),
         ),
       );
