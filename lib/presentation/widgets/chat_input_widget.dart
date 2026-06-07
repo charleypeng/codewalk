@@ -26,6 +26,7 @@ import '../services/speech_input_service_sensevoice.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import '../theme/app_shapes.dart';
+import '../utils/speech_engine_platform_support.dart';
 import '../theme/app_theme.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
@@ -389,46 +390,19 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         defaultTargetPlatform == TargetPlatform.linux;
   }
 
-  bool get _isNativeEngineSupported {
-    if (kIsWeb) {
-      return true;
-    }
-    return defaultTargetPlatform != TargetPlatform.linux;
-  }
-
-  bool get _isSherpaEngineSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform != TargetPlatform.android;
-  }
-
-  bool get _isMoonshineEngineSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
-  }
-
-  bool get _isParakeetEngineSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
-  }
-
-  bool get _isSenseVoiceEngineSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
-  }
+  // Platform support is centralized in [SpeechEnginePlatformSupport] so the
+  // chat input, settings, and tests all agree on what works where. See that
+  // class for the Windows-specific exclusion rationale.
+  bool get _isNativeEngineSupported =>
+      SpeechEnginePlatformSupport.isNativeSupported;
+  bool get _isSherpaEngineSupported =>
+      SpeechEnginePlatformSupport.isSherpaSupported;
+  bool get _isMoonshineEngineSupported =>
+      SpeechEnginePlatformSupport.isMoonshineSupported;
+  bool get _isParakeetEngineSupported =>
+      SpeechEnginePlatformSupport.isParakeetSupported;
+  bool get _isSenseVoiceEngineSupported =>
+      SpeechEnginePlatformSupport.isSenseVoiceSupported;
 
   bool get _isSoftwareKeyboardVisible {
     final mediaQueryInsetBottom = MediaQuery.maybeOf(

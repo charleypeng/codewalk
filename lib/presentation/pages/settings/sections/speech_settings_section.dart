@@ -16,6 +16,7 @@ import '../../../services/moonshine_model_manager.dart';
 import '../../../services/parakeet_model_manager.dart';
 import '../../../services/sensevoice_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
+import '../../../utils/speech_engine_platform_support.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
 
@@ -80,18 +81,10 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     return defaultTargetPlatform == TargetPlatform.linux;
   }
 
-  bool get _supportsSherpa {
-    if (kIsWeb) {
-      return false;
-    }
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.iOS ||
-      TargetPlatform.linux ||
-      TargetPlatform.macOS ||
-      TargetPlatform.windows => true,
-      _ => false,
-    };
-  }
+  // Platform support is centralized in [SpeechEnginePlatformSupport] so the
+  // chat input, settings, and tests all agree on what works where. See that
+  // class for the Windows-specific exclusion rationale.
+  bool get _supportsSherpa => SpeechEnginePlatformSupport.isSherpaSupported;
 
   bool get _isWindows {
     if (kIsWeb) {
@@ -100,32 +93,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     return defaultTargetPlatform == TargetPlatform.windows;
   }
 
-  bool get _supportsMoonshine {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
-  }
-
-  bool get _supportsParakeet {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
-  }
-
-  bool get _supportsSenseVoice {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
-  }
+  bool get _supportsMoonshine =>
+      SpeechEnginePlatformSupport.isMoonshineSupported;
+  bool get _supportsParakeet =>
+      SpeechEnginePlatformSupport.isParakeetSupported;
+  bool get _supportsSenseVoice =>
+      SpeechEnginePlatformSupport.isSenseVoiceSupported;
 
   @override
   void initState() {
@@ -209,16 +182,29 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     final parakeetEnabled = _supportsParakeet;
     final senseVoiceEnabled = _supportsSenseVoice;
     final nativeEnabled = !_isLinux;
-    final sherpaUnavailableHint =
-        defaultTargetPlatform == TargetPlatform.android
-        ? 'Unavailable on Android builds optimized for small APK size.'
-        : 'Not available on this platform.';
-    const moonshineUnavailableHint =
-        'Available on desktop only. Android stays native-only.';
-    const parakeetUnavailableHint =
-        'Available on desktop only. Uses offline multilingual recognition.';
-    const senseVoiceUnavailableHint =
-        'Available on desktop only. Strongest for Chinese, Cantonese, Japanese, Korean, and English.';
+    final sherpaUnavailableHint = switch (defaultTargetPlatform) {
+      TargetPlatform.android =>
+        'Unavailable on Android builds optimized for small APK size.',
+      TargetPlatform.windows =>
+        'Disabled on Windows because the underlying microphone plugin can crash the app.',
+      _ => 'Not available on this platform.',
+    };
+    final moonshineUnavailableHint = switch (defaultTargetPlatform) {
+      TargetPlatform.windows =>
+        'Disabled on Windows because the underlying microphone plugin can crash the app.',
+      _ => 'Available on desktop only. Android stays native-only.',
+    };
+    final parakeetUnavailableHint = switch (defaultTargetPlatform) {
+      TargetPlatform.windows =>
+        'Disabled on Windows because the underlying microphone plugin can crash the app.',
+      _ => 'Available on desktop only. Uses offline multilingual recognition.',
+    };
+    final senseVoiceUnavailableHint = switch (defaultTargetPlatform) {
+      TargetPlatform.windows =>
+        'Disabled on Windows because the underlying microphone plugin can crash the app.',
+      _ =>
+        'Available on desktop only. Strongest for Chinese, Cantonese, Japanese, Korean, and English.',
+    };
 
     return Card(
       child: Padding(
@@ -292,6 +278,36 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   ],
                 ),
               ),
+            if (_isWindows) ...[
+              const SizedBox(height: 4),
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Symbols.warning_amber_rounded,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        context.l10n.speechOnDeviceWindowsDisabled,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const Divider(height: 1),
             RadioListTile<SpeechToTextEngine>(
               contentPadding: EdgeInsets.zero,

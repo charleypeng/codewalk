@@ -3993,11 +3993,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get speechNativeSTTWorks =>
-      'El STT nativo funciona en Windows cuando los servicios de voz del sistema operativo están habilitados. Si la inicialización nativa falla, CodeWalk vuelve automáticamente a Sherpa. Compruebe la privacidad del micrófono en Windows, el reconocimiento de voz en línea y los paquetes de idiomas de voz instalados.';
+      'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.';
 
   @override
   String get speechNativeStartsFaster =>
       'El nativo se inicia más rápido. Sherpa se ejecuta completamente en el dispositivo con una configuración más pesada y un control de modelo más profundo.';
+
+  @override
+  String get speechOnDeviceWindowsDisabled =>
+      'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
 
   @override
   String get speechParakeet => 'Parakeet';

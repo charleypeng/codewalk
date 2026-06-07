@@ -3692,11 +3692,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get speechNativeSTTWorks =>
-      '在启用操作系统语音服务时，原生 STT 可以在 Windows 上工作。如果原生初始化失败，CodeWalk 会自动回退到 Sherpa。请检查 Windows 麦克风隐私、联机语音识别以及已安装的语音语言包。';
+      'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.';
 
   @override
   String get speechNativeStartsFaster =>
       '原生引擎启动更快。Sherpa 完全在设备上运行，具有更繁重的设置和更深度的模型控制。';
+
+  @override
+  String get speechOnDeviceWindowsDisabled =>
+      'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
 
   @override
   String get speechParakeet => 'Parakeet';

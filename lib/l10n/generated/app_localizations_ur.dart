@@ -3931,11 +3931,15 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get speechNativeSTTWorks =>
-      'مقامی STT ونڈوز پر کام کرتا ہے جب OS اسپیچ سروسز کو فعال کیا جاتا ہے۔ اگر مقامی ابتداء ناکام ہوجاتی ہے، تو CodeWalk خود بخود واپس شیرپا کے پاس آجاتا ہے۔ ونڈوز مائکروفون پرائیویسی، آن لائن اسپیچ ریکگنیشن، اور انسٹال اسپیچ لینگویج پیک چیک کریں۔';
+      'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.';
 
   @override
   String get speechNativeStartsFaster =>
       'مقامی تیزی سے شروع ہوتا ہے۔ شیرپا بھاری سیٹ اپ اور گہرے ماڈل کنٹرول کے ساتھ مکمل طور پر آن ڈیوائس چلاتا ہے۔';
+
+  @override
+  String get speechOnDeviceWindowsDisabled =>
+      'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
 
   @override
   String get speechParakeet => 'طوطا';

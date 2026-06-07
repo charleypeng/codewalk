@@ -3947,11 +3947,15 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get speechNativeSTTWorks =>
-      'নেটিভ STT উইন্ডোজে কাজ করে যখন OS স্পিচ পরিষেবাগুলি সক্রিয় থাকে। নেটিভ ইনিশিয়ালাইজেশন ব্যর্থ হলে, CodeWalk স্বয়ংক্রিয়ভাবে শেরপার কাছে ফিরে যায়। উইন্ডোজ মাইক্রোফোন গোপনীয়তা, অনলাইন স্পিচ রিকগনিশন এবং ইনস্টল করা স্পিচ ল্যাঙ্গুয়েজ প্যাকগুলি পরীক্ষা করুন৷';
+      'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.';
 
   @override
   String get speechNativeStartsFaster =>
       'নেটিভ দ্রুত শুরু হয়. শেরপা ভারী সেটআপ এবং গভীর মডেল নিয়ন্ত্রণ সহ সম্পূর্ণরূপে অন-ডিভাইস চালান।';
+
+  @override
+  String get speechOnDeviceWindowsDisabled =>
+      'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
 
   @override
   String get speechParakeet => 'প্যারাকিট';

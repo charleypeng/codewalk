@@ -41,6 +41,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-035: Message-Derived Selection Fallback with Explicit-Override Precedence
 - ADR-036: Userspace Tailscale Transport with Profile-Scoped Activation
 - ADR-037: Chat Viewport and Scroll/Follow Synchronization Revamp
+- ADR-038: Disable On-Device STT Engines on Windows Desktop
 
 ---
 
@@ -2014,3 +2015,68 @@ Consolidate the viewport state and scroll follow behavior to stabilize synchroni
 - `lib/presentation/pages/chat_page/chat_page_lifecycle.dart`
 - `lib/presentation/providers/chat_provider.dart`
 - Ref: e8ff8a78
+
+---
+
+## ADR-038: Disable On-Device STT Engines on Windows Desktop (2026-06-07)
+
+**Status**: Accepted
+
+**Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy)
+
+### Context
+
+The Windows desktop build of CodeWalk is unusable for speech-to-text. Issue #43 reports that **all** STT engines close the application automatically when the user activates voice input:
+
+> "Whenever I try to use the speech-to-text function on Windows, the application closes automatically. This happens whether I use the native option or other models like Whisper or ParaKeet."
+
+The user-visible behavior is a hard crash with no error dialog, so the cause must be a native-side segfault that bypasses Dart's exception handling. Two distinct crash surfaces are in play:
+
+1. **`record: ^6.0.0` → `record_windows: 1.0.7` (MediaFoundation).** All on-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) use the `AudioRecorder` API for microphone capture. The upstream issue `llfbandit/record#453` documents an `EXCEPTION_ACCESS_VIOLATION_READ / 0x0` in `mtx_do_lock` (MediaFoundation mutex init) that takes down the host process. `record_windows 1.0.7` ships the most recent fix ("Crashes (on Flutter 3.35.1 only ?)"), but the issue is not fully closed across all Windows + Flutter + driver combinations.
+2. **`speech_to_text: 7.3.0` (Native) on Windows.** The Windows implementation is documented as **beta** and uses the UWP Speech Recognition APIs. Failures during `speech.initialize()` or `speech.listen()` (privacy settings disabled, missing language pack, online speech recognition off) can segfault the process through the same COM/MediaFoundation surface.
+
+Because the crash is in native code, **Dart `try/catch` cannot catch it** — the only safe mitigation is to prevent the buggy code path from being invoked on Windows.
+
+### Decision
+
+Disable the on-device STT engines (Sherpa, Moonshine, Parakeet, SenseVoice) on Windows desktop. The Native engine (UWP speech recognition) remains available; the chat input and settings UI must surface that the on-device engines are intentionally disabled on Windows and explain why.
+
+1. **Centralized platform support table** — introduce `lib/presentation/utils/speech_engine_platform_support.dart` as the single source of truth for which engine works on which platform. Chat input (`_ChatInputWidgetState`) and the speech settings section (`_SpeechSettingsSectionState`) both delegate to this class instead of duplicating the platform check, so they cannot drift.
+2. **Exclusions on Windows** — every engine that depends on `record` is reported as unsupported on Windows (`isMoonshineSupported`, `isParakeetSupported`, `isSenseVoiceSupported` → `false`; `isSherpaSupported` → `false` for the same reason, even though `sherpa_onnx` does ship a Windows build). Linux and macOS keep the full on-device engine set. Web still uses the Native path only.
+3. **Auto-migrate existing Windows selections** — `SettingsProvider.initialize()` checks the persisted `speechToTextEngine`. If a Windows user has Sherpa/Moonshine/Parakeet/SenseVoice stored from a previous install, the value is migrated to `Native` and the change is persisted. This prevents a returning user from landing on a disabled engine after the next app launch.
+4. **Updated UI copy** — `Settings > Speech` on Windows shows the existing `speechNativeSTTWorks` info card (now accurate, no false promise about a Sherpa fallback), a new `speechOnDeviceWindowsDisabled` warning card explaining the limitation and pointing the user to the Native engine, and the on-device engine radio tiles appear disabled with platform-specific hint text.
+5. **i18n** — a new `speechOnDeviceWindowsDisabled` key is added to `englishTemplate` in `tool/i18n/arb_strings.dart`. All 13 non-English locale blocks have their stale `speechNativeSTTWorks` translation removed so they fall back to the new accurate English copy; translators can fill in proper localizations in a follow-up.
+
+### Rationale
+
+- The user impact (app closes) is more severe than the feature loss (no on-device STT on Windows). Native UWP speech recognition is a serviceable fallback and is the only STT path that does not depend on `record`.
+- Centralizing the platform support table prevents future drift between the chat input and the settings UI when other engines or platforms are added.
+- Auto-migrating existing Windows selections avoids a class of "I opened the app and it just doesn't speak anymore" support tickets, because the change is transparent — the user wakes up on Native instead of being silently switched during a settings change.
+- The UI copy is the load-bearing piece for user trust: the on-device engines are not "broken on my machine", they are intentionally disabled because the underlying microphone plugin is the problem. The error card plus the disabled radio tiles make that explicit.
+- Keeping `record: ^6.0.0` pinned in `pubspec.yaml` (rather than upgrading to `record 7.0.0` or `record_windows 2.0.0`) is intentional — both require Flutter 3.44/Dart 3.12 which is above the current `sdk: ^3.8.1` constraint, and the risk of a major-version audio regression on macOS/Linux outweighs the theoretical Windows benefit. The platform exclusion is the targeted mitigation.
+
+### Consequences
+
+- ✅ Windows users no longer experience a hard crash when activating voice input. The app stays responsive and surfaces a clear explanation in the settings.
+- ✅ The chat input and settings UI cannot disagree about which engines work on which platform — both delegate to `SpeechEnginePlatformSupport`.
+- ✅ Existing Windows users with on-device selections are silently migrated to Native on next launch, so the change is non-disruptive.
+- ✅ Linux and macOS keep the full on-device engine set (Moonshine/Parakeet/SenseVoice/Sherpa) with no behavioral change.
+- ⚠ On Windows, the only STT path is Native (UWP). If the OS speech privacy settings or online speech recognition are misconfigured, the user sees the existing `_buildUnavailableReason` hint and no transcription, but the app still does not crash.
+- ⚠ Users who explicitly want on-device STT on Windows must wait for either `record_windows` to ship a stable fix or for an alternative microphone capture strategy (e.g., direct MediaFoundation bindings). The exclusion can be reverted by changing the `SpeechEnginePlatformSupport` flags and the Windows branch in `SettingsProvider`.
+- ❌ On Windows, the on-device engine selection UI remains visible (so the user understands what is being disabled) but is non-interactive. The radio tiles, model management cards, and per-engine sub-cards all hide via the existing `_supports*` gates.
+- ❌ The 13 non-English `speechNativeSTTWorks` translations are removed and fall back to English until translators update them. This is the expected behavior of the safe i18n workflow.
+
+### Key Files
+
+- `lib/presentation/utils/speech_engine_platform_support.dart` — new centralized platform support table
+- `lib/presentation/widgets/chat_input_widget.dart` — chat input engine support delegates to the table
+- `lib/presentation/pages/settings/sections/speech_settings_section.dart` — settings section delegates to the table + Windows info card
+- `lib/presentation/providers/settings_provider.dart` — Windows STT selection auto-migration
+- `lib/presentation/services/speech_input_service_stt.dart` — existing Windows-specific `_buildUnavailableReason` hint retained for Native init failures
+- `lib/l10n/app_en.arb` + 13 locale ARBs — `speechOnDeviceWindowsDisabled` added; `speechNativeSTTWorks` updated; non-English translations removed for safe fallback
+- `tool/i18n/arb_strings.dart` — source of truth updated, then `generate_arb.dart` + `flutter gen-l10n` regenerated
+- `test/unit/presentation/speech_engine_platform_support_test.dart` — per-platform regression coverage (issue #43)
+- `test/unit/providers/settings_provider_test.dart` — Windows migration regression coverage
+- `BEHAVIOR.md` — new "Windows on-device STT is intentionally disabled" section + updated platform table
+- `CODEBASE.md` — new "Speech-to-Text Platform Support" cluster section
+- Ref: issue #43

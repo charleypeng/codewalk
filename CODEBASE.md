@@ -276,6 +276,20 @@ chat_input_send_controller.dart
 chat_input_speech_controller.dart
 ```
 
+### Speech-to-Text Platform Support
+
+```text
+lib/presentation/utils/speech_engine_platform_support.dart # Centralized per-engine platform support table; excludes Sherpa/Moonshine/Parakeet/SenseVoice on Windows because the underlying `record_windows` plugin can hard-crash the app (see ADR-038)
+```
+
+Platform support rules (per `SpeechEnginePlatformSupport`):
+
+- **Native** (`speech_to_text`): web + iOS/macOS/Windows/Android/Fuchsia; Linux is excluded by design (Linux defaults to Parakeet).
+- **Sherpa**: web excluded; Android excluded (slim APK); **Windows excluded** (record_windows crash); other IO platforms allowed.
+- **Moonshine / Parakeet / SenseVoice**: Linux + macOS only. Windows excluded for the same record_windows reason. Desktop-only because they bundle `sherpa_onnx` + downloadable models.
+
+The `SettingsProvider` auto-migrates Windows selections of Sherpa/Moonshine/Parakeet/SenseVoice to Native on `initialize()` so existing users never land on a crashing engine.
+
 ### Terminal Workspace
 
 ```text

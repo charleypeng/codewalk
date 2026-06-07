@@ -6976,7 +6976,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — speechNativeSTTWorks
   ///
   /// In en, this message translates to:
-  /// **'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.'**
+  /// **'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.'**
   String get speechNativeSTTWorks;
 
   /// CodeWalk UI string — speechNativeStartsFaster
@@ -6984,6 +6984,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.'**
   String get speechNativeStartsFaster;
+
+  /// CodeWalk UI string — speechOnDeviceWindowsDisabled
+  ///
+  /// In en, this message translates to:
+  /// **'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.'**
+  String get speechOnDeviceWindowsDisabled;
 
   /// CodeWalk UI string — speechParakeet
   ///

@@ -4828,13 +4828,17 @@
   "@speechNativeSTTDisabled": {
     "description": "CodeWalk UI string — speechNativeSTTDisabled"
   },
-  "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.",
+  "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.",
   "@speechNativeSTTWorks": {
     "description": "CodeWalk UI string — speechNativeSTTWorks"
   },
   "speechNativeStartsFaster": "Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.",
   "@speechNativeStartsFaster": {
     "description": "CodeWalk UI string — speechNativeStartsFaster"
+  },
+  "speechOnDeviceWindowsDisabled": "On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.",
+  "@speechOnDeviceWindowsDisabled": {
+    "description": "CodeWalk UI string — speechOnDeviceWindowsDisabled"
   },
   "speechParakeet": "Parakeet",
   "@speechParakeet": {

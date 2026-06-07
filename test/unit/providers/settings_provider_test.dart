@@ -490,20 +490,67 @@ void main() {
         );
         await second.initialize();
 
-        final expectedEngine =
-            !kIsWeb &&
-                (defaultTargetPlatform == TargetPlatform.android ||
-                    defaultTargetPlatform == TargetPlatform.iOS)
-            ? SpeechToTextEngine.native
-            : defaultTargetPlatform == TargetPlatform.linux ||
-                  defaultTargetPlatform == TargetPlatform.macOS ||
-                  defaultTargetPlatform == TargetPlatform.windows
+        // On Windows the on-device engines (Sherpa/Moonshine/Parakeet/SenseVoice)
+        // are migrated to Native because the underlying `record_windows`
+        // plugin can hard-crash the app (issue #43). On Linux/macOS the
+        // selection persists as-is. On Android, iOS, and web it falls back to
+        // Native for the slim-build engines.
+        final expectedEngine = defaultTargetPlatform == TargetPlatform.linux ||
+                defaultTargetPlatform == TargetPlatform.macOS
             ? SpeechToTextEngine.moonshine
             : SpeechToTextEngine.native;
         expect(second.speechToTextEngine, expectedEngine);
         expect(second.speechSilenceTimeoutSeconds, 7);
         expect(second.sherpaLanguageCode, 'pt');
         expect(second.moonshineModelId, kMoonshineModelBase);
+      },
+    );
+
+    // Regression coverage for issue #43: the on-device STT engines
+    // (Sherpa/Moonshine/Parakeet/SenseVoice) are disabled on Windows because
+    // the underlying `record_windows` plugin can hard-crash the app. Existing
+    // selections must be migrated to Native on initialize() so the user never
+    // lands on a crashing engine selection.
+    test(
+      'migrates Windows on-device speech engine selections to Native',
+      () async {
+        for (final engine in const [
+          SpeechToTextEngine.sherpa,
+          SpeechToTextEngine.moonshine,
+          SpeechToTextEngine.parakeet,
+          SpeechToTextEngine.sensevoice,
+        ]) {
+          final local = InMemoryAppLocalDataSource()
+            ..experienceSettingsJson = jsonEncode({'speechEngine': engine.name});
+          final provider = SettingsProvider(
+            localDataSource: local,
+            dioClient: DioClient(),
+            soundService: _FakeSoundService(),
+          );
+          await provider.initialize();
+          // On Windows, every on-device engine must migrate to Native. On
+          // Linux/macOS the engines stay (they're supported). On Android/iOS
+          // and web the existing platform migrations apply (Android migrates
+          // all 4 to Native; iOS/Web keep Sherpa and migrate the rest).
+          final expectedEngine = switch (defaultTargetPlatform) {
+            TargetPlatform.windows => SpeechToTextEngine.native,
+            TargetPlatform.android => SpeechToTextEngine.native,
+            TargetPlatform.linux => engine,
+            TargetPlatform.macOS => engine,
+            // iOS: sherpa stays, others migrate; web: sherpa stays, others migrate.
+            TargetPlatform.iOS => engine == SpeechToTextEngine.sherpa
+                ? SpeechToTextEngine.sherpa
+                : SpeechToTextEngine.native,
+            _ => engine == SpeechToTextEngine.sherpa
+                ? SpeechToTextEngine.sherpa
+                : SpeechToTextEngine.native,
+          };
+          expect(
+            provider.speechToTextEngine,
+            expectedEngine,
+            reason: 'platform=${defaultTargetPlatform.name} engine=${engine.name}',
+          );
+        }
       },
     );
 
