@@ -212,3 +212,72 @@ class _ComposerBuildKey {
     composerStatusSignature,
   );
 }
+
+// Moved from chat_page.dart — top-level enums and tour copy helper.
+enum _DisplayToggleAction {
+  thinkingBubbles,
+  toolCallBubbles,
+  taskList,
+  reviewChanges,
+  recentSessions,
+  composerTips,
+  replayTour,
+}
+
+enum _HistoryToolbarAction { undo, redo }
+
+enum _CurrentSessionAction {
+  shareToggle,
+  copyLink,
+  exportMarkdown,
+  exportJson,
+  viewTasks,
+  reviewChanges,
+  undo,
+  redo,
+  compactContext,
+}
+
+enum _SessionExportFormat { markdown, json }
+
+enum _PostOnboardingTourPhase { idle, intro, composer }
+
+enum _ScrollOwner {
+  none,
+  userDrag,
+  paginationRestore,
+  newMessage,
+  streaming,
+  returnReveal,
+  contentShrinkSnap,
+  searchResult,
+}
+
+enum _CachedViewportRestoreTarget { none, bottom, latestResponse }
+
+@visibleForTesting
+({String title, String description}) postOnboardingSidebarTourCopy({
+  required BuildContext context,
+  required bool isMobile,
+  required bool showConversationPane,
+}) {
+  if (isMobile) {
+    return (
+      title: context.l10n.chatOpenSidebar,
+      description: context.l10n.chatTourProjectsConversations,
+    );
+  }
+  if (showConversationPane) {
+    return (
+      title: context.l10n.chatOpenProject,
+      description: context.l10n.chatTourSwitchFolders,
+    );
+  }
+  return (
+    title: context.l10n.chatSidebarAccess,
+    description: context.l10n.chatTourSidebarProjectTools,
+  );
+}
+
+// _ScrollFollowMode (was at the end of chat_page.dart, line 2646).
+enum _ScrollFollowMode { following, pausedByUser, reading }
