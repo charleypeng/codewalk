@@ -1313,6 +1313,7 @@ ADR-026 specified a local PTY shell spawned on the client device using `flutter_
 5. **Composer auto-hide on compact/mobile**: On compact and mobile layouts, the composer input area is hidden while the terminal panel is open. The composer reappears when the terminal is minimized or closed.
 6. **Project directory integration**: The server-side PTY launches in the active project's working directory (the `scopeId` from the current `serverId::scopeId` context), ensuring the shell operates in the same workspace the chat conversation is about.
 7. **No server API contract changes**: The terminal transport reuses existing OpenCode streaming infrastructure (WebSocket or SSE). No new dedicated terminal endpoints are introduced — the server exposes PTY data through the established event stream contract.
+8. **Windows printable hardware-key fallback and AltGr support**: The vendored `xterm` `TerminalView` includes a Windows-only fallback that handles printable hardware-key events (raw scan codes) and AltGr key composition. This guards against input regression on international keyboard layouts where AltGr produces alternate characters (e.g. European layouts). The fallback is gated behind `TargetPlatform.windows` (Flutter platform gate) and does not affect other platforms.
 
 ### Rationale
 
@@ -1324,7 +1325,7 @@ ADR-026 specified a local PTY shell spawned on the client device using `flutter_
 
 ### Consequences
 
-- ✅ Terminal works identically on all client platforms (desktop, mobile, web) with no platform-specific native dependencies.
+- ✅ Terminal works identically on all client platforms (desktop, mobile, web) with no platform-specific native dependencies. Windows AltGr and hardware-key fallback preserves input parity for international keyboard layouts.
 - ✅ Server-side PTY runs in the correct project environment with full toolchain access.
 - ✅ Removes `flutter_pty` native compilation complexity from the client build pipeline.
 - ✅ Close/minimize/maximize semantics and composer auto-hide on compact/mobile are preserved.

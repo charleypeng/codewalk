@@ -819,6 +819,7 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Then** CodeWalk creates or reconnects to a server-hosted PTY terminal rooted in the active project directory on the OpenCode host and renders it inside the embedded panel
 - **Then** `Close terminal` fully closes the panel and terminates the active server PTY session, while `Minimize terminal` hides the panel without stopping that session
 - **Then** `Maximize terminal` expands the panel to a larger workspace view and `Restore terminal size` returns it to the saved panel height
+- **Then** on Windows, printable hardware keyboard input, including AltGr characters from international layouts, is forwarded to the terminal session instead of being dropped after focus
 - **Given** the user is on a compact/mobile chat layout
 - **When** the embedded terminal is open
 - **Then** CodeWalk hides the composer input area until the terminal is minimized or closed so the terminal can use the available screen space

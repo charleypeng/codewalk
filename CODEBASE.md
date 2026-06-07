@@ -62,7 +62,7 @@ codewalk/
 ├── linux/runner/resources/             # Linux launcher icon + desktop entry icon metadata
 ├── third_party/                         # Vendored Dart packages (path dependencies)
 │   ├── tailscale/                        # Userspace Tailscale networking; Go native build hook via `hook/build.dart`
-│   └── xterm/                            # xterm.js terminal emulator Dart port
+│   └── xterm/                            # xterm.js terminal emulator Dart port (customized with Windows-only printable hardware-key fallback and AltGr support)
 └── Makefile                            # Main development and validation commands
 ```
 
@@ -358,7 +358,7 @@ test/unit/services/                     # Platform and runtime service unit test
   codewalk_terminal_controller_test.dart #   Terminal controller: server-side PTY lifecycle, WebSocket connectivity, resize debouncing, cursor tracking
   codewalk_terminal_url_test.dart        #   WebSocket terminal URL construction
   read_aloud_service_test.dart           #   Text-to-speech service lifecycle, options (pitch/rate/voice), and message tracking
-test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, and terminal mobile backspace simulation coverage)
+test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, terminal mobile backspace simulation, Windows printable hardware key forwarding, and Windows AltGr printable forwarding)
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking; `pump_localized_app.dart` wraps widgets with all l10n delegates for locale-aware tests
