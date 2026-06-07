@@ -438,10 +438,16 @@ class TerminalViewState extends State<TerminalView> {
   }
 
   bool _shouldForwardWindowsPrintableCharacter(KeyEvent event) {
+    final isAltGrPrintable = HardwareKeyboard.instance.isControlPressed &&
+        HardwareKeyboard.instance.isAltPressed &&
+        HardwareKeyboard.instance
+            .isLogicalKeyPressed(LogicalKeyboardKey.altRight);
+
     if (defaultTargetPlatform != TargetPlatform.windows ||
         (event is! KeyDownEvent && event is! KeyRepeatEvent) ||
-        HardwareKeyboard.instance.isControlPressed ||
-        HardwareKeyboard.instance.isAltPressed ||
+        (!isAltGrPrintable &&
+            (HardwareKeyboard.instance.isControlPressed ||
+                HardwareKeyboard.instance.isAltPressed)) ||
         HardwareKeyboard.instance.isMetaPressed) {
       return false;
     }
@@ -453,7 +459,8 @@ class TerminalViewState extends State<TerminalView> {
 
     // Windows desktop can deliver printable input through hardware key events
     // without a usable text-input delta, so preserve xterm's shortcut path and
-    // forward only real printable characters as terminal text.
+    // forward only real printable characters as terminal text. AltGr reports as
+    // Ctrl+Alt on Windows layouts, but it still represents text entry.
     return character.runes
         .every((codePoint) => codePoint >= 0x20 && codePoint != 0x7f);
   }

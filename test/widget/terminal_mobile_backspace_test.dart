@@ -81,4 +81,51 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     }
   });
+
+  testWidgets('xterm forwards Windows AltGr printable characters', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      final terminalOutput = <String>[];
+      final terminal = Terminal(onOutput: terminalOutput.add);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: TerminalView(terminal, autofocus: true)),
+        ),
+      );
+      await tester.tap(find.byType(TerminalView));
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.sendKeyDownEvent(
+        LogicalKeyboardKey.controlLeft,
+        platform: 'windows',
+      );
+      await tester.sendKeyDownEvent(
+        LogicalKeyboardKey.altRight,
+        platform: 'windows',
+      );
+      final handled = await tester.sendKeyDownEvent(
+        LogicalKeyboardKey.keyQ,
+        platform: 'windows',
+        character: '@',
+      );
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyQ, platform: 'windows');
+      await tester.sendKeyUpEvent(
+        LogicalKeyboardKey.altRight,
+        platform: 'windows',
+      );
+      await tester.sendKeyUpEvent(
+        LogicalKeyboardKey.controlLeft,
+        platform: 'windows',
+      );
+      await binding.idle();
+
+      expect(handled, isTrue);
+      expect(terminalOutput.join(), '@');
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
 }
