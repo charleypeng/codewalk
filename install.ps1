@@ -96,6 +96,108 @@ function New-StartMenuShortcut([string]$TargetExePath) {
   $shortcut.Save()
 }
 
+function Stop-CodeWalkProcess {
+  $procs = @()
+  try {
+    $found = Get-Process -Name 'codewalk' -ErrorAction Stop
+    if ($found -is [array]) { $procs = $found } else { $procs = @($found) }
+  } catch { return }
+  if ($procs.Count -eq 0) { return }
+
+  Info "Stopping $($procs.Count) running CodeWalk process(es)"
+  foreach ($proc in $procs) {
+    try {
+      Stop-Process -Id $proc.Id -Force -ErrorAction Stop
+    } catch {
+      Warn "Could not stop CodeWalk process (PID $($proc.Id)): $($_.Exception.Message)"
+    }
+  }
+  foreach ($proc in $procs) {
+    $proc | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+  }
+  # Brief pause to let the OS release file handles after process exit.
+  Start-Sleep -Milliseconds 500
+
+  $survivors = Get-Process -Name 'codewalk' -ErrorAction SilentlyContinue
+  if ($survivors) {
+    Warn "CodeWalk process(es) still running after stop attempt"
+  }
+}
+
+# Schedule a directory for deletion on the next reboot using MoveFileEx.
+# Requires the MoveFileEx Win32 API via P/Invoke (usually works without admin).
+# Falls back to a warning if P/Invoke is unavailable.
+function Register-RebootDelete([string]$Path) {
+  try {
+    # Guard against duplicate Add-Type when called more than once.
+    if (-not ([System.Management.Automation.PSTypeName]'FileOps').Type) {
+      $code = '
+        using System;
+        using System.Runtime.InteropServices;
+        public class FileOps {
+          [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+          public static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, int dwFlags);
+        }
+      '
+      Add-Type -TypeDefinition $code -ErrorAction Stop
+    }
+    $MOVEFILE_DELAY_UNTIL_REBOOT = 0x00000004
+    $result = [FileOps]::MoveFileEx($Path, $null, $MOVEFILE_DELAY_UNTIL_REBOOT)
+    if ($result) {
+      Info "Scheduled locked directory for deletion on next reboot: $Path"
+    } else {
+      Warn "MoveFileEx failed for $Path (error $([System.Runtime.InteropServices.Marshal]::GetLastWin32Error()))"
+    }
+  } catch {
+    Warn "Could not schedule reboot deletion for $Path. Delete it manually after restart."
+  }
+}
+
+# Remove the install directory, handling in-use locks from a running process.
+# Tries: stop process → direct remove → rename to .old → schedule reboot delete.
+function Remove-InstallDir {
+  if (-not (Test-Path $InstallDir)) { return $true }
+
+  # Attempt 1: direct removal (works when no process is locking files).
+  try {
+    Remove-Item -Recurse -Force -Path $InstallDir -ErrorAction Stop
+    return $true
+  } catch {
+    # Directory is locked — continue to rename strategy.
+  }
+
+  # Attempt 2: stop the running process and retry removal.
+  Stop-CodeWalkProcess
+  try {
+    Remove-Item -Recurse -Force -Path $InstallDir -ErrorAction Stop
+    return $true
+  } catch {
+    # Still locked — continue to rename strategy.
+  }
+
+  # Attempt 3: rename the locked directory out of the way and schedule it
+  # for deletion on reboot. Windows allows renaming a directory that
+  # contains a running executable (but not deleting it).
+  $oldDir = "${InstallDir}.old"
+  if (Test-Path $oldDir) {
+    try {
+      Remove-Item -Recurse -Force -Path $oldDir -ErrorAction SilentlyContinue
+    } catch {
+      # If .old is also locked, schedule it for reboot deletion too.
+      Register-RebootDelete -Path $oldDir
+    }
+  }
+
+  try {
+    Rename-Item -Path $InstallDir -NewName 'CodeWalk.old' -ErrorAction Stop
+    Info "Renamed locked directory to $oldDir"
+    Register-RebootDelete -Path $oldDir
+    return $true
+  } catch {
+    Fail "Cannot remove or rename $InstallDir. Close CodeWalk and retry."
+  }
+}
+
 function Get-InstalledVersion {
   if (-not (Test-Path $VersionFile)) {
     return ""
@@ -159,9 +261,7 @@ try {
   Info "Downloading $asset"
   Invoke-WebRequest -Uri $match.browser_download_url -OutFile $zipPath
 
-  if (Test-Path $InstallDir) {
-    Remove-Item -Recurse -Force -Path $InstallDir
-  }
+  Remove-InstallDir
   New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 
   Info "Extracting package"
