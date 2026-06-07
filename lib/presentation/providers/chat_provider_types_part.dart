@@ -285,3 +285,67 @@ class _ShortcutCycleState {
   final DateTime lastActivatedAt;
   final bool reverse;
 }
+
+// Moved from chat_provider.dart — top-level enums and selection persistence snapshot.
+enum ChatState { initial, loading, loaded, error, sending }
+
+enum ChatSyncState { connected, reconnecting, delayed }
+
+enum ChatProvidersRefreshState { idle, loading, ready, failed }
+
+enum _SelectionSyncTransactionPhase {
+  idle,
+  pendingRemote,
+  appliedRemote,
+  failed,
+}
+
+class _SelectionPersistenceSnapshot {
+  const _SelectionPersistenceSnapshot({
+    required this.serverId,
+    required this.scopeId,
+    required this.selectedProviderId,
+    required this.selectedModelId,
+    required this.selectedAgentName,
+    required this.recentModelsJson,
+    required this.modelUsageCountsJson,
+    required this.selectedVariantMapJson,
+    required this.agentSelectionMemoryJson,
+    required this.sessionSelectionOverridesJson,
+    required this.syncRemote,
+  });
+
+  final String serverId;
+  final String scopeId;
+  final String? selectedProviderId;
+  final String? selectedModelId;
+  final String? selectedAgentName;
+  final String recentModelsJson;
+  final String modelUsageCountsJson;
+  final String selectedVariantMapJson;
+  final String agentSelectionMemoryJson;
+  final String sessionSelectionOverridesJson;
+  final bool syncRemote;
+
+  _SelectionPersistenceSnapshot copyWith({bool? syncRemote}) {
+    return _SelectionPersistenceSnapshot(
+      serverId: serverId,
+      scopeId: scopeId,
+      selectedProviderId: selectedProviderId,
+      selectedModelId: selectedModelId,
+      selectedAgentName: selectedAgentName,
+      recentModelsJson: recentModelsJson,
+      modelUsageCountsJson: modelUsageCountsJson,
+      selectedVariantMapJson: selectedVariantMapJson,
+      agentSelectionMemoryJson: agentSelectionMemoryJson,
+      sessionSelectionOverridesJson: sessionSelectionOverridesJson,
+      syncRemote: syncRemote ?? this.syncRemote,
+    );
+  }
+}
+
+enum SessionListFilter { active, archived, all }
+
+enum SessionListSort { recent, oldest, title }
+
+enum ChatUiNoticeType { remoteAbort, serverError }
