@@ -1,10 +1,11 @@
-import '../support/pump_localized_app.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/presentation/widgets/permission_request_card.dart';
 import 'package:codewalk/presentation/widgets/question_request_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/pump_localized_app.dart';
 
 void main() {
   testWidgets('PermissionRequestCard dispatches selected decision', (

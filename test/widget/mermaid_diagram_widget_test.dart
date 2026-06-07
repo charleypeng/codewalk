@@ -55,10 +55,7 @@ void main() {
       await tester.pumpWidget(
         localizedMaterialApp(
           home: Scaffold(
-            body: MermaidDiagramWidget(
-              code: '',
-              onCopySource: () {},
-            ),
+            body: MermaidDiagramWidget(code: '', onCopySource: () {}),
           ),
         ),
       );
@@ -74,10 +71,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         localizedMaterialApp(
-          home: Scaffold(
-            body: MermaidDiagramWidget(
-              code: 'graph TD\n  A --> B',
-            ),
+          home: const Scaffold(
+            body: MermaidDiagramWidget(code: 'graph TD\n  A --> B'),
           ),
         ),
       );

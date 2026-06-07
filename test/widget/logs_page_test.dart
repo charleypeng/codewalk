@@ -1,8 +1,9 @@
-import '../support/pump_localized_app.dart';
 import 'package:codewalk/core/logging/app_logger.dart';
 import 'package:codewalk/presentation/pages/logs_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/pump_localized_app.dart';
 
 void main() {
   setUp(AppLogger.clearEntries);

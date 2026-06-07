@@ -1,11 +1,8 @@
-import '../support/pump_localized_app.dart';
-import 'package:codewalk/core/i18n/app_locales.dart';
-import 'package:codewalk/l10n/generated/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:codewalk/core/di/injection_container.dart' as di;
+import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:codewalk/domain/entities/provider.dart';
@@ -34,6 +31,7 @@ import 'package:codewalk/domain/usecases/unshare_chat_session.dart';
 import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
 import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
+import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/pages/app_shell_page.dart';
 import 'package:codewalk/presentation/pages/onboarding_wizard_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
@@ -45,10 +43,12 @@ import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart' hide Provider;
 
 import '../support/fakes.dart';
+import '../support/pump_localized_app.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

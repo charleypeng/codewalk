@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/core/i18n/app_locales.dart';
+import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';

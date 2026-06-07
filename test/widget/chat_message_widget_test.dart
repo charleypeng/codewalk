@@ -1,3 +1,6 @@
+@Tags(<String>['slow'])
+library;
+
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
@@ -11,7 +14,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../support/pump_localized_app.dart';
 
-@Tags(<String>['slow'])
 void main() {
   testWidgets('renders historical revert action for user message callback', (
     WidgetTester tester,
@@ -2176,13 +2178,13 @@ void main() {
             time: DateTime.fromMillisecondsSinceEpoch(1000),
           ),
         ),
-        ToolPart(
+        const ToolPart(
           id: 'part_tool_summary_progress_2',
           messageId: 'msg_tool_summary_progress',
           sessionId: 'ses_tool_summary_progress',
           callId: 'call_tool_summary_progress_2',
           tool: 'read',
-          state: const ToolStatePending(),
+          state: ToolStatePending(),
         ),
       ],
     );

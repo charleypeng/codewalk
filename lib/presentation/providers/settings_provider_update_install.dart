@@ -1,0 +1,195 @@
+part of 'settings_provider.dart';
+
+extension SettingsProviderUpdateInstall on SettingsProvider {
+  Future<void> checkForUpdate() async {
+    _checkingForUpdate = true;
+    _lastCheckFoundNoUpdate = false;
+    notifyListeners();
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _updateCheckService.clearCache();
+      final result = await _updateCheckService.check(info.version);
+      if (result != null &&
+          result.isNewer &&
+          result.latestVersion != _dismissedUpdateVersion) {
+        _updateCheckResult = result;
+        _lastCheckFoundNoUpdate = false;
+      } else {
+        _updateCheckResult = null;
+        _lastCheckFoundNoUpdate = result != null;
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Update check failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _checkingForUpdate = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> dismissUpdate(String version) async {
+    _dismissedUpdateVersion = version;
+    _updateCheckResult = null;
+    _installState = UpdateInstallState.idle;
+    _installProgress = 0.0;
+    await _localDataSource.saveDismissedUpdateVersion(version);
+    notifyListeners();
+  }
+
+  /// Resets in-memory state to defaults (used after clearAll during app reset).
+  void resetToDefaults() {
+    _automaticUpdateCheckTimer?.cancel();
+    _automaticUpdateCheckTimer = null;
+    _settings = ExperienceSettings.defaults();
+    _updateCheckResult = null;
+    _dismissedUpdateVersion = null;
+    _checkingForUpdate = false;
+    _lastCheckFoundNoUpdate = false;
+    _pendingStartupUpdateToast = false;
+    _installState = UpdateInstallState.idle;
+    _installProgress = 0.0;
+    _initialized = false;
+    _initFuture = null;
+    unawaited(_syncAndroidBackgroundAlertRuntime());
+    notifyListeners();
+  }
+
+  /// Begins the in-app update installation flow for the current platform.
+  /// Android: downloads the APK then opens the system installer.
+  /// Desktop: runs the install.cat shell script and signals "Restart to apply".
+  /// Resetting to idle first lets AppShellPage clear its SnackBar guards on retry.
+  Future<void> startInstall() async {
+    if (_installState == UpdateInstallState.downloading ||
+        _installState == UpdateInstallState.installing) {
+      return;
+    }
+    final result = _updateCheckResult;
+    if (result == null) {
+      return;
+    }
+
+    // Reset to idle so AppShellPage observers can clear their snackbar guards.
+    _installState = UpdateInstallState.idle;
+    _installProgress = 0.0;
+    notifyListeners();
+
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    if (isAndroid) {
+      await _installAndroid(result);
+    } else {
+      await _installDesktop();
+    }
+  }
+
+  Future<void> _installAndroid(UpdateCheckResult result) async {
+    final apkUrl = result.apkUrl;
+    if (apkUrl == null) return;
+
+    _installState = UpdateInstallState.downloading;
+    _installProgress = 0.0;
+    notifyListeners();
+
+    String? destPath;
+    try {
+      final tmpDir = await getTemporaryDirectory();
+      destPath = '${tmpDir.path}/codewalk-update.apk';
+      // Use explicit timeouts; APK downloads can be large but should not hang forever.
+      await Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(minutes: 10),
+        ),
+      ).download(
+        apkUrl,
+        destPath,
+        onReceiveProgress: (received, total) {
+          _installProgress = total > 0 ? received / total : 0.0;
+          notifyListeners();
+        },
+      );
+      _installState = UpdateInstallState.installing;
+      notifyListeners();
+      await OpenFilex.open(destPath);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'APK download failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      // Clean up partial file so a retry does not open a corrupt APK.
+      if (destPath != null) {
+        try {
+          final file = File(destPath);
+          if (file.existsSync()) file.deleteSync();
+        } catch (_) {}
+      }
+      _installState = UpdateInstallState.failed;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _installDesktop() async {
+    _installState = UpdateInstallState.installing;
+    notifyListeners();
+
+    try {
+      final isWindows =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+      // Wrap in a timeout so a stalled network does not hang indefinitely.
+      ProcessResult processResult;
+      if (isWindows) {
+        processResult = await Process.run('powershell', [
+          '-c',
+          'irm install.cat/verseles/codewalk | iex',
+        ]).timeout(const Duration(minutes: 5));
+      } else {
+        processResult = await Process.run('sh', [
+          '-c',
+          'curl -fsSL install.cat/verseles/codewalk | sh',
+        ]).timeout(const Duration(minutes: 5));
+      }
+      _installState = processResult.exitCode == 0
+          ? UpdateInstallState.done
+          : UpdateInstallState.failed;
+      if (processResult.exitCode != 0) {
+        AppLogger.warn('Desktop install failed: ${processResult.stderr}');
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Desktop install failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _installState = UpdateInstallState.failed;
+    }
+    notifyListeners();
+  }
+
+  Future<void> restartDesktopApp() async {
+    final isDesktop =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.windows);
+    if (!isDesktop) {
+      return;
+    }
+    try {
+      final executable = Platform.resolvedExecutable;
+      final args = List<String>.from(Platform.executableArguments);
+      await Process.start(executable, args, mode: ProcessStartMode.detached);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Desktop restart relaunch failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      exit(0);
+    }
+  }
+}

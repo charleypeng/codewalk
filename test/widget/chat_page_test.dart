@@ -3122,11 +3122,7 @@ void main() {
       // Pump to let the Future.delayed fire and _activeWidgetId get set.
       await _pumpPostOnboardingTourStart(tester);
 
-      // Access ShowCaseWidgetState directly to avoid ShowcaseService scope issues.
-      final showcaseState = tester.state<ShowCaseWidgetState>(
-        find.byType(ShowCaseWidget),
-      );
-      expect(showcaseState.isShowcaseRunning, isTrue);
+      expect(ShowcaseView.get().isShowcaseRunning, isTrue);
       expect(find.text('Open sidebar'), findsOneWidget);
     });
 
@@ -3163,11 +3159,7 @@ void main() {
       // Pump to let the post-frame callback fire and the showcase delay (350ms) elapse.
       await _pumpPostOnboardingTourStart(tester);
 
-      // Access ShowCaseWidgetState directly to avoid ShowcaseService scope issues.
-      final showcaseState = tester.state<ShowCaseWidgetState>(
-        find.byType(ShowCaseWidget),
-      );
-      expect(showcaseState.isShowcaseRunning, isTrue);
+      expect(ShowcaseView.get().isShowcaseRunning, isTrue);
       expect(find.text('Open project'), findsOneWidget);
     });
 
@@ -13027,7 +13019,7 @@ void main() {
             time: DateTime.fromMillisecondsSinceEpoch(60000),
             completedTime: DateTime.fromMillisecondsSinceEpoch(60100),
             parts: <MessagePart>[
-              TextPart(
+              const TextPart(
                 id: 'part_final_reveal_alignment_intro',
                 messageId: 'msg_final_reveal_alignment',
                 sessionId: sessionId,
@@ -13123,7 +13115,7 @@ void main() {
             time: DateTime.fromMillisecondsSinceEpoch(60000),
             completedTime: DateTime.fromMillisecondsSinceEpoch(60100),
             parts: <MessagePart>[
-              TextPart(
+              const TextPart(
                 id: 'part_reading_active_final_intro',
                 messageId: 'msg_reading_active_final',
                 sessionId: sessionId,
