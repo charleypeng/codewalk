@@ -88,6 +88,8 @@ part 'chat_page/chat_page_scaffold.dart';
 part 'chat_page/chat_page_file_explorer_controller.dart';
 part 'chat_page/chat_page_file_viewer.dart';
 part 'chat_page/chat_page_timeline_builder.dart';
+part 'chat_page/chat_page_timeline_viewport.dart';
+part 'chat_page/chat_page_timeline_entries.dart';
 part 'chat_page/chat_page_composer_status.dart';
 part 'chat_page/chat_page_command_query.dart';
 part 'chat_page/chat_page_runtime_support.dart';
