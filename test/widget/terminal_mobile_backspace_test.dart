@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xterm/xterm.dart';
 
@@ -49,4 +50,35 @@ void main() {
       }
     },
   );
+
+  testWidgets('xterm forwards Windows printable hardware key characters', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      final terminalOutput = <String>[];
+      final terminal = Terminal(onOutput: terminalOutput.add);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: TerminalView(terminal, autofocus: true)),
+        ),
+      );
+      await tester.tap(find.byType(TerminalView));
+      await tester.pump(const Duration(seconds: 1));
+
+      final handled = await tester.sendKeyDownEvent(
+        LogicalKeyboardKey.keyA,
+        platform: 'windows',
+        character: 'a',
+      );
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyA, platform: 'windows');
+      await binding.idle();
+
+      expect(handled, isTrue);
+      expect(terminalOutput.join(), 'a');
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
 }

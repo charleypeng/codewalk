@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -427,7 +428,34 @@ class TerminalViewState extends State<TerminalView> {
       _scrollToBottom();
     }
 
+    if (!handled && _shouldForwardWindowsPrintableCharacter(event)) {
+      widget.terminal.textInput(event.character!);
+      _scrollToBottom();
+      return KeyEventResult.handled;
+    }
+
     return handled ? KeyEventResult.handled : KeyEventResult.ignored;
+  }
+
+  bool _shouldForwardWindowsPrintableCharacter(KeyEvent event) {
+    if (defaultTargetPlatform != TargetPlatform.windows ||
+        (event is! KeyDownEvent && event is! KeyRepeatEvent) ||
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isAltPressed ||
+        HardwareKeyboard.instance.isMetaPressed) {
+      return false;
+    }
+
+    final character = event.character;
+    if (character == null || character.isEmpty) {
+      return false;
+    }
+
+    // Windows desktop can deliver printable input through hardware key events
+    // without a usable text-input delta, so preserve xterm's shortcut path and
+    // forward only real printable characters as terminal text.
+    return character.runes
+        .every((codePoint) => codePoint >= 0x20 && codePoint != 0x7f);
   }
 
   void _onKeyboardShow() {
