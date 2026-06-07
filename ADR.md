@@ -206,6 +206,8 @@ Keep `chat_page.dart`, `chat_provider.dart`, and `chat_input_widget.dart` as sli
 
 **Note** (commit `8759defc`): Aggressive `part`/`part of` file split extended to four more large files beyond the original chat cluster. The five target files were reduced from 14,087 to 12,534 lines (−1,553). The split is purely mechanical refactoring to keep private members library-scoped — no new architectural pattern introduced, same part-file decomposition precedent as above.
 
+**Note** (plan `ca14f6af`, commits `76b5de49`, `e0cd8048`, `bbcc2e71`): Second pass split three more chat-surface files: `chat_page_timeline_builder.dart` (2,436→1,158 + 2 part files), `chat_page.dart` (2,646→2,168 + 1 part file), `chat_provider.dart` (4,206→3,788 + 1 part file). **Boundary condition**: `lib/data/datasources/chat_remote_datasource.dart` (2,401 lines) could NOT be split because it `implements ChatRemoteDataSource` (22 abstract methods); Dart extensions cannot satisfy abstract class overrides, so part/extension decomposition is inapplicable when the file's primary class must honor an interface contract. This limitation applies to any class whose public API is defined by an `abstract class` or `interface` — those files must stay monolithic or use a different decomposition strategy (e.g., delegation/mixin, separate impl classes).
+
 ---
 
 ## ADR-005: Composer Pipeline for Multimodal Input, Prompt Triggers, and Send/Stop Semantics (2026-02-19)

@@ -33,40 +33,40 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 40–74 |
 | 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 75–112 |
 | 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 113–163 |
-| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 173–209 |
-| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 211–247 |
-| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine, Parakeet V3, and SenseVoice (sherpa_onnx offline recognition) on desktop, native STT on Android; Linux defaults to Parakeet with native→Parakeet migration — pluggable by platform | 250–300 |
-| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 301–337 |
-| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 338–373 |
-| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 372–405 |
-| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 406–441 |
-| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 442–480 |
-| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 470–504 |
-| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 505–548 |
-| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 549–594 |
-| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 595–638 |
-| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 639–675 |
-| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 676–712 |
-| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 713–764 |
-| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 765–809 |
-| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 810–869 |
-| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 870–913 |
-| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 914–954 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source; Known Pitfall P-002: final assistant message flicker after session.idle (monotonic completion guard) | 958–1103 |
-| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1106–1180 |
-| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1181–1232 |
-| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1233–1291 |
-| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile, Windows AltGr/hardware-key fallback for international keyboards | 1294–1356 |
-| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1357–1437 |
-| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in; narrow `opencode-go` exception for dashboard credential opt-in (workspace ID + auth cookie, scoped by serverId, quota-probe only, removable via UI); Codex `providerId` guard prevents single-window label collapse | 1438–1517 |
-| 030 | OpenChamber-driven realtime hardening and permission continuity — atomic refresh consolidation, mutation guard during reconnect failures, authoritative pruning delay, and bounded reconnect helpers | 1518–1561 |
-| 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, distinct inline rewind action for server-confirmed user messages, and permission `remember: true` companion fix for `always` replies | 1562–1629 |
-| 032 | LaTeX math rendering with `flutter_math_fork` (pure-Dart KaTeX port), custom `$…$`/`$$…$$` Markdown delimiters, `MathExpressionWidget` with styled fallback, and `showMathRendering` toggle in `ExperienceSettings` — typeset math in chat without WebView | 1630–1683 |
-| 033 | Cloudflare Managed OAuth as optional desktop + Android reverse-proxy auth (ADR-023 exception) — `ServerProfile.oauthEnabled`, `OAuthService` conditional export (io/stub), auth code + PKCE S256, DCR, `OAuthTokenStorage` in `flutter_secure_storage` scoped by profileId+serverUrl, Bearer token for matching origin only, OAuth/Basic Auth mutually exclusive per profile, desktop (local HTTP redirect) and Android (flutter_appauth) via `AppProvider.supportsCloudflareAccessOAuth`, `/oauth/callback` with state/duplicate rejection, health checks record OAuth challenges, rollback by disabling `oauthEnabled` + clearing credentials | 1684–1796 |
-| 034 | Density-aware spacing tokens via `AppDensitySpacing` static helper — 5-tier `AppDensity` switch expressions for horizontal/vertical padding, gaps, content insets, chrome/composer convenience builders, replacing ~25 hardcoded EdgeInsets/SizedBox magic numbers | 1797–1853 |
-| 035 | Message-derived selection fallback with explicit-override precedence — 3-tier restoration (explicit override → message scan → global defaults), LRU cache-first backward scan for `providerId`/`modelId`/`mode`/`variant`, neutral-message filtering, isExplicit flag, override promotion on fallback success; OpenChamber parity for `restoreSessionStateFromMessages()` | 1854–1904 |
-| 036 | Userspace Tailscale transport with vendored `package:tailscale`, `hook/build.dart` no-op on Windows, `ServerProfile.tailscaleEnabled`, one node per process, active-profile-only transport, inactive health returns unknown, custom Dio HttpClientAdapter preserving SSE + cancellation, interactive auth UX via `AppProvider` reactive state + `authenticateTailscale()`, auth panels in onboarding/settings, no auto-launch of auth URLs, no Web/Windows | 1905–1964 |
-| 037 | Chat Viewport and Scroll/Follow Synchronization Revamp — consolidation of viewport flags to `_ScrollFollowMode`, turn-scoped reveal guard, time-windowed REST status guard, build-phase sync extraction, no entrance motion on timeline entries (passive auto-follow uses non-animated `jumpTo` with bounded retry), and reader-owned viewport preservation during active incoming response growth | 1965–2012 |
+| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces; part/extension split inapplicable to abstract-class implementations | 173–211 |
+| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 213–249 |
+| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine, Parakeet V3, and SenseVoice (sherpa_onnx offline recognition) on desktop, native STT on Android; Linux defaults to Parakeet with native→Parakeet migration — pluggable by platform | 252–302 |
+| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 303–339 |
+| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 340–375 |
+| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 374–407 |
+| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 408–443 |
+| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 444–482 |
+| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 472–506 |
+| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 507–550 |
+| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 551–596 |
+| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 597–640 |
+| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 641–677 |
+| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 678–714 |
+| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 715–766 |
+| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 767–811 |
+| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 812–871 |
+| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 872–915 |
+| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 916–956 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source; Known Pitfall P-002: final assistant message flicker after session.idle (monotonic completion guard) | 960–1105 |
+| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1108–1182 |
+| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1183–1234 |
+| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1235–1293 |
+| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile, Windows AltGr/hardware-key fallback for international keyboards | 1296–1358 |
+| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1359–1439 |
+| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in; narrow `opencode-go` exception for dashboard credential opt-in (workspace ID + auth cookie, scoped by serverId, quota-probe only, removable via UI); Codex `providerId` guard prevents single-window label collapse | 1440–1519 |
+| 030 | OpenChamber-driven realtime hardening and permission continuity — atomic refresh consolidation, mutation guard during reconnect failures, authoritative pruning delay, and bounded reconnect helpers | 1520–1563 |
+| 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, distinct inline rewind action for server-confirmed user messages, and permission `remember: true` companion fix for `always` replies | 1564–1631 |
+| 032 | LaTeX math rendering with `flutter_math_fork` (pure-Dart KaTeX port), custom `$…$`/`$$…$$` Markdown delimiters, `MathExpressionWidget` with styled fallback, and `showMathRendering` toggle in `ExperienceSettings` — typeset math in chat without WebView | 1632–1685 |
+| 033 | Cloudflare Managed OAuth as optional desktop + Android reverse-proxy auth (ADR-023 exception) — `ServerProfile.oauthEnabled`, `OAuthService` conditional export (io/stub), auth code + PKCE S256, DCR, `OAuthTokenStorage` in `flutter_secure_storage` scoped by profileId+serverUrl, Bearer token for matching origin only, OAuth/Basic Auth mutually exclusive per profile, desktop (local HTTP redirect) and Android (flutter_appauth) via `AppProvider.supportsCloudflareAccessOAuth`, `/oauth/callback` with state/duplicate rejection, health checks record OAuth challenges, rollback by disabling `oauthEnabled` + clearing credentials | 1686–1798 |
+| 034 | Density-aware spacing tokens via `AppDensitySpacing` static helper — 5-tier `AppDensity` switch expressions for horizontal/vertical padding, gaps, content insets, chrome/composer convenience builders, replacing ~25 hardcoded EdgeInsets/SizedBox magic numbers | 1799–1855 |
+| 035 | Message-derived selection fallback with explicit-override precedence — 3-tier restoration (explicit override → message scan → global defaults), LRU cache-first backward scan for `providerId`/`modelId`/`mode`/`variant`, neutral-message filtering, isExplicit flag, override promotion on fallback success; OpenChamber parity for `restoreSessionStateFromMessages()` | 1856–1906 |
+| 036 | Userspace Tailscale transport with vendored `package:tailscale`, `hook/build.dart` no-op on Windows, `ServerProfile.tailscaleEnabled`, one node per process, active-profile-only transport, inactive health returns unknown, custom Dio HttpClientAdapter preserving SSE + cancellation, interactive auth UX via `AppProvider` reactive state + `authenticateTailscale()`, auth panels in onboarding/settings, no auto-launch of auth URLs, no Web/Windows | 1907–1966 |
+| 037 | Chat Viewport and Scroll/Follow Synchronization Revamp — consolidation of viewport flags to `_ScrollFollowMode`, turn-scoped reveal guard, time-windowed REST status guard, build-phase sync extraction, no entrance motion on timeline entries (passive auto-follow uses non-animated `jumpTo` with bounded retry), and reader-owned viewport preservation during active incoming response growth | 1967–2014 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -77,14 +77,14 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–11 |
 | Folder Structure | 13–68 |
 | Entry Points | 70–80 |
-| Core Modules | 82–188 |
-| Chat Architecture | 190–290 |
-| Data & Domain Layers | 292–302 |
-| Key API/DataSource locations | 304–323 |
-| Main Commands | 325–347 |
-| Testing/Quality Gates | 349–380 |
-| Internationalization (i18n) | 382–393 |
-| Notes | 395–581 |
+| Core Modules | 82–189 |
+| Chat Architecture | 191–296 |
+| Data & Domain Layers | 298–308 |
+| Key API/DataSource locations | 310–329 |
+| Main Commands | 331–353 |
+| Testing/Quality Gates | 355–386 |
+| Internationalization (i18n) | 388–399 |
+| Notes | 401–588 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

@@ -39,12 +39,12 @@ codewalk/
 │       │   ├── app_shell_page.dart
 │       │   ├── onboarding_wizard_page.dart # First-run onboarding wizard (Welcome → Server Setup → Ready)
 │       │   ├── chat_page.dart          # Chat orchestrator/facade
-│       │   ├── chat_page_types_part.dart # Shared intents, configurations, and keys (including _ViewportBuildKey)
+│       │   ├── chat_page_types_part.dart # Shared intents, configurations, and keys (including _ViewportBuildKey, 7 enums, and postOnboardingSidebarTourCopy helper)
 │       │   ├── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
-│       │   └── chat_page/              # ChatPage decomposed clusters (21 modules)
+│       │   └── chat_page/              # ChatPage decomposed clusters (24 modules)
 │       ├── providers/                  # App/Chat/Project/Settings state orchestration
 │       │   ├── chat_provider.dart      # Chat provider orchestrator/facade
-│       │   └── chat_provider/          # ChatProvider decomposed clusters (17 modules)
+│       │   └── chat_provider/          # ChatProvider decomposed clusters (19 modules)
 │       ├── widgets/
 │       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
@@ -171,6 +171,7 @@ lib/presentation/pages/opencode_setup_debug_page.dart # OpenCode setup debug sur
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget; includes a Tailscale status card (`_buildTailscaleStatusCard()`) within the active-server details area, showing connection state with authenticate action and auth URL; includes navigation to OpenCodeSetupDebugPage
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds scroll state (follow mode, current scroll owner, viewport restore targets); holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
+  └── chat_page/chat_page_widgets.dart # UI components part of chat_page.dart: _ComposerStatusLanternText, _ComposerStatusLanternTextState, _DirectoryPickerSheet, _DirectoryPickerSheetState
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; accepts appDensity parameter for density-aware spacing; speech controller resolves Native, Sherpa, Moonshine, Parakeet, and SenseVoice backends and routes model-required setup dialogs accordingly
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks, inline latest-turn undo, historical `onInlineRevertToHere`, stable rebuild gating keyed by callback identity, `onFileTap` for clickable file paths with line jumps, and `onMermaidCode` callback routing mermaid fenced blocks to MermaidDiagramWidget
 lib/presentation/widgets/mermaid_diagram_widget.dart # Renders ```mermaid fenced code blocks as visual diagrams via flutter_mermaid; copy-source button; styled source fallback on parse error via errorBuilder; horizontal scroll only (no vertical scroll); responsive layout
@@ -220,7 +221,10 @@ chat_page_terminal_runtime.dart              # Terminal panel toggle, attach/det
 chat_page_composer_widgets.dart                   # Reserved-height composer progress slot with in-place slide/fade updates so busy status changes do not move the timeline
 chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit)
 chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile; composer stays enabled during draft-first New Chat (`currentSession != null || isDraftingNewChat`) and in sub-conversation sessions; sub-conversation model/agent selection remains session-context aware/locked; child-thread footer keeps `Return to main conversation` visible (stop behavior managed by composer); wires latest inline undo and historical server-confirmed user-message rewind while excluding `local_user_*` optimistic IDs
+chat_page_timeline_viewport.dart             # Extension `_ChatPageTimelineViewport` on `_ChatPageState` for timeline viewport management
+chat_page_timeline_entries.dart              # Extension `_ChatPageTimelineEntries` on `_ChatPageState` for generating/handling timeline entry widgets
 chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
+chat_page_widgets.dart                       # UI components part of chat_page.dart: _ComposerStatusLanternText, _ComposerStatusLanternTextState, _DirectoryPickerSheet, _DirectoryPickerSheetState
 chat_page_search.dart                   # Timeline full-text search: inline AppBar input with 300ms debounce, case-insensitive text/reasoning matching, message-level next/previous navigation, and transient TextSpan highlighting; uses dedicated _ScrollOwner.searchResult for scroll coordination
 chat_page_mobile_overflow.dart                    # Renders pinned and overflow actions for mobile app bar, including display toggles, search, and terminal panel trigger
 ```
@@ -240,6 +244,8 @@ lib/presentation/utils/tool_presentation.dart                      # Shared tool
 ```text
 chat_provider_core.dart
 chat_provider_session_ops.dart           # Implements undo/redo turn logic, guarded historical `revertToTurn`, revert boundary advancement, and composer draft restoration
+chat_provider_lifecycle_ops.dart                 # Extension `ChatProviderLifecycleOps` on `ChatProvider` holding 9 public lifecycle methods + 1 getter
+chat_provider_history_ops.dart                   # Extension `ChatProviderHistoryOps` on `ChatProvider` for history state/branching and revert support
 chat_provider_realtime_ops.dart           # Realtime event handling; defers stale `session.idle` reconciliation until the active send stream settles so server-driven lifecycle stays authoritative across follow-up sends
 chat_provider_realtime_aux_ops.dart                # Post-reconnect recovery with _postReconnectRecoveryInFlight guard; degraded mode preservation across background/foreground transitions
 chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition; reactive notification dismissal — calls `dismissForSession()` on `permission.replied`, `question.replied`, `question.rejected`, and `session.idle` (current session) + `removeNotifiedRequestIds()` to sync background alert snapshot
