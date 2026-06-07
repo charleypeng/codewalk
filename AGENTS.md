@@ -33,14 +33,14 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 40–74 |
 | 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 75–112 |
 | 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 113–163 |
-| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 164–199 |
-| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 200–236 |
-| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine, Parakeet V3, and SenseVoice (sherpa_onnx offline recognition) on desktop, native STT on Android; Linux defaults to Parakeet with native→Parakeet migration — pluggable by platform | 237–287 |
-| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 288–324 |
-| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 325–360 |
-| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 361–394 |
-| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 395–430 |
-| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 431–469 |
+| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 173–209 |
+| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 211–247 |
+| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine, Parakeet V3, and SenseVoice (sherpa_onnx offline recognition) on desktop, native STT on Android; Linux defaults to Parakeet with native→Parakeet migration — pluggable by platform | 250–300 |
+| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 301–337 |
+| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 338–373 |
+| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 372–405 |
+| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 406–441 |
+| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 442–480 |
 | 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 470–504 |
 | 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 505–548 |
 | 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 549–594 |
@@ -75,16 +75,16 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | CODEBASE Topic | Lines |
 |----------------|-------|
 | Project Snapshot | 3–11 |
-| Folder Structure | 13–66 |
-| Entry Points | 68–77 |
-| Core Modules | 79–180 |
-| Chat Architecture | 181–278 |
-| Data & Domain Layers | 279–289 |
-| Key API/DataSource locations | 291–309 |
-| Main Commands | 314–336 |
-| Testing/Quality Gates | 338–364 |
-| Internationalization (i18n) | 366–378 |
-| Notes | 379–566 |
+| Folder Structure | 13–68 |
+| Entry Points | 70–80 |
+| Core Modules | 82–188 |
+| Chat Architecture | 190–290 |
+| Data & Domain Layers | 292–302 |
+| Key API/DataSource locations | 304–323 |
+| Main Commands | 325–347 |
+| Testing/Quality Gates | 349–380 |
+| Internationalization (i18n) | 382–393 |
+| Notes | 395–581 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

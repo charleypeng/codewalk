@@ -40,6 +40,7 @@ codewalk/
 │       │   ├── onboarding_wizard_page.dart # First-run onboarding wizard (Welcome → Server Setup → Ready)
 │       │   ├── chat_page.dart          # Chat orchestrator/facade
 │       │   ├── chat_page_types_part.dart # Shared intents, configurations, and keys (including _ViewportBuildKey)
+│       │   ├── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 │       │   └── chat_page/              # ChatPage decomposed clusters (21 modules)
 │       ├── providers/                  # App/Chat/Project/Settings state orchestration
 │       │   ├── chat_provider.dart      # Chat provider orchestrator/facade
@@ -73,6 +74,7 @@ lib/main.dart                                # Runtime entry; DI, providers, Dyn
 lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior; triggers startup/hourly update toast via `addPostFrameCallback` + `UpdateCheckResult` when `checkUpdatesOnOpen` is enabled; reacts to `UpdateInstallState` transitions with platform-aware snackbars (Android downloading progress, desktop installing spinner, done/retry states) and triggers `startInstall()`
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard
+  └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 .github/workflows/ci.yml                      # CI workflow entry
 .github/workflows/release.yml                 # Release workflow entry
 ```
@@ -102,8 +104,10 @@ lib/core/auth/oauth_token_storage.dart             # Secure OAuth credential per
 lib/core/auth/oauth_credential.dart                # OAuthCredential model: accessToken, refreshToken, expiresAt, isExpired/isValid check (5-min buffer), JSON serialization (fromJson/toJson)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; app discovery retries scoped `/provider`, `/agent`, and `/config` calls with `directory`-only and then unscoped fallbacks when workspace-scoped queries fail; `/agent` parsing tolerates multiple upstream payload shapes; scoped discovery/config calls forward both `directory` and `workspace` when a project directory is active
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures; SSE backoff loop fix — streamAliveStart enforces 5-second threshold before resetting reconnect counter, ±20% jitter to prevent thundering-herd
+  └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc)
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models, session composer drafts, and per-agent selection memory; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
+  └── app_local_datasource_storage_helpers.dart # Secure storage, SharedPreferences, and large-cache migration helpers (part of app_local_datasource.dart; see commit 8759defc)
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
 lib/data/cache/chat_cache_payload_store_base.dart # Abstract interface for cache store (read/write/remove/clear)
 lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid file+LRU memory cache (24 entries) for chat payloads
@@ -115,6 +119,8 @@ lib/domain/entities/quota.dart                    # Quota domain entities: `Quot
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle, Tailscale transport orchestration; supportsTailscale (Android/iOS/Linux/macOS), _applyTailscaleTransport() drives per-profile Tailscale node lifecycle (upForProfile/auth URL launch/down), swaps Dio adapter via TailscaleHttpAdapter, propagates active adapter to health-check Dio via createHealthCheckDio; tailscaleEnabled in addServerProfile/updateServerProfile CRUD; exposes reactive Tailscale state getters: tailscaleState, tailscaleNodeState, tailscaleAuthUrl, tailscaleMessage, tailscaleNeedsAuth, tailscaleNeedsMachineAuth, and authenticateTailscale() method; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence; exposes file-name, file-content, and workspace-symbol search for Quick Open and composer mentions
 lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, and complete OpenCode shared settings coverage (default model, default agent, small model, autoupdate, share, username, snapshot); exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` now controls startup + hourly automatic checks via `_configureAutomaticUpdateChecks()` and `_performStartupUpdateCheck()`; `UpdateInstallState` enum (idle/downloading/installing/done/failed), `startInstall()`, and `restartDesktopApp()` manage APK/desktop install lifecycle
+  └── settings_provider_opencode_defaults.dart # Extension for OpenCode shared defaults (part of settings_provider.dart; see commit 8759defc)
+  └── settings_provider_update_install.dart # Extension for update check and install lifecycle (part of settings_provider.dart; see commit 8759defc)
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch; Codex single-window label preserved using provider name instead of raw API label (guarded by `result.providerId != 'codex'`)
 lib/presentation/utils/quota_pace_utils.dart # Pure Dart pace helpers: `predictedFinalPercent`, `PaceStatus` enum, window/label inference, and formatted `Pace xx%` / time-left strings
 lib/presentation/widgets/settings_provenance_chip.dart # Shared provenance badge widget for `OpenCode-backed`, `CodeWalk-local`, and `CodeWalk exception` labels used by Behavior, Notifications, and Shortcuts settings surfaces
@@ -164,6 +170,7 @@ lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (W
 lib/presentation/pages/opencode_setup_debug_page.dart # OpenCode setup debug surface for installation/diagnostics troubleshooting; displays environment report, setup timeline, captured logs, and exportable debug report
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget; includes a Tailscale status card (`_buildTailscaleStatusCard()`) within the active-server details area, showing connection state with authenticate action and auth URL; includes navigation to OpenCodeSetupDebugPage
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds scroll state (follow mode, current scroll owner, viewport restore targets); holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
+  └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; accepts appDensity parameter for density-aware spacing; speech controller resolves Native, Sherpa, Moonshine, Parakeet, and SenseVoice backends and routes model-required setup dialogs accordingly
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks, inline latest-turn undo, historical `onInlineRevertToHere`, stable rebuild gating keyed by callback identity, `onFileTap` for clickable file paths with line jumps, and `onMermaidCode` callback routing mermaid fenced blocks to MermaidDiagramWidget
 lib/presentation/widgets/mermaid_diagram_widget.dart # Renders ```mermaid fenced code blocks as visual diagrams via flutter_mermaid; copy-source button; styled source fallback on parse error via errorBuilder; horizontal scroll only (no vertical scroll); responsive layout
@@ -187,6 +194,7 @@ lib/presentation/widgets/quota/pace_label.dart               # Pace % chip: desk
 ```text
 lib/presentation/pages/chat_page.dart
 lib/presentation/pages/chat_page_types_part.dart   # Shared intents, configurations, and keys including `_ViewportBuildKey`
+lib/presentation/pages/chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 lib/presentation/providers/chat_provider.dart
 lib/presentation/widgets/chat_input_widget.dart
 ```
@@ -277,6 +285,8 @@ lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage exte
 lib/presentation/pages/chat_page/chat_page_timeline_builder.dart # Main chat workspace layout: renders terminal full-width below the constrained chat column and hides composer-adjacent controls on compact/mobile while terminal is visible
 lib/domain/entities/experience_settings.dart                    # Persisted terminal visibility, height, maximize state, and read-aloud settings (readAloudEnabled, readAloudRate, readAloudPitch, readAloudVoice) inside shared experience settings
 lib/presentation/providers/settings_provider.dart               # In-memory + persisted mutators for terminal visibility, height, and maximize state
+  └── settings_provider_opencode_defaults.dart # Shared defaults (part of settings_provider.dart; see commit 8759defc)
+  └── settings_provider_update_install.dart # Update check / install lifecycle (part of settings_provider.dart; see commit 8759defc)
 ```
 
 ## Data & Domain Layers
@@ -298,6 +308,7 @@ lib/data/datasources/app_remote_datasource.dart
   - /path, /app (fallback), /app/init (fallback), /provider, /agent, /config; scoped discovery/config calls add both directory and workspace query params; implements directory-only and unscoped retries for discovery contracts; `/agent` parsing handles multiple upstream response formats
 
 lib/data/datasources/chat_remote_datasource.dart
+  └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc)
   - /session, /session/{id}, /session/{id}/message, /session/{id}/shell
   - /session/status, /session/{id}/children, /session/{id}/todo, /session/{id}/diff
   - /session/{id}/abort, /session/{id}/revert, /session/{id}/unrevert, /session/{id}/init, /session/{id}/summarize

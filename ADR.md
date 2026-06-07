@@ -204,6 +204,8 @@ Keep `chat_page.dart`, `chat_provider.dart`, and `chat_input_widget.dart` as sli
 - `lib/presentation/widgets/chat_input_widget.dart`
 - `lib/presentation/widgets/chat_input/`
 
+**Note** (commit `8759defc`): Aggressive `part`/`part of` file split extended to four more large files beyond the original chat cluster. The five target files were reduced from 14,087 to 12,534 lines (−1,553). The split is purely mechanical refactoring to keep private members library-scoped — no new architectural pattern introduced, same part-file decomposition precedent as above.
+
 ---
 
 ## ADR-005: Composer Pipeline for Multimodal Input, Prompt Triggers, and Send/Stop Semantics (2026-02-19)
