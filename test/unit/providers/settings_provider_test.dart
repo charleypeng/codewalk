@@ -520,8 +520,14 @@ void main() {
           SpeechToTextEngine.parakeet,
           SpeechToTextEngine.sensevoice,
         ]) {
+          // Use the real persistence key (`speechToTextEngine`) consumed by
+          // `ExperienceSettings.fromJson`; using a wrong key would silently
+          // leave the default value in place and the migration branch would
+          // never be exercised.
           final local = InMemoryAppLocalDataSource()
-            ..experienceSettingsJson = jsonEncode({'speechEngine': engine.name});
+            ..experienceSettingsJson = jsonEncode({
+              'speechToTextEngine': engine.name,
+            });
           final provider = SettingsProvider(
             localDataSource: local,
             dioClient: DioClient(),

@@ -14,7 +14,8 @@ import 'package:flutter/foundation.dart';
 class SpeechEnginePlatformSupport {
   const SpeechEnginePlatformSupport._();
 
-  // Hide on web — no native STT runtime.
+  // Web: true (browser speech via speech_to_text). Linux: false — Linux
+  // defaults to on-device engines (Parakeet) per ADR-006.
   static bool get isNativeSupported {
     if (kIsWeb) {
       return true;

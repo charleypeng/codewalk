@@ -27,7 +27,9 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     final primaryEngine = settingsProvider.speechToTextEngine;
     final candidates = <SpeechToTextEngine>[primaryEngine];
     if (primaryEngine == SpeechToTextEngine.native) {
-      candidates.add(SpeechToTextEngine.sherpa);
+      if (_isSherpaEngineSupported) {
+        candidates.add(SpeechToTextEngine.sherpa);
+      }
       if (_isParakeetEngineSupported) {
         candidates.add(SpeechToTextEngine.parakeet);
       }
