@@ -9,6 +9,10 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "CodeWalk"
 $BinaryPath = Join-Path $InstallDir "codewalk.exe"
 $VersionFile = Join-Path $InstallDir ".installed-version"
 $StartMenuShortcutPath = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\CodeWalk.lnk"
+$StageRoot = Join-Path $env:LOCALAPPDATA "CodeWalk.update"
+$StagePayloadDir = Join-Path $StageRoot "payload"
+$PendingVersionFile = Join-Path $StageRoot ".pending-version"
+$InstallMode = if ($env:CODEWALK_INSTALL_MODE) { $env:CODEWALK_INSTALL_MODE.ToLowerInvariant() } else { "install" }
 
 function Info([string]$Message) {
   Write-Host ":: $Message" -ForegroundColor Cyan
@@ -96,112 +100,6 @@ function New-StartMenuShortcut([string]$TargetExePath) {
   $shortcut.Save()
 }
 
-# Schedule a directory for deletion on the next reboot using MoveFileEx.
-# Requires the MoveFileEx Win32 API via P/Invoke (usually works without admin).
-# Falls back to a warning if P/Invoke is unavailable.
-function Register-RebootDelete([string]$Path) {
-  try {
-    # Guard against duplicate Add-Type when called more than once.
-    if (-not ([System.Management.Automation.PSTypeName]'FileOps').Type) {
-      $code = '
-        using System;
-        using System.Runtime.InteropServices;
-        public class FileOps {
-          [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
-          public static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, int dwFlags);
-        }
-      '
-      Add-Type -TypeDefinition $code -ErrorAction Stop
-    }
-    $MOVEFILE_DELAY_UNTIL_REBOOT = 0x00000004
-    $result = [FileOps]::MoveFileEx($Path, $null, $MOVEFILE_DELAY_UNTIL_REBOOT)
-    if ($result) {
-      Info "Scheduled locked directory for deletion on next reboot: $Path"
-    } else {
-      Warn "MoveFileEx failed for $Path (error $([System.Runtime.InteropServices.Marshal]::GetLastWin32Error()))"
-    }
-  } catch {
-    Warn "Could not schedule reboot deletion for $Path. Delete it manually after restart."
-  }
-}
-
-function Register-RebootDeleteTree([string]$Path) {
-  if (-not (Test-Path $Path)) { return }
-
-  try {
-    Get-ChildItem -Path $Path -Recurse -Force -File -ErrorAction SilentlyContinue | ForEach-Object {
-      Register-RebootDelete -Path $_.FullName
-    }
-    Get-ChildItem -Path $Path -Recurse -Force -Directory -ErrorAction SilentlyContinue |
-      Sort-Object -Property FullName -Descending |
-      ForEach-Object { Register-RebootDelete -Path $_.FullName }
-  } catch {
-    Warn "Could not enumerate all files for reboot deletion under $Path."
-  }
-
-  # Windows only removes directories on reboot after their contents are gone.
-  Register-RebootDelete -Path $Path
-}
-
-function Get-AvailableInstallBackupName {
-  $baseName = "CodeWalk.old"
-  $basePath = Join-Path (Split-Path -Parent $InstallDir) $baseName
-  if (-not (Test-Path $basePath)) {
-    return $baseName
-  }
-
-  for ($i = 1; $i -le 20; $i++) {
-    $candidateName = "CodeWalk.old.$i"
-    $candidatePath = Join-Path (Split-Path -Parent $InstallDir) $candidateName
-    if (-not (Test-Path $candidatePath)) {
-      return $candidateName
-    }
-  }
-
-  return "CodeWalk.old.$([Guid]::NewGuid().ToString('N'))"
-}
-
-# Remove the install directory, handling in-use locks from a running process.
-# In-app updates run this script from the current CodeWalk process, so the
-# installer must not stop codewalk.exe here. If deletion fails because the app is
-# still running, rename the old directory aside and let the existing app show its
-# normal Restart action after the script completes.
-function Remove-InstallDir {
-  if (-not (Test-Path $InstallDir)) { return $true }
-
-  # Attempt 1: direct removal (works when no process is locking files).
-  try {
-    Remove-Item -Recurse -Force -Path $InstallDir -ErrorAction Stop
-    return $true
-  } catch {
-    # Directory is locked — continue to rename strategy.
-  }
-
-  # Attempt 2: rename the locked directory out of the way and schedule it for
-  # deletion on reboot. Windows allows renaming a directory that contains a
-  # running executable (but not deleting it).
-  $oldDir = "${InstallDir}.old"
-  if (Test-Path $oldDir) {
-    try {
-      Remove-Item -Recurse -Force -Path $oldDir -ErrorAction SilentlyContinue
-    } catch {
-      # If .old is also locked, schedule it for reboot deletion too.
-      Register-RebootDeleteTree -Path $oldDir
-    }
-  }
-
-  $backupName = Get-AvailableInstallBackupName
-  $backupPath = Join-Path (Split-Path -Parent $InstallDir) $backupName
-  try {
-    Rename-Item -Path $InstallDir -NewName $backupName -ErrorAction Stop
-    Info "Renamed locked directory to $backupPath"
-    Register-RebootDeleteTree -Path $backupPath
-    return $true
-  } catch {
-    Fail "Cannot remove or rename $InstallDir. Close CodeWalk and retry."
-  }
-}
-
 function Get-InstalledVersion {
   if (-not (Test-Path $VersionFile)) {
     return ""
@@ -213,6 +111,209 @@ function Get-InstalledVersion {
   catch {
     return ""
   }
+}
+
+function Get-PendingVersion {
+  if (-not (Test-Path $PendingVersionFile)) {
+    return ""
+  }
+
+  try {
+    return (Get-Content -Path $PendingVersionFile -Raw).Trim()
+  }
+  catch {
+    return ""
+  }
+}
+
+function Test-CodeWalkRunning {
+  $proc = Get-Process -Name 'codewalk' -ErrorAction SilentlyContinue
+  return $null -ne $proc
+}
+
+function Stop-CodeWalkProcess {
+  $procs = @()
+  try {
+    $found = Get-Process -Name 'codewalk' -ErrorAction Stop
+    if ($found -is [array]) { $procs = $found } else { $procs = @($found) }
+  } catch { return }
+  if ($procs.Count -eq 0) { return }
+
+  Info "Stopping $($procs.Count) running CodeWalk process(es) before applying update"
+  foreach ($proc in $procs) {
+    try {
+      Stop-Process -Id $proc.Id -Force -ErrorAction Stop
+    } catch {
+      Warn "Could not stop CodeWalk process (PID $($proc.Id)): $($_.Exception.Message)"
+    }
+  }
+  foreach ($proc in $procs) {
+    $proc | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+  }
+  Start-Sleep -Milliseconds 500
+
+  $survivors = Get-Process -Name 'codewalk' -ErrorAction SilentlyContinue
+  if ($survivors) {
+    Warn "CodeWalk process(es) still running after first stop attempt; retrying"
+    foreach ($proc in @($survivors)) {
+      try {
+        Stop-Process -Id $proc.Id -Force -ErrorAction Stop
+      } catch {
+        Warn "Could not stop CodeWalk process (PID $($proc.Id)): $($_.Exception.Message)"
+      }
+    }
+    Start-Sleep -Seconds 2
+  }
+}
+
+function Get-ParentProcessId {
+  try {
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $PID" -ErrorAction Stop
+    if ($proc.ParentProcessId) { return [int]$proc.ParentProcessId }
+  } catch {
+    try {
+      $proc = Get-WmiObject Win32_Process -Filter "ProcessId = $PID" -ErrorAction Stop
+      if ($proc.ParentProcessId) { return [int]$proc.ParentProcessId }
+    } catch {}
+  }
+
+  return 0
+}
+
+function Get-CodeWalkParentProcessId {
+  $parentPid = Get-ParentProcessId
+  if ($parentPid -le 0) { return 0 }
+
+  try {
+    $parent = Get-Process -Id $parentPid -ErrorAction Stop
+    if ($parent.ProcessName -eq 'codewalk') {
+      return $parentPid
+    }
+  } catch {}
+
+  return 0
+}
+
+function Wait-ForParentExit([int]$ProcessId) {
+  if ($ProcessId -le 0) { return }
+
+  try {
+    Info "Waiting for CodeWalk process $ProcessId to exit before applying update"
+    Wait-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 500
+  } catch {}
+}
+
+function Complete-InstallIntegration([string]$Version) {
+  Get-ChildItem -Path $InstallDir -Recurse | Unblock-File -ErrorAction SilentlyContinue
+
+  if (-not (Test-Path $BinaryPath)) {
+    $nested = Join-Path $InstallDir "bin\codewalk.exe"
+    if (Test-Path $nested) {
+      Copy-Item -Force $nested $BinaryPath
+    } else {
+      Fail "codewalk.exe not found in staged package."
+    }
+  }
+
+  Add-ToUserPath -PathEntry $InstallDir
+
+  try {
+    New-StartMenuShortcut -TargetExePath $BinaryPath
+    Info "Start Menu shortcut created at $StartMenuShortcutPath"
+  }
+  catch {
+    Warn "Could not create Start Menu shortcut: $($_.Exception.Message)"
+  }
+
+  Set-Content -Path $VersionFile -Value $Version -NoNewline
+}
+
+function Save-StagedPackage([string]$ZipPath, [string]$Version) {
+  if (Test-Path $StageRoot) {
+    Remove-Item -Recurse -Force -Path $StageRoot -ErrorAction Stop
+  }
+  New-Item -ItemType Directory -Force -Path $StagePayloadDir | Out-Null
+
+  Info "Extracting package to staging directory"
+  Expand-Archive -Path $ZipPath -DestinationPath $StagePayloadDir -Force
+
+  $stagedBinary = Join-Path $StagePayloadDir "codewalk.exe"
+  $nestedBinary = Join-Path $StagePayloadDir "bin\codewalk.exe"
+  if (-not (Test-Path $stagedBinary) -and -not (Test-Path $nestedBinary)) {
+    Fail "codewalk.exe not found in archive."
+  }
+
+  Set-Content -Path $PendingVersionFile -Value $Version -NoNewline
+}
+
+function Apply-StagedInstall {
+  $pendingVersion = Get-PendingVersion
+  if (-not $pendingVersion) {
+    Fail "No staged CodeWalk update found."
+  }
+  if (-not (Test-Path $StagePayloadDir)) {
+    Fail "Staged CodeWalk payload not found."
+  }
+
+  Stop-CodeWalkProcess
+
+  if (Test-Path $InstallDir) {
+    $removed = $false
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+      try {
+        Remove-Item -Recurse -Force -Path $InstallDir -ErrorAction Stop
+        $removed = $true
+        break
+      } catch {
+        if ($attempt -lt 3) {
+          Warn "Install directory is still locked; retrying removal ($attempt/3)"
+          Start-Sleep -Seconds 2
+        }
+      }
+    }
+    if (-not $removed) {
+      Fail "Cannot remove $InstallDir after closing CodeWalk. Staged update remains at $StageRoot."
+    }
+  }
+  New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+  Get-ChildItem -Path $StagePayloadDir -Force | ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $InstallDir -Recurse -Force
+  }
+
+  Complete-InstallIntegration -Version $pendingVersion
+  Remove-Item -Recurse -Force -Path $StageRoot -ErrorAction SilentlyContinue
+  Info "CodeWalk update applied at $InstallDir ($pendingVersion)"
+}
+
+function Start-ApplyHelper([int]$ParentPid, [bool]$Relaunch) {
+  $repoValue = $Repo.Replace("'", "''")
+  $relaunchValue = if ($Relaunch) { "1" } else { "0" }
+  $command = "`$env:CODEWALK_REPO='$repoValue'; `$env:CODEWALK_INSTALL_MODE='apply'; `$env:CODEWALK_PARENT_PID='$ParentPid'; `$env:CODEWALK_RELAUNCH='$relaunchValue'; irm install.cat/$repoValue | iex"
+  $encoded = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($command))
+  Start-Process -FilePath "powershell" -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encoded) -WindowStyle Hidden
+}
+
+if ($InstallMode -eq "apply") {
+  $parentPid = 0
+  if ($env:CODEWALK_PARENT_PID) {
+    try { $parentPid = [int]$env:CODEWALK_PARENT_PID } catch { $parentPid = 0 }
+  }
+  try {
+    Wait-ForParentExit -ProcessId $parentPid
+    Apply-StagedInstall
+    if ($env:CODEWALK_RELAUNCH -eq "1" -and (Test-Path $BinaryPath)) {
+      Start-Process -FilePath $BinaryPath -WorkingDirectory $InstallDir
+    }
+  } catch {
+    Warn "CodeWalk update apply failed: $($_.Exception.Message)"
+    if ($env:CODEWALK_RELAUNCH -eq "1" -and (Test-Path $BinaryPath)) {
+      Start-Process -FilePath $BinaryPath -WorkingDirectory $InstallDir
+    }
+    exit 1
+  }
+  exit 0
 }
 
 $assetCandidates = Get-WindowsAssetCandidates
@@ -265,34 +366,25 @@ try {
   Info "Downloading $asset"
   Invoke-WebRequest -Uri $match.browser_download_url -OutFile $zipPath
 
-  Remove-InstallDir
-  New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+  Save-StagedPackage -ZipPath $zipPath -Version $release.tag_name
 
-  Info "Extracting package"
-  Expand-Archive -Path $zipPath -DestinationPath $InstallDir -Force
-  # Remove Zone.Identifier ADS so SmartScreen does not warn on first run.
-  Get-ChildItem -Path $InstallDir -Recurse | Unblock-File -ErrorAction SilentlyContinue
-
-  if (-not (Test-Path $BinaryPath)) {
-    $nested = Join-Path $InstallDir "bin\codewalk.exe"
-    if (Test-Path $nested) {
-      Copy-Item -Force $nested $BinaryPath
-    } else {
-      Fail "codewalk.exe not found in archive."
-    }
+  if ($InstallMode -eq "stage") {
+    Write-Host ""
+    Write-Host "CodeWalk update staged at $StageRoot ($($release.tag_name))" -ForegroundColor Green
+    Write-Host "Restart CodeWalk to apply the update."
+    exit 0
   }
 
-  Add-ToUserPath -PathEntry $InstallDir
-
-  try {
-    New-StartMenuShortcut -TargetExePath $BinaryPath
-    Info "Start Menu shortcut created at $StartMenuShortcutPath"
+  if (Test-CodeWalkRunning) {
+    $parentPid = Get-CodeWalkParentProcessId
+    Start-ApplyHelper -ParentPid $parentPid -Relaunch $true
+    Write-Host ""
+    Write-Host "CodeWalk update staged at $StageRoot ($($release.tag_name))" -ForegroundColor Green
+    Write-Host "Restart CodeWalk to apply the update."
+    exit 0
   }
-  catch {
-    Warn "Could not create Start Menu shortcut: $($_.Exception.Message)"
-  }
 
-  Set-Content -Path $VersionFile -Value $release.tag_name -NoNewline
+  Apply-StagedInstall
 
   Write-Host ""
   Write-Host "CodeWalk installed successfully at $InstallDir ($($release.tag_name))" -ForegroundColor Green

@@ -1285,6 +1285,8 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the installer script is running
 - **Then** the app shows an indefinite loading snackbar (`Installing update...`) until the install state settles
 - **Then** on success, the app shows a completion warning snackbar with a `Restart` action so the user can relaunch into the new version
+- **Then** on Windows, the initial install step stages the downloaded update without modifying the running install directory
+- **Then** on Windows, the `Restart` action starts an updater helper, closes CodeWalk, applies the staged update after the old process exits, and relaunches CodeWalk from the updated install path
 
 ### Snackbars are always manually dismissible
 

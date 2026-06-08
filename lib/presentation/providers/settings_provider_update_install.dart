@@ -143,8 +143,11 @@ extension SettingsProviderUpdateInstall on SettingsProvider {
       ProcessResult processResult;
       if (isWindows) {
         processResult = await Process.run('powershell', [
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
           '-c',
-          'irm install.cat/verseles/codewalk | iex',
+          r"$env:CODEWALK_INSTALL_MODE='stage'; irm install.cat/verseles/codewalk | iex",
         ]).timeout(const Duration(minutes: 5));
       } else {
         processResult = await Process.run('sh', [
@@ -179,17 +182,36 @@ extension SettingsProviderUpdateInstall on SettingsProvider {
       return;
     }
     try {
+      final isWindows =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+      if (isWindows) {
+        final command =
+            r"$env:CODEWALK_INSTALL_MODE='apply'; "
+            "\$env:CODEWALK_PARENT_PID='$pid'; "
+            r"$env:CODEWALK_RELAUNCH='1'; "
+            'irm install.cat/verseles/codewalk | iex';
+        await Process.start('powershell', [
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-WindowStyle',
+          'Hidden',
+          '-Command',
+          command,
+        ], mode: ProcessStartMode.detached);
+        exit(0);
+      }
+
       final executable = Platform.resolvedExecutable;
       final args = List<String>.from(Platform.executableArguments);
       await Process.start(executable, args, mode: ProcessStartMode.detached);
+      exit(0);
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Desktop restart relaunch failed',
         error: error,
         stackTrace: stackTrace,
       );
-    } finally {
-      exit(0);
     }
   }
 }
