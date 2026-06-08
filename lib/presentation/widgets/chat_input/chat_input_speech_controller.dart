@@ -328,8 +328,9 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
 
   // Show a snackbar that points the user at the exact Windows settings page
   // when the speech service is unavailable. On non-Windows targets this falls
-  // back to the existing `msgVoiceInputUnavailable` copy. The action button
-  // is only rendered when at least one Windows settings link can be opened.
+  // back to the existing `msgVoiceInputUnavailable` copy. On Windows, the
+  // action button label and target URI are picked from the typed
+  // [unavailableReasonKey] emitted by [SttSpeechInputService].
   void _showVoiceInputUnavailableSnackbar(BuildContext context) {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -344,16 +345,45 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       return;
     }
 
+    final service = _activeSpeechService;
+    final reasonKey = service is SttSpeechInputService
+        ? service.unavailableReasonKey
+        : null;
+    final (String label, Future<bool> Function() action) =
+        _windowsActionForReason(reasonKey, l10n);
+
     final snack = SnackBar(
       content: Text(l10n.msgFailedToStartVoiceInput),
       duration: const Duration(seconds: 8),
       action: SnackBarAction(
-        label: l10n.speechOpenMicrophoneSettings,
-        onPressed: () {
-          unawaited(WindowsSettingsLinks.openMicrophonePrivacy());
-        },
+        label: label,
+        onPressed: () => unawaited(action()),
       ),
     );
     messenger.showSnackBar(snack);
+  }
+
+  // Map a [SttSpeechInputService.unavailableReasonKey] to the most relevant
+  // Windows settings link. The mapping is intentionally narrow: every key
+  // resolves to a single actionable link so the user is never sent to the
+  // wrong page.
+  (String, Future<bool> Function()) _windowsActionForReason(
+    String? reasonKey,
+    AppLocalizations l10n,
+  ) {
+    switch (reasonKey) {
+      case 'speechPrivacy':
+      case 'noInputDevice':
+        return (l10n.speechOpenSpeechSettings, WindowsSettingsLinks.openSpeech);
+      case 'deviceBusy':
+        return (l10n.speechOpenMicrophoneSettings,
+            WindowsSettingsLinks.openMicrophonePrivacy);
+      case 'microphoneDenied':
+      case 'generic':
+      case null:
+      default:
+        return (l10n.speechOpenMicrophoneSettings,
+            WindowsSettingsLinks.openMicrophonePrivacy);
+    }
   }
 }

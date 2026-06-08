@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:record/record.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
@@ -51,7 +50,6 @@ class MoonshineSpeechInputService implements SpeechInputService {
   static bool _bindingsInitialized = false;
 
   sherpa.OfflineRecognizer? _recognizer;
-  AudioRecorder? _recorder;
   SpeechAudioCapture? _capture;
   StreamSubscription<Uint8List>? _audioSub;
   String? _activeModelDir;
@@ -152,18 +150,10 @@ class MoonshineSpeechInputService implements SpeechInputService {
       return;
     }
 
-    final recorder = AudioRecorder();
-    _recorder = recorder;
     final capture = SpeechAudioCapture();
     _capture = capture;
     final hasPermission = await capture.hasPermission();
     if (!hasPermission) {
-      if (capture.isWindowsTarget) {
-        // WASAPI path: no recorder to dispose.
-      } else {
-        await recorder.dispose();
-        _recorder = null;
-      }
       _capture = null;
       _unavailableReason = 'Microphone permission is disabled.';
       onError();
@@ -236,10 +226,6 @@ class MoonshineSpeechInputService implements SpeechInputService {
         stackTrace: stackTrace,
       );
       _isListening = false;
-      if (!capture.isWindowsTarget) {
-        await recorder.dispose();
-        _recorder = null;
-      }
       _capture = null;
       onError();
       return;
@@ -321,19 +307,12 @@ class MoonshineSpeechInputService implements SpeechInputService {
   @override
   Future<void> stopListening() async {
     _isListening = false;
-    try {
-      await _recorder?.stop();
-    } catch (_) {
-      // Ignore stop errors.
-    }
     await _audioSub?.cancel();
     _audioSub = null;
-    await _recorder?.dispose();
-    _recorder = null;
     final capture = _capture;
+    _capture = null;
     if (capture != null) {
       await capture.stop();
-      _capture = null;
     }
   }
 

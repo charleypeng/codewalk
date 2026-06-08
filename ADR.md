@@ -2083,74 +2083,69 @@ Disable the on-device STT engines (Sherpa, Moonshine, Parakeet, SenseVoice) on W
 
 ---
 
-## ADR-039: Real Windows STT Fix — WASAPI Capture and Actionable Settings Links (2026-06-08)
+## ADR-039: Real Windows STT Fix — Actionable Settings Links and Typed Microphone Preflight (2026-06-08)
 
-**Status**: Accepted
+**Status**: Accepted (partial fix; on-device engine re-enable on Windows is a follow-up).
 
-**Supersedes**: ADR-038 mitigation for Windows users (replaces the "disable on-device engines" mitigation with a working capture path; ADR-038 remains the historical record of the original mitigation).
-
-**Related**: ADR-006 (Speech Input Architecture), ADR-023 (Official OpenCode contract-first compatibility).
+**Related**: ADR-006 (Speech Input Architecture), ADR-023 (Official OpenCode contract-first compatibility), ADR-038 (historical Windows mitigation — disable on-device engines).
 
 ### Context
 
 ADR-038 mitigated the Windows STT hard crash by disabling the on-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) and force-migrating saved Windows selections to Native. The user still cannot use third-party STT, and the Native error message is generic. Issue #43 explicitly requests (a) a real fix for third-party STT, (b) actionable links to open the relevant Windows settings, and (c) a runtime permission prompt if Windows supports it.
 
-Research established three facts that shape the real fix:
+Research established three facts that shape the partial fix:
 
 1. `record: ^6.0.0` → `record_windows: 1.0.7` (MediaFoundation) hard-crashes the host process with `EXCEPTION_ACCESS_VIOLATION_READ` (llfbandit/record#453). Dart `try/catch` cannot catch a native segfault, so re-enabling the current `record` code path is not safe.
 2. `permission_handler_windows` does not implement a real microphone permission check or prompt for unpackaged Win32 apps; it returns a hardcoded `GRANTED`.
 3. Windows does not show a runtime microphone permission prompt for unpackaged Win32 apps. The realistic flow is: probe capture, report the typed status (`allowed` / `denied` / `noInputDevice` / `deviceBusy` / `unknown`), and offer a one-tap link to the exact Settings page via `url_launcher`.
 
+A full re-enable of the on-device engines on Windows requires a validated WASAPI capture backend (a new native C++ plugin that uses `IAudioClient` shared mode, never touches MediaFoundation, and is built and smoke-tested on a Windows host). Shipping that without a Windows CI gate risks reintroducing the very crash the user reported. The partial fix in this ADR ships the parts that are independently useful and well-tested on non-Windows: the actionable settings links, the typed microphone preflight, the `SpeechAudioCapture` lifecycle cleanup, and the architecture for adding the WASAPI backend later.
+
 ### Decision
 
-Replace the ADR-038 "disable on-device engines" mitigation with a working capture path so the user can actually use Sherpa, Moonshine, Parakeet, and SenseVoice on Windows without `record_windows`, and the Native engine reports an actionable, specific reason when it cannot initialize.
+Build on top of ADR-038 (still the runtime contract) and add the parts of the fix that are independently useful on Windows, while keeping the on-device engines disabled until a validated WASAPI capture backend lands.
 
-1. **Windows WASAPI PCM16 mono 16 kHz capture backend** — add a new platform channel `codewalk/windows_microphone` and an event channel `codewalk/windows_microphone_stream` for PCM delivery. The native side uses `IAudioClient` (WASAPI shared mode) and never touches `record_windows`. Capture errors map to typed `WindowsMicrophoneAccessStatus` values; the host process is never crashed.
-2. **`SpeechAudioCapture` abstraction** — on-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) now obtain a `Stream<Uint8List>` from `SpeechAudioCapture`, which routes to the WASAPI backend on Windows and to the existing `record` API on Linux/macOS. The engine logic and decoder pipeline are unchanged.
-3. **Actionable Windows settings helpers** — `WindowsSettingsLinks` wraps `url_launcher` with three official Microsoft Settings URIs: `ms-settings:privacy-microphone`, `ms-settings:privacy-speech`, and `ms-settings:speech`. The helpers no-op on non-Windows targets.
-4. **Actionable Native STT preflight** — `SttSpeechInputService._buildUnavailableReason` now probes the Windows microphone access status first and returns a specific reason with a stable reason key (`microphoneDenied` / `noInputDevice` / `deviceBusy` / `speechPrivacy`) that the UI can map to the correct settings link.
-5. **Actionable composer snackbar** — the chat input failure path on Windows shows a snackbar with an "Open microphone settings" action button that launches `ms-settings:privacy-microphone`. Non-Windows targets keep the existing copy.
-6. **Re-enable on-device engines on Windows** — `SpeechEnginePlatformSupport` now reports Sherpa/Moonshine/Parakeet/SenseVoice as supported on Windows. The Windows force-migration to Native in `SettingsProvider` is removed. If the WASAPI backend is unavailable on the host, the engine initializer returns a typed status and the UI shows the actionable link.
-7. **Settings UI** — the Windows setup card is now an actionable card with three buttons (microphone, speech privacy, speech language). On non-Windows the card is hidden.
-8. **i18n** — new keys `speechOpenMicrophoneSettings`, `speechOpenSpeechPrivacy`, `speechOpenSpeechSettings`, `speechWindowsSetupHint` are added in English; non-English locales fall back to English (expected behavior of the safe i18n workflow).
-9. **Regression coverage** — `speech_engine_platform_support_test.dart` and `settings_provider_test.dart` are updated to assert that Windows no longer migrates on-device engines to Native. New unit tests cover `WindowsSettingsLinks` URIs and `WindowsMicrophoneService.probe()` (typed status parsing + `PlatformException` mapping).
+1. **Actionable Windows settings helpers** — `WindowsSettingsLinks` wraps `url_launcher` with three official Microsoft Settings URIs: `ms-settings:privacy-microphone`, `ms-settings:privacy-speech`, and `ms-settings:speech`. The helpers no-op on non-Windows targets.
+2. **Typed Windows microphone preflight** — `WindowsMicrophoneService.probe()` exposes `WindowsMicrophoneAccessStatus` (`allowed` / `denied` / `noInputDevice` / `deviceBusy` / `unknown` / `notSupported`) over a `codewalk/windows_microphone` MethodChannel. The probe fails soft: any `PlatformException` maps to `unknown`, any `MissingPluginException` maps to `notSupported`. The EventChannel surface (`codewalk/windows_microphone_stream`) raises `MicrophoneBackendUnavailableException` when the native side is missing so the engine can fall back to Native.
+3. **Actionable Native STT preflight** — `SttSpeechInputService._buildUnavailableReason` probes the Windows microphone access status first and returns a specific reason with a stable reason key (`microphoneDenied` / `noInputDevice` / `deviceBusy` / `speechPrivacy`) that the UI can map to the correct settings link.
+4. **Actionable composer snackbar** — the chat input failure path on Windows shows a snackbar with an action button whose target URI is picked from the typed `unavailableReasonKey` (`speechPrivacy` / `noInputDevice` → speech settings, `deviceBusy` / `microphoneDenied` / `generic` → microphone privacy). Non-Windows targets keep the existing copy.
+5. **`SpeechAudioCapture` lifecycle cleanup** — the on-device engines no longer create their own `AudioRecorder` instances; the wrapper owns the recorder lifecycle end-to-end so the previously-leaked `AudioRecorder` is no longer reachable. This change is platform-neutral and fixes a latent leak that affected Linux/macOS too.
+6. **Settings UI** — the Windows setup card in `Settings > Speech` is now actionable: three buttons (microphone, speech privacy, speech language) that launch the corresponding `ms-settings:` URI. On non-Windows the card is hidden.
+7. **i18n** — new keys `speechOpenMicrophoneSettings`, `speechOpenSpeechPrivacy`, `speechOpenSpeechSettings`, `speechWindowsSetupHint` are added in English; non-English locales fall back to English (expected behavior of the safe i18n workflow).
+8. **Regression coverage** — new unit tests cover `WindowsSettingsLinks` URIs and `WindowsMicrophoneService.probe()` (typed status parsing + `PlatformException` + `MissingPluginException` mapping). Existing tests assert that Windows still force-migrates on-device selections to Native so the user never lands on a crashing engine.
+9. **On-device engine re-enable on Windows is deferred** — the WASAPI capture backend (a new C++ plugin using `IAudioClient` shared mode, no MediaFoundation) is the follow-up deliverable. Until it is built and validated on a Windows host, the on-device engines remain disabled on Windows and the actionable settings card is the user-facing remediation.
 
 ### Rationale
 
-- The user's explicit ask in issue #43 cannot be satisfied by ADR-038 alone; a working capture path is required.
-- Bypassing `record_windows` via WASAPI is the only documented safe path on Windows for now; upgrading `record` to 7.x is blocked by the current `sdk: ^3.8.1` constraint, and pinning to a known-broken plugin is unacceptable.
-- The actionable settings link approach matches what `permission_handler_windows` cannot provide and is the only realistic UX for unpackaged Win32 apps.
-- Centralizing the per-engine Windows capture path in `SpeechAudioCapture` keeps the on-device engine code unchanged and prevents future drift between engines.
+- The user's primary ask in issue #43 is the actionable settings links; this ADR ships them with full test coverage and no platform risk.
+- The Native STT preflight is independently useful: even without re-enabling the on-device engines, the user gets a specific reason + one-tap remediation for every Windows failure mode.
+- The `SpeechAudioCapture` lifecycle cleanup is a latent leak fix that is worth shipping on its own and unblocks the future WASAPI backend.
+- Shipping a Windows C++ plugin without a Windows CI gate risks reintroducing the original crash. The follow-up is well-defined and can land once `release.yml`'s `windows-latest` job is wired into the regular CI feedback loop.
 
 ### Consequences
 
-- ✅ Third-party on-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) works on Windows without `record_windows`.
+- ✅ The user can open the exact Windows settings page from `Settings > Speech` and from the chat input failure snackbar.
 - ✅ The Native engine reports a specific reason (microphone privacy / no input device / device busy / speech privacy) on Windows; the user gets a one-tap action that opens the relevant Settings page.
-- ✅ The chat input and settings UI cannot disagree about which engines work on which platform — both delegate to `SpeechEnginePlatformSupport`.
-- ✅ Existing Windows users with on-device selections are no longer force-migrated to Native; their saved selection is preserved.
-- ⚠ The WASAPI backend is a new native code path. It must avoid MediaFoundation APIs that were the root cause of the `record_windows` crash. The platform-channel contract is fail-soft: any platform error maps to `WindowsMicrophoneAccessStatus.unknown` and never throws into Dart.
+- ✅ The on-device engines no longer leak the legacy `AudioRecorder` instance on Linux/macOS.
+- ✅ Existing Windows users with on-device selections are still force-migrated to Native so they never land on a crashing engine.
+- ⚠ The on-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are still disabled on Windows. A validated WASAPI capture backend is required to re-enable them; this is tracked as a follow-up to ADR-039.
 - ⚠ The `ms-settings:` URIs are only resolvable on Windows 10/11. On other platforms the helpers return `false` so the UI can hide the action button.
 - ❌ The non-English `speechNativeSTTWorks` translation remains removed and the new `speechOpen*` / `speechWindowsSetupHint` keys fall back to English until translators update them. This is the expected behavior of the safe i18n workflow.
-- ❌ This ADR does not address `record 7.0.0` / `record_windows 2.0.0` upgrades (still blocked by the SDK constraint) or MSIX packaging (out of scope).
+- ❌ This ADR does not address `record 7.0.0` / `record_windows 2.0.0` upgrades (still blocked by the SDK constraint), MSIX packaging (out of scope), or the WASAPI capture backend (follow-up).
 
 ### Key Files
 
-- `lib/presentation/services/windows_microphone_service.dart` — typed probe + EventChannel bridge
-- `lib/presentation/services/windows_pcm_capture_service.dart` — Windows PCM stream wrapper
-- `lib/presentation/services/speech_audio_capture.dart` — engine-side abstraction (Windows → WASAPI, others → `record`)
-- `lib/presentation/services/speech_input_service_stt.dart` — Native STT preflight with `unavailableReasonKey`
-- `lib/presentation/services/speech_input_service_{sherpa,moonshine,parakeet,sensevoice}_io.dart` — on-device engines now consume `SpeechAudioCapture`
 - `lib/presentation/utils/windows_settings_links.dart` — `url_launcher` wrappers for the three Microsoft Settings URIs
-- `lib/presentation/utils/speech_engine_platform_support.dart` — re-enabled on-device engines on Windows
-- `lib/presentation/providers/settings_provider.dart` — removed Windows force-migration
+- `lib/presentation/services/windows_microphone_service.dart` — typed probe + EventChannel bridge + `MicrophoneBackendUnavailableException`
+- `lib/presentation/services/speech_audio_capture.dart` — engine-side abstraction with end-to-end `AudioRecorder` lifecycle (Windows is currently a no-op stub for the on-device engines)
+- `lib/presentation/services/speech_input_service_stt.dart` — Native STT preflight with `unavailableReasonKey`
+- `lib/presentation/services/speech_input_service_{sherpa,moonshine,parakeet,sensevoice}_io.dart` — on-device engines now consume `SpeechAudioCapture` and no longer create their own `AudioRecorder`
 - `lib/presentation/pages/settings/sections/speech_settings_section.dart` — actionable Windows setup card
-- `lib/presentation/widgets/chat_input/chat_input_speech_controller.dart` — actionable snackbar on Windows
+- `lib/presentation/widgets/chat_input/chat_input_speech_controller.dart` — actionable snackbar on Windows; action target derived from `unavailableReasonKey`
 - `lib/l10n/app_en.arb` + 13 locale ARBs — `speechOpen*` / `speechWindowsSetupHint` keys; `speechNativeSTTWorks` updated
 - `tool/i18n/arb_strings.dart` — source of truth updated, then `generate_arb.dart` + `flutter gen-l10n` regenerated
-- `test/unit/presentation/speech_engine_platform_support_test.dart` — Windows-supported regression
-- `test/unit/providers/settings_provider_test.dart` — preserved Windows selection regression
 - `test/unit/presentation/windows_settings_links_test.dart` — new helper unit tests
-- `test/unit/services/windows_microphone_service_test.dart` — new probe unit tests
-- `BEHAVIOR.md` — replaced "Windows on-device STT is intentionally disabled" with "Windows STT settings and engine availability"
+- `test/unit/services/windows_microphone_service_test.dart` — new probe unit tests (happy path + `PlatformException` + `MissingPluginException`)
+- `BEHAVIOR.md` — Windows STT table updated; "Windows on-device STT is intentionally disabled (with actionable Windows settings links)" section
 - Ref: issue #43, llfbandit/record#453, https://learn.microsoft.com/en-us/windows/apps/develop/launch/launch-settings, https://learn.microsoft.com/en-us/windows/win32/coreaudio/wasapi
 

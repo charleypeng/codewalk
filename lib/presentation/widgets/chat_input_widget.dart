@@ -18,6 +18,7 @@ import '../../domain/entities/canned_answer.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_session.dart';
 import '../../domain/entities/experience_settings.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../providers/settings_provider.dart';
 import '../services/speech_input_service.dart';
 import '../services/speech_input_service_moonshine.dart';

@@ -247,14 +247,18 @@ class SettingsProvider extends ChangeNotifier {
     // Platform STT policy migration:
     // - Linux: Native is disabled, force Parakeet for new installs / invalid native selections.
     // - Android: Sherpa/Moonshine/Parakeet/SenseVoice are disabled in slim APK builds, force Native.
+    // - Windows: Sherpa/Moonshine/Parakeet/SenseVoice are disabled because the
+    //   underlying `record_windows` plugin can hard-crash the host process.
+    //   Force Native (UWP speech recognition) for existing selections. ADR-039
+    //   adds actionable Windows settings links and a typed microphone preflight
+    //   but does not yet re-enable on-device engines on Windows (a validated
+    //   WASAPI capture backend is a follow-up).
     // - iOS/Web: Moonshine/Parakeet/SenseVoice stay unavailable until a dedicated client path exists.
-    // - Windows: all on-device engines are supported (see ADR-039) via the WASAPI
-    //   capture backend; existing selections are preserved. If the WASAPI backend
-    //   is unavailable on the host, the engine initializer returns a typed status
-    //   and the UI shows an actionable settings link.
     final isLinux = !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
     final isAndroid =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
     final isIos = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     if (isLinux && _settings.speechToTextEngine == SpeechToTextEngine.native) {
       _settings = _settings.copyWith(
@@ -262,6 +266,15 @@ class SettingsProvider extends ChangeNotifier {
       );
       unawaited(_persist());
     } else if (isAndroid &&
+        (_settings.speechToTextEngine == SpeechToTextEngine.sherpa ||
+            _settings.speechToTextEngine == SpeechToTextEngine.moonshine ||
+            _settings.speechToTextEngine == SpeechToTextEngine.parakeet ||
+            _settings.speechToTextEngine == SpeechToTextEngine.sensevoice)) {
+      _settings = _settings.copyWith(
+        speechToTextEngine: SpeechToTextEngine.native,
+      );
+      unawaited(_persist());
+    } else if (isWindows &&
         (_settings.speechToTextEngine == SpeechToTextEngine.sherpa ||
             _settings.speechToTextEngine == SpeechToTextEngine.moonshine ||
             _settings.speechToTextEngine == SpeechToTextEngine.parakeet ||

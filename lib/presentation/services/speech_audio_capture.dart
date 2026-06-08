@@ -4,30 +4,20 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
-import 'windows_microphone_service.dart';
-import 'windows_pcm_capture_service.dart';
-
 // Audio capture abstraction for the on-device STT engines.
 //
 // On Windows the legacy `record` plugin (record_windows 1.0.7) can crash the
-// host process with a MediaFoundation segfault (llfbandit/record#453). This
-// abstraction routes capture through:
-//   - On Windows: WindowsPcmCaptureService (WASAPI PCM16 mono 16 kHz).
-//   - On other platforms: AudioRecorder from `record` (unchanged behavior).
-//
-// Each capture exposes a permission check, a PCM stream, and a stop method.
-// Permission checks return true on Windows when the WASAPI preflight is
-// allowed; the engine treats `false` the same way it treats a denied plugin.
+// host process with a MediaFoundation segfault (llfbandit/record#453), so the
+// on-device engines are not enabled on Windows. The capture wrapper owns
+// the [AudioRecorder] lifecycle for the duration of a single session so
+// [startPcmStream] and [stop] always reference the same instance; the
+// engines no longer create their own recorder.
 class SpeechAudioCapture {
-  SpeechAudioCapture({
-    WindowsPcmCaptureService? windowsCapture,
-    WindowsMicrophoneService? windowsMicrophoneService,
-  })  : _windowsCapture = windowsCapture ?? WindowsPcmCaptureService(),
-        _windowsMicrophoneService = windowsMicrophoneService ??
-            const WindowsMicrophoneService();
+  SpeechAudioCapture();
 
-  final WindowsPcmCaptureService _windowsCapture;
-  final WindowsMicrophoneService _windowsMicrophoneService;
+  // On non-Windows, the wrapper owns the AudioRecorder for the duration of
+  // a single capture session.
+  AudioRecorder? _activeRecorder;
 
   bool get isWindowsTarget {
     if (kIsWeb) {
@@ -37,41 +27,62 @@ class SpeechAudioCapture {
   }
 
   Future<bool> hasPermission() async {
-    if (!isWindowsTarget) {
-      try {
-        return await AudioRecorder().hasPermission();
-      } catch (_) {
-        return false;
-      }
+    if (isWindowsTarget) {
+      // The on-device engines are not enabled on Windows; this branch should
+      // be unreachable. Return false to keep the engine's permission check
+      // honest until the WASAPI backend lands.
+      return false;
     }
-    final status = await _windowsMicrophoneService.probe();
-    return status == WindowsMicrophoneAccessStatus.allowed;
+    try {
+      final recorder = AudioRecorder();
+      final granted = await recorder.hasPermission();
+      await recorder.dispose();
+      return granted;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<Stream<Uint8List>> startPcmStream({
     int sampleRate = 16000,
     int numChannels = 1,
   }) async {
-    if (!isWindowsTarget) {
-      final recorder = AudioRecorder();
-      return recorder.startStream(
-        RecordConfig(
-          encoder: AudioEncoder.pcm16bits,
-          sampleRate: sampleRate,
-          numChannels: numChannels,
-        ),
+    if (isWindowsTarget) {
+      throw StateError(
+        'SpeechAudioCapture.startPcmStream is not available on Windows; '
+        'the on-device engines are disabled there until the WASAPI capture '
+        'backend is validated (ADR-039).',
       );
     }
-    await _windowsCapture.start();
-    return _windowsCapture.stream();
+    final recorder = AudioRecorder();
+    _activeRecorder = recorder;
+    return recorder.startStream(
+      RecordConfig(
+        encoder: AudioEncoder.pcm16bits,
+        sampleRate: sampleRate,
+        numChannels: numChannels,
+      ),
+    );
   }
 
   Future<void> stop() async {
-    if (!isWindowsTarget) {
-      // The legacy engines own the AudioRecorder lifecycle; nothing to do
-      // here for the generic `record` path.
+    if (isWindowsTarget) {
       return;
     }
-    await _windowsCapture.stop();
+    final recorder = _activeRecorder;
+    _activeRecorder = null;
+    if (recorder == null) {
+      return;
+    }
+    try {
+      await recorder.stop();
+    } catch (_) {
+      // Ignore stop errors so callers can always safely stop().
+    }
+    try {
+      await recorder.dispose();
+    } catch (_) {
+      // Ignore dispose errors.
+    }
   }
 }

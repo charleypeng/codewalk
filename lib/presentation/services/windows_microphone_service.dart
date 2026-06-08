@@ -93,21 +93,37 @@ class WindowsMicrophoneService {
   }
 
   // Returns a stream of PCM16 mono 16 kHz chunks when the native backend is
-  // active. On non-Windows the stream emits an error event so the caller can
-  // fall back to the legacy AudioRecorder path.
+  // active. On non-Windows the stream is empty. Any platform error
+  // (including [MissingPluginException] when the native side is not built)
+  // is mapped to a synthetic error stream so the engine can fall back to
+  // Native instead of crashing.
   Stream<Uint8List> pcmStream() {
     if (!_isWindowsTarget) {
       return const Stream<Uint8List>.empty();
     }
-    return _stream.receiveBroadcastStream().map((event) {
-      if (event is Uint8List) {
-        return event;
-      }
-      if (event is List<int>) {
-        return Uint8List.fromList(event);
-      }
-      return Uint8List(0);
-    });
+    return _stream
+        .receiveBroadcastStream()
+        .map<Uint8List>((event) {
+          if (event is Uint8List) {
+            return event;
+          }
+          if (event is List<int>) {
+            return Uint8List.fromList(event);
+          }
+          return Uint8List(0);
+        })
+        .handleError((error) {
+          if (error is MissingPluginException) {
+            throw const MicrophoneBackendUnavailableException();
+          }
+          if (error is PlatformException) {
+            throw MicrophoneBackendUnavailableException(
+              code: error.code,
+              message: error.message,
+            );
+          }
+          throw error;
+        });
   }
 
   Future<void> stopStream() async {
@@ -141,4 +157,18 @@ class WindowsMicrophoneService {
         return WindowsMicrophoneAccessStatus.unknown;
     }
   }
+}
+
+// Sentinel exception raised when the Windows native microphone backend is
+// missing or fails to initialize. Engines should map this to the Native
+// engine fallback instead of crashing.
+class MicrophoneBackendUnavailableException implements Exception {
+  const MicrophoneBackendUnavailableException({this.code, this.message});
+
+  final String? code;
+  final String? message;
+
+  @override
+  String toString() => 'MicrophoneBackendUnavailableException('
+      'code: $code, message: $message)';
 }

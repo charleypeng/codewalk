@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:record/record.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
@@ -29,7 +28,6 @@ class SherpaSpeechInputService implements SpeechInputService {
   static bool _bindingsInitialized = false;
 
   sherpa.OnlineRecognizer? _recognizer;
-  AudioRecorder? _recorder;
   SpeechAudioCapture? _capture;
   StreamSubscription<Uint8List>? _audioSub;
   String? _activeLanguage;
@@ -151,20 +149,11 @@ class SherpaSpeechInputService implements SpeechInputService {
       return;
     }
 
-    final recorder = AudioRecorder();
-    _recorder = recorder;
-
     final capture = SpeechAudioCapture();
     _capture = capture;
 
     final hasPermission = await capture.hasPermission();
     if (!hasPermission) {
-      if (capture.isWindowsTarget) {
-        // WASAPI is not used; nothing to dispose on the new path.
-      } else {
-        await recorder.dispose();
-        _recorder = null;
-      }
       _capture = null;
       onError();
       return;
@@ -236,10 +225,6 @@ class SherpaSpeechInputService implements SpeechInputService {
       );
       _isListening = false;
       stream.free();
-      if (!capture.isWindowsTarget) {
-        await recorder.dispose();
-        _recorder = null;
-      }
       _capture = null;
       onError();
       return;
@@ -370,19 +355,12 @@ class SherpaSpeechInputService implements SpeechInputService {
   @override
   Future<void> stopListening() async {
     _isListening = false;
-    try {
-      await _recorder?.stop();
-    } catch (_) {
-      // Ignore stop errors.
-    }
     await _audioSub?.cancel();
     _audioSub = null;
-    await _recorder?.dispose();
-    _recorder = null;
     final capture = _capture;
+    _capture = null;
     if (capture != null) {
       await capture.stop();
-      _capture = null;
     }
   }
 
