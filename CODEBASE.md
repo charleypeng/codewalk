@@ -137,6 +137,7 @@ lib/presentation/utils/diff_parser.dart # Diff parser: DiffHunk model, groupInto
 lib/presentation/utils/file_path_detector.dart # Regex-based file path detector: ~90 known extensions, :line:col suffix parsing, code-block exclusion, URL exclusion, Windows absolute paths
 lib/presentation/utils/file_path_markdown.dart # Custom flutter_markdown_plus InlineSyntax (FilePathSyntax) and MarkdownElementBuilder (FilePathBuilder) for clickable file path spans
 lib/presentation/utils/math_markdown.dart # Custom markdown syntaxes (InlineMathSyntax, BlockMathSyntax, SingleLineBlockMathSyntax) and builders (InlineMathBuilder, BlockMathBuilder) for `$...$` and `$$...$$` LaTeX math expressions
+lib/presentation/utils/windows_settings_links.dart # URI helper class for Windows system settings links (microphone, speech privacy, speech settings)
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state; exposes `clearNotificationsForSession()` for per-session notification dismissal
 lib/presentation/services/event_feedback_dispatcher.dart  # Routes chat events to notification + sound feedback; includes `dismissForSession()` for reactive foreground notification cleanup when permissions/questions are resolved or sessions become idle
@@ -149,17 +150,19 @@ lib/presentation/services/read_aloud_service.dart                # ReadAloudServ
 lib/presentation/services/session_export_service.dart # SessionExportService: serializes session history to Markdown and JSON for local export; omits local_user_* IDs from JSON per ADR-023
 lib/presentation/services/message_image_export_service.dart # MessageImageExportService: captures a RepaintBoundary widget as a PNG and invokes the platform share sheet; MessageImageExportResult enum (shared, tooTall, notLaidOut, failed); uses RenderRepaintBoundary.toImage() with _capturePixelRatio=2.5, capped at _maxCaptureHeight=4096 logical px
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
-lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition
-lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and Windows
+lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition; consumes `SpeechAudioCapture`
+lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and Windows; exposes `unavailableReasonKey` for preflight settings routing
+lib/presentation/services/speech_audio_capture.dart # Platform-neutral audio capture and recording lifecycle cleanup; prevents AudioRecorder leaks
+lib/presentation/services/windows_microphone_service.dart # Windows microphone access probe and preflight status service
 lib/presentation/services/speech_input_service_parakeet.dart # Conditional export: routes to IO or stub Parakeet STT adapter
-lib/presentation/services/speech_input_service_parakeet_io.dart # Desktop Parakeet STT backend; NeMo transducer for on-device transcription
+lib/presentation/services/speech_input_service_parakeet_io.dart # Desktop Parakeet STT backend; NeMo transducer for on-device transcription; consumes `SpeechAudioCapture`
 lib/presentation/services/speech_input_service_parakeet_stub.dart # Non-IO platforms: no-op Parakeet stub
 lib/presentation/services/parakeet_model_manager.dart # Conditional export: routes to IO or stub Parakeet model manager
 lib/presentation/services/parakeet_model_manager_io.dart # Desktop Parakeet model download/extract/delete flow using NeMo release archives
 lib/presentation/services/parakeet_model_manager_stub.dart # Non-IO platforms: disabled Parakeet model manager
 lib/presentation/widgets/parakeet_model_download_dialog.dart # Parakeet model download/setup dialog shown when Parakeet is selected without a downloaded model
 lib/presentation/services/speech_input_service_sensevoice.dart # Conditional export: routes to IO or stub SenseVoice STT adapter
-lib/presentation/services/speech_input_service_sensevoice_io.dart # Desktop SenseVoice STT backend; sherpa_onnx offline recognizer for on-device transcription (strongest option for CJK + English)
+lib/presentation/services/speech_input_service_sensevoice_io.dart # Desktop SenseVoice STT backend; sherpa_onnx offline recognizer for on-device transcription (strongest option for CJK + English); consumes `SpeechAudioCapture`
 lib/presentation/services/speech_input_service_sensevoice_stub.dart # Non-IO platforms: no-op SenseVoice stub
 lib/presentation/services/sensevoice_model_manager.dart # Conditional export: routes to IO or stub SenseVoice model manager
 lib/presentation/services/sensevoice_model_manager_io.dart # Desktop SenseVoice model download/extract/delete flow using sherpa_onnx archives
@@ -289,6 +292,7 @@ Platform support rules (per `SpeechEnginePlatformSupport`):
 - **Moonshine / Parakeet / SenseVoice**: Linux + macOS only. Windows excluded for the same record_windows reason. Desktop-only because they bundle `sherpa_onnx` + downloadable models.
 
 The `SettingsProvider` auto-migrates Windows selections of Sherpa/Moonshine/Parakeet/SenseVoice to Native on `initialize()` so existing users never land on a crashing engine.
+For Windows STT failures, Native STT performs a microphone preflight check via `WindowsMicrophoneService.probe()`, and errors are mapped to Windows settings links via `WindowsSettingsLinks` in both the speech settings section and the chat input failure snackbar.
 
 ### Terminal Workspace
 
@@ -389,6 +393,7 @@ test/unit/services/                     # Platform and runtime service unit test
   codewalk_terminal_controller_test.dart #   Terminal controller: server-side PTY lifecycle, WebSocket connectivity, resize debouncing, cursor tracking
   codewalk_terminal_url_test.dart        #   WebSocket terminal URL construction
   read_aloud_service_test.dart           #   Text-to-speech service lifecycle, options (pitch/rate/voice), and message tracking
+  windows_microphone_service_test.dart   #   Windows microphone access probe and preflight status tests
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, terminal mobile backspace simulation, Windows printable hardware key forwarding, and Windows AltGr printable forwarding)
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
