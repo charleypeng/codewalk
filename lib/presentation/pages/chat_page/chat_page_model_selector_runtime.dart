@@ -44,7 +44,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (!isSubConversation)
+            if (!isSubConversation) ...[
               Tooltip(
                 message: autoApproveEnabled
                     ? context.l10n.chatPermissionAutoApproveOn
@@ -110,8 +110,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   ),
                 ),
               ),
-            if (!isSubConversation) ...[
               const SizedBox(width: 8),
+            ],
+            if (!isSubConversation) ...[
               Tooltip(
                 message: context.l10n.modelChooseAgent,
                 child: ConstrainedBox(
@@ -151,8 +152,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
             ],
-            const SizedBox(width: 8),
             Tooltip(
               message: isSubConversation
                   ? context.l10n.chatModelLockedSubConversation
@@ -181,8 +182,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            if (showProvidersLoadingHint)
+            if (showProvidersLoadingHint) ...[
+              const SizedBox(width: 8),
               Chip(
                 avatar: SizedBox(
                   width: 14,
@@ -200,8 +201,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 ),
                 side: BorderSide.none,
                 backgroundColor: colorScheme.surfaceContainerHighest,
-              )
-            else if (showProvidersRetryHint)
+              ),
+            ] else if (showProvidersRetryHint) ...[
+              const SizedBox(width: 8),
               Tooltip(
                 message:
                     chatProvider.providersRefreshErrorMessage ??
@@ -221,10 +223,11 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       unawaited(chatProvider.retryProvidersRefresh()),
                 ),
               ),
-            const SizedBox(width: 8),
+            ],
             if (isSubConversation
                 ? selectedVariantLabel != null
-                : variants.isNotEmpty)
+                : variants.isNotEmpty) ...[
+              const SizedBox(width: 8),
               Tooltip(
                 message: isSubConversation
                     ? context.l10n.chatEffortLockedSubConversation
@@ -263,6 +266,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
