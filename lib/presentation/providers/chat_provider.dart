@@ -1570,19 +1570,10 @@ class ChatProvider extends ChangeNotifier {
               error: null,
             );
           }
-          // Empty result: only treat as final when walking for the explicit
-          // Review Changes action. Automatic refresh never clears a
-          // known-good diff with an empty response.
-          if (exhaustiveDiffScan) {
-            return _SessionDiffResolution(
-              diffs: hadPreviousDiff ? existingDiff : const <SessionDiff>[],
-              applied: false,
-              updatedState: hadPreviousDiff
-                  ? _SessionDiffLoadState.unchanged
-                  : _SessionDiffLoadState.loadedEmpty,
-              error: null,
-            );
-          }
+          // Empty result: continue walking for the Review Changes
+          // exhaustive scan, or preserve the previous diff for the
+          // automatic refresh path. The final "every turn is empty"
+          // state is committed only after the loop completes.
           return _SessionDiffResolution(
             diffs: existingDiff,
             applied: false,
@@ -1602,13 +1593,15 @@ class ChatProvider extends ChangeNotifier {
     }
 
     if (exhaustiveDiffScan) {
-      // Every candidate returned empty: the session is definitively empty.
+      // Every candidate returned empty. The user explicitly asked for the
+      // exhaustive Review Changes view, so honor the honest outcome and
+      // commit to a loaded-empty result. We still rely on the overwrite
+      // guard in the caller to avoid clobbering a newer concurrent write
+      // before the diff list is finally cleared.
       return _SessionDiffResolution(
-        diffs: hadPreviousDiff ? existingDiff : const <SessionDiff>[],
-        applied: false,
-        updatedState: hadPreviousDiff
-            ? _SessionDiffLoadState.unchanged
-            : _SessionDiffLoadState.loadedEmpty,
+        diffs: const <SessionDiff>[],
+        applied: hadPreviousDiff,
+        updatedState: _SessionDiffLoadState.loadedEmpty,
         error: null,
       );
     }

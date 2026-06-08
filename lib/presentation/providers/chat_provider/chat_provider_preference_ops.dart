@@ -103,6 +103,12 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionChildrenById = snapshot.sessionChildrenById;
     _sessionTodoById = snapshot.sessionTodoById;
     _sessionDiffById = snapshot.sessionDiffById;
+    // The diff loaded/error UI state is per-session, but the snapshot only
+    // carries the diff list. Clear the bookkeeping so the restored context
+    // does not advertise "loaded" for data that is not yet in the visible
+    // timeline. The next loadSessionInsights call repopulates it.
+    _sessionDiffLoadedById.clear();
+    _sessionDiffErrorById.clear();
     _sessionSearchQuery = snapshot.sessionSearchQuery;
     _sessionListFilter = snapshot.sessionListFilter;
     _sessionListSort = snapshot.sessionListSort;

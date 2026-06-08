@@ -318,9 +318,16 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               )
               .toList(growable: false);
 
+          final existing = _sessionDiffById[sessionId];
+          // Preserve a known-good diff when the SSE event carries an empty
+          // list. The authoritative source for the file list is the
+          // turn-by-turn summary in the server, and a transient empty
+          // payload from another client must not erase the local view.
+          if (parsed.isEmpty && existing != null && existing.isNotEmpty) {
+            break;
+          }
           // Merge guard: if incoming SSE item has no content (empty before/after
           // AND no patch), preserve existing non-empty stored content for same file
-          final existing = _sessionDiffById[sessionId];
           if (existing != null && existing.isNotEmpty) {
             final merged = <SessionDiff>[];
             final existingByFile = {for (final e in existing) e.file: e};
@@ -344,10 +351,6 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             }
             _sessionDiffById[sessionId] = merged;
           } else {
-            // Skip overwrite if entire incoming list is empty but existing exists
-            if (parsed.isEmpty && existing != null && existing.isNotEmpty) {
-              break;
-            }
             _sessionDiffById[sessionId] = parsed;
           }
           _notifyListeners();
