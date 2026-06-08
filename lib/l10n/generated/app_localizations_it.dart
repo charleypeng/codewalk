@@ -4006,10 +4006,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'L\'STT nativo si avvia più velocemente. Sherpa viene eseguito interamente sul dispositivo con una configurazione più pesante e un controllo più approfondito del modello.';
 
   @override
-  String get speechOnDeviceWindowsDisabled =>
-      'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
-
-  @override
   String get speechOpenMicrophoneSettings => 'Open microphone settings';
 
   @override

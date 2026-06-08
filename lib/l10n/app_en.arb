@@ -4836,10 +4836,6 @@
   "@speechNativeStartsFaster": {
     "description": "CodeWalk UI string — speechNativeStartsFaster"
   },
-  "speechOnDeviceWindowsDisabled": "On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.",
-  "@speechOnDeviceWindowsDisabled": {
-    "description": "CodeWalk UI string — speechOnDeviceWindowsDisabled"
-  },
   "speechOpenMicrophoneSettings": "Open microphone settings",
   "@speechOpenMicrophoneSettings": {
     "description": "CodeWalk UI string — speechOpenMicrophoneSettings"

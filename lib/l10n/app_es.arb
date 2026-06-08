@@ -1143,7 +1143,6 @@
   "speechNativeSTTDisabled": "El STT nativo está desactivado en Linux en esta aplicación. Parakeet es el motor predeterminado para nuevas instalaciones.",
   "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.",
   "speechNativeStartsFaster": "El nativo se inicia más rápido. Sherpa se ejecuta completamente en el dispositivo con una configuración más pesada y un control de modelo más profundo.",
-  "speechOnDeviceWindowsDisabled": "On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.",
   "speechOpenMicrophoneSettings": "Open microphone settings",
   "speechOpenSpeechPrivacy": "Open speech privacy",
   "speechOpenSpeechSettings": "Open speech settings",

@@ -58,6 +58,7 @@ class SttSpeechInputService implements SpeechInputService {
 
   Future<bool> _initializeSpeechEngine() async {
     _lastUnavailableReason = null;
+    _lastUnavailableReasonKey = null;
     try {
       _isAvailable = await _speechToText.initialize(
         onStatus: _handleStatus,

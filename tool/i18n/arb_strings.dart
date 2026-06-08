@@ -1148,7 +1148,6 @@ const englishTemplate = <String, String>{
   'speechNative': 'Native',
   'speechNativeSTTDisabled': 'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.',
   'speechNativeSTTWorks': 'Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.',
-  'speechOnDeviceWindowsDisabled': 'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.',
   'speechOpenMicrophoneSettings': 'Open microphone settings',
   'speechOpenSpeechPrivacy': 'Open speech privacy',
   'speechOpenSpeechSettings': 'Open speech settings',

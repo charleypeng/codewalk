@@ -81,6 +81,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
 
     String? unavailableReason;
     SpeechInputService? lastAttempted;
+    SpeechToTextEngine? lastAttemptedEngine;
     for (var i = 0; i < candidates.length; i++) {
       final engine = candidates[i];
       final service = _serviceForEngine(engine);
@@ -88,6 +89,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
         continue;
       }
       lastAttempted = service;
+      lastAttemptedEngine = engine;
       if (await service.initialize()) {
         return _SpeechServiceResolution(
           service: service,
@@ -104,7 +106,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     }
     return _SpeechServiceResolution(
       service: lastAttempted,
-      engine: candidates.last,
+      engine: lastAttemptedEngine ?? candidates.last,
       usedFallback: true,
       unavailableReason: unavailableReason,
     );

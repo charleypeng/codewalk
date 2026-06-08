@@ -1143,7 +1143,6 @@
   "speechNativeSTTDisabled": "এই অ্যাপে Linux-এ নেটিভ STT অক্ষম করা আছে। প্যারাকিট নতুন ইনস্টলের জন্য ডিফল্ট ইঞ্জিন।",
   "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.",
   "speechNativeStartsFaster": "নেটিভ দ্রুত শুরু হয়. শেরপা ভারী সেটআপ এবং গভীর মডেল নিয়ন্ত্রণ সহ সম্পূর্ণরূপে অন-ডিভাইস চালান।",
-  "speechOnDeviceWindowsDisabled": "On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.",
   "speechOpenMicrophoneSettings": "Open microphone settings",
   "speechOpenSpeechPrivacy": "Open speech privacy",
   "speechOpenSpeechSettings": "Open speech settings",

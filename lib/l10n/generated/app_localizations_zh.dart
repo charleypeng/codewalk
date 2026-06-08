@@ -3699,10 +3699,6 @@ class AppLocalizationsZh extends AppLocalizations {
       '原生引擎启动更快。Sherpa 完全在设备上运行，具有更繁重的设置和更深度的模型控制。';
 
   @override
-  String get speechOnDeviceWindowsDisabled =>
-      'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
-
-  @override
   String get speechOpenMicrophoneSettings => 'Open microphone settings';
 
   @override

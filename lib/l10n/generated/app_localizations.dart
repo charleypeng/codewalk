@@ -6985,12 +6985,6 @@ abstract class AppLocalizations {
   /// **'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.'**
   String get speechNativeStartsFaster;
 
-  /// CodeWalk UI string — speechOnDeviceWindowsDisabled
-  ///
-  /// In en, this message translates to:
-  /// **'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.'**
-  String get speechOnDeviceWindowsDisabled;
-
   /// CodeWalk UI string — speechOpenMicrophoneSettings
   ///
   /// In en, this message translates to:
