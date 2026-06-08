@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "ডিফ ফাইল: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} লাইন যোগ করা হয়েছে -{removed} লাইন সরানো হয়েছে",
   "sessionDiffLinesCollapsed": "{count} লাইনগুলি ভেঙে গেছে — প্রসারিত করতে আলতো চাপুন৷",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "পরিবর্তনগুলি পর্যালোচনা করুন",
   "sessionDiffSplit": "বিভক্ত",
   "sessionDiffSummary": "সারাংশ",

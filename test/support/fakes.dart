@@ -1514,6 +1514,15 @@ class FakeChatRepository implements ChatRepository {
   int getSessionTodoCallCount = 0;
   int getSessionDiffCallCount = 0;
   int getSessionStatusCallCount = 0;
+  // ADR-023 regression tracking: assert the resolver passes a messageId to
+  // the REST /session/{id}/diff call instead of relying on unscoped queries
+  // that upstream SessionSummary.diff answers with an empty list.
+  String? lastGetSessionDiffMessageId;
+  // Per-message diff map keyed by sessionId. When populated, the fake
+  // returns the entry matching the requested messageId; otherwise it falls
+  // back to the legacy `sessionDiffById` map for backward compatibility.
+  final Map<String, Map<String, List<SessionDiff>>>
+      sessionDiffByMessageId = <String, Map<String, List<SessionDiff>>>{};
 
   // Optional delay hooks for concurrency verification in tests.
   Future<void> Function()? getSessionsDelay;
@@ -1809,9 +1818,19 @@ class FakeChatRepository implements ChatRepository {
     String? directory,
   }) async {
     getSessionDiffCallCount += 1;
+    lastGetSessionDiffMessageId = messageId;
     if (getSessionDiffDelay != null) await getSessionDiffDelay!();
     if (sessionDiffFailure != null) {
       return Left(sessionDiffFailure!);
+    }
+    final perMessage = sessionDiffByMessageId[sessionId];
+    if (perMessage != null && perMessage.isNotEmpty) {
+      if (messageId == null || messageId.isEmpty) {
+        return const Right(<SessionDiff>[]);
+      }
+      return Right(
+        List<SessionDiff>.from(perMessage[messageId] ?? const <SessionDiff>[]),
+      );
     }
     return Right(
       List<SessionDiff>.from(

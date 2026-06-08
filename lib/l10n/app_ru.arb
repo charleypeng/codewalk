@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "Измененные файлы: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} строк добавлено -{removed} строк удалено",
   "sessionDiffLinesCollapsed": "{count} строк свернуто — нажмите, чтобы развернуть",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "Просмотр изменений",
   "sessionDiffSplit": "Разделенный",
   "sessionDiffSummary": "Сводка",

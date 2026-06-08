@@ -64,6 +64,8 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _sessionChildrenById = <String, List<ChatSession>>{};
       _sessionTodoById = <String, List<SessionTodo>>{};
       _sessionDiffById = <String, List<SessionDiff>>{};
+      _sessionDiffLoadedById.clear();
+      _sessionDiffErrorById.clear();
       _sessionSearchQuery = '';
       _sessionListFilter = SessionListFilter.active;
       _sessionListSort = SessionListSort.recent;

@@ -2583,6 +2583,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => 'Review changes';
 
   @override

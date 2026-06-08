@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "Diff-Dateien: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} Zeilen hinzugefügt -{removed} Zeilen entfernt",
   "sessionDiffLinesCollapsed": "{count} Zeilen ausgeblendet — Tippen zum Aufklappen",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "Änderungen überprüfen",
   "sessionDiffSplit": "Geteilt",
   "sessionDiffSummary": "Zusammenfassung",

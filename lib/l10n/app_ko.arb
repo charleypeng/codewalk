@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "Diff 파일: {count}",
   "sessionDiffLinesAddedRemoved": "+{added}줄 추가됨 -{removed}줄 제거됨",
   "sessionDiffLinesCollapsed": "{count}줄이 접혀 있음 — 탭하여 펼치기",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "변경 사항 검토",
   "sessionDiffSplit": "분할 보기",
   "sessionDiffSummary": "요약",

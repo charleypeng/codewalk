@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "ملفات الفرق: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} أسطر تم إضافتها -{removed} أسطر تم إزالتها",
   "sessionDiffLinesCollapsed": "{count} أسطر مطوية — اضغط للتوسيع",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "مراجعة التغييرات",
   "sessionDiffSplit": "تقسيم",
   "sessionDiffSummary": "ملخص",

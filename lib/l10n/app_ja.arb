@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "差分ファイル: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} 行追加 -{removed} 行削除",
   "sessionDiffLinesCollapsed": "{count} 行が折りたたまれています — タップして展開",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "変更を確認",
   "sessionDiffSplit": "分割",
   "sessionDiffSummary": "概要",

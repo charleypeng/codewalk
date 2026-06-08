@@ -2620,6 +2620,9 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => 'Änderungen überprüfen';
 
   @override

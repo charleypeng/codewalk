@@ -2477,6 +2477,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => '변경 사항 검토';
 
   @override

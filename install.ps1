@@ -308,8 +308,11 @@ if ($InstallMode -eq "apply") {
     }
   } catch {
     Warn "CodeWalk update apply failed: $($_.Exception.Message)"
-    if ($env:CODEWALK_RELAUNCH -eq "1" -and (Test-Path $BinaryPath)) {
+    $canRelaunch = (Test-Path $BinaryPath) -and (Test-Path $VersionFile)
+    if ($env:CODEWALK_RELAUNCH -eq "1" -and $canRelaunch) {
       Start-Process -FilePath $BinaryPath -WorkingDirectory $InstallDir
+    } elseif ($env:CODEWALK_RELAUNCH -eq "1") {
+      Warn "CodeWalk was not relaunched because the install directory is incomplete. Staged update remains at $StageRoot."
     }
     exit 1
   }

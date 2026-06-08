@@ -2593,6 +2593,9 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => 'পরিবর্তনগুলি পর্যালোচনা করুন';
 
   @override

@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "Fichiers diff : {count}",
   "sessionDiffLinesAddedRemoved": "+{added} lignes ajoutées -{removed} lignes supprimées",
   "sessionDiffLinesCollapsed": "{count} lignes réduites — appuyez pour développer",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "Examiner les modifications",
   "sessionDiffSplit": "Scindé",
   "sessionDiffSummary": "Résumé",

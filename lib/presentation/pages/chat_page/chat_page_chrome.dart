@@ -193,7 +193,13 @@ extension _ChatPageChrome on _ChatPageState {
     final isCompactLayout =
         context.windowSizeClass.isCompact || _isMobileRuntime;
     unawaited(
-      chatProvider.loadSessionInsights(session.id, userInitiated: true),
+      chatProvider.loadSessionInsights(
+        session.id,
+        userInitiated: true,
+        // Review Changes expects a session-wide view; scan recent user turns
+        // so a turn that produced no file changes does not hide older diffs.
+        exhaustiveDiffScan: reviewFirst,
+      ),
     );
 
     await showDialog<void>(
@@ -334,6 +340,10 @@ extension _ChatPageChrome on _ChatPageState {
   }
 
   List<Widget> _buildCurrentSessionReviewSection(ChatProvider chatProvider) {
+    final hasLoaded = chatProvider.isCurrentSessionDiffLoaded;
+    final hasError = chatProvider.currentSessionDiffError;
+    final isLoading =
+        chatProvider.isLoadingSessionInsights && !hasLoaded;
     return <Widget>[
       Text(
         context.l10n.chatReviewChanges,
@@ -343,17 +353,38 @@ extension _ChatPageChrome on _ChatPageState {
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
       const SizedBox(height: 8),
-      if (chatProvider.currentSessionDiff.isEmpty)
-        Text(
-          context.l10n.chatChangedFilesAvailable,
-          style: Theme.of(context).textTheme.bodyMedium,
-        )
-      else
+      if (chatProvider.currentSessionDiff.isNotEmpty)
         SessionDiffViewer(
           diffs: chatProvider.currentSessionDiff,
           compact: false,
           onFileTap: (path, line) =>
               unawaited(_onFilePathTap(path, line, null)),
+        )
+      else if (isLoading)
+        Padding(
+          key: const ValueKey<String>('current_session_review_loading'),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            context.l10n.sessionDiffLoading,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        )
+      else if (!hasLoaded && hasError != null)
+        Padding(
+          key: const ValueKey<String>('current_session_review_error'),
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            hasError,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+          ),
+        )
+      else
+        Text(
+          context.l10n.chatChangedFilesAvailable,
+          key: const ValueKey<String>('current_session_review_empty'),
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
     ];
   }

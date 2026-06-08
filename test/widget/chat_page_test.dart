@@ -14658,6 +14658,25 @@ void main() {
         status: 'modified',
       ),
     ];
+    // ADR-023: the Review Changes / inline diff flow now scopes the
+    // /session/{id}/diff call to the latest server-confirmed user message.
+    // Seed one so the provider can pick a target message ID and the fake
+    // can return the diff for that turn.
+    repository.messagesBySession['ses_diff_inline'] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_user_diff_inline_1',
+        sessionId: 'ses_diff_inline',
+        time: DateTime.fromMillisecondsSinceEpoch(1500),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_user_diff_inline_1',
+            messageId: 'msg_user_diff_inline_1',
+            sessionId: 'ses_diff_inline',
+            text: 'Edit the file',
+          ),
+        ],
+      ),
+    ];
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -14800,6 +14819,23 @@ void main() {
         additions: 1,
         deletions: 1,
         status: 'modified',
+      ),
+    ];
+    // ADR-023: review changes now scopes /session/{id}/diff to a server-
+    // confirmed user message. Seed one so the provider can resolve a target.
+    repository.messagesBySession['ses_session_details'] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_user_session_details_1',
+        sessionId: 'ses_session_details',
+        time: DateTime.fromMillisecondsSinceEpoch(1500),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_user_session_details_1',
+            messageId: 'msg_user_session_details_1',
+            sessionId: 'ses_session_details',
+            text: 'Refactor the file',
+          ),
+        ],
       ),
     ];
 

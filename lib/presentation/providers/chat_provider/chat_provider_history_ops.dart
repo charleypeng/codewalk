@@ -266,6 +266,33 @@ extension ChatProviderHistoryOps on ChatProvider {
     return null;
   }
 
+  /// Server-confirmed user message IDs eligible as a diff target, newest first.
+  /// Mirrors the visibility rules used by [latestRevertibleMessageId]:
+  /// only the active session, only [UserMessage]s, and skipping optimistic
+  /// `local_user_*` bubbles whose server echo has not been merged yet.
+  List<String> visibleServerConfirmedUserMessageIds({int? limit}) {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null) {
+      return const <String>[];
+    }
+    final visibleMessages = messages;
+    final result = <String>[];
+    for (var index = visibleMessages.length - 1; index >= 0; index -= 1) {
+      final message = visibleMessages[index];
+      if (message.sessionId != sessionId || message is! UserMessage) {
+        continue;
+      }
+      if (_isOptimisticLocalUserMessageId(message.id)) {
+        continue;
+      }
+      result.add(message.id);
+      if (limit != null && result.length >= limit) {
+        break;
+      }
+    }
+    return result;
+  }
+
   bool get canUndoCurrentSession => latestRevertibleMessageId != null;
 
   bool get canRedoCurrentSession => currentSessionRevert != null;

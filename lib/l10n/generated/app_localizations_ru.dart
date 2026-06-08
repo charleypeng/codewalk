@@ -2615,6 +2615,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => 'Просмотр изменений';
 
   @override

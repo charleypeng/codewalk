@@ -4597,6 +4597,12 @@ abstract class AppLocalizations {
   /// **'{count} lines collapsed — tap to expand'**
   String sessionDiffLinesCollapsed(int count);
 
+  /// CodeWalk UI string — sessionDiffLoading
+  ///
+  /// In en, this message translates to:
+  /// **'Loading changed files…'**
+  String get sessionDiffLoading;
+
   /// CodeWalk UI string — sessionDiffReview
   ///
   /// In en, this message translates to:

@@ -87,6 +87,33 @@ part 'chat_provider/chat_provider_history_ops.dart';
 part 'chat_provider/chat_provider_session_attention_ops.dart';
 part 'chat_provider/chat_provider_lifecycle_ops.dart';
 
+/// What a diff refresh attempt should do to the loaded/error bookkeeping
+/// for its target session.
+enum _SessionDiffLoadState {
+  /// No change to loaded/error state.
+  unchanged,
+
+  /// Diff is now confirmed empty for this session.
+  loadedEmpty,
+
+  /// Diff is now populated for this session.
+  loaded,
+}
+
+class _SessionDiffResolution {
+  const _SessionDiffResolution({
+    required this.diffs,
+    required this.applied,
+    required this.updatedState,
+    required this.error,
+  });
+
+  final List<SessionDiff> diffs;
+  final bool applied;
+  final _SessionDiffLoadState updatedState;
+  final String? error;
+}
+
 /// Chat provider
 class ChatProvider extends ChangeNotifier {
   ChatProvider({
@@ -256,6 +283,14 @@ class ChatProvider extends ChangeNotifier {
       <String, List<SessionTodo>>{};
   Map<String, List<SessionDiff>> _sessionDiffById =
       <String, List<SessionDiff>>{};
+  // Tracks whether the diff for a given session has been loaded at least once
+  // since the last context switch. Used by the Review Changes UI to distinguish
+  // "no data yet" from "loaded with zero changed files" so the user no longer
+  // sees a misleading empty state while the REST refresh is in flight.
+  final Set<String> _sessionDiffLoadedById = <String>{};
+  // Last error message emitted by the diff request, or null on success.
+  // Latched per session; cleared on next successful diff load.
+  final Map<String, String> _sessionDiffErrorById = <String, String>{};
   String _sessionSearchQuery = '';
   SessionListFilter _sessionListFilter = SessionListFilter.active;
   SessionListSort _sessionListSort = SessionListSort.recent;
@@ -409,6 +444,11 @@ class ChatProvider extends ChangeNotifier {
   static const String _remoteAbortInlineErrorName = 'MessageAborted';
   static const String _optimisticLocalUserMessageIdPrefix = 'local_user_';
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
+  // ADR-023: upstream SessionSummary.diff returns [] when messageID is omitted,
+  // so any unscoped /session/{id}/diff call reports an empty list. Cap the
+  // user-initiated exhaustive scan to this many recent user turns.
+  static const int _reviewChangesExhaustiveScanCap = 25;
+
   // Microtask coalescing: multiple calls within the same microtask frame
   // result in a single notifyListeners() invocation, reducing rebuild storms
   // during streaming (where 5+ event types fire per tick).
@@ -1235,6 +1275,26 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
+  /// True when the diff for the active session has been loaded at least once
+  /// since the last context switch. Lets the Review Changes UI suppress the
+  /// "no changed files" empty state until the first refresh resolves.
+  bool get isCurrentSessionDiffLoaded {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null) {
+      return false;
+    }
+    return _sessionDiffLoadedById.contains(sessionId);
+  }
+
+  /// Last error message for the active session diff request, or null on success.
+  String? get currentSessionDiffError {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null) {
+      return null;
+    }
+    return _sessionDiffErrorById[sessionId];
+  }
+
   Provider? get selectedProvider {
     final selectedId = _selectedProviderId;
     if (selectedId == null) {
@@ -1416,11 +1476,156 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Resolves the [SessionDiff] for [sessionId] using official
+  /// `GET /session/{id}/diff` semantics.
+  ///
+  /// When [exhaustiveDiffScan] is true (user-initiated Review Changes), the
+  /// helper walks recent user turns newest-first and stops at the first
+  /// turn whose summary contains a non-empty diff. The walk is bounded by
+  /// [_reviewChangesExhaustiveScanCap] to avoid runaway cost.
+  ///
+  /// ADR-023: current upstream `SessionSummary.diff` returns `[]` when
+  /// `messageID` is omitted. The helper therefore:
+  /// - uses the explicit [messageId] when provided;
+  /// - otherwise picks the latest visible server-confirmed user message;
+  /// - on user-initiated calls with [exhaustiveDiffScan] true, walks back
+  ///   up to the recent-user-turn cap so a turn that produced no file changes
+  ///   does not hide earlier changes;
+  /// - on automatic refresh, only overwrites an existing non-empty diff when
+  ///   the targeted turn actually has changes; transient fetch failures and
+  ///   empty automatic results preserve the last-known good diff (matches
+  ///   the BEHAVIOR.md rule that hiding the display toggle must not clear
+  ///   session diff data).
+  Future<_SessionDiffResolution> _resolveSessionDiff({
+    required String sessionId,
+    required String projectId,
+    required String? directory,
+    required String? messageId,
+    required bool userInitiated,
+    required bool exhaustiveDiffScan,
+  }) async {
+    final existingDiff = List<SessionDiff>.unmodifiable(
+      _sessionDiffById[sessionId] ?? const <SessionDiff>[],
+    );
+    final hadPreviousDiff = existingDiff.isNotEmpty;
+
+    String? targetMessageId = messageId?.trim();
+    List<String>? walkCandidates;
+    if ((targetMessageId == null || targetMessageId.isEmpty) &&
+        _currentSession?.id == sessionId) {
+      walkCandidates = visibleServerConfirmedUserMessageIds(
+        limit: exhaustiveDiffScan ? _reviewChangesExhaustiveScanCap : 1,
+      );
+      targetMessageId = walkCandidates.isEmpty ? null : walkCandidates.first;
+    }
+    if (targetMessageId == null || targetMessageId.isEmpty) {
+      // No eligible server-confirmed user message yet. We still want to mark
+      // the session as "loaded empty" so the UI doesn't show a perpetual
+      // spinner, but only when this was an explicit user request. Automatic
+      // refresh defers loaded-state to the next concrete attempt so we don't
+      // lose the chance to retry on the next send.
+      return _SessionDiffResolution(
+        diffs: const <SessionDiff>[],
+        applied: false,
+        updatedState: userInitiated
+            ? _SessionDiffLoadState.loadedEmpty
+            : _SessionDiffLoadState.unchanged,
+        error: null,
+      );
+    }
+
+    // For the user-initiated Review Changes action, walk the recent user
+    // turns newest-first and stop at the first non-empty result. For any
+    // other call, only the latest turn is queried.
+    final candidates = exhaustiveDiffScan
+        ? (walkCandidates ?? <String>[targetMessageId])
+        : <String>[targetMessageId];
+
+    String? lastError;
+    for (final candidateMessageId in candidates) {
+      final result = await getSessionDiff(
+        GetSessionDiffParams(
+          projectId: projectId,
+          sessionId: sessionId,
+          messageId: candidateMessageId,
+          directory: directory,
+        ),
+      );
+      final next = result.fold<_SessionDiffResolution>(
+        (failure) {
+          lastError = failure.message;
+          return _SessionDiffResolution(
+            diffs: existingDiff,
+            applied: false,
+            updatedState: _SessionDiffLoadState.unchanged,
+            error: failure.message,
+          );
+        },
+        (diff) {
+          if (diff.isNotEmpty) {
+            return _SessionDiffResolution(
+              diffs: diff,
+              applied: true,
+              updatedState: _SessionDiffLoadState.loaded,
+              error: null,
+            );
+          }
+          // Empty result: only treat as final when walking for the explicit
+          // Review Changes action. Automatic refresh never clears a
+          // known-good diff with an empty response.
+          if (exhaustiveDiffScan) {
+            return _SessionDiffResolution(
+              diffs: hadPreviousDiff ? existingDiff : const <SessionDiff>[],
+              applied: false,
+              updatedState: hadPreviousDiff
+                  ? _SessionDiffLoadState.unchanged
+                  : _SessionDiffLoadState.loadedEmpty,
+              error: null,
+            );
+          }
+          return _SessionDiffResolution(
+            diffs: existingDiff,
+            applied: false,
+            updatedState: _SessionDiffLoadState.unchanged,
+            error: null,
+          );
+        },
+      );
+      // Stop walking only on a non-empty diff or a fetch error. An empty
+      // diff during the exhaustive walk simply moves on to the next older
+      // turn; only when every candidate has been tried do we commit to the
+      // "session is empty" state.
+      if (next.applied || next.error != null) {
+        return next;
+      }
+      // Otherwise keep walking to the next older turn.
+    }
+
+    if (exhaustiveDiffScan) {
+      // Every candidate returned empty: the session is definitively empty.
+      return _SessionDiffResolution(
+        diffs: hadPreviousDiff ? existingDiff : const <SessionDiff>[],
+        applied: false,
+        updatedState: hadPreviousDiff
+            ? _SessionDiffLoadState.unchanged
+            : _SessionDiffLoadState.loadedEmpty,
+        error: null,
+      );
+    }
+    return _SessionDiffResolution(
+      diffs: existingDiff,
+      applied: false,
+      updatedState: _SessionDiffLoadState.unchanged,
+      error: lastError,
+    );
+  }
+
   Future<void> loadSessionInsights(
     String sessionId, {
     String? messageId,
     bool silent = false,
     bool userInitiated = false,
+    bool exhaustiveDiffScan = false,
   }) async {
     if (userInitiated) {
       _cellularDataSaverService.noteExplicitUserAction(
@@ -1463,7 +1668,7 @@ class ChatProvider extends ChangeNotifier {
 
       Future<Either<Failure, List<ChatSession>>>? childrenFuture;
       Future<Either<Failure, List<SessionTodo>>>? todoFuture;
-      Future<Either<Failure, List<SessionDiff>>>? diffFuture;
+      Future<_SessionDiffResolution>? diffFuture;
       if (!automaticDataSaverMode) {
         // Full insights are useful after explicit actions, but expensive to pull
         // automatically on cellular data.
@@ -1487,16 +1692,17 @@ class ChatProvider extends ChangeNotifier {
             ),
           ),
         );
-        diffFuture = _runSessionInsightRequest(
-          requestName: 'diff',
-          request: () => getSessionDiff(
-            GetSessionDiffParams(
-              projectId: projectId,
-              sessionId: sessionId,
-              messageId: messageId,
-              directory: directory,
-            ),
-          ),
+        // ADR-023: the official /session/{id}/diff endpoint requires a
+        // messageID; route the request through _resolveSessionDiff so we
+        // pick the right user message and apply non-empty guards before
+        // overwriting the existing diff.
+        diffFuture = _resolveSessionDiff(
+          sessionId: sessionId,
+          projectId: projectId,
+          directory: directory,
+          messageId: messageId,
+          userInitiated: userInitiated,
+          exhaustiveDiffScan: exhaustiveDiffScan,
         );
       }
       final statusFuture = _runSessionInsightRequest(
@@ -1536,17 +1742,43 @@ class ChatProvider extends ChangeNotifier {
       }
 
       if (diffFuture != null) {
-        final diffResult = await diffFuture;
-        diffResult.fold(
-          (failure) {
-            AppLogger.warn(
-              'Failed to load session diff for $sessionId: $failure',
-            );
-          },
-          (diff) {
-            _sessionDiffById[sessionId] = diff;
-          },
-        );
+        final diffResolution = await diffFuture;
+        if (diffResolution.applied) {
+          _sessionDiffById[sessionId] = diffResolution.diffs;
+        }
+        switch (diffResolution.updatedState) {
+          case _SessionDiffLoadState.unchanged:
+            // Leave the loaded/error bookkeeping as-is.
+            break;
+          case _SessionDiffLoadState.loaded:
+            _sessionDiffLoadedById.add(sessionId);
+            _sessionDiffErrorById.remove(sessionId);
+            break;
+          case _SessionDiffLoadState.loadedEmpty:
+            _sessionDiffLoadedById.add(sessionId);
+            _sessionDiffErrorById.remove(sessionId);
+            if (!diffResolution.applied) {
+              // First successful empty result for this session — clear the
+              // stale list so the UI can show the honest empty state. Only
+              // clobber the stored list when it is currently empty so that
+              // an older in-flight call cannot erase a newer write that
+              // arrived from a more recent successful refresh.
+              if ((_sessionDiffById[sessionId] ?? const <SessionDiff>[])
+                  .isEmpty) {
+                _sessionDiffById[sessionId] = const <SessionDiff>[];
+              }
+            }
+            break;
+        }
+        if (diffResolution.error != null) {
+          // Latch the error only when we have no usable cached diff data
+          // (mirrors the failure case in _resolveSessionDiff).
+          final hasUsableCached = (_sessionDiffById[sessionId] ?? const <SessionDiff>[])
+              .isNotEmpty;
+          if (!hasUsableCached) {
+            _sessionDiffErrorById[sessionId] = diffResolution.error!;
+          }
+        }
       }
 
       statusResult.fold(

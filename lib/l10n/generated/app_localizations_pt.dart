@@ -2608,6 +2608,9 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => 'Revisar alterações';
 
   @override

@@ -59,6 +59,10 @@ class MockOpenCodeServer {
   Map<String, String>? lastQuestionReplyQueryParameters;
   String? lastQuestionRejectRequestId;
   Map<String, String>? lastQuestionRejectQueryParameters;
+  // ADR-023 regression tracking for /session/{id}/diff requests.
+  String? lastDiffSessionId;
+  String? lastDiffMessageId;
+  Map<String, String>? lastDiffQueryParameters;
   Map<String, Map<String, dynamic>> sessionStatusById =
       <String, Map<String, dynamic>>{};
   final Map<String, List<Map<String, dynamic>>> sessionTodoById =
@@ -125,6 +129,9 @@ class MockOpenCodeServer {
     lastQuestionReplyQueryParameters = null;
     lastQuestionRejectRequestId = null;
     lastQuestionRejectQueryParameters = null;
+    lastDiffSessionId = null;
+    lastDiffMessageId = null;
+    lastDiffQueryParameters = null;
     promptAsyncSupported = true;
     preserveMessageHistoryOnPromptAsync = false;
     promptAsyncReturnsCompletePayload = false;
@@ -1029,11 +1036,38 @@ class MockOpenCodeServer {
         segments[2] == 'diff' &&
         method == 'GET') {
       final sessionId = segments[1];
-      await _writeJson(
-        request.response,
-        200,
-        sessionDiffById[sessionId] ?? <Map<String, dynamic>>[],
+      final queryParameters = request.uri.queryParameters;
+      lastDiffSessionId = sessionId;
+      lastDiffMessageId = queryParameters['messageID']?.trim();
+      lastDiffQueryParameters = queryParameters;
+      final stored = sessionDiffById[sessionId] ?? const <Map<String, dynamic>>[];
+      final hasAnyMessageId = stored.any(
+        (item) =>
+            item is Map &&
+            (item['messageID']?.toString().trim().isNotEmpty ?? false),
       );
+      final requestedMessageId = queryParameters['messageID']?.trim();
+      // Two behaviors:
+      //  - When the test seeds per-messageID entries and passes a messageID
+      //    query, the mock filters so ADR-023 regression tests can verify
+      //    the user-initiated exhaustive scan.
+      //  - Otherwise (unscoped request, or test seed without messageID) the
+      //    mock returns the stored entries unchanged to preserve existing
+      //    contract checks against the datasource layer.
+      if (requestedMessageId == null ||
+          requestedMessageId.isEmpty ||
+          !hasAnyMessageId) {
+        await _writeJson(request.response, 200, stored);
+        return;
+      }
+      final filtered = stored
+          .whereType<Map<String, dynamic>>()
+          .where((item) {
+            final candidate = item['messageID']?.toString().trim();
+            return candidate == requestedMessageId;
+          })
+          .toList(growable: false);
+      await _writeJson(request.response, 200, filtered);
       return;
     }
 

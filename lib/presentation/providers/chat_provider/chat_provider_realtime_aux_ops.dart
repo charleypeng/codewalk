@@ -367,6 +367,8 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _sessionChildrenById.remove(sessionId);
     _sessionTodoById.remove(sessionId);
     _sessionDiffById.remove(sessionId);
+    _sessionDiffLoadedById.remove(sessionId);
+    _sessionDiffErrorById.remove(sessionId);
     _threadPermissionsVersion++;
   }
 

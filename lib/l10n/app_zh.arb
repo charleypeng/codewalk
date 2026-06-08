@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "差异文件：{count}",
   "sessionDiffLinesAddedRemoved": "新增 +{added} 行，删除 -{removed} 行",
   "sessionDiffLinesCollapsed": "已折叠 {count} 行 — 点击以展开",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "审查更改",
   "sessionDiffSplit": "分栏",
   "sessionDiffSummary": "摘要",

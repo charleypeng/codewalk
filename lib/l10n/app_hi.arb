@@ -745,6 +745,7 @@
   "sessionDiffFilesCount": "Diff फ़ाइलें: {count}",
   "sessionDiffLinesAddedRemoved": "+{added} पंक्तियाँ जोड़ी गईं -{removed} पंक्तियाँ हटाई गईं",
   "sessionDiffLinesCollapsed": "{count} पंक्तियाँ संकुचित की गईं — विस्तार करने के लिए टैप करें",
+  "sessionDiffLoading": "Loading changed files…",
   "sessionDiffReview": "परिवर्तनों की समीक्षा करें",
   "sessionDiffSplit": "विभाजित (Split)",
   "sessionDiffSummary": "सारांश",

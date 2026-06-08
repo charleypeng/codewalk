@@ -2426,6 +2426,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => '审查更改';
 
   @override

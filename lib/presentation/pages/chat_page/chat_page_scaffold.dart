@@ -1234,7 +1234,7 @@ extension _ChatPageScaffold on _ChatPageState {
                           onFileTap: (path, line) =>
                               unawaited(_onFilePathTap(path, line, null)),
                         ),
-                      ] else
+                      ] else if (chatProvider.isCurrentSessionDiffLoaded)
                         Text(
                           context.l10n.sessionDiffFilesCount(0),
                           style: Theme.of(context).textTheme.bodySmall,

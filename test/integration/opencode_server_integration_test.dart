@@ -371,7 +371,11 @@ void main() {
         final todo = await remote.getSessionTodo('default', 'ses_1');
         expect(todo.single.id, 'todo_1');
 
-        final diff = await remote.getSessionDiff('default', 'ses_1');
+        final diff = await remote.getSessionDiff(
+          'default',
+          'ses_1',
+          messageId: 'msg_user_1',
+        );
         expect(diff.single.file, 'lib/main.dart');
 
         final status = await remote.getSessionStatus();

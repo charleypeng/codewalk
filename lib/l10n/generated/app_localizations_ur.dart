@@ -2583,6 +2583,9 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get sessionDiffLoading => 'Loading changed files…';
+
+  @override
   String get sessionDiffReview => 'تبدیلیوں کا جائزہ لیں۔';
 
   @override

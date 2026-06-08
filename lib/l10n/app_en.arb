@@ -3197,6 +3197,10 @@
     "placeholders": {
       "count": { "type": "int" }
     }  },
+  "sessionDiffLoading": "Loading changed files…",
+  "@sessionDiffLoading": {
+    "description": "CodeWalk UI string — sessionDiffLoading"
+  },
   "sessionDiffReview": "Review changes",
   "@sessionDiffReview": {
     "description": "CodeWalk UI string — sessionDiffReview"

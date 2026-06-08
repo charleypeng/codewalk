@@ -29,6 +29,8 @@ class GetSessionDiffParams {
     this.directory,
   });
 
+  /// Workspace ID forwarded for parity with other session-scoped calls. The
+  /// official `/session/{id}/diff` endpoint does not require it.
   final String projectId;
   final String sessionId;
   final String? messageId;
