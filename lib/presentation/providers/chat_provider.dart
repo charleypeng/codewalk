@@ -106,10 +106,17 @@ class _SessionDiffResolution {
     required this.applied,
     required this.updatedState,
     required this.error,
+    this.appliedIfStillEquals,
   });
 
   final List<SessionDiff> diffs;
   final bool applied;
+
+  /// When non-null, the caller should only write [diffs] to the store if
+  /// the currently stored diff for the session still equals this snapshot.
+  /// Used to avoid clobbering a newer concurrent write with a stale empty
+  /// result from a long-running exhaustive scan.
+  final List<SessionDiff>? appliedIfStillEquals;
   final _SessionDiffLoadState updatedState;
   final String? error;
 }
@@ -1476,6 +1483,24 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  bool _sessionDiffListEquals(
+    List<SessionDiff> a,
+    List<SessionDiff> b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var index = 0; index < a.length; index += 1) {
+      if (a[index] != b[index]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Resolves the [SessionDiff] for [sessionId] using official
   /// `GET /session/{id}/diff` semantics.
   ///
@@ -1595,12 +1620,13 @@ class ChatProvider extends ChangeNotifier {
     if (exhaustiveDiffScan) {
       // Every candidate returned empty. The user explicitly asked for the
       // exhaustive Review Changes view, so honor the honest outcome and
-      // commit to a loaded-empty result. We still rely on the overwrite
-      // guard in the caller to avoid clobbering a newer concurrent write
-      // before the diff list is finally cleared.
+      // commit to a loaded-empty result. The caller is responsible for
+      // not clobbering a newer concurrent write (it compares the stored
+      // diff to the snapshot we captured at the start of this call).
       return _SessionDiffResolution(
         diffs: const <SessionDiff>[],
         applied: hadPreviousDiff,
+        appliedIfStillEquals: hadPreviousDiff ? existingDiff : null,
         updatedState: _SessionDiffLoadState.loadedEmpty,
         error: null,
       );
@@ -1737,6 +1763,22 @@ class ChatProvider extends ChangeNotifier {
       if (diffFuture != null) {
         final diffResolution = await diffFuture;
         if (diffResolution.applied) {
+          // Guard against a stale result clobbering a newer concurrent
+          // write: only apply the new value when the stored diff still
+          // matches the snapshot we captured at the start of the call.
+          // We compare by reference identity first, then by element-wise
+          // equality of the Equatable SessionDiff entries.
+          final snapshot = diffResolution.appliedIfStillEquals;
+          if (snapshot != null) {
+            final current = _sessionDiffById[sessionId];
+            final stillMatches = identical(current, snapshot) ||
+                (current != null &&
+                    current.length == snapshot.length &&
+                    _sessionDiffListEquals(current, snapshot));
+            if (!stillMatches) {
+              return;
+            }
+          }
           _sessionDiffById[sessionId] = diffResolution.diffs;
         }
         switch (diffResolution.updatedState) {
