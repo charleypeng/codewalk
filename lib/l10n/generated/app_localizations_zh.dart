@@ -3692,7 +3692,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get speechNativeSTTWorks =>
-      'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.';
+      'Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.';
 
   @override
   String get speechNativeStartsFaster =>
@@ -3701,6 +3701,15 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get speechOnDeviceWindowsDisabled =>
       'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.';
+
+  @override
+  String get speechOpenMicrophoneSettings => 'Open microphone settings';
+
+  @override
+  String get speechOpenSpeechPrivacy => 'Open speech privacy';
+
+  @override
+  String get speechOpenSpeechSettings => 'Open speech settings';
 
   @override
   String get speechParakeet => 'Parakeet';
@@ -3753,6 +3762,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String speechUnavailableOnPlatform(String service) {
     return '$service 语音在此平台上不可用。';
   }
+
+  @override
+  String get speechWindowsSetupHint =>
+      'Windows does not prompt for microphone access at runtime. Open the settings below, enable microphone access for desktop apps, and install a speech language pack.';
 
   @override
   String get statusConnected => '已连接';

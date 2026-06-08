@@ -3,15 +3,22 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import 'speech_input_service.dart';
+import 'windows_microphone_service.dart';
 
 // speech_to_text backend for iOS, macOS, Web, and Windows.
 // Moves the STT logic that previously lived inline in _ChatInputWidgetState.
 class SttSpeechInputService implements SpeechInputService {
+  SttSpeechInputService({WindowsMicrophoneService? windowsMicrophoneService})
+      : _windowsMicrophoneService =
+            windowsMicrophoneService ?? const WindowsMicrophoneService();
+
   final stt.SpeechToText _speechToText = stt.SpeechToText();
+  final WindowsMicrophoneService _windowsMicrophoneService;
 
   bool _isAvailable = false;
   Future<bool>? _initialization;
   String? _lastUnavailableReason;
+  String? _lastUnavailableReasonKey;
 
   void Function(String status)? _onStatus;
   void Function()? _onError;
@@ -24,6 +31,10 @@ class SttSpeechInputService implements SpeechInputService {
 
   @override
   String? get unavailableReason => _lastUnavailableReason;
+
+  // Stable reason key for the most recent init failure. Used by the UI to
+  // pick the right actionable Windows settings link without re-parsing text.
+  String? get unavailableReasonKey => _lastUnavailableReasonKey;
 
   @override
   Future<bool> initialize() async {
@@ -66,20 +77,47 @@ class SttSpeechInputService implements SpeechInputService {
   }
 
   Future<String> _buildUnavailableReason({String? fallback}) async {
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    if (isWindows) {
+      final probe = await _windowsMicrophoneService.probe();
+      switch (probe) {
+        case WindowsMicrophoneAccessStatus.denied:
+          _lastUnavailableReasonKey = 'microphoneDenied';
+          return 'Microphone access is blocked by Windows privacy settings.';
+        case WindowsMicrophoneAccessStatus.noInputDevice:
+          _lastUnavailableReasonKey = 'noInputDevice';
+          return 'No microphone input device is available.';
+        case WindowsMicrophoneAccessStatus.deviceBusy:
+          _lastUnavailableReasonKey = 'deviceBusy';
+          return 'The default microphone is currently in use by another app.';
+        case WindowsMicrophoneAccessStatus.unknown:
+          _lastUnavailableReasonKey = 'speechPrivacy';
+          return 'Windows speech services may be disabled (speech privacy, online speech recognition, or language packs).';
+        case WindowsMicrophoneAccessStatus.notSupported:
+        case WindowsMicrophoneAccessStatus.allowed:
+          break;
+      }
+    }
+
     final permissionGranted = await _speechToText.hasPermission;
     if (!permissionGranted) {
+      _lastUnavailableReasonKey = 'microphoneDenied';
       return 'Microphone permission is disabled.';
     }
 
     final errorMessage = _speechToText.lastError?.errorMsg.trim();
     if (errorMessage != null && errorMessage.isNotEmpty) {
+      _lastUnavailableReasonKey = 'generic';
       return errorMessage;
     }
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+    if (isWindows) {
+      _lastUnavailableReasonKey = 'speechPrivacy';
       return 'Check Windows speech privacy, online speech recognition, and installed speech language packs.';
     }
 
+    _lastUnavailableReasonKey = 'generic';
     return fallback ?? 'Native speech engine is unavailable on this device.';
   }
 

@@ -8,6 +8,7 @@ import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
 import 'sherpa_model_manager.dart';
+import 'speech_audio_capture.dart';
 import 'speech_input_service.dart';
 
 // Sherpa STT backend using sherpa_onnx OnlineRecognizer with Kroko streaming
@@ -29,6 +30,7 @@ class SherpaSpeechInputService implements SpeechInputService {
 
   sherpa.OnlineRecognizer? _recognizer;
   AudioRecorder? _recorder;
+  SpeechAudioCapture? _capture;
   StreamSubscription<Uint8List>? _audioSub;
   String? _activeLanguage;
   String? _activeModelDir;
@@ -152,10 +154,18 @@ class SherpaSpeechInputService implements SpeechInputService {
     final recorder = AudioRecorder();
     _recorder = recorder;
 
-    final hasPermission = await recorder.hasPermission();
+    final capture = SpeechAudioCapture();
+    _capture = capture;
+
+    final hasPermission = await capture.hasPermission();
     if (!hasPermission) {
-      await recorder.dispose();
-      _recorder = null;
+      if (capture.isWindowsTarget) {
+        // WASAPI is not used; nothing to dispose on the new path.
+      } else {
+        await recorder.dispose();
+        _recorder = null;
+      }
+      _capture = null;
       onError();
       return;
     }
@@ -214,12 +224,9 @@ class SherpaSpeechInputService implements SpeechInputService {
 
     Stream<Uint8List> audioStream;
     try {
-      audioStream = await recorder.startStream(
-        const RecordConfig(
-          encoder: AudioEncoder.pcm16bits,
-          sampleRate: 16000,
-          numChannels: 1,
-        ),
+      audioStream = await capture.startPcmStream(
+        sampleRate: 16000,
+        numChannels: 1,
       );
     } catch (error, stackTrace) {
       AppLogger.error(
@@ -229,8 +236,11 @@ class SherpaSpeechInputService implements SpeechInputService {
       );
       _isListening = false;
       stream.free();
-      await recorder.dispose();
-      _recorder = null;
+      if (!capture.isWindowsTarget) {
+        await recorder.dispose();
+        _recorder = null;
+      }
+      _capture = null;
       onError();
       return;
     }
@@ -369,6 +379,11 @@ class SherpaSpeechInputService implements SpeechInputService {
     _audioSub = null;
     await _recorder?.dispose();
     _recorder = null;
+    final capture = _capture;
+    if (capture != null) {
+      await capture.stop();
+      _capture = null;
+    }
   }
 
   // Converts raw little-endian Int16 PCM bytes to normalized Float32 samples

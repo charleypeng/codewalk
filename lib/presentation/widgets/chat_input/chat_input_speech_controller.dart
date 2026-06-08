@@ -119,9 +119,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     if (resolution == null) {
       _finishListeningLoading();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.msgVoiceInputUnavailable)),
-      );
+      _showVoiceInputUnavailableSnackbar(context);
       return;
     }
 
@@ -175,9 +173,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
         _isListening = false;
       });
       _finishListeningLoading();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.msgFailedToStartVoiceInput)),
-      );
+      _showVoiceInputUnavailableSnackbar(context);
     }
   }
 
@@ -328,5 +324,36 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       _activeSpeechService = null;
       await _startListening();
     }
+  }
+
+  // Show a snackbar that points the user at the exact Windows settings page
+  // when the speech service is unavailable. On non-Windows targets this falls
+  // back to the existing `msgVoiceInputUnavailable` copy. The action button
+  // is only rendered when at least one Windows settings link can be opened.
+  void _showVoiceInputUnavailableSnackbar(BuildContext context) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+
+    if (!isWindows) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.msgVoiceInputUnavailable)),
+      );
+      return;
+    }
+
+    final snack = SnackBar(
+      content: Text(l10n.msgFailedToStartVoiceInput),
+      duration: const Duration(seconds: 8),
+      action: SnackBarAction(
+        label: l10n.speechOpenMicrophoneSettings,
+        onPressed: () {
+          unawaited(WindowsSettingsLinks.openMicrophonePrivacy());
+        },
+      ),
+    );
+    messenger.showSnackBar(snack);
   }
 }

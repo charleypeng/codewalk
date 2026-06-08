@@ -490,13 +490,12 @@ void main() {
         );
         await second.initialize();
 
-        // On Windows the on-device engines (Sherpa/Moonshine/Parakeet/SenseVoice)
-        // are migrated to Native because the underlying `record_windows`
-        // plugin can hard-crash the app (issue #43). On Linux/macOS the
-        // selection persists as-is. On Android, iOS, and web it falls back to
-        // Native for the slim-build engines.
+        // On Linux/macOS/Windows the on-device engines stay (Windows now
+        // supports them via the WASAPI capture backend — ADR-039). On
+        // Android, iOS, and web the selection migrates to Native.
         final expectedEngine = defaultTargetPlatform == TargetPlatform.linux ||
-                defaultTargetPlatform == TargetPlatform.macOS
+                defaultTargetPlatform == TargetPlatform.macOS ||
+                defaultTargetPlatform == TargetPlatform.windows
             ? SpeechToTextEngine.moonshine
             : SpeechToTextEngine.native;
         expect(second.speechToTextEngine, expectedEngine);
@@ -506,13 +505,14 @@ void main() {
       },
     );
 
-    // Regression coverage for issue #43: the on-device STT engines
-    // (Sherpa/Moonshine/Parakeet/SenseVoice) are disabled on Windows because
-    // the underlying `record_windows` plugin can hard-crash the app. Existing
-    // selections must be migrated to Native on initialize() so the user never
-    // lands on a crashing engine selection.
+    // Regression coverage for issue #43 (real fix, ADR-039): on Windows, all
+    // on-device engines (Sherpa/Moonshine/Parakeet/SenseVoice) are now
+    // supported through the WASAPI capture backend, so existing selections
+    // must NOT be migrated to Native. On Linux/macOS the engines stay (they
+    // are supported). On Android the slim-build migration to Native still
+    // applies, and iOS/Web keep Sherpa and migrate the rest to Native.
     test(
-      'migrates Windows on-device speech engine selections to Native',
+      'preserves Windows on-device speech engine selections (ADR-039 real fix)',
       () async {
         for (final engine in const [
           SpeechToTextEngine.sherpa,
@@ -534,12 +534,13 @@ void main() {
             soundService: _FakeSoundService(),
           );
           await provider.initialize();
-          // On Windows, every on-device engine must migrate to Native. On
-          // Linux/macOS the engines stay (they're supported). On Android/iOS
-          // and web the existing platform migrations apply (Android migrates
-          // all 4 to Native; iOS/Web keep Sherpa and migrate the rest).
+          // On Windows, every on-device engine must stay selected (it is now
+          // supported via the WASAPI capture backend). On Linux/macOS the
+          // engines stay (they're supported). On Android/iOS/web the
+          // existing platform migrations apply (Android migrates all 4 to
+          // Native; iOS/Web keep Sherpa and migrate the rest).
           final expectedEngine = switch (defaultTargetPlatform) {
-            TargetPlatform.windows => SpeechToTextEngine.native,
+            TargetPlatform.windows => engine,
             TargetPlatform.android => SpeechToTextEngine.native,
             TargetPlatform.linux => engine,
             TargetPlatform.macOS => engine,

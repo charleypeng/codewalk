@@ -4828,7 +4828,7 @@
   "@speechNativeSTTDisabled": {
     "description": "CodeWalk UI string — speechNativeSTTDisabled"
   },
-  "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.",
+  "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.",
   "@speechNativeSTTWorks": {
     "description": "CodeWalk UI string — speechNativeSTTWorks"
   },
@@ -4839,6 +4839,18 @@
   "speechOnDeviceWindowsDisabled": "On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.",
   "@speechOnDeviceWindowsDisabled": {
     "description": "CodeWalk UI string — speechOnDeviceWindowsDisabled"
+  },
+  "speechOpenMicrophoneSettings": "Open microphone settings",
+  "@speechOpenMicrophoneSettings": {
+    "description": "CodeWalk UI string — speechOpenMicrophoneSettings"
+  },
+  "speechOpenSpeechPrivacy": "Open speech privacy",
+  "@speechOpenSpeechPrivacy": {
+    "description": "CodeWalk UI string — speechOpenSpeechPrivacy"
+  },
+  "speechOpenSpeechSettings": "Open speech settings",
+  "@speechOpenSpeechSettings": {
+    "description": "CodeWalk UI string — speechOpenSpeechSettings"
   },
   "speechParakeet": "Parakeet",
   "@speechParakeet": {
@@ -4906,6 +4918,10 @@
     "placeholders": {
       "service": { "type": "String" }
     }  },
+  "speechWindowsSetupHint": "Windows does not prompt for microphone access at runtime. Open the settings below, enable microphone access for desktop apps, and install a speech language pack.",
+  "@speechWindowsSetupHint": {
+    "description": "CodeWalk UI string — speechWindowsSetupHint"
+  },
   "statusConnected": "Connected",
   "@statusConnected": {
     "description": "CodeWalk UI string — statusConnected"

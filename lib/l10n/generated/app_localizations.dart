@@ -6976,7 +6976,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — speechNativeSTTWorks
   ///
   /// In en, this message translates to:
-  /// **'Native STT works on Windows when OS speech services are enabled. Check Windows microphone privacy, Online speech recognition, and installed speech language packs. On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled on Windows because the underlying microphone plugin can crash the app.'**
+  /// **'Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.'**
   String get speechNativeSTTWorks;
 
   /// CodeWalk UI string — speechNativeStartsFaster
@@ -6990,6 +6990,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On-device STT (Sherpa, Moonshine, Parakeet, SenseVoice) is disabled on Windows because the underlying microphone plugin can hard-crash the app. Use the Native engine instead.'**
   String get speechOnDeviceWindowsDisabled;
+
+  /// CodeWalk UI string — speechOpenMicrophoneSettings
+  ///
+  /// In en, this message translates to:
+  /// **'Open microphone settings'**
+  String get speechOpenMicrophoneSettings;
+
+  /// CodeWalk UI string — speechOpenSpeechPrivacy
+  ///
+  /// In en, this message translates to:
+  /// **'Open speech privacy'**
+  String get speechOpenSpeechPrivacy;
+
+  /// CodeWalk UI string — speechOpenSpeechSettings
+  ///
+  /// In en, this message translates to:
+  /// **'Open speech settings'**
+  String get speechOpenSpeechSettings;
 
   /// CodeWalk UI string — speechParakeet
   ///
@@ -7080,6 +7098,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{service} speech is unavailable on this platform.'**
   String speechUnavailableOnPlatform(String service);
+
+  /// CodeWalk UI string — speechWindowsSetupHint
+  ///
+  /// In en, this message translates to:
+  /// **'Windows does not prompt for microphone access at runtime. Open the settings below, enable microphone access for desktop apps, and install a speech language pack.'**
+  String get speechWindowsSetupHint;
 
   /// CodeWalk UI string — statusConnected
   ///

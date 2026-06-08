@@ -7,6 +7,7 @@ import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
 import 'parakeet_model_manager.dart';
+import 'speech_audio_capture.dart';
 import 'speech_input_service.dart';
 
 @visibleForTesting
@@ -50,6 +51,7 @@ class ParakeetSpeechInputService implements SpeechInputService {
 
   sherpa.OfflineRecognizer? _recognizer;
   AudioRecorder? _recorder;
+  SpeechAudioCapture? _capture;
   StreamSubscription<Uint8List>? _audioSub;
   String? _activeModelDir;
   bool _isListening = false;
@@ -151,10 +153,17 @@ class ParakeetSpeechInputService implements SpeechInputService {
 
     final recorder = AudioRecorder();
     _recorder = recorder;
-    final hasPermission = await recorder.hasPermission();
+    final capture = SpeechAudioCapture();
+    _capture = capture;
+    final hasPermission = await capture.hasPermission();
     if (!hasPermission) {
-      await recorder.dispose();
-      _recorder = null;
+      if (capture.isWindowsTarget) {
+        // WASAPI path: no recorder to dispose.
+      } else {
+        await recorder.dispose();
+        _recorder = null;
+      }
+      _capture = null;
       _unavailableReason = 'Microphone permission is disabled.';
       onError();
       return;
@@ -215,12 +224,9 @@ class ParakeetSpeechInputService implements SpeechInputService {
 
     Stream<Uint8List> audioStream;
     try {
-      audioStream = await recorder.startStream(
-        const RecordConfig(
-          encoder: AudioEncoder.pcm16bits,
-          sampleRate: _sampleRate,
-          numChannels: 1,
-        ),
+      audioStream = await capture.startPcmStream(
+        sampleRate: _sampleRate,
+        numChannels: 1,
       );
     } catch (error, stackTrace) {
       AppLogger.error(
@@ -229,8 +235,11 @@ class ParakeetSpeechInputService implements SpeechInputService {
         stackTrace: stackTrace,
       );
       _isListening = false;
-      await recorder.dispose();
-      _recorder = null;
+      if (!capture.isWindowsTarget) {
+        await recorder.dispose();
+        _recorder = null;
+      }
+      _capture = null;
       onError();
       return;
     }
@@ -321,6 +330,11 @@ class ParakeetSpeechInputService implements SpeechInputService {
     _audioSub = null;
     await _recorder?.dispose();
     _recorder = null;
+    final capture = _capture;
+    if (capture != null) {
+      await capture.stop();
+      _capture = null;
+    }
   }
 
   static Float32List _pcm16ToFloat32(Uint8List bytes) {

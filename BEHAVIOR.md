@@ -895,20 +895,25 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 | Linux | Sherpa ONNX or Moonshine via sherpa_onnx | On-device models are downloaded on demand; Native not supported on Linux |
 | macOS | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable; Moonshine is an optional desktop engine |
 | iOS | Native (system speech recognizer) | Native only in the current app build |
-| Windows | Native (UWP speech recognition) | **On-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) are disabled** because the `record_windows` microphone plugin can hard-crash the app. Native is the only working option. |
+| Windows | Native (UWP speech recognition); on-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) also supported via WASAPI capture (ADR-039) | WASAPI PCM16 mono 16 kHz capture bypasses the `record_windows` MediaFoundation segfault; Windows settings links expose microphone, speech privacy, and language pack pages |
 | Web | Native (system speech recognizer) | Browser speech only |
 
-### Windows on-device STT is intentionally disabled
+### Windows STT settings and engine availability
 
 - **Given** the user is on Windows desktop
-- **When** the user opens `Settings > Speech` or uses the voice input button
-- **Then** only the `Native` (UWP speech recognition) engine is selectable
-- **Then** `Sherpa`, `Moonshine`, `Parakeet`, and `SenseVoice` appear as grayed-out radio options with the explanation "Disabled on Windows because the underlying microphone plugin can crash the app. Use the Native engine instead."
-- **Then** the engine card shows a warning card explaining the limitation with a link to the relevant Windows settings
+- **When** the user opens `Settings > Speech`
+- **Then** all engines (Native, Sherpa, Moonshine, Parakeet, SenseVoice) are selectable
+- **Then** the engine card shows an actionable Windows setup card with three buttons: "Open microphone settings" (`ms-settings:privacy-microphone`), "Open speech privacy" (`ms-settings:privacy-speech`), and "Open speech settings" (`ms-settings:speech`)
 - **When** the app loads existing settings on Windows and finds a previously saved Sherpa/Moonshine/Parakeet/SenseVoice selection
-- **Then** the selection is migrated to `Native` automatically so the user never lands on a crashing engine
+- **Then** the selection is preserved (no longer force-migrated to Native — see ADR-039)
 - **When** the Native engine fails to initialize on Windows (speech privacy disabled, online speech recognition off, missing language pack, etc.)
-- **Then** the user sees the existing Windows-specific error hint with a clear next step and the app stays responsive (no hard crash)
+- **Then** the user sees a specific reason ("Microphone access is blocked by Windows privacy settings." / "No microphone input device is available." / "The default microphone is currently in use by another app." / "Windows speech services may be disabled (speech privacy, online speech recognition, or language packs).") and the app stays responsive (no hard crash)
+- **When** voice input fails in the composer on Windows
+- **Then** the snackbar exposes an action button that opens the relevant Windows settings page (microphone privacy by default)
+- **When** voice input is activated and Windows microphone access is denied
+- **Then** the WASAPI preflight reports `denied`, the engine reports a clear reason, and the user is offered a direct link to the microphone privacy settings
+- **When** voice input is activated and no microphone device is available
+- **Then** the WASAPI preflight reports `noInputDevice`, the engine reports a clear reason, and the user is told to plug in a microphone
 
 ---
 

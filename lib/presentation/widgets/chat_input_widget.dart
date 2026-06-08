@@ -27,6 +27,7 @@ import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import '../theme/app_shapes.dart';
 import '../utils/speech_engine_platform_support.dart';
+import '../utils/windows_settings_links.dart';
 import '../theme/app_theme.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';

@@ -17,6 +17,7 @@ import '../../../services/parakeet_model_manager.dart';
 import '../../../services/sensevoice_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
 import '../../../utils/speech_engine_platform_support.dart';
+import '../../../utils/windows_settings_links.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
 
@@ -284,25 +285,66 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
+                  color: Theme.of(context).colorScheme.secondaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Symbols.warning_amber_rounded,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        context.l10n.speechOnDeviceWindowsDisabled,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Symbols.info,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            context.l10n.speechWindowsSetupHint,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          icon: const Icon(Symbols.mic),
+                          label: Text(
+                            context.l10n.speechOpenMicrophoneSettings,
+                          ),
+                          onPressed: () => unawaited(
+                            WindowsSettingsLinks.openMicrophonePrivacy(),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          icon: const Icon(Symbols.speech_to_text),
+                          label: Text(
+                            context.l10n.speechOpenSpeechPrivacy,
+                          ),
+                          onPressed: () => unawaited(
+                            WindowsSettingsLinks.openSpeechPrivacy(),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          icon: const Icon(Symbols.translate),
+                          label: Text(
+                            context.l10n.speechOpenSpeechSettings,
+                          ),
+                          onPressed: () => unawaited(
+                            WindowsSettingsLinks.openSpeech(),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
