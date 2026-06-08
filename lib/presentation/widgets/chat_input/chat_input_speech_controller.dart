@@ -80,12 +80,14 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     }
 
     String? unavailableReason;
+    SpeechInputService? lastAttempted;
     for (var i = 0; i < candidates.length; i++) {
       final engine = candidates[i];
       final service = _serviceForEngine(engine);
       if (service == null) {
         continue;
       }
+      lastAttempted = service;
       if (await service.initialize()) {
         return _SpeechServiceResolution(
           service: service,
@@ -97,7 +99,15 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       unavailableReason ??= service.unavailableReason;
     }
 
-    return null;
+    if (lastAttempted == null) {
+      return null;
+    }
+    return _SpeechServiceResolution(
+      service: lastAttempted,
+      engine: candidates.last,
+      usedFallback: true,
+      unavailableReason: unavailableReason,
+    );
   }
 
   Future<void> _startListening() async {
@@ -173,7 +183,13 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
         _isListening = false;
       });
       _finishListeningLoading();
-      _showVoiceInputUnavailableSnackbar(context);
+      // The just-attempted service is the one whose startListening threw
+      // (or whose initialize returned false). Use it for the typed reason
+      // instead of the previous _activeSpeechService.
+      _showVoiceInputUnavailableSnackbar(
+        context,
+        reasonService: resolution.service,
+      );
     }
   }
 
@@ -330,8 +346,14 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
   // when the speech service is unavailable. On non-Windows targets this falls
   // back to the existing `msgVoiceInputUnavailable` copy. On Windows, the
   // action button label and target URI are picked from the typed
-  // [unavailableReasonKey] emitted by [SttSpeechInputService].
-  void _showVoiceInputUnavailableSnackbar(BuildContext context) {
+  // [unavailableReasonKey] emitted by [SttSpeechInputService]. The caller can
+  // pass a [reasonService] (the just-attempted service) to override the
+  // default [SttSpeechInputService] lookup, which avoids stale
+  // [unavailableReasonKey] values from a previous successful session.
+  void _showVoiceInputUnavailableSnackbar(
+    BuildContext context, {
+    SpeechInputService? reasonService,
+  }) {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
@@ -345,10 +367,12 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       return;
     }
 
-    final service = _activeSpeechService;
-    final reasonKey = service is SttSpeechInputService
-        ? service.unavailableReasonKey
-        : null;
+    final service = reasonService is SttSpeechInputService
+        ? reasonService
+        : (_activeSpeechService is SttSpeechInputService
+            ? _activeSpeechService as SttSpeechInputService
+            : null);
+    final reasonKey = service?.unavailableReasonKey;
     final (String label, Future<bool> Function() action) =
         _windowsActionForReason(reasonKey, l10n);
 

@@ -33,13 +33,19 @@ class SpeechAudioCapture {
       // honest until the WASAPI backend lands.
       return false;
     }
+    final recorder = AudioRecorder();
     try {
-      final recorder = AudioRecorder();
-      final granted = await recorder.hasPermission();
-      await recorder.dispose();
-      return granted;
+      return await recorder.hasPermission();
     } catch (_) {
       return false;
+    } finally {
+      // The probe recorder is only used to query permission; dispose it
+      // unconditionally so we never leak a plugin instance.
+      try {
+        await recorder.dispose();
+      } catch (_) {
+        // Ignore dispose errors during cleanup.
+      }
     }
   }
 
@@ -56,13 +62,31 @@ class SpeechAudioCapture {
     }
     final recorder = AudioRecorder();
     _activeRecorder = recorder;
-    return recorder.startStream(
-      RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: sampleRate,
-        numChannels: numChannels,
-      ),
-    );
+    try {
+      return recorder.startStream(
+        RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: sampleRate,
+          numChannels: numChannels,
+        ),
+      );
+    } catch (error) {
+      // startStream failed before returning a live stream; ensure the
+      // recorder is cleaned up so we do not leak the underlying
+      // record_windows / record_linux / record_macos plugin instance.
+      _activeRecorder = null;
+      try {
+        await recorder.stop();
+      } catch (_) {
+        // Ignore stop errors during cleanup.
+      }
+      try {
+        await recorder.dispose();
+      } catch (_) {
+        // Ignore dispose errors during cleanup.
+      }
+      rethrow;
+    }
   }
 
   Future<void> stop() async {
