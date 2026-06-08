@@ -96,34 +96,6 @@ function New-StartMenuShortcut([string]$TargetExePath) {
   $shortcut.Save()
 }
 
-function Stop-CodeWalkProcess {
-  $procs = @()
-  try {
-    $found = Get-Process -Name 'codewalk' -ErrorAction Stop
-    if ($found -is [array]) { $procs = $found } else { $procs = @($found) }
-  } catch { return }
-  if ($procs.Count -eq 0) { return }
-
-  Info "Stopping $($procs.Count) running CodeWalk process(es)"
-  foreach ($proc in $procs) {
-    try {
-      Stop-Process -Id $proc.Id -Force -ErrorAction Stop
-    } catch {
-      Warn "Could not stop CodeWalk process (PID $($proc.Id)): $($_.Exception.Message)"
-    }
-  }
-  foreach ($proc in $procs) {
-    $proc | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
-  }
-  # Brief pause to let the OS release file handles after process exit.
-  Start-Sleep -Milliseconds 500
-
-  $survivors = Get-Process -Name 'codewalk' -ErrorAction SilentlyContinue
-  if ($survivors) {
-    Warn "CodeWalk process(es) still running after stop attempt"
-  }
-}
-
 # Schedule a directory for deletion on the next reboot using MoveFileEx.
 # Requires the MoveFileEx Win32 API via P/Invoke (usually works without admin).
 # Falls back to a warning if P/Invoke is unavailable.
@@ -153,8 +125,47 @@ function Register-RebootDelete([string]$Path) {
   }
 }
 
+function Register-RebootDeleteTree([string]$Path) {
+  if (-not (Test-Path $Path)) { return }
+
+  try {
+    Get-ChildItem -Path $Path -Recurse -Force -File -ErrorAction SilentlyContinue | ForEach-Object {
+      Register-RebootDelete -Path $_.FullName
+    }
+    Get-ChildItem -Path $Path -Recurse -Force -Directory -ErrorAction SilentlyContinue |
+      Sort-Object -Property FullName -Descending |
+      ForEach-Object { Register-RebootDelete -Path $_.FullName }
+  } catch {
+    Warn "Could not enumerate all files for reboot deletion under $Path."
+  }
+
+  # Windows only removes directories on reboot after their contents are gone.
+  Register-RebootDelete -Path $Path
+}
+
+function Get-AvailableInstallBackupName {
+  $baseName = "CodeWalk.old"
+  $basePath = Join-Path (Split-Path -Parent $InstallDir) $baseName
+  if (-not (Test-Path $basePath)) {
+    return $baseName
+  }
+
+  for ($i = 1; $i -le 20; $i++) {
+    $candidateName = "CodeWalk.old.$i"
+    $candidatePath = Join-Path (Split-Path -Parent $InstallDir) $candidateName
+    if (-not (Test-Path $candidatePath)) {
+      return $candidateName
+    }
+  }
+
+  return "CodeWalk.old.$([Guid]::NewGuid().ToString('N'))"
+}
+
 # Remove the install directory, handling in-use locks from a running process.
-# Tries: stop process → direct remove → rename to .old → schedule reboot delete.
+# In-app updates run this script from the current CodeWalk process, so the
+# installer must not stop codewalk.exe here. If deletion fails because the app is
+# still running, rename the old directory aside and let the existing app show its
+# normal Restart action after the script completes.
 function Remove-InstallDir {
   if (-not (Test-Path $InstallDir)) { return $true }
 
@@ -166,32 +177,25 @@ function Remove-InstallDir {
     # Directory is locked — continue to rename strategy.
   }
 
-  # Attempt 2: stop the running process and retry removal.
-  Stop-CodeWalkProcess
-  try {
-    Remove-Item -Recurse -Force -Path $InstallDir -ErrorAction Stop
-    return $true
-  } catch {
-    # Still locked — continue to rename strategy.
-  }
-
-  # Attempt 3: rename the locked directory out of the way and schedule it
-  # for deletion on reboot. Windows allows renaming a directory that
-  # contains a running executable (but not deleting it).
+  # Attempt 2: rename the locked directory out of the way and schedule it for
+  # deletion on reboot. Windows allows renaming a directory that contains a
+  # running executable (but not deleting it).
   $oldDir = "${InstallDir}.old"
   if (Test-Path $oldDir) {
     try {
       Remove-Item -Recurse -Force -Path $oldDir -ErrorAction SilentlyContinue
     } catch {
       # If .old is also locked, schedule it for reboot deletion too.
-      Register-RebootDelete -Path $oldDir
+      Register-RebootDeleteTree -Path $oldDir
     }
   }
 
+  $backupName = Get-AvailableInstallBackupName
+  $backupPath = Join-Path (Split-Path -Parent $InstallDir) $backupName
   try {
-    Rename-Item -Path $InstallDir -NewName 'CodeWalk.old' -ErrorAction Stop
-    Info "Renamed locked directory to $oldDir"
-    Register-RebootDelete -Path $oldDir
+    Rename-Item -Path $InstallDir -NewName $backupName -ErrorAction Stop
+    Info "Renamed locked directory to $backupPath"
+    Register-RebootDeleteTree -Path $backupPath
     return $true
   } catch {
     Fail "Cannot remove or rename $InstallDir. Close CodeWalk and retry."
