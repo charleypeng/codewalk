@@ -31,184 +31,240 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         chatProvider.providers.isEmpty;
     final showProvidersRetryHint =
         chatProvider.providersRefreshState == ChatProvidersRefreshState.failed;
+    final isCompact = context.windowSizeClass.isCompact;
+    const double modelChipMaxWidth = 240;
+    const double agentChipMaxWidth = 200;
+    const double variantChipMaxWidth = 180;
+    final double compactChipMaxWidth = 160;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          if (!isSubConversation)
-            Tooltip(
-              message: autoApproveEnabled
-                  ? context.l10n.chatPermissionAutoApproveOn
-                  : context.l10n.chatPermissionAutoApproveOff,
-              child: Badge.count(
-                isLabelVisible:
-                    chatProvider.currentThreadPermissionRequests.isNotEmpty,
-                count: chatProvider.currentThreadPermissionRequests.length > 99
-                    ? 99
-                    : chatProvider.currentThreadPermissionRequests.length,
-                child: IconButton(
-                  key: const ValueKey<String>(
-                    'composer_permission_auto_approve_toggle',
-                  ),
-                  isSelected: autoApproveEnabled,
-                  icon: const Icon(Symbols.keyboard_double_arrow_right),
-                  selectedIcon: const Icon(Symbols.keyboard_double_arrow_right),
-                  style: ButtonStyle(
-                    shape: const WidgetStatePropertyAll<OutlinedBorder>(
-                      CircleBorder(),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (!isSubConversation)
+              Tooltip(
+                message: autoApproveEnabled
+                    ? context.l10n.chatPermissionAutoApproveOn
+                    : context.l10n.chatPermissionAutoApproveOff,
+                child: Badge.count(
+                  isLabelVisible:
+                      chatProvider.currentThreadPermissionRequests.isNotEmpty,
+                  count: chatProvider.currentThreadPermissionRequests.length > 99
+                      ? 99
+                      : chatProvider.currentThreadPermissionRequests.length,
+                  child: IconButton(
+                    key: const ValueKey<String>(
+                      'composer_permission_auto_approve_toggle',
                     ),
-                    padding: const WidgetStatePropertyAll<EdgeInsetsGeometry>(
-                      EdgeInsets.all(8),
+                    isSelected: autoApproveEnabled,
+                    icon: const Icon(Symbols.keyboard_double_arrow_right),
+                    selectedIcon: const Icon(
+                      Symbols.keyboard_double_arrow_right,
                     ),
-                    minimumSize: const WidgetStatePropertyAll<Size>(
-                      Size(40, 40),
+                    style: ButtonStyle(
+                      shape: const WidgetStatePropertyAll<OutlinedBorder>(
+                        CircleBorder(),
+                      ),
+                      padding: const WidgetStatePropertyAll<EdgeInsetsGeometry>(
+                        EdgeInsets.all(8),
+                      ),
+                      minimumSize: const WidgetStatePropertyAll<Size>(
+                        Size(40, 40),
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor:
+                          WidgetStateProperty.resolveWith<Color?>((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return autoApproveColor;
+                        }
+                        return colorScheme.onSurfaceVariant;
+                      }),
+                      backgroundColor:
+                          WidgetStateProperty.resolveWith<Color?>((states) {
+                        if (states.contains(WidgetState.pressed)) {
+                          return autoApproveColor.withValues(alpha: 0.18);
+                        }
+                        return Colors.transparent;
+                      }),
+                      overlayColor:
+                          WidgetStateProperty.resolveWith<Color?>((states) {
+                        if (states.contains(WidgetState.pressed) ||
+                            states.contains(WidgetState.hovered) ||
+                            states.contains(WidgetState.focused)) {
+                          return autoApproveColor.withValues(alpha: 0.12);
+                        }
+                        return null;
+                      }),
                     ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    foregroundColor: WidgetStateProperty.resolveWith<Color?>((
-                      states,
-                    ) {
-                      if (states.contains(WidgetState.selected)) {
-                        return autoApproveColor;
-                      }
-                      return colorScheme.onSurfaceVariant;
-                    }),
-                    backgroundColor: WidgetStateProperty.resolveWith<Color?>((
-                      states,
-                    ) {
-                      if (states.contains(WidgetState.pressed)) {
-                        return autoApproveColor.withValues(alpha: 0.18);
-                      }
-                      return Colors.transparent;
-                    }),
-                    overlayColor: WidgetStateProperty.resolveWith<Color?>((
-                      states,
-                    ) {
-                      if (states.contains(WidgetState.pressed) ||
-                          states.contains(WidgetState.hovered) ||
-                          states.contains(WidgetState.focused)) {
-                        return autoApproveColor.withValues(alpha: 0.12);
-                      }
-                      return null;
-                    }),
-                  ),
-                  onPressed: settingsProvider == null
-                      ? null
-                      : () => unawaited(
-                          settingsProvider.setComposerAutoApprovePermissions(
-                            !autoApproveEnabled,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-          if (!isSubConversation)
-            Tooltip(
-              message: context.l10n.modelChooseAgent,
-              child: Builder(
-                key: _agentSelectorChipKey,
-                builder: (chipContext) => ActionChip(
-                  key: const ValueKey<String>('agent_selector_button'),
-                  side: BorderSide.none,
-                  shape: const StadiumBorder(),
-                  backgroundColor: selectedAgentColor?.withValues(alpha: 0.16),
-                  label: Text(
-                    selectedAgent == null
-                        ? context.l10n.chatChooseAgent
-                        : _formatAgentLabel(selectedAgent),
-                    style: selectedAgentColor == null
+                    onPressed: settingsProvider == null
                         ? null
-                        : TextStyle(color: selectedAgentColor),
-                  ),
-                  onPressed: selectableAgents.isEmpty
-                      ? null
-                      : () => unawaited(
-                          _openAgentQuickSelector(
-                            chatProvider,
-                            anchorContext: chipContext,
+                        : () => unawaited(
+                            settingsProvider
+                                .setComposerAutoApprovePermissions(
+                                  !autoApproveEnabled,
+                                ),
                           ),
-                        ),
+                  ),
                 ),
               ),
-            ),
-          Tooltip(
-            message: isSubConversation
-                ? context.l10n.chatModelLockedSubConversation
-                : context.l10n.chatChooseModel,
-            child: ActionChip(
-              key: isSubConversation
-                  ? const ValueKey<String>('model_selector_button_readonly')
-                  : const ValueKey<String>('model_selector_button'),
-              side: BorderSide.none,
-              shape: const StadiumBorder(),
-              label: Text(selectedModelLabel),
-              onPressed: isSubConversation || chatProvider.providers.isEmpty
-                  ? null
-                  : () => unawaited(_openModelSelector(chatProvider)),
-            ),
-          ),
-          if (showProvidersLoadingHint)
-            Chip(
-              avatar: SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: colorScheme.primary,
+            if (!isSubConversation) ...[
+              const SizedBox(width: 8),
+              Tooltip(
+                message: context.l10n.modelChooseAgent,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isCompact
+                        ? compactChipMaxWidth
+                        : agentChipMaxWidth,
+                  ),
+                  child: Builder(
+                    key: _agentSelectorChipKey,
+                    builder: (chipContext) => ActionChip(
+                      key: const ValueKey<String>('agent_selector_button'),
+                      side: BorderSide.none,
+                      shape: const StadiumBorder(),
+                      backgroundColor:
+                          selectedAgentColor?.withValues(alpha: 0.16),
+                      label: Text(
+                        selectedAgent == null
+                            ? context.l10n.chatChooseAgent
+                            : _formatAgentLabel(selectedAgent),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: selectedAgentColor == null
+                            ? null
+                            : TextStyle(color: selectedAgentColor),
+                      ),
+                      onPressed: selectableAgents.isEmpty
+                          ? null
+                          : () => unawaited(
+                              _openAgentQuickSelector(
+                                chatProvider,
+                                anchorContext: chipContext,
+                              ),
+                            ),
+                    ),
+                  ),
                 ),
               ),
-              label: Text(context.l10n.modelLoadingModels),
-              side: BorderSide.none,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-            )
-          else if (showProvidersRetryHint)
-            Tooltip(
-              message:
-                  chatProvider.providersRefreshErrorMessage ??
-                  context.l10n.chatFailedToRefreshProviders,
-              child: ActionChip(
-                key: const ValueKey<String>('model_selector_retry_button'),
-                avatar: const Icon(Symbols.refresh_rounded, size: 16),
-                side: BorderSide.none,
-                shape: const StadiumBorder(),
-                label: Text(context.l10n.modelRetryModels),
-                onPressed: () =>
-                    unawaited(chatProvider.retryProvidersRefresh()),
-              ),
-            ),
-          if (isSubConversation
-              ? selectedVariantLabel != null
-              : variants.isNotEmpty)
+            ],
+            const SizedBox(width: 8),
             Tooltip(
               message: isSubConversation
-                  ? context.l10n.chatEffortLockedSubConversation
-                  : context.l10n.chatChooseEffort,
-              child: Builder(
-                builder: (chipContext) => ActionChip(
+                  ? context.l10n.chatModelLockedSubConversation
+                  : context.l10n.chatChooseModel,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isCompact
+                      ? compactChipMaxWidth
+                      : modelChipMaxWidth,
+                ),
+                child: ActionChip(
                   key: isSubConversation
-                      ? const ValueKey<String>(
-                          'variant_selector_button_readonly',
-                        )
-                      : const ValueKey<String>('variant_selector_button'),
+                      ? const ValueKey<String>('model_selector_button_readonly')
+                      : const ValueKey<String>('model_selector_button'),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
                   label: Text(
-                    selectedVariantLabel ?? chatProvider.selectedVariantLabel,
+                    selectedModelLabel,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    softWrap: false,
                   ),
-                  onPressed: isSubConversation
+                  onPressed: isSubConversation || chatProvider.providers.isEmpty
                       ? null
-                      : () => unawaited(
-                          _openVariantQuickSelector(
-                            chatProvider,
-                            anchorContext: chipContext,
-                          ),
-                        ),
+                      : () => unawaited(_openModelSelector(chatProvider)),
                 ),
               ),
             ),
-        ],
+            const SizedBox(width: 8),
+            if (showProvidersLoadingHint)
+              Chip(
+                avatar: SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                label: Text(
+                  context.l10n.modelLoadingModels,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  softWrap: false,
+                ),
+                side: BorderSide.none,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+              )
+            else if (showProvidersRetryHint)
+              Tooltip(
+                message:
+                    chatProvider.providersRefreshErrorMessage ??
+                    context.l10n.chatFailedToRefreshProviders,
+                child: ActionChip(
+                  key: const ValueKey<String>('model_selector_retry_button'),
+                  avatar: const Icon(Symbols.refresh_rounded, size: 16),
+                  side: BorderSide.none,
+                  shape: const StadiumBorder(),
+                  label: Text(
+                    context.l10n.modelRetryModels,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                  onPressed: () =>
+                      unawaited(chatProvider.retryProvidersRefresh()),
+                ),
+              ),
+            const SizedBox(width: 8),
+            if (isSubConversation
+                ? selectedVariantLabel != null
+                : variants.isNotEmpty)
+              Tooltip(
+                message: isSubConversation
+                    ? context.l10n.chatEffortLockedSubConversation
+                    : context.l10n.chatChooseEffort,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isCompact
+                        ? compactChipMaxWidth
+                        : variantChipMaxWidth,
+                  ),
+                  child: Builder(
+                    builder: (chipContext) => ActionChip(
+                      key: isSubConversation
+                          ? const ValueKey<String>(
+                              'variant_selector_button_readonly',
+                            )
+                          : const ValueKey<String>('variant_selector_button'),
+                      side: BorderSide.none,
+                      shape: const StadiumBorder(),
+                      label: Text(
+                        selectedVariantLabel ??
+                            chatProvider.selectedVariantLabel,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                      onPressed: isSubConversation
+                          ? null
+                          : () => unawaited(
+                              _openVariantQuickSelector(
+                                chatProvider,
+                                anchorContext: chipContext,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1127,8 +1183,22 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                 entry.modelId,
                                               ),
                                         ),
-                                        title: Text(entry.modelName),
-                                        subtitle: Text(entry.providerName),
+                                        title: Tooltip(
+                                          message: entry.modelName,
+                                          child: Text(
+                                            entry.modelName,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                        subtitle: Tooltip(
+                                          message: entry.providerName,
+                                          child: Text(
+                                            entry.providerName,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
                                         trailing: _modelSelectorTrailing(
                                           chatProvider: chatProvider,
                                           providerId: entry.providerId,
@@ -1197,8 +1267,22 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                 entry.modelId,
                                               ),
                                         ),
-                                        title: Text(entry.modelName),
-                                        subtitle: Text(entry.providerName),
+                                        title: Tooltip(
+                                          message: entry.modelName,
+                                          child: Text(
+                                            entry.modelName,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                        subtitle: Tooltip(
+                                          message: entry.providerName,
+                                          child: Text(
+                                            entry.providerName,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
                                         trailing: _modelSelectorTrailing(
                                           chatProvider: chatProvider,
                                           providerId: entry.providerId,
@@ -1271,11 +1355,26 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                   entry.modelId,
                                                 ),
                                           ),
-                                          title: Text(entry.modelName),
-                                          subtitle:
-                                              entry.modelName == entry.modelId
+                                          title: Tooltip(
+                                            message: entry.modelName,
+                                            child: Text(
+                                              entry.modelName,
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                          subtitle: entry.modelName ==
+                                                  entry.modelId
                                               ? null
-                                              : Text(entry.modelId),
+                                              : Tooltip(
+                                                  message: entry.modelId,
+                                                  child: Text(
+                                                    entry.modelId,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ),
                                           trailing: _modelSelectorTrailing(
                                             chatProvider: chatProvider,
                                             providerId: entry.providerId,
@@ -1370,7 +1469,13 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
           value: null,
           child: Row(
             children: [
-              Expanded(child: Text(context.l10n.modelAuto)),
+              Expanded(
+                child: Text(
+                  context.l10n.modelAuto,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
               if (chatProvider.selectedVariantId == null)
                 const Icon(Symbols.check_rounded, size: 18),
             ],
@@ -1383,7 +1488,11 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(variant.name, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    variant.name,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
                 if (chatProvider.selectedVariantId == variant.id)
                   const Icon(Symbols.check_rounded, size: 18),

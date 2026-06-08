@@ -7025,6 +7025,245 @@ void main() {
   });
 
   testWidgets(
+    'long model name keeps variant chip reachable on compact viewport (issue #39)',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const longModelName =
+          'deepseek-reasoner-experimental-large-context-window-v3';
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_long_model',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Long Model Session',
+          ),
+        ],
+      );
+
+      final providersResponse = ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'deepseek',
+            name: 'DeepSeek',
+            env: const <String>[],
+            models: <String, Model>{
+              'deepseek-reasoner': _model(
+                'deepseek-reasoner',
+                name: longModelName,
+                variants: const <String, ModelVariant>{
+                  'low': ModelVariant(id: 'low', name: 'Low'),
+                  'high': ModelVariant(id: 'high', name: 'High'),
+                },
+              ),
+            },
+          ),
+        ],
+        defaultModels: const <String, String>{
+          'deepseek': 'deepseek-reasoner',
+        },
+        connected: const <String>['deepseek'],
+      );
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        includeVariants: true,
+        providersResponse: providersResponse,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final variantFinder = find.byKey(
+        const ValueKey<String>('variant_selector_button'),
+      );
+      expect(variantFinder, findsOneWidget);
+
+      // Scroll any horizontal SingleChildScrollView parent into view so the
+      // variant chip can be tapped. Pre-fix the chip was pushed onto a hidden
+      // Wrap line and unreachable on narrow viewports.
+      await tester.ensureVisible(variantFinder);
+      await tester.pumpAndSettle();
+
+      await tester.tap(variantFinder);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('variant_selector_option_auto')),
+        findsOneWidget,
+      );
+      expect(find.text('Low'), findsOneWidget);
+      expect(find.text('High'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'model chip truncates long names with TextOverflow.ellipsis',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const longModelName = 'minimax-text-01-very-long-experimental-tag-2026';
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_long_minimax',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Long Minimax Session',
+          ),
+        ],
+      );
+
+      final providersResponse = ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'minimax',
+            name: 'MiniMax',
+            env: const <String>[],
+            models: <String, Model>{
+              'minimax-text-01': _model(
+                'minimax-text-01',
+                name: longModelName,
+              ),
+            },
+          ),
+        ],
+        defaultModels: const <String, String>{'minimax': 'minimax-text-01'},
+        connected: const <String>['minimax'],
+      );
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        providersResponse: providersResponse,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final modelChipFinder = find.byKey(
+        const ValueKey<String>('model_selector_button'),
+      );
+      expect(modelChipFinder, findsOneWidget);
+
+      final modelTextWidget = tester.widget<Text>(
+        find.descendant(
+          of: modelChipFinder,
+          matching: find.byType(Text),
+        ),
+      );
+      expect(modelTextWidget.data, equals(longModelName));
+      expect(modelTextWidget.overflow, TextOverflow.ellipsis);
+      expect(modelTextWidget.maxLines, 1);
+      expect(modelTextWidget.softWrap, isFalse);
+    },
+  );
+
+  testWidgets(
+    'model picker entry shows ellipsis and Tooltip with full name',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const longModelName =
+          'deepseek-reasoner-experimental-large-context-window-v3';
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_picker',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Picker Session',
+          ),
+        ],
+      );
+
+      final providersResponse = ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'deepseek',
+            name: 'DeepSeek',
+            env: const <String>[],
+            models: <String, Model>{
+              'deepseek-reasoner': _model(
+                'deepseek-reasoner',
+                name: longModelName,
+              ),
+            },
+          ),
+        ],
+        defaultModels: const <String, String>{
+          'deepseek': 'deepseek-reasoner',
+        },
+        connected: const <String>['deepseek'],
+      );
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        providersResponse: providersResponse,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('model_selector_button')),
+      );
+      await tester.pumpAndSettle();
+
+      final entryFinder = find.byKey(
+        const ValueKey<String>(
+          'model_selector_item_deepseek_deepseek-reasoner',
+        ),
+      );
+      expect(entryFinder, findsOneWidget);
+
+      final tooltipFinder = find.descendant(
+        of: entryFinder,
+        matching: find.byTooltip(longModelName),
+      );
+      expect(tooltipFinder, findsOneWidget);
+
+      final titleTextWidget = tester.widget<Text>(
+        find.descendant(
+          of: tooltipFinder,
+          matching: find.byType(Text),
+        ),
+      );
+      expect(titleTextWidget.overflow, TextOverflow.ellipsis);
+      expect(titleTextWidget.maxLines, 1);
+    },
+  );
+
+  testWidgets(
     'sub-conversation shows composer parity and keeps sends scoped to the child session',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
