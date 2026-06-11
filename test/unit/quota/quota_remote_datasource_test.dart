@@ -169,7 +169,7 @@ void main() {
       script,
       contains('w.rolling = tUW({ uP: sub.rolling.usedPercent, wS: null'),
     );
-    expect(script, contains("'ollamacloud'].includes(k)"));
+    expect(script, contains('"ollamacloud"].includes(k)'));
     expect(script, contains("const GDP = 'rising-fact-p41fc';"));
     expect(
       script,
@@ -647,7 +647,7 @@ void main() {
       'cursor', 'ollama-cloud', 'ollamacloud'
     ];
     for (final key in expectedKeys) {
-      expect(script, contains("'$key'"));
+      expect(script, contains('"$key"'));
     }
   });
 

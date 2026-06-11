@@ -852,6 +852,12 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Then** the setup dialog can open `https://opencode.ai/auth`, save the workspace ID and auth cookie in secure storage, refresh the quota probe, and forget saved credentials later
 - **Then** if neither path returns data, the `Provider Quotas` section is silently omitted from the popup
 - **Then** outside the explicit OpenCode Go dashboard opt-in, the client never stores, manages, or forwards provider credentials; quota ownership stays on the server host by default
+- **Given** the host has configured credentials for `NanoGPT`, `Wafer.ai`, `GitHub Copilot Add-on`, `Kimi for Coding`, `Zhipu AI Coding Plan`, `MiniMax Coding Plan`, `z.ai`, `Cursor`, or `Ollama Cloud`
+- **When** the `Provider Quotas` popup is opened
+- **Then** CodeWalk displays their respective usage windows, rate limits, and remaining credits
+- **Then** `minimax-cn-coding-plan` uses inverted remains semantics to calculate utilized percentage (`used = total - remaining`)
+- **Then** `cursor` falls back to querying the local Cursor SQLite database on macOS hosts if environment tokens are missing
+- **Then** `ollama-cloud` parses HTML scraping safely, falling back to a descriptive error if the HTML format changes
 
 ---
 

@@ -855,6 +855,7 @@ async function fWafer(a) {
     w[windowLabel] = tUW({ uP: usedPercent, wS: windowSeconds, rA: windowEnd, vL: vL });
     return bR({ pId: 'wafer', pName: 'Wafer.ai', ok: true, use: { windows: w } });
   } catch (err) {
+    if (tm) clearTimeout(tm);
     const isTimeout = ac && ac.signal && ac.signal.aborted;
     return bR({ pId: 'wafer', pName: 'Wafer.ai', ok: false, err: isTimeout ? 'Request timed out' : err.message });
   }
@@ -1035,11 +1036,11 @@ async function fMinimaxCn(a) {
     const weeklyStartAt = toTs(firstModel.weekly_start_time);
     const weeklyResetAt = toTs(firstModel.weekly_end_time);
     // CN: usage is REMAINING, not used. Subtract to get the used count.
-    const intervalUsed = intervalTotal - intervalUsage;
-    const weeklyUsed = weeklyTotal - weeklyUsage;
-    const intervalUsedPercent = intervalTotal > 0 && intervalUsed >= 0 ? Math.max(0, Math.min(100, (intervalUsed / intervalTotal) * 100)) : null;
+    const intervalUsed = (intervalTotal !== null && intervalUsage !== null) ? Math.max(0, Math.min(intervalTotal, intervalTotal - intervalUsage)) : null;
+    const weeklyUsed = (weeklyTotal !== null && weeklyUsage !== null) ? Math.max(0, Math.min(weeklyTotal, weeklyTotal - weeklyUsage)) : null;
+    const intervalUsedPercent = intervalTotal > 0 && intervalUsed !== null ? (intervalUsed / intervalTotal) * 100 : null;
     const intervalWindowSeconds = (intervalStartAt && intervalResetAt && intervalResetAt > intervalStartAt) ? Math.floor((intervalResetAt - intervalStartAt) / 1000) : null;
-    const weeklyUsedPercent = weeklyTotal > 0 && weeklyUsed >= 0 ? Math.max(0, Math.min(100, (weeklyUsed / weeklyTotal) * 100)) : null;
+    const weeklyUsedPercent = weeklyTotal > 0 && weeklyUsed !== null ? (weeklyUsed / weeklyTotal) * 100 : null;
     const weeklyWindowSeconds = (weeklyStartAt && weeklyResetAt && weeklyResetAt > weeklyStartAt) ? Math.floor((weeklyResetAt - weeklyStartAt) / 1000) : null;
     const w = {
       '5h': tUW({ uP: intervalUsedPercent, wS: intervalWindowSeconds, rA: intervalResetAt }),

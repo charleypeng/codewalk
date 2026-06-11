@@ -46,6 +46,7 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     'google.oauth',
     'github-copilot',
     'copilot',
+    'github-copilot-addon',
     'opencode-go',
     'nano-gpt',
     'nanogpt',
@@ -354,9 +355,7 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
         ? base64Encode(utf8.encode(openCodeGoCredentials!.authCookie.trim()))
         : '';
 
-    final supportedKeysLiteral = '[' +
-        _supportedAuthKeys.map((k) => "'$k'").join(',') +
-        ']';
+    final supportedKeysLiteral = jsonEncode(_supportedAuthKeys.toList());
 
     final payload = StringBuffer()
       ..write(_jsSharedHelpers())

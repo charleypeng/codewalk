@@ -114,6 +114,7 @@ lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid fi
 lib/data/cache/chat_cache_payload_store_stub.dart # Non-IO platforms: disabled payload store (returns null)
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
+  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + per-provider quota-fetch functions (Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, Ollama Cloud); modularized with `_supportedAuthKeys` Set as single source of truth for provider auth key whitelisting
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle, Tailscale transport orchestration; supportsTailscale (Android/iOS/Linux/macOS), _applyTailscaleTransport() drives per-profile Tailscale node lifecycle (upForProfile/auth URL launch/down), swaps Dio adapter via TailscaleHttpAdapter, propagates active adapter to health-check Dio via createHealthCheckDio; tailscaleEnabled in addServerProfile/updateServerProfile CRUD; exposes reactive Tailscale state getters: tailscaleState, tailscaleNodeState, tailscaleAuthUrl, tailscaleMessage, tailscaleNeedsAuth, tailscaleNeedsMachineAuth, and authenticateTailscale() method; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out
@@ -344,6 +345,10 @@ lib/data/datasources/project_remote_datasource.dart
   - /project, /project/current
   - /experimental/worktree, /experimental/worktree/reset
   - /file, /file/content, /find/file, /find?pattern=, /find/symbol, /vcs
+
+lib/data/datasources/quota_remote_datasource.dart
+  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + per-provider quota-fetch functions (Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, Ollama Cloud); modularized with `_supportedAuthKeys` Set as single source of truth for provider auth key whitelisting
+  - Strategy-chain: OpenChamber REST (`GET /api/quota/providers`) → shell probe fallback (`CW_QUOTA_JSON:`)
 ```
 
 ## Main Commands

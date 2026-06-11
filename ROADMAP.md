@@ -1,5 +1,9 @@
 # CodeWalk Roadmap
 
+## Features
+
+- [x] 10 OpenChamber quota providers parity (Issue #45) - Commit hash: [pending]
+
 ## Refactoring
 
 - [x] Aggressive split of oversized Dart files (five large files split into five new part files, test analyzer-budget cleanup) - Commit hash: 8759defc

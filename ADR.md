@@ -1478,6 +1478,7 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 ### Key Files
 
 - `lib/data/datasources/quota_remote_datasource.dart` — Strategy-chain implementation (OpenChamber REST → shell fallback)
+- `lib/data/datasources/quota_remote_datasource.part.js.dart` — Base64-encoded Node.js one-liner payload for shell-fallback quota probing (minified multi-provider JS encoded at compile time, decoded at runtime via `node -e "eval(Buffer.from('BASE64_PAYLOAD','base64').toString())"`)
 - `lib/domain/entities/quota.dart` — Domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
 - `lib/presentation/providers/quota_provider.dart` — Polling, TTL cache, server-scoped state, provider grouping, and Codex `providerId` guard that prevents single-window label collapse for Codex entries by preserving per-window granularity in grouped display
 - `lib/presentation/utils/quota_pace_utils.dart` — Pure Dart pace calculation, window label inference, and formatting
@@ -1487,6 +1488,28 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 - `lib/presentation/widgets/quota/pace_label.dart` — Desktop tooltip / mobile snackbar pace explanation
 - `lib/presentation/pages/chat_page/chat_page_status_presenter.dart` — Hosts `_buildContextUsagePopover` which includes `QuotaPopupSection`
 - `lib/core/di/injection_container.dart` — DI wiring for `QuotaRemoteDataSource` and `QuotaProvider`
+
+### Provider Register
+
+The following OpenChamber quota providers are supported by the strategy-chain. Each provider entry includes the provider key used in REST/shell discovery, a brief description, and its grouping.
+
+| # | Provider Key | Description | Group |
+|---|-------------|-------------|-------|
+| 1 | `openai` | OpenAI API usage and rate-limits | OpenAI |
+| 2 | `anthropic` | Anthropic API usage and rate-limits | Anthropic |
+| 3 | `openrouter` | OpenRouter aggregated usage | OpenRouter |
+| 4 | `google-gemini` | Google Gemini API usage | Google |
+| 5 | `groq` | Groq API usage and rate-limits | Groq |
+| 6 | `nano-gpt` | NanoGPT API usage and rate-limits | NanoGPT |
+| 7 | `wafer` | Wafer API usage and rate-limits | Wafer |
+| 8 | `github-copilot-addon` | GitHub Copilot addon quota (usage vs. included allowance) | GitHub |
+| 9 | `kimi-for-coding` | Kimi for Coding API usage | Moonshot |
+| 10 | `zhipuai-coding-plan` | ZhipuAI coding plan quota | ZhipuAI |
+| 11 | `minimax-coding-plan` | MiniMax coding plan quota (international) | MiniMax |
+| 12 | `minimax-cn-coding-plan` | MiniMax coding plan quota (China domestic) | MiniMax |
+| 13 | `zai-coding-plan` | ZAI coding plan quota | ZAI |
+| 14 | `cursor` | Cursor API usage and rate-limits | Cursor |
+| 15 | `ollama-cloud` | Ollama Cloud hosted model usage | Ollama |
 
 ### Exception: OpenCode Go Dashboard Credential Opt-In
 
