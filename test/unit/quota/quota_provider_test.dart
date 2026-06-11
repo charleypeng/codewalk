@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
 import 'package:codewalk/domain/entities/quota.dart';
+import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/providers/quota_provider.dart';
 import 'package:codewalk/presentation/widgets/quota/quota_entry_row.dart';
 import 'package:codewalk/presentation/widgets/quota/quota_popup_section.dart';
-import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -208,14 +208,14 @@ void main() {
       ]),
     );
 
-    await tester.pumpWidget(
-      ChangeNotifierProvider<QuotaProvider>.value(
-        value: provider,
-        child: _buildApp(
-        home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
-      ),
-    ),
-  );
+      await tester.pumpWidget(
+        ChangeNotifierProvider<QuotaProvider>.value(
+          value: provider,
+          child: _buildApp(
+            home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+          ),
+        ),
+      );
   await tester.pump();
   await tester.pumpAndSettle();
 
@@ -406,7 +406,7 @@ void main() {
 
     await tester.pumpWidget(
       _buildApp(
-        home: Scaffold(body: QuotaEntryRow(entry: entry)),
+        home: const Scaffold(body: QuotaEntryRow(entry: entry)),
       ),
     );
 
@@ -475,7 +475,7 @@ void main() {
         ChangeNotifierProvider<QuotaProvider>.value(
           value: provider,
           child: _buildApp(
-            home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+            home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
           ),
         ),
       );
@@ -506,7 +506,7 @@ void main() {
         ChangeNotifierProvider<QuotaProvider>.value(
           value: provider,
           child: _buildApp(
-            home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+            home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
           ),
         ),
       );

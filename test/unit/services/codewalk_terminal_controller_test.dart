@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codewalk/data/datasources/terminal_remote_datasource.dart';
 import 'package:codewalk/data/models/pty_session_model.dart';

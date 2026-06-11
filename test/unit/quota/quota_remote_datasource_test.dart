@@ -169,7 +169,7 @@ void main() {
       script,
       contains('w.rolling = tUW({ uP: sub.rolling.usedPercent, wS: null'),
     );
-    expect(script, contains("'opencode-go'].includes(k)"));
+    expect(script, contains("'ollamacloud'].includes(k)"));
     expect(script, contains("const GDP = 'rising-fact-p41fc';"));
     expect(
       script,
@@ -260,8 +260,8 @@ void main() {
     );
     await tempFile.writeAsString(script);
     addTearDown(() async {
-      if (await tempFile.exists()) {
-        await tempFile.delete();
+      if (tempFile.existsSync()) {
+        tempFile.deleteSync();
       }
     });
 
@@ -444,4 +444,242 @@ void main() {
       );
     },
   );
+
+  Dio createMockDio(String resultsJson) {
+    final dio = Dio();
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/api/quota/providers') {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 404,
+                ),
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session' && options.method == 'POST') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'id': 'ses_quota_probe'},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe/shell') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{
+                  'parts': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'type': 'text',
+                      'text': 'CW_QUOTA_JSON:$resultsJson',
+                    },
+                  ],
+                },
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe' &&
+              options.method == 'DELETE') {
+            handler.resolve(
+              Response<dynamic>(requestOptions: options, statusCode: 200),
+            );
+            return;
+          }
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              error: 'Unexpected ${options.path}',
+            ),
+          );
+        },
+      ),
+    );
+    return dio;
+  }
+
+  test('parses nano-gpt quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"nano-gpt","providerName":"NanoGPT","ok":true,"configured":true,"usage":{"windows":{"daily":{"usedPercent":50,"windowSeconds":86400,"resetAt":1000,"valueLabel":null}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'nano-gpt');
+    expect(results.first.usage?.windows['daily']?.usedPercent, 50.0);
+  });
+
+  test('parses wafer quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"wafer","providerName":"Wafer.ai","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":75,"windowSeconds":18000,"resetAt":1000,"valueLabel":"+5 overage"}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'wafer');
+    expect(results.first.usage?.windows['5h']?.valueLabel, contains('+5 overage'));
+  });
+
+  test('parses github-copilot-addon quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"github-copilot-addon","providerName":"GitHub Copilot Add-on","ok":true,"configured":true,"usage":{"windows":{"premium":{"usedPercent":30,"windowSeconds":null,"resetAt":1000,"valueLabel":"30 / 100 left"}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'github-copilot-addon');
+  });
+
+  test('parses kimi-for-coding quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"kimi-for-coding","providerName":"Kimi for Coding","ok":true,"configured":true,"usage":{"windows":{"weekly":{"usedPercent":20,"windowSeconds":null,"resetAt":1000,"valueLabel":null}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'kimi-for-coding');
+  });
+
+  test('parses zhipuai-coding-plan quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"zhipuai-coding-plan","providerName":"Zhipu AI Coding Plan","ok":true,"configured":true,"usage":{"windows":{"Tokens":{"usedPercent":40,"windowSeconds":18000,"resetAt":1000,"valueLabel":null}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'zhipuai-coding-plan');
+  });
+
+  test('parses minimax-coding-plan quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"minimax-coding-plan","providerName":"MiniMax Coding Plan (minimax.io)","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":60,"windowSeconds":18000,"resetAt":1000,"valueLabel":null}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'minimax-coding-plan');
+  });
+
+  test('parses minimax-cn-coding-plan quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"minimax-cn-coding-plan","providerName":"MiniMax Coding Plan (minimaxi.com)","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":30,"windowSeconds":18000,"resetAt":1000,"valueLabel":"70 / 100 remains"}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'minimax-cn-coding-plan');
+  });
+
+  test('parses zai-coding-plan quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"zai-coding-plan","providerName":"z.ai","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":10,"windowSeconds":18000,"resetAt":1000,"valueLabel":null}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'zai-coding-plan');
+  });
+
+  test('parses cursor quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"cursor","providerName":"Cursor","ok":true,"configured":true,"usage":{"windows":{"billing_cycle":{"usedPercent":15,"windowSeconds":null,"resetAt":1000,"valueLabel":"\$1.50"}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'cursor');
+  });
+
+  test('parses ollama-cloud quota payload from shell fallback', () async {
+    final dio = createMockDio(
+      '{"results":[{"providerId":"ollama-cloud","providerName":"Ollama Cloud","ok":true,"configured":true,"usage":{"windows":{"session":{"usedPercent":80,"windowSeconds":null,"resetAt":null,"valueLabel":null}}},"fetchedAt":1}]}',
+    );
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'ollama-cloud');
+  });
+
+  test('supported auth keys hydration matches generated JS', () async {
+    final dio = Dio();
+    String? shellCommand;
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        if (options.path == '/api/quota/providers') {
+          handler.reject(DioException(requestOptions: options, response: Response<dynamic>(requestOptions: options, statusCode: 404)));
+          return;
+        }
+        if (options.path == '/session' && options.method == 'POST') {
+          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'id': 'ses_quota_probe'}));
+          return;
+        }
+        if (options.path == '/session/ses_quota_probe/shell') {
+          shellCommand = (options.data as Map<String, dynamic>)['command'] as String?;
+          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'parts': <Map<String, dynamic>>[]}));
+          return;
+        }
+        if (options.path == '/session/ses_quota_probe' && options.method == 'DELETE') {
+          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200));
+          return;
+        }
+      }
+    ));
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    await dataSource.fetchQuotaResults();
+    final script = _decodeShellScript(shellCommand!);
+    
+    final expectedKeys = [
+      'anthropic', 'claude', 'openrouter', 'openai', 'codex', 'chatgpt',
+      'google', 'google.oauth', 'github-copilot', 'copilot', 'opencode-go',
+      'nano-gpt', 'nanogpt', 'nano_gpt', 'wafer', 'wafer-ai', 'wafer_ai', 'wafer.ai',
+      'kimi-for-coding', 'kimi', 'zhipuai-coding-plan', 'zhipuai', 'zhipu',
+      'minimax-coding-plan', 'minimax-cn-coding-plan', 'zai-coding-plan', 'zai', 'z.ai',
+      'cursor', 'ollama-cloud', 'ollamacloud'
+    ];
+    for (final key in expectedKeys) {
+      expect(script, contains("'$key'"));
+    }
+  });
+
+  test('minimax-cn uses inverted semantics in JS code', () async {
+    final dio = Dio();
+    String? shellCommand;
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        if (options.path == '/api/quota/providers') {
+          handler.reject(DioException(requestOptions: options, response: Response<dynamic>(requestOptions: options, statusCode: 404)));
+          return;
+        }
+        if (options.path == '/session' && options.method == 'POST') {
+          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'id': 'ses_quota_probe'}));
+          return;
+        }
+        if (options.path == '/session/ses_quota_probe/shell') {
+          shellCommand = (options.data as Map<String, dynamic>)['command'] as String?;
+          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'parts': <Map<String, dynamic>>[]}));
+          return;
+        }
+        if (options.path == '/session/ses_quota_probe' && options.method == 'DELETE') {
+          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200));
+          return;
+        }
+      }
+    ));
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    await dataSource.fetchQuotaResults();
+    final script = _decodeShellScript(shellCommand!);
+    
+    expect(script, contains('intervalTotal - intervalUsage'));
+    expect(script, contains('weeklyTotal - weeklyUsage'));
+  });
 }
