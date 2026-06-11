@@ -864,7 +864,7 @@ async function fWafer(a) {
 
 String _jsGitHubCopilotAddonProvider() => r'''
 async function fGHA(a) {
-  const e = nE(getE(a, ['github-copilot', 'copilot']));
+  const e = nE(getE(a, ['github-copilot-addon', 'github-copilot', 'copilot']));
   const t = e && (e.access || e.token);
   if (!t) return null;
   try {
@@ -995,9 +995,19 @@ async function fMinimax(a) {
     // Non-CN: usage IS the used count.
     const intervalUsed = intervalUsage;
     const weeklyUsed = weeklyUsage;
-    const intervalUsedPercent = intervalTotal > 0 && intervalUsed !== null ? Math.max(0, Math.min(100, (intervalUsed / intervalTotal) * 100)) : null;
+    // The Coding Plan rate-limit returns total=0 with a separate
+    // `current_*_remaining_percent` field for the actual signal. Fall back
+    // to that field when the count formula cannot produce a percent (so the
+    // popup filter does not hide the row).
+    const intervalRemPct = toN(firstModel.current_interval_remaining_percent);
+    const weeklyRemPct = toN(firstModel.current_weekly_remaining_percent);
+    const intervalUsedPercent = (intervalTotal > 0 && intervalUsed !== null)
+      ? Math.max(0, Math.min(100, (intervalUsed / intervalTotal) * 100))
+      : (intervalRemPct !== null ? Math.max(0, Math.min(100, 100 - intervalRemPct)) : null);
     const intervalWindowSeconds = (intervalStartAt && intervalResetAt && intervalResetAt > intervalStartAt) ? Math.floor((intervalResetAt - intervalStartAt) / 1000) : null;
-    const weeklyUsedPercent = weeklyTotal > 0 && weeklyUsed !== null ? Math.max(0, Math.min(100, (weeklyUsed / weeklyTotal) * 100)) : null;
+    const weeklyUsedPercent = (weeklyTotal > 0 && weeklyUsed !== null)
+      ? Math.max(0, Math.min(100, (weeklyUsed / weeklyTotal) * 100))
+      : (weeklyRemPct !== null ? Math.max(0, Math.min(100, 100 - weeklyRemPct)) : null);
     const weeklyWindowSeconds = (weeklyStartAt && weeklyResetAt && weeklyResetAt > weeklyStartAt) ? Math.floor((weeklyResetAt - weeklyStartAt) / 1000) : null;
     const w = {
       '5h': tUW({ uP: intervalUsedPercent, wS: intervalWindowSeconds, rA: intervalResetAt }),
@@ -1038,9 +1048,19 @@ async function fMinimaxCn(a) {
     // CN: usage is REMAINING, not used. Subtract to get the used count.
     const intervalUsed = (intervalTotal !== null && intervalUsage !== null) ? Math.max(0, Math.min(intervalTotal, intervalTotal - intervalUsage)) : null;
     const weeklyUsed = (weeklyTotal !== null && weeklyUsage !== null) ? Math.max(0, Math.min(weeklyTotal, weeklyTotal - weeklyUsage)) : null;
-    const intervalUsedPercent = intervalTotal > 0 && intervalUsed !== null ? (intervalUsed / intervalTotal) * 100 : null;
+    // The Coding Plan rate-limit returns total=0 with a separate
+    // `current_*_remaining_percent` field for the actual signal. Fall back
+    // to that field when the count formula cannot produce a percent (so the
+    // popup filter does not hide the row).
+    const intervalRemPct = toN(firstModel.current_interval_remaining_percent);
+    const weeklyRemPct = toN(firstModel.current_weekly_remaining_percent);
+    const intervalUsedPercent = (intervalTotal > 0 && intervalUsed !== null)
+      ? (intervalUsed / intervalTotal) * 100
+      : (intervalRemPct !== null ? Math.max(0, Math.min(100, 100 - intervalRemPct)) : null);
     const intervalWindowSeconds = (intervalStartAt && intervalResetAt && intervalResetAt > intervalStartAt) ? Math.floor((intervalResetAt - intervalStartAt) / 1000) : null;
-    const weeklyUsedPercent = weeklyTotal > 0 && weeklyUsed !== null ? (weeklyUsed / weeklyTotal) * 100 : null;
+    const weeklyUsedPercent = (weeklyTotal > 0 && weeklyUsed !== null)
+      ? (weeklyUsed / weeklyTotal) * 100
+      : (weeklyRemPct !== null ? Math.max(0, Math.min(100, 100 - weeklyRemPct)) : null);
     const weeklyWindowSeconds = (weeklyStartAt && weeklyResetAt && weeklyResetAt > weeklyStartAt) ? Math.floor((weeklyResetAt - weeklyStartAt) / 1000) : null;
     const w = {
       '5h': tUW({ uP: intervalUsedPercent, wS: intervalWindowSeconds, rA: intervalResetAt }),

@@ -856,6 +856,8 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **When** the `Provider Quotas` popup is opened
 - **Then** CodeWalk displays their respective usage windows, rate limits, and remaining credits
 - **Then** `minimax-cn-coding-plan` uses inverted remains semantics to calculate utilized percentage (`used = total - remaining`)
+- **Then** both `minimax-coding-plan` and `minimax-cn-coding-plan` fall back to the API's `current_*_remaining_percent` field when `current_*_total_count` is `0` (Coding Plan rate-limit has no hard count cap), so the popup filter never hides the row
+- **Then** the fallback computes `usedPercent = max(0, min(100, 100 - remainingPercent))` to keep the value in the standard 0–100 range
 - **Then** `cursor` falls back to querying the local Cursor SQLite database on macOS hosts if environment tokens are missing
 - **Then** `ollama-cloud` parses HTML scraping safely, falling back to a descriptive error if the HTML format changes
 
