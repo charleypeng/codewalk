@@ -1055,11 +1055,11 @@ async function fMinimaxCn(a) {
     const intervalRemPct = toN(firstModel.current_interval_remaining_percent);
     const weeklyRemPct = toN(firstModel.current_weekly_remaining_percent);
     const intervalUsedPercent = (intervalTotal > 0 && intervalUsed !== null)
-      ? (intervalUsed / intervalTotal) * 100
+      ? Math.max(0, Math.min(100, (intervalUsed / intervalTotal) * 100))
       : (intervalRemPct !== null ? Math.max(0, Math.min(100, 100 - intervalRemPct)) : null);
     const intervalWindowSeconds = (intervalStartAt && intervalResetAt && intervalResetAt > intervalStartAt) ? Math.floor((intervalResetAt - intervalStartAt) / 1000) : null;
     const weeklyUsedPercent = (weeklyTotal > 0 && weeklyUsed !== null)
-      ? (weeklyUsed / weeklyTotal) * 100
+      ? Math.max(0, Math.min(100, (weeklyUsed / weeklyTotal) * 100))
       : (weeklyRemPct !== null ? Math.max(0, Math.min(100, 100 - weeklyRemPct)) : null);
     const weeklyWindowSeconds = (weeklyStartAt && weeklyResetAt && weeklyResetAt > weeklyStartAt) ? Math.floor((weeklyResetAt - weeklyStartAt) / 1000) : null;
     const w = {
