@@ -1541,6 +1541,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get forwardAction => 'Forward';
 
   @override
+  String get forwardAllFailed => 'Could not forward to any session';
+
+  @override
   String get forwardCancel => 'Cancel';
 
   @override
@@ -1554,6 +1557,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get forwardNoOpenProjects => 'No open projects with sessions';
+
+  @override
+  String get forwardNoProviderModel =>
+      'Select a provider and model before forwarding';
 
   @override
   String get forwardNoSessions => 'No recent sessions';

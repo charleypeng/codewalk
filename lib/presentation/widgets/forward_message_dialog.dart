@@ -257,6 +257,7 @@ class _ForwardMessageDialogState extends State<ForwardMessageDialog> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: TextField(
             controller: _searchController,
+            autofocus: true,
             decoration: InputDecoration(
               hintText: context.l10n.forwardSearchHint,
               prefixIcon: const Icon(Symbols.search),

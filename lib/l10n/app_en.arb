@@ -1667,6 +1667,9 @@
   "@forwardAction": {
     "description": "CodeWalk UI string — forwardAction"
   },
+  "@forwardAllFailed": {
+    "description": "CodeWalk UI string — forwardAllFailed"
+  },
   "@forwardCancel": {
     "description": "CodeWalk UI string — forwardCancel"
   },
@@ -1681,6 +1684,9 @@
   },
   "@forwardNoOpenProjects": {
     "description": "CodeWalk UI string — forwardNoOpenProjects"
+  },
+  "@forwardNoProviderModel": {
+    "description": "CodeWalk UI string — forwardNoProviderModel"
   },
   "@forwardNoSessions": {
     "description": "CodeWalk UI string — forwardNoSessions"
@@ -4804,11 +4810,13 @@
   "filesSearchHint": "Search files by name or path",
   "filesTitle": "Files",
   "forwardAction": "Forward",
+  "forwardAllFailed": "Could not forward to any session",
   "forwardCancel": "Cancel",
   "forwardDialogSubtitle": "Select one or more conversations",
   "forwardDialogTitle": "Forward to…",
   "forwardLoading": "Loading sessions…",
   "forwardNoOpenProjects": "No open projects with sessions",
+  "forwardNoProviderModel": "Select a provider and model before forwarding",
   "forwardNoSessions": "No recent sessions",
   "forwardPartial": "Forwarded to {success} of {total}",
   "forwardProvenanceLabel": "Forwarded from: {origin}",

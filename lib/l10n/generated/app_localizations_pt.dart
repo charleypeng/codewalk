@@ -1667,6 +1667,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get forwardAction => 'Encaminhar';
 
   @override
+  String get forwardAllFailed =>
+      'Não foi possível encaminhar para nenhuma sessão';
+
+  @override
   String get forwardCancel => 'Cancelar';
 
   @override
@@ -1680,6 +1684,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get forwardNoOpenProjects => 'Nenhum projeto aberto com sessões';
+
+  @override
+  String get forwardNoProviderModel =>
+      'Selecione um provedor e modelo antes de encaminhar';
 
   @override
   String get forwardNoSessions => 'Nenhuma sessão recente';

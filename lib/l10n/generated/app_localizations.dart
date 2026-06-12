@@ -2981,6 +2981,12 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get forwardAction;
 
+  /// CodeWalk UI string — forwardAllFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not forward to any session'**
+  String get forwardAllFailed;
+
   /// CodeWalk UI string — forwardCancel
   ///
   /// In en, this message translates to:
@@ -3010,6 +3016,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No open projects with sessions'**
   String get forwardNoOpenProjects;
+
+  /// CodeWalk UI string — forwardNoProviderModel
+  ///
+  /// In en, this message translates to:
+  /// **'Select a provider and model before forwarding'**
+  String get forwardNoProviderModel;
 
   /// CodeWalk UI string — forwardNoSessions
   ///

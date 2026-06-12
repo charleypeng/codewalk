@@ -48,14 +48,12 @@ ChatSession _session({
   required String id,
   String? title,
   DateTime? time,
-  String? directory,
 }) {
   return ChatSession(
     id: id,
     workspaceId: 'default',
     time: time ?? DateTime.fromMillisecondsSinceEpoch(0),
     title: title,
-    directory: directory,
   );
 }
 
@@ -152,14 +150,14 @@ void main() {
     });
 
     test(
-        'forwardToSessions sends to each target and records a per-target undo entry',
-        () async {
+        'forwardToSessions sends to each target without forwarding a messageId '
+        '(ADR-023 P-001)', () async {
       final project = _project(id: 'p1', name: 'Alpha');
       final context = _FakeForwardContext(projects: <Project>[project]);
 
       final sentSessionIds = <String>[];
       final sentTexts = <String>[];
-      final sentMessageIds = <String>[];
+      final sentMessageIds = <String?>[];
 
       repository.sendMessageHandler = (
         String projectId,
@@ -169,7 +167,7 @@ void main() {
       ) {
         sentSessionIds.add(sessionId);
         sentTexts.add((input.parts.first as TextInputPart).text);
-        if (input.messageId != null) sentMessageIds.add(input.messageId!);
+        sentMessageIds.add(input.messageId);
         return Stream<Either<Failure, ChatMessage>>.value(
           Right<Failure, ChatMessage>(_assistantPlaceholder(sessionId)),
         );
@@ -198,14 +196,17 @@ void main() {
       expect(sentSessionIds, <String>['ses_a', 'ses_b']);
       expect(sentTexts.first, contains('forwarded body'));
       expect(sentTexts.first, contains('Encaminhado de: Alpha / origin'));
-      expect(sentMessageIds, hasLength(2));
-      expect(sentMessageIds.first, isNot(equals(sentMessageIds.last)));
+      // ADR-023 Pitfall P-001: messageId MUST NOT be forwarded to
+      // prompt_async. Forwarding the local optimistic id breaks SSE
+      // event stream reconciliation in the target session.
+      expect(sentMessageIds, everyElement(isNull));
       expect(result.successes, hasLength(2));
       expect(result.successes[0].sessionId, 'ses_a');
       expect(result.successes[0].userMessageId, 'usr_a');
     });
 
-    test('forwardToSessions records per-target failures', () async {
+    test('forwardToSessions records per-target failures with typed reasons',
+        () async {
       final project = _project(id: 'p1', name: 'Alpha');
       final context = _FakeForwardContext(projects: <Project>[project]);
 
@@ -241,6 +242,48 @@ void main() {
       expect(result.successes, hasLength(1));
       expect(result.failures, hasLength(1));
       expect(result.failures.first.target.sessionId, 'ses_fail');
+      expect(result.failures.first.reason, ForwardFailureReason.send);
+      expect(result.failures.first.error, isA<ServerFailure>());
+    });
+
+    test(
+        'forwardToSessions reports undoUnresolved when the message is sent '
+        'but the user message id cannot be resolved', () async {
+      final project = _project(id: 'p1', name: 'Alpha');
+      final context = _FakeForwardContext(projects: <Project>[project]);
+
+      repository.sendMessageHandler = (
+        String projectId,
+        String sessionId,
+        ChatInput input,
+        String? directory,
+      ) {
+        return Stream<Either<Failure, ChatMessage>>.value(
+          Right<Failure, ChatMessage>(_assistantPlaceholder(sessionId)),
+        );
+      };
+      // Note: no entry in messagesBySession for ses_orphan — the service
+      // must NOT surface this as a send failure (it would be retried and
+      // duplicate the message). It must surface it as undoUnresolved so
+      // the UI hides the retry action.
+      repository.messagesBySession.remove('ses_orphan');
+
+      final result = await buildService(context).forwardToSessions(
+        text: 'body',
+        provenanceLine: '> Encaminhado',
+        targets: const <ForwardTarget>[
+          ForwardTarget(sessionId: 'ses_orphan', directory: '/tmp/p1'),
+        ],
+        selection: const ForwardSelection(providerId: 'p', modelId: 'm'),
+      );
+
+      expect(result.successes, isEmpty);
+      expect(result.failures, hasLength(1));
+      expect(result.failures.first.reason,
+          ForwardFailureReason.undoUnresolved);
+      // undoUnresolved failures must NOT be retryable — a retry would
+      // duplicate the already-sent message in the target session.
+      expect(result.retryableFailures, isEmpty);
     });
 
     test('undoForward reverts each successful entry and reports the rest',

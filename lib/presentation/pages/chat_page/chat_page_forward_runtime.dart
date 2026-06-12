@@ -11,13 +11,15 @@ part of '../chat_page.dart';
 extension _ChatPageForwardRuntime on _ChatPageState {
   /// Returns true if the message can be forwarded. v1 only allows
   /// assistant and user messages; tool/system parts are filtered at the
-  /// text-extraction step.
+  /// text-extraction step. A message with no forwardable text is
+  /// rejected so the user does not see a "Forward" button that would
+  /// send an empty body.
   bool _canForwardMessage(ChatMessage message) {
-    if (message is UserMessage) return true;
+    if (message is UserMessage) {
+      return _extractForwardableText(message).isNotEmpty;
+    }
     if (message is AssistantMessage) {
-      return message.parts.whereType<TextPart>().any(
-        (part) => part.text.trim().isNotEmpty,
-      );
+      return _extractForwardableText(message).isNotEmpty;
     }
     return false;
   }
@@ -63,7 +65,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     final selection = _resolveForwardSelection(chatProvider, message);
     if (selection == null) {
       _showChatPageMessageSnackBar(
-        context.l10n.forwardNoOpenProjects,
+        context.l10n.forwardNoProviderModel,
       );
       return;
     }
@@ -117,7 +119,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     }
     if (result.successes.isEmpty) {
       _showChatPageSnackBar(
-        content: Text(context.l10n.forwardServerOffline),
+        content: Text(context.l10n.forwardAllFailed),
       );
       return;
     }
@@ -147,17 +149,22 @@ extension _ChatPageForwardRuntime on _ChatPageState {
 
   SnackBar _buildPartialSnackBar({
     required List<UndoForwardEntry> successes,
-    required List<({ForwardTarget target, Object error})> failures,
+    required List<ForwardFailure> failures,
     required ForwardMessageService forwardService,
   }) {
     final total = successes.length + failures.length;
+    final retryable = failures
+        .where((f) => f.reason == ForwardFailureReason.send)
+        .toList(growable: false);
     return SnackBar(
       content: Text(context.l10n.forwardPartial(successes.length, total)),
       duration: const Duration(seconds: 8),
-      action: SnackBarAction(
-        label: context.l10n.forwardRetry,
-        onPressed: () => _runRetry(failures, forwardService),
-      ),
+      action: retryable.isEmpty
+          ? null
+          : SnackBarAction(
+              label: context.l10n.forwardRetry,
+              onPressed: () => _runRetry(retryable, forwardService),
+            ),
     );
   }
 
@@ -174,10 +181,13 @@ extension _ChatPageForwardRuntime on _ChatPageState {
   }
 
   Future<void> _runRetry(
-    List<({ForwardTarget target, Object error})> failures,
+    List<ForwardFailure> failures,
     ForwardMessageService forwardService,
   ) async {
-    final targets = failures.map((f) => f.target).toList(growable: false);
+    final targets = failures
+        .where((f) => f.reason == ForwardFailureReason.send)
+        .map((f) => f.target)
+        .toList(growable: false);
     if (targets.isEmpty) return;
     final chatProvider = _chatProvider ?? context.read<ChatProvider>();
     final selection = _resolveForwardSelection(

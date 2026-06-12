@@ -70,15 +70,38 @@ class UndoForwardEntry {
   final String? directory;
 }
 
+/// Distinguishes a real send failure (retryable) from an "undo unresolved"
+/// case (the message was sent but we could not capture its server id for
+/// undo — retrying would create a duplicate in the target session).
+enum ForwardFailureReason { send, undoUnresolved }
+
+/// One failed forward attempt.
+class ForwardFailure {
+  const ForwardFailure({
+    required this.target,
+    required this.reason,
+    this.error,
+  });
+
+  final ForwardTarget target;
+  final ForwardFailureReason reason;
+  final Object? error;
+}
+
 /// Result of a single forward action.
 class ForwardResult {
   const ForwardResult({required this.successes, required this.failures});
 
   final List<UndoForwardEntry> successes;
-  final List<({ForwardTarget target, Object error})> failures;
+  final List<ForwardFailure> failures;
 
   bool get isFullSuccess => failures.isEmpty;
   int get totalCount => successes.length + failures.length;
+
+  /// Failures that are safe to retry (the message was NOT sent).
+  List<ForwardFailure> get retryableFailures => failures
+      .where((failure) => failure.reason == ForwardFailureReason.send)
+      .toList(growable: false);
 }
 
 /// Selects the provider/model/variant applied to a forwarded message when
@@ -238,15 +261,16 @@ class ForwardMessageService {
   }
 
   /// Send [text] (prepended with [provenanceLine]) to every [target] and
-  /// return per-target outcomes. The stream from each target is consumed
-  /// until the first assistant message is observed; the most recent user
-  /// message in the session is then captured for undo.
+  /// return per-target outcomes. Each target is awaited sequentially; the
+  /// accepted send stream is drained to completion before resolving the
+  /// undo id. Targets that send successfully but yield no resolvable
+  /// user message id are reported as [ForwardFailureReason.undoUnresolved]
+  /// so the UI does not surface a retry that would duplicate the send.
   Future<ForwardResult> forwardToSessions({
     required String text,
     required String provenanceLine,
     required List<ForwardTarget> targets,
     required ForwardSelection selection,
-    String? clientMessageIdPrefix,
   }) async {
     if (targets.isEmpty) {
       return const ForwardResult(successes: [], failures: []);
@@ -258,7 +282,7 @@ class ForwardMessageService {
     );
 
     final successes = <UndoForwardEntry>[];
-    final failures = <({ForwardTarget target, Object error})>[];
+    final failures = <ForwardFailure>[];
 
     for (final target in targets) {
       try {
@@ -266,15 +290,16 @@ class ForwardMessageService {
           target: target,
           text: composedText,
           selection: selection,
-          clientMessageIdPrefix: clientMessageIdPrefix,
         );
         if (undoEntry != null) {
           successes.add(undoEntry);
         } else {
-          failures.add((
-            target: target,
-            error: StateError('Forwarded message but could not resolve undo target'),
-          ));
+          failures.add(
+            ForwardFailure(
+              target: target,
+              reason: ForwardFailureReason.undoUnresolved,
+            ),
+          );
         }
       } catch (error, stackTrace) {
         AppLogger.warn(
@@ -282,7 +307,13 @@ class ForwardMessageService {
           error: error,
           stackTrace: stackTrace,
         );
-        failures.add((target: target, error: error));
+        failures.add(
+          ForwardFailure(
+            target: target,
+            reason: ForwardFailureReason.send,
+            error: error,
+          ),
+        );
       }
     }
 
@@ -313,14 +344,14 @@ class ForwardMessageService {
     required ForwardTarget target,
     required String text,
     required ForwardSelection selection,
-    String? clientMessageIdPrefix,
   }) async {
-    final messageId = _buildClientMessageId(
-      prefix: clientMessageIdPrefix,
-      sessionId: target.sessionId,
-    );
+    // INVARIANT — do NOT add a `messageId` field here (ADR-023 Pitfall P-001):
+    // The server must assign its own canonical ID for the user message.
+    // Forwarding the local optimistic ID as `messageId` in the payload
+    // causes the SSE event stream to fail reconciliation for all turns
+    // after the first — assistant responses are received but silently
+    // discarded. (Regression: b0660a2)
     final input = ChatInput(
-      messageId: messageId,
       providerId: selection.providerId,
       modelId: selection.modelId,
       variant: selection.variant,
@@ -335,17 +366,22 @@ class ForwardMessageService {
         directory: target.directory,
       ),
     );
-    var firstYielded = false;
+    // Drain the stream so the prompt_async send is fully accepted by the
+    // server before we look up the resulting user message id. The stream
+    // yields assistant message updates; we don't need them, but we do need
+    // the request to complete server-side. A `Left` (server-side failure
+    // surfaced through the repo) is rethrown so the caller's catch-all
+    // records it as a `send` failure rather than silently treating it as
+    // a successful send followed by an undo-resolve miss.
     await for (final result in stream) {
-      result.fold((_) => null, (_) => null);
-      if (!firstYielded) {
-        firstYielded = true;
-      }
+      result.fold(
+        (failure) => throw failure,
+        (_) => null,
+      );
     }
     final undoEntry = await _resolveForwardedUserMessageId(
       sessionId: target.sessionId,
       directory: target.directory,
-      clientMessageId: messageId,
     );
     return undoEntry;
   }
@@ -353,12 +389,13 @@ class ForwardMessageService {
   /// Find the user message that was just created by the forward action.
   ///
   /// Strategy: list the last few messages of the target session, find the
-  /// most recent user message. If the client-provided message id matches
-  /// one of the returned ids, prefer that exact match.
+  /// most recent user message. Returns null if the target has no user
+  /// message yet — the caller treats that as a `forwardedButUndoUnresolved`
+  /// failure so the UI does not surface a misleading retry that would
+  /// duplicate the send.
   Future<UndoForwardEntry?> _resolveForwardedUserMessageId({
     required String sessionId,
     required String? directory,
-    String? clientMessageId,
   }) async {
     final result = await _getChatMessages(
       GetChatMessagesParams(
@@ -372,18 +409,6 @@ class ForwardMessageService {
       (_) => <ChatMessage>[],
       (value) => value,
     );
-    for (final message in messages) {
-      if (message is! UserMessage) continue;
-      if (clientMessageId != null &&
-          clientMessageId.isNotEmpty &&
-          message.id == clientMessageId) {
-        return UndoForwardEntry(
-          sessionId: sessionId,
-          userMessageId: message.id,
-          directory: directory,
-        );
-      }
-    }
     for (final message in messages) {
       if (message is UserMessage) {
         return UndoForwardEntry(
@@ -438,13 +463,6 @@ class ForwardMessageService {
     }
     buffer.write(text);
     return buffer.toString();
-  }
-
-  String _buildClientMessageId({String? prefix, required String sessionId}) {
-    final now = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-    final salt = sessionId.hashCode.toRadixString(36);
-    final base = (prefix == null || prefix.isEmpty) ? 'fwd' : prefix;
-    return '$base-$now-$salt';
   }
 
   String _truncate(String value, int maxLength) {
