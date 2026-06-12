@@ -127,6 +127,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
       _buildPartialSnackBar(
         successes: result.successes,
         failures: result.failures,
+        provenanceLine: result.provenanceLine,
         forwardService: forwardService,
       ),
     );
@@ -150,6 +151,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
   SnackBar _buildPartialSnackBar({
     required List<UndoForwardEntry> successes,
     required List<ForwardFailure> failures,
+    required String provenanceLine,
     required ForwardMessageService forwardService,
   }) {
     final total = successes.length + failures.length;
@@ -163,7 +165,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
           ? null
           : SnackBarAction(
               label: context.l10n.forwardRetry,
-              onPressed: () => _runRetry(retryable, forwardService),
+              onPressed: () => _runRetry(retryable, provenanceLine, forwardService),
             ),
     );
   }
@@ -176,12 +178,13 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     if (!mounted) return;
     if (failed.isEmpty) return;
     _showChatPageSnackBar(
-      content: Text(context.l10n.forwardServerOffline),
+      content: Text(context.l10n.forwardUndoFailed),
     );
   }
 
   Future<void> _runRetry(
     List<ForwardFailure> failures,
+    String provenanceLine,
     ForwardMessageService forwardService,
   ) async {
     final targets = failures
@@ -197,12 +200,6 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     if (selection == null) return;
     final text = _extractForwardableText(_lastForwardedMessage);
     if (text.isEmpty) return;
-    final provenanceLine = context.l10n.forwardProvenanceLabel(
-      _composeOriginLabel(
-        chatProvider: chatProvider,
-        projectProvider: context.read<ProjectProvider>(),
-      ),
-    );
     final messenger = ScaffoldMessenger.of(context);
     final result = await forwardService.forwardToSessions(
       text: text,
@@ -256,7 +253,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     final project = projectProvider.currentProject;
     final sessionTitle = session?.title?.trim();
     if (sessionTitle != null && sessionTitle.isNotEmpty && project != null) {
-      return '$project.name / $sessionTitle';
+      return '${project.name} / $sessionTitle';
     }
     if (sessionTitle != null && sessionTitle.isNotEmpty) return sessionTitle;
     if (project != null) return project.name;

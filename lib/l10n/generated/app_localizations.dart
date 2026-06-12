@@ -3089,6 +3089,12 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get forwardUndo;
 
+  /// CodeWalk UI string — forwardUndoFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not undo the forward'**
+  String get forwardUndoFailed;
+
   /// CodeWalk UI string — logsAppLogs
   ///
   /// In en, this message translates to:

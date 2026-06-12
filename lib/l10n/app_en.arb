@@ -1721,6 +1721,9 @@
   "@forwardUndo": {
     "description": "CodeWalk UI string — forwardUndo"
   },
+  "@forwardUndoFailed": {
+    "description": "CodeWalk UI string — forwardUndoFailed"
+  },
   "@logsAppLogs": {
     "description": "CodeWalk UI string — logsAppLogs"
   },
@@ -4828,6 +4831,7 @@
   "forwardShortcutHint": "Ctrl+Shift+F",
   "forwardSuccess": "Forwarded to {count} sessions",
   "forwardUndo": "Undo",
+  "forwardUndoFailed": "Could not undo the forward",
   "logsAppLogs": "App Logs",
   "logsClear": "Clear logs",
   "logsCloseSearch": "Close search",

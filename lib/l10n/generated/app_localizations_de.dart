@@ -1739,6 +1739,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get forwardUndo => 'Undo';
 
   @override
+  String get forwardUndoFailed => 'Could not undo the forward';
+
+  @override
   String get logsAppLogs => 'App-Protokolle';
 
   @override

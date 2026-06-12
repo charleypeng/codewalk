@@ -494,6 +494,7 @@
   "forwardShortcutHint": "Ctrl+Shift+F",
   "forwardSuccess": "Encaminhado para {count} sessões",
   "forwardUndo": "Desfazer",
+  "forwardUndoFailed": "Não foi possível desfazer o encaminhamento",
   "logsAppLogs": "Logs do App",
   "logsClear": "Limpar logs",
   "logsCloseSearch": "Fechar busca",

@@ -494,6 +494,7 @@
   "forwardShortcutHint": "Ctrl+Shift+F",
   "forwardSuccess": "Forwarded to {count} sessions",
   "forwardUndo": "Undo",
+  "forwardUndoFailed": "Could not undo the forward",
   "logsAppLogs": "ایپ لاگز",
   "logsClear": "نوشتہ جات صاف کریں۔",
   "logsCloseSearch": "تلاش بند کریں۔",

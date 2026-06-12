@@ -206,7 +206,12 @@ class _ForwardMessageDialogState extends State<ForwardMessageDialog> {
       child: _buildBody(context),
     );
 
-    return Dialog(
+    return PopScope(
+      // Prevent barrier / system back while a send is in flight so the
+      // ForwardResult + undo mapping cannot be silently dropped by
+      // dismissing the dialog mid-send.
+      canPop: !_submitting,
+      child: Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: AppShapes.borderLarge,
       ),
@@ -220,6 +225,7 @@ class _ForwardMessageDialogState extends State<ForwardMessageDialog> {
           maxHeight: mediaQuery.size.height - 64,
         ),
         child: dialogChild,
+      ),
       ),
     );
   }

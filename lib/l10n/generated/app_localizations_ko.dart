@@ -1634,6 +1634,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forwardUndo => 'Undo';
 
   @override
+  String get forwardUndoFailed => 'Could not undo the forward';
+
+  @override
   String get logsAppLogs => '앱 로그';
 
   @override

@@ -90,10 +90,19 @@ class ForwardFailure {
 
 /// Result of a single forward action.
 class ForwardResult {
-  const ForwardResult({required this.successes, required this.failures});
+  const ForwardResult({
+    required this.successes,
+    required this.failures,
+    required this.provenanceLine,
+  });
 
   final List<UndoForwardEntry> successes;
   final List<ForwardFailure> failures;
+
+  /// Captured at the time of the original send so the retry path can
+  /// re-attribute the origin even if the user switched the active
+  /// session/project before clicking Retry.
+  final String provenanceLine;
 
   bool get isFullSuccess => failures.isEmpty;
   int get totalCount => successes.length + failures.length;
@@ -229,13 +238,22 @@ class ForwardMessageService {
         (_) => <ChatSession>[],
         (value) => value,
       );
+      // Fetch all last-message previews in parallel rather than awaiting
+      // them serially — the previous serial waterfall added O(N) network
+      // round-trips on dialog open for users with many recent sessions.
+      final previews = await Future.wait(
+        sessions.map(
+          (session) => _loadLastMessagePreview(
+            projectId: project.id,
+            sessionId: session.id,
+            directory: project.path,
+          ),
+        ),
+        eagerError: false,
+      );
       final mapped = <ForwardSession>[];
-      for (final session in sessions) {
-        final preview = await _loadLastMessagePreview(
-          projectId: project.id,
-          sessionId: session.id,
-          directory: project.path,
-        );
+      for (var index = 0; index < sessions.length; index += 1) {
+        final session = sessions[index];
         mapped.add(
           ForwardSession(
             id: session.id,
@@ -246,7 +264,7 @@ class ForwardMessageService {
             directory: project.path,
             providerId: null,
             modelId: null,
-            lastMessagePreview: preview,
+            lastMessagePreview: previews[index],
           ),
         );
       }
@@ -273,7 +291,11 @@ class ForwardMessageService {
     required ForwardSelection selection,
   }) async {
     if (targets.isEmpty) {
-      return const ForwardResult(successes: [], failures: []);
+      return ForwardResult(
+        successes: const <UndoForwardEntry>[],
+        failures: const <ForwardFailure>[],
+        provenanceLine: provenanceLine,
+      );
     }
 
     final composedText = _composeForwardedText(
@@ -317,7 +339,11 @@ class ForwardMessageService {
       }
     }
 
-    return ForwardResult(successes: successes, failures: failures);
+    return ForwardResult(
+      successes: successes,
+      failures: failures,
+      provenanceLine: provenanceLine,
+    );
   }
 
   /// Revert each entry in [entries] via the official `/revert` endpoint.
@@ -409,7 +435,12 @@ class ForwardMessageService {
       (_) => <ChatMessage>[],
       (value) => value,
     );
-    for (final message in messages) {
+    // The REST endpoint returns messages chronologically (oldest first).
+    // We need the *most recent* user message — the one we just created —
+    // so iterate from the tail of the list. The previous forward order
+    // matched the oldest user message in the returned chunk, which on a
+    // session with prior history reverted the wrong bubble.
+    for (final message in messages.reversed) {
       if (message is UserMessage) {
         return UndoForwardEntry(
           sessionId: sessionId,

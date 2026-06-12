@@ -494,6 +494,7 @@
   "forwardShortcutHint": "Ctrl+Shift+F",
   "forwardSuccess": "Forwarded to {count} sessions",
   "forwardUndo": "Undo",
+  "forwardUndoFailed": "Could not undo the forward",
   "logsAppLogs": "앱 로그",
   "logsClear": "로그 지우기",
   "logsCloseSearch": "검색 닫기",

@@ -1731,6 +1731,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get forwardUndo => 'Desfazer';
 
   @override
+  String get forwardUndoFailed => 'Não foi possível desfazer o encaminhamento';
+
+  @override
   String get logsAppLogs => 'Logs do App';
 
   @override

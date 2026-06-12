@@ -21,8 +21,13 @@ extension _ChatPageShortcuts on _ChatPageState {
     }
 
     final hardwareKeyboard = HardwareKeyboard.instance;
+    // Disambiguate the two F-key shortcuts by requiring !isShiftPressed
+    // for the find path. Without this guard, Ctrl/Cmd+Shift+F would be
+    // intercepted by the find shortcut and the forward shortcut would be
+    // unreachable.
     final isFindShortcut =
         event.logicalKey == LogicalKeyboardKey.keyF &&
+        !hardwareKeyboard.isShiftPressed &&
         (hardwareKeyboard.isControlPressed || hardwareKeyboard.isMetaPressed);
     if (isFindShortcut) {
       _openTimelineSearch();

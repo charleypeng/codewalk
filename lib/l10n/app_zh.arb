@@ -494,6 +494,7 @@
   "forwardShortcutHint": "Ctrl+Shift+F",
   "forwardSuccess": "Forwarded to {count} sessions",
   "forwardUndo": "Undo",
+  "forwardUndoFailed": "Could not undo the forward",
   "logsAppLogs": "应用日志",
   "logsClear": "清除日志",
   "logsCloseSearch": "关闭搜索",
