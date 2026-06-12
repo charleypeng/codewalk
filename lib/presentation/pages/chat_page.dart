@@ -41,6 +41,7 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/codewalk_terminal_controller.dart';
+import '../services/forward_message_service.dart';
 import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
 import '../services/read_aloud_service.dart';
@@ -65,6 +66,7 @@ import '../widgets/chat_session_list.dart';
 import '../widgets/chat_skeleton_shimmer.dart';
 import '../widgets/chat_tour_showcase.dart';
 import '../widgets/codewalk_terminal_panel.dart';
+import '../widgets/forward_message_dialog.dart';
 import '../widgets/message_entrance_animation.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import '../widgets/permission_request_card.dart';
@@ -101,6 +103,7 @@ part 'chat_page/chat_page_timeline_runtime.dart';
 part 'chat_page/chat_page_terminal_runtime.dart';
 part 'chat_page/chat_page_search.dart';
 part 'chat_page/chat_page_mobile_overflow.dart';
+part 'chat_page/chat_page_forward_runtime.dart';
 part 'chat_page/chat_page_widgets.dart';
 
 /// Chat page
@@ -461,6 +464,11 @@ class _ChatPageState extends State<ChatPage>
   String? _terminalSessionSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
+  /// Track the most recently targeted message for the forward keyboard
+  /// shortcut (Ctrl/Cmd+Shift+F). Reset by the forward runtime; read by
+  /// the shortcut resolver in `chat_page_shortcuts.dart`.
+  String? _lastForwardedMessageId;
+  ChatMessage? _lastForwardedMessage;
   final Map<String, _FileExplorerContextState> _fileContextStates =
       <String, _FileExplorerContextState>{};
   final Map<String, String> _fileDiffSignaturesByContext = <String, String>{};

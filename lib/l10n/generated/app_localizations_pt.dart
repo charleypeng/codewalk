@@ -1664,6 +1664,65 @@ class AppLocalizationsPt extends AppLocalizations {
   String get filesTitle => 'Arquivos';
 
   @override
+  String get forwardAction => 'Encaminhar';
+
+  @override
+  String get forwardCancel => 'Cancelar';
+
+  @override
+  String get forwardDialogSubtitle => 'Selecione uma ou várias conversas';
+
+  @override
+  String get forwardDialogTitle => 'Encaminhar para…';
+
+  @override
+  String get forwardLoading => 'Carregando sessões…';
+
+  @override
+  String get forwardNoOpenProjects => 'Nenhum projeto aberto com sessões';
+
+  @override
+  String get forwardNoSessions => 'Nenhuma sessão recente';
+
+  @override
+  String forwardPartial(Object success, Object total) {
+    return 'Encaminhado para $success de $total';
+  }
+
+  @override
+  String forwardProvenanceLabel(Object origin) {
+    return 'Encaminhado de: $origin';
+  }
+
+  @override
+  String get forwardRetry => 'Tentar novamente';
+
+  @override
+  String get forwardSearchHint => 'Buscar';
+
+  @override
+  String forwardSelectedCount(Object count) {
+    return '$count selecionadas';
+  }
+
+  @override
+  String get forwardSend => 'Encaminhar';
+
+  @override
+  String get forwardServerOffline => 'Servidor offline';
+
+  @override
+  String get forwardShortcutHint => 'Ctrl+Shift+F';
+
+  @override
+  String forwardSuccess(Object count) {
+    return 'Encaminhado para $count sessões';
+  }
+
+  @override
+  String get forwardUndo => 'Desfazer';
+
+  @override
   String get logsAppLogs => 'Logs do App';
 
   @override

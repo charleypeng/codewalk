@@ -126,6 +126,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                                     ),
                               ),
                               const Spacer(),
+                              _buildForwardButton(context),
                               _buildShareImageButton(context),
                               if (!isUser &&
                                   message is AssistantMessage) ...[
@@ -315,6 +316,34 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         tooltip: context.l10n.msgShareAsImage,
         onPressed: () => _onShareAsImage(context),
+      ),
+    );
+  }
+
+  /// "Forward to another session" button. Mirrors the Share image button:
+  /// compact, low-emphasis icon. The action is wired by the parent via
+  /// [onForwardMessage] and is intentionally disabled while a share image
+  /// capture is in flight so the header chrome stays stable.
+  Widget _buildForwardButton(BuildContext context) {
+    if (_hideShareImageButtonForCapture) {
+      return const SizedBox(width: 48, height: 48);
+    }
+    final callback = onForwardMessage;
+    if (callback == null) {
+      return const SizedBox.shrink();
+    }
+    return Tooltip(
+      message: context.l10n.forwardAction,
+      child: IconButton(
+        key: ValueKey<String>('chat_message_forward_button_${message.id}'),
+        icon: const Icon(Symbols.forward, size: 18),
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        splashRadius: 18,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        tooltip: context.l10n.forwardAction,
+        onPressed: callback,
       ),
     );
   }

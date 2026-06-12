@@ -1538,6 +1538,65 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filesTitle => '文件';
 
   @override
+  String get forwardAction => 'Forward';
+
+  @override
+  String get forwardCancel => 'Cancel';
+
+  @override
+  String get forwardDialogSubtitle => 'Select one or more conversations';
+
+  @override
+  String get forwardDialogTitle => 'Forward to…';
+
+  @override
+  String get forwardLoading => 'Loading sessions…';
+
+  @override
+  String get forwardNoOpenProjects => 'No open projects with sessions';
+
+  @override
+  String get forwardNoSessions => 'No recent sessions';
+
+  @override
+  String forwardPartial(Object success, Object total) {
+    return 'Forwarded to $success of $total';
+  }
+
+  @override
+  String forwardProvenanceLabel(Object origin) {
+    return 'Forwarded from: $origin';
+  }
+
+  @override
+  String get forwardRetry => 'Retry';
+
+  @override
+  String get forwardSearchHint => 'Search';
+
+  @override
+  String forwardSelectedCount(Object count) {
+    return '$count selected';
+  }
+
+  @override
+  String get forwardSend => 'Forward';
+
+  @override
+  String get forwardServerOffline => 'Server offline';
+
+  @override
+  String get forwardShortcutHint => 'Ctrl+Shift+F';
+
+  @override
+  String forwardSuccess(Object count) {
+    return 'Forwarded to $count sessions';
+  }
+
+  @override
+  String get forwardUndo => 'Undo';
+
+  @override
   String get logsAppLogs => '应用日志';
 
   @override

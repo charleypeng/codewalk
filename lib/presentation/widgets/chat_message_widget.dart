@@ -71,6 +71,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.onSubtaskNavigate,
     this.onTaskToolNavigate,
     this.onFileTap,
+    this.onForwardMessage,
     this.taskToolChildSummariesByPartId =
         const <String, TaskToolChildSummary>{},
     this.searchHighlightQuery,
@@ -88,6 +89,7 @@ class ChatMessageWidget extends StatefulWidget {
   final VoidCallback? onBackgroundLongPressEnd;
   final ValueChanged<SubtaskPart>? onSubtaskNavigate;
   final ValueChanged<ToolPart>? onTaskToolNavigate;
+  final VoidCallback? onForwardMessage;
 
   /// Callback when a file path is tapped in assistant text.
   /// Receives (filePath, lineNumber?, columnNumber?).
@@ -430,6 +432,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;
   ValueChanged<ToolPart>? get onTaskToolNavigate => widget.onTaskToolNavigate;
+  VoidCallback? get onForwardMessage => widget.onForwardMessage;
   TaskToolChildSummary? taskToolChildSummaryForPart(String partId) {
     return widget.taskToolChildSummariesByPartId[partId];
   }

@@ -2975,6 +2975,108 @@ abstract class AppLocalizations {
   /// **'Files'**
   String get filesTitle;
 
+  /// CodeWalk UI string — forwardAction
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get forwardAction;
+
+  /// CodeWalk UI string — forwardCancel
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get forwardCancel;
+
+  /// CodeWalk UI string — forwardDialogSubtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Select one or more conversations'**
+  String get forwardDialogSubtitle;
+
+  /// CodeWalk UI string — forwardDialogTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to…'**
+  String get forwardDialogTitle;
+
+  /// CodeWalk UI string — forwardLoading
+  ///
+  /// In en, this message translates to:
+  /// **'Loading sessions…'**
+  String get forwardLoading;
+
+  /// CodeWalk UI string — forwardNoOpenProjects
+  ///
+  /// In en, this message translates to:
+  /// **'No open projects with sessions'**
+  String get forwardNoOpenProjects;
+
+  /// CodeWalk UI string — forwardNoSessions
+  ///
+  /// In en, this message translates to:
+  /// **'No recent sessions'**
+  String get forwardNoSessions;
+
+  /// CodeWalk UI string — forwardPartial
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded to {success} of {total}'**
+  String forwardPartial(Object success, Object total);
+
+  /// CodeWalk UI string — forwardProvenanceLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded from: {origin}'**
+  String forwardProvenanceLabel(Object origin);
+
+  /// CodeWalk UI string — forwardRetry
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get forwardRetry;
+
+  /// CodeWalk UI string — forwardSearchHint
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get forwardSearchHint;
+
+  /// CodeWalk UI string — forwardSelectedCount
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String forwardSelectedCount(Object count);
+
+  /// CodeWalk UI string — forwardSend
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get forwardSend;
+
+  /// CodeWalk UI string — forwardServerOffline
+  ///
+  /// In en, this message translates to:
+  /// **'Server offline'**
+  String get forwardServerOffline;
+
+  /// CodeWalk UI string — forwardShortcutHint
+  ///
+  /// In en, this message translates to:
+  /// **'Ctrl+Shift+F'**
+  String get forwardShortcutHint;
+
+  /// CodeWalk UI string — forwardSuccess
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded to {count} sessions'**
+  String forwardSuccess(Object count);
+
+  /// CodeWalk UI string — forwardUndo
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get forwardUndo;
+
   /// CodeWalk UI string — logsAppLogs
   ///
   /// In en, this message translates to:

@@ -58,6 +58,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               _openSubConversationFromTaskToolPart(chatProvider, part),
             ),
       onFileTap: _onFilePathTap,
+      onForwardMessage: _canForwardMessage(message)
+          ? () => _openForwardDialog(message)
+          : null,
       taskToolChildSummariesByPartId: taskToolChildSummariesByPartId,
       searchHighlightQuery: _timelineSearchHighlightQuery,
     );

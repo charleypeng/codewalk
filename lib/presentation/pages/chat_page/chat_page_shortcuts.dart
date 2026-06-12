@@ -29,6 +29,18 @@ extension _ChatPageShortcuts on _ChatPageState {
       return true;
     }
 
+    // Forward: Ctrl/Cmd + Shift + F. Disambiguated from the find shortcut
+    // above by requiring the shift modifier, so a plain Ctrl/Cmd+F still
+    // opens the timeline search.
+    final isForwardShortcut =
+        event.logicalKey == LogicalKeyboardKey.keyF &&
+        hardwareKeyboard.isShiftPressed &&
+        (hardwareKeyboard.isControlPressed || hardwareKeyboard.isMetaPressed);
+    if (isForwardShortcut) {
+      unawaited(_invokeForwardShortcut());
+      return true;
+    }
+
     final settingsProvider = context.read<SettingsProvider>();
     for (final action in _activeShortcutActions()) {
       final activator = ShortcutBindingCodec.parse(
@@ -150,6 +162,20 @@ extension _ChatPageShortcuts on _ChatPageState {
     }
     _chatInputController.focusInput();
     await _chatInputController.toggleVoiceInput();
+  }
+
+  /// Keyboard shortcut: forward the most recently focused message (or
+  /// the most recent assistant/user message if no focus has been
+  /// recorded) to other sessions. See ADR-023 (server contract) and the
+  /// issue's "Decisões" section for the auto-send + auto-reply semantics.
+  Future<void> _invokeForwardShortcut() async {
+    final chatProvider = _chatProvider ?? context.read<ChatProvider>();
+    final target = _resolveShortcutForwardTarget(chatProvider);
+    if (target == null) {
+      _showChatPageMessageSnackBar(context.l10n.forwardNoSessions);
+      return;
+    }
+    await _openForwardDialog(target);
   }
 
   Future<void> _requestStopActiveResponse(ChatProvider chatProvider) async {
