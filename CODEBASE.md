@@ -15,7 +15,11 @@
 ```text
 codewalk/
 ├── ai-docs/                            # AI docs and engineering artifacts
-│   └── implement.md                    # Synthesized upstream alignment plan (OpenCode v1.14.x - v1.15.0)
+│   ├── implement.md                    # Synthesized upstream alignment plan (OpenCode v1.14.x - v1.15.0)
+│   ├── opencode_server.md              # Server contract local anchor (used by ADR-023)
+│   ├── opencode_web.md                 # Web contract local anchor (used by ADR-023)
+│   ├── opencode_config.md              # Config schema local anchor (used by ADR-023)
+│   └── opencode_models.md              # Model/provider compatibility notes (used by ADR-023)
 ├── assets/
 │   ├── images/                           # Source and generated launcher/tray icon assets used by `make icons`
 │   ├── parakeet_models.json              # Parakeet STT model catalog (id, label, download URL, lang)
@@ -87,7 +91,7 @@ lib/core/i18n/app_locales.dart                     # Locale registry: 14 support
 lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
 lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
 lib/core/utils/timeline_search_service.dart         # Client-side full-text search over timeline messages: extracts TextPart.text and ReasoningPart.text, performs case-insensitive matching with occurrence counting, and returns results ordered by message age
-lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates, Tailscale adapter swap; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool); Tailscale transport via applyTailscaleAdapter/removeTailscaleAdapter; createHealthCheckDio propagates active adapter to ephemeral Dio instances; OAuth auth ownership via setOAuthToken/clearOAuthToken/clearAuth with Basic Auth coexistence and header restoration
+lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates, Tailscale adapter swap; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool); Tailscale transport via applyTailscaleAdapter/removeTailscaleAdapter; createHealthCheckDio propagates active adapter to ephemeral Dio instances; OAuth auth ownership via setOAuthToken/clearOAuthToken/clearAuth with Basic Auth coexistence and header restoration; sticky OpenCode `X-Session-Id` routing — echoes the `X-Session-Id` returned by the server on later requests (cleared on base URL change and on `clearAuth`)
 lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
@@ -104,7 +108,7 @@ lib/core/auth/oauth_token_storage.dart             # Secure OAuth credential per
 lib/core/auth/oauth_credential.dart                # OAuthCredential model: accessToken, refreshToken, expiresAt, isExpired/isValid check (5-min buffer), JSON serialization (fromJson/toJson)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; app discovery retries scoped `/provider`, `/agent`, and `/config` calls with `directory`-only and then unscoped fallbacks when workspace-scoped queries fail; `/agent` parsing tolerates multiple upstream payload shapes; scoped discovery/config calls forward both `directory` and `workspace` when a project directory is active
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures; SSE backoff loop fix — streamAliveStart enforces 5-second threshold before resetting reconnect counter, ±20% jitter to prevent thundering-herd
-  └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc)
+  └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc); structured named error extraction (`_extractServerMessage`, `_extractValidationErrors`, `_extractNamedServerError`, `_extractTypedDetails`) preserves typed upstream error names/codes/details in surfaced failures
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models, session composer drafts, and per-agent selection memory; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
   └── app_local_datasource_storage_helpers.dart # Secure storage, SharedPreferences, and large-cache migration helpers (part of app_local_datasource.dart; see commit 8759defc)
@@ -252,7 +256,7 @@ chat_provider_lifecycle_ops.dart                 # Extension `ChatProviderLifecy
 chat_provider_history_ops.dart                   # Extension `ChatProviderHistoryOps` on `ChatProvider` for history state/branching and revert support
 chat_provider_realtime_ops.dart           # Realtime event handling; defers stale `session.idle` reconciliation until the active send stream settles so server-driven lifecycle stays authoritative across follow-up sends
 chat_provider_realtime_aux_ops.dart                # Post-reconnect recovery with _postReconnectRecoveryInFlight guard; degraded mode preservation across background/foreground transitions
-chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition; reactive notification dismissal — calls `dismissForSession()` on `permission.replied`, `question.replied`, `question.rejected`, and `session.idle` (current session) + `removeNotifiedRequestIds()` to sync background alert snapshot
+chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition; reactive notification dismissal — calls `dismissForSession()` on `permission.replied`, `question.replied`, `question.rejected`, and `session.idle` (current session) + `removeNotifiedRequestIds()` to sync background alert snapshot; v2 permission/question SSE aliases (`permission.v2.asked`/`updated`/`replied`, `question.v2.asked`/`updated`/`replied`/`rejected`) plus `message.part.delta` (merged with `message.part.updated`) and `session.next.moved` (dirties current context and triggers session/status/active-session refresh)
 chat_provider_message_merge_ops.dart
 chat_provider_message_state_ops.dart             # Message state mutations; auto-title scheduling guard skips subsessions
 chat_provider_draft_part.dart                    # Loads/persists per-session composer drafts and manages rejected-draft envelopes; unconditional draft preservation across background transitions (removed foreground guards from _stashRejectedDraftForRetry)
@@ -382,7 +386,7 @@ test/unit/                             # Unit tests
 test/unit/auth/                        # OAuth auth unit tests
 test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare Managed OAuth flow, PKCE S256 challenge/verifier generation, local callback server lifecycle, credential caching/refresh, isOAuthChallenge detection, trusted endpoint validation, cross-profile isolation
 test/unit/auth/oauth_token_storage_test.dart # OAuth token storage tests: save/load/delete credential, hasValidCredential, OAuthTokenStorageException backend error handling, cross-profile key isolation
-test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth
+test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth, sticky OpenCode `X-Session-Id` echo (echoed on later requests, cleared on base URL change, cleared on `clearAuth`)
 test/unit/providers/                   # ChatProvider split tests (8 files, parallelized with -j 12)
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync

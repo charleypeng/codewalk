@@ -3,6 +3,7 @@
 ## Features
 
 - [x] 10 OpenChamber quota providers parity (Issue #45) - Commit hash: [pending]
+- [x] OpenCode v1.17 compatibility updates - Related commits: 2bf8931 33e66b6
 
 ## Refactoring
 
