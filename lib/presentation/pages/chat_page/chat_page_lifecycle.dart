@@ -474,6 +474,7 @@ extension _ChatPageLifecycle on _ChatPageState {
         );
       }
     }
+    if (!mounted) return;
     final projectProvider = context.read<ProjectProvider>();
     await projectProvider.onServerScopeChanged();
     await _chatProvider?.onServerScopeChanged();
