@@ -13,6 +13,27 @@ String? extractEventSessionId(Map<String, dynamic> properties) {
     return _readTrimmed(info, 'id');
   }
 
+  for (final key in const <String>[
+    'request',
+    'permission',
+    'question',
+    'session',
+  ]) {
+    final nested = properties[key];
+    if (nested is Map) {
+      final nestedSessionId = _readTrimmed(nested, 'sessionID');
+      if (nestedSessionId != null) {
+        return nestedSessionId;
+      }
+      if (key == 'session') {
+        final id = _readTrimmed(nested, 'id');
+        if (id != null) {
+          return id;
+        }
+      }
+    }
+  }
+
   return null;
 }
 

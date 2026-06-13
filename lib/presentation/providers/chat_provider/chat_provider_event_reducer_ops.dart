@@ -66,6 +66,26 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     return merged;
   }
 
+  Map<String, dynamic> _eventPayloadOrNested(
+    Map<String, dynamic> properties,
+    Iterable<String> nestedKeys,
+  ) {
+    for (final key in nestedKeys) {
+      final nested = properties[key];
+      if (nested is Map) {
+        return Map<String, dynamic>.from(nested);
+      }
+    }
+    return properties;
+  }
+
+  void _refreshPendingInteractionsForEvent(String type) {
+    AppLogger.warn(
+      'Refreshing pending interactions after unparseable OpenCode event type=$type',
+    );
+    unawaited(_loadPendingInteractions());
+  }
+
   /// Compose a dedup key from event type + identifying properties.
   /// Returns null for events that cannot be meaningfully deduplicated.
   String? _composeEventDeduplicationKey(ChatEvent event) {
@@ -399,35 +419,34 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           }
           _sessionErrorAttentionIds.remove(sessionId);
-        if (isCurrentSession) {
-        _clearSessionAttentionForSession(sessionId);
-        // Reactive dismiss: the user is already viewing this session, so
-        // any lingering notification (completion, error, permission) is
-        // stale and should be removed immediately.
-        unawaited(
-          eventFeedbackDispatcher?.dismissForSession(sessionId),
-        );
-        _clearActiveSendDraft();
+          if (isCurrentSession) {
+            _clearSessionAttentionForSession(sessionId);
+            // Reactive dismiss: the user is already viewing this session, so
+            // any lingering notification (completion, error, permission) is
+            // stale and should be removed immediately.
+            unawaited(eventFeedbackDispatcher?.dismissForSession(sessionId));
+            _clearActiveSendDraft();
             // OpenCode's session.idle is the terminal lifecycle signal for a
             // turn. End the active-send UI immediately even if CodeWalk's
             // fallback stream is still draining in the background; otherwise
             // the composer status can keep showing stale progress after the
             // final assistant response is already visible.
-    _activeMessageStreamSessionId = null;
-    _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
-    // Cancel pending debounced message fallback timers — session.idle is
-    // the terminal signal; no further remote resolution is needed. This
-    // prevents unnecessary HTTP GETs that the monotonic guard would
-    // discard.
-    for (final entry in _messageFallbackDebounceById.entries.toList()) {
-      final messageId = entry.key;
-      final msgIndex = _messages.indexWhere((m) => m.id == messageId);
-      if (msgIndex != -1 && _messages[msgIndex].sessionId == sessionId) {
-        entry.value.cancel();
-        _messageFallbackDebounceById.remove(messageId);
-      }
-    }
-    if (_state == ChatState.sending) {
+            _activeMessageStreamSessionId = null;
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+            // Cancel pending debounced message fallback timers — session.idle is
+            // the terminal signal; no further remote resolution is needed. This
+            // prevents unnecessary HTTP GETs that the monotonic guard would
+            // discard.
+            for (final entry in _messageFallbackDebounceById.entries.toList()) {
+              final messageId = entry.key;
+              final msgIndex = _messages.indexWhere((m) => m.id == messageId);
+              if (msgIndex != -1 &&
+                  _messages[msgIndex].sessionId == sessionId) {
+                entry.value.cancel();
+                _messageFallbackDebounceById.remove(messageId);
+              }
+            }
+            if (_state == ChatState.sending) {
               _setState(ChatState.loaded);
             } else {
               _notifyListeners();
@@ -555,12 +574,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         }
         break;
       case 'message.part.updated':
+      case 'message.part.delta':
         final partMap = properties['part'] as Map<String, dynamic>?;
         var part = partMap == null
             ? null
             : MessagePartModel.fromJson(partMap).toDomain();
-        final sessionId = part?.sessionId;
-        final messageId = part?.messageId;
+        final sessionId = part?.sessionId ?? properties['sessionID'] as String?;
+        final messageId = part?.messageId ?? properties['messageID'] as String?;
         if (sessionId == null ||
             messageId == null ||
             _currentSession?.id != sessionId) {
@@ -687,9 +707,31 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         break;
       case 'permission.asked':
       case 'permission.updated':
-        final permission = ChatPermissionRequestModel.fromJson(
-          properties,
-        ).toDomain();
+      case 'permission.v2.asked':
+      case 'permission.v2.updated':
+        ChatPermissionRequest permission;
+        try {
+          permission = ChatPermissionRequestModel.fromJson(
+            _eventPayloadOrNested(properties, const <String>[
+              'permission',
+              'request',
+              'info',
+            ]),
+          ).toDomain();
+        } catch (error, stackTrace) {
+          AppLogger.warn(
+            'Failed to parse permission event; falling back to pending list',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          _refreshPendingInteractionsForEvent(event.type);
+          break;
+        }
+        if (permission.id.trim().isEmpty ||
+            permission.sessionId.trim().isEmpty) {
+          _refreshPendingInteractionsForEvent(event.type);
+          break;
+        }
         final sessionPermissions = List<ChatPermissionRequest>.from(
           _pendingPermissionsBySession[permission.sessionId] ??
               const <ChatPermissionRequest>[],
@@ -707,8 +749,18 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         _notifyListeners();
         break;
       case 'permission.replied':
-        final sessionId = properties['sessionID'] as String?;
-        final requestId = properties['requestID'] as String?;
+      case 'permission.v2.replied':
+        final replyPayload = _eventPayloadOrNested(properties, const <String>[
+          'permission',
+          'request',
+          'info',
+        ]);
+        final sessionId =
+            _extractEventSessionId(replyPayload) ??
+            _extractEventSessionId(properties);
+        final requestId =
+            replyPayload['requestID'] as String? ??
+            replyPayload['id'] as String?;
         if (sessionId == null || requestId == null) {
           break;
         }
@@ -733,9 +785,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final hasRemainingQuestions =
             _pendingQuestionsBySession[sessionId]?.isNotEmpty ?? false;
         if (!hasRemainingPermissions && !hasRemainingQuestions) {
-          unawaited(
-            eventFeedbackDispatcher?.dismissForSession(sessionId),
-          );
+          unawaited(eventFeedbackDispatcher?.dismissForSession(sessionId));
         }
         // Sync background alert snapshot so the background worker does not
         // re-notify about this already-handled permission request.
@@ -749,9 +799,30 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         break;
       case 'question.asked':
       case 'question.updated':
-        final question = ChatQuestionRequestModel.fromJson(
-          properties,
-        ).toDomain();
+      case 'question.v2.asked':
+      case 'question.v2.updated':
+        ChatQuestionRequest question;
+        try {
+          question = ChatQuestionRequestModel.fromJson(
+            _eventPayloadOrNested(properties, const <String>[
+              'question',
+              'request',
+              'info',
+            ]),
+          ).toDomain();
+        } catch (error, stackTrace) {
+          AppLogger.warn(
+            'Failed to parse question event; falling back to pending list',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          _refreshPendingInteractionsForEvent(event.type);
+          break;
+        }
+        if (question.id.trim().isEmpty || question.sessionId.trim().isEmpty) {
+          _refreshPendingInteractionsForEvent(event.type);
+          break;
+        }
         final sessionQuestions = List<ChatQuestionRequest>.from(
           _pendingQuestionsBySession[question.sessionId] ??
               const <ChatQuestionRequest>[],
@@ -770,8 +841,19 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         break;
       case 'question.replied':
       case 'question.rejected':
-        final sessionId = properties['sessionID'] as String?;
-        final requestId = properties['requestID'] as String?;
+      case 'question.v2.replied':
+      case 'question.v2.rejected':
+        final replyPayload = _eventPayloadOrNested(properties, const <String>[
+          'question',
+          'request',
+          'info',
+        ]);
+        final sessionId =
+            _extractEventSessionId(replyPayload) ??
+            _extractEventSessionId(properties);
+        final requestId =
+            replyPayload['requestID'] as String? ??
+            replyPayload['id'] as String?;
         if (sessionId == null || requestId == null) {
           break;
         }
@@ -796,9 +878,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final hasRemainingQuestions =
             _pendingQuestionsBySession[sessionId]?.isNotEmpty ?? false;
         if (!hasRemainingPermissions && !hasRemainingQuestions) {
-          unawaited(
-            eventFeedbackDispatcher?.dismissForSession(sessionId),
-          );
+          unawaited(eventFeedbackDispatcher?.dismissForSession(sessionId));
         }
         // Sync background alert snapshot so the background worker does not
         // re-notify about this already-handled question request.
@@ -809,6 +889,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           ),
         );
         _notifyListeners();
+        break;
+      case 'session.next.moved':
+        _dirtyContextKeys.add(_activeContextKey);
+        _scheduleCurrentContextRefresh(
+          reason: 'event-session.next.moved',
+          refreshSessions: true,
+          refreshStatus: true,
+          refreshActiveSession: true,
+        );
         break;
       default:
         break;
@@ -891,19 +980,28 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       'session.diff',
       'session.idle',
       'session.error',
+      'session.next.moved',
       'todo.updated',
       'message.created',
       'message.updated',
       'message.part.updated',
+      'message.part.delta',
       'message.part.removed',
       'message.removed',
       'permission.asked',
       'permission.updated',
       'permission.replied',
+      'permission.v2.asked',
+      'permission.v2.updated',
+      'permission.v2.replied',
       'question.asked',
       'question.updated',
       'question.replied',
       'question.rejected',
+      'question.v2.asked',
+      'question.v2.updated',
+      'question.v2.replied',
+      'question.v2.rejected',
     };
     if (!supportedTypes.contains(event.type)) {
       return false;
@@ -1032,9 +1130,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           return false;
         }
         final previousStatusType = snapshot.sessionStatusById[sessionId]?.type;
-        const nextIdleStatus = SessionStatusInfo(
-          type: SessionStatusType.idle,
-        );
+        const nextIdleStatus = SessionStatusInfo(type: SessionStatusType.idle);
         nextSessionStatusById = Map<String, SessionStatusInfo>.from(
           snapshot.sessionStatusById,
         )..[sessionId] = nextIdleStatus;

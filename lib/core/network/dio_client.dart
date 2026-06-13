@@ -46,6 +46,9 @@ class DioClient {
   String? _oauthBearerToken;
   Uri? _oauthOrigin;
   HttpClientAdapter? _tailscaleAdapter;
+  String? _stickySessionId;
+
+  static const String _stickySessionIdHeader = 'X-Session-Id';
 
   Dio get dio => _dio;
 
@@ -155,6 +158,8 @@ class DioClient {
                 'Bearer $_oauthBearerToken';
           }
 
+          _applyStickySessionHeader(options);
+
           if (!kReleaseMode) {
             options.extra['request_start_ms'] =
                 DateTime.now().millisecondsSinceEpoch;
@@ -165,6 +170,9 @@ class DioClient {
           handler.next(options);
         },
         onResponse: (response, handler) {
+          _rememberStickySessionId(
+            response.headers.value(_stickySessionIdHeader),
+          );
           if (!kReleaseMode) {
             final startMs =
                 response.requestOptions.extra['request_start_ms'] as int?;
@@ -181,6 +189,9 @@ class DioClient {
           handler.next(response);
         },
         onError: (error, handler) {
+          _rememberStickySessionId(
+            error.response?.headers.value(_stickySessionIdHeader),
+          );
           if (!kReleaseMode) {
             final uri = error.requestOptions.uri.toString();
             final method = error.requestOptions.method.toUpperCase();
@@ -214,13 +225,24 @@ class DioClient {
                 'Bearer $_oauthBearerToken';
           }
 
+          _applyStickySessionHeader(options);
+
           if (!kReleaseMode) {
             final uri = options.uri.toString();
             AppLogger.debug('[SSE] --> ${options.method.toUpperCase()} $uri');
           }
           handler.next(options);
         },
+        onResponse: (response, handler) {
+          _rememberStickySessionId(
+            response.headers.value(_stickySessionIdHeader),
+          );
+          handler.next(response);
+        },
         onError: (error, handler) {
+          _rememberStickySessionId(
+            error.response?.headers.value(_stickySessionIdHeader),
+          );
           if (!kReleaseMode) {
             final uri = error.requestOptions.uri.toString();
             final method = error.requestOptions.method.toUpperCase();
@@ -242,6 +264,18 @@ class DioClient {
     return uri.scheme == origin.scheme &&
         uri.host == origin.host &&
         uri.port == origin.port;
+  }
+
+  void _applyStickySessionHeader(RequestOptions options) {
+    final sessionId = _stickySessionId;
+    if (sessionId == null || sessionId.isEmpty) return;
+    options.headers.putIfAbsent(_stickySessionIdHeader, () => sessionId);
+  }
+
+  void _rememberStickySessionId(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return;
+    _stickySessionId = normalized;
   }
 
   void _handleError(DioException error) {

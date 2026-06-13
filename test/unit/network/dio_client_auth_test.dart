@@ -23,6 +23,28 @@ class _FakeAdapter implements HttpClientAdapter {
   }
 }
 
+class _StickySessionAdapter implements HttpClientAdapter {
+  final requests = <RequestOptions>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    final headers = requests.length == 1
+        ? <String, List<String>>{
+            'X-Session-Id': <String>['sticky-session'],
+          }
+        : <String, List<String>>{};
+    return ResponseBody.fromString('{}', 200, headers: headers);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   group('DioClient auth ownership', () {
     test('clearing OAuth restores Basic Auth instead of removing it', () {
@@ -77,5 +99,22 @@ void main() {
       expect(healthDio.httpClientAdapter, same(adapter));
       expect(healthDio.options.baseUrl, 'https://code.example.com');
     });
+  });
+
+  group('DioClient OpenCode sticky routing', () {
+    test(
+      'echoes X-Session-Id from a prior response on later requests',
+      () async {
+        final client = DioClient(baseUrl: 'https://code.example.com');
+        final adapter = _StickySessionAdapter();
+        client.dio.httpClientAdapter = adapter;
+
+        await client.get<dynamic>('/global/health');
+        await client.get<dynamic>('/session');
+
+        expect(adapter.requests, hasLength(2));
+        expect(adapter.requests.last.headers['X-Session-Id'], 'sticky-session');
+      },
+    );
   });
 }

@@ -742,27 +742,30 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
           'Install directory is not writable. Check user permissions.';
     }
     if (opencode.available) {
-      return L10nBridge.current
+      return L10nBridge
+              .current
               ?.onboardingPreconditionOpenCodeAlreadyAvailable ??
           'OpenCode is already available. You can use the detected command immediately.';
     }
     if (defaultTargetPlatform == TargetPlatform.windows && !wsl.available) {
-      return L10nBridge.current
+      return L10nBridge
+              .current
               ?.onboardingPreconditionWindowsWslRecommendation ??
-          'Windows build detected. WSL is recommended by OpenCode docs, but npm install can be used as fallback.';
+          'Windows build detected. OpenCode recommends WSL for the best server experience; run opencode serve inside WSL with OPENCODE_SERVER_PASSWORD and --hostname 0.0.0.0, then connect to the WSL IP. npm install can still be used as a fallback.';
     }
     if (bun.available) {
-      return L10nBridge.current
+      return L10nBridge
+              .current
               ?.onboardingPreconditionInstallViaBunRecommendation ??
           'Install via Bun is recommended by OpenCode maintainers.';
     }
     if (node.available && npm.available) {
       final windowsHint = defaultTargetPlatform == TargetPlatform.windows
           ? (L10nBridge.current?.onboardingPreconditionWindowsPathLagHint ??
-              ' On Windows, refresh checks after install because PATH updates may lag in already-open apps.')
+                ' On Windows, refresh checks after install because PATH updates may lag in already-open apps.')
           : '';
-      final mainText = L10nBridge.current
-              ?.onboardingPreconditionNodeNpmAvailable ??
+      final mainText =
+          L10nBridge.current?.onboardingPreconditionNodeNpmAvailable ??
           'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.';
       return '$mainText$windowsHint';
     }

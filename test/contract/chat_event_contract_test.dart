@@ -59,14 +59,14 @@ void main() {
       fail(reason ?? 'Condition was not met before event queue settled.');
     }
 
-  Future<void> initAndSelectSession() async {
-    await provider.projectProvider.initializeProject();
-    await provider.loadSessions();
-    await provider.selectSession(provider.sessions.first);
-    await provider.initializeProviders();
-    // Allow async subscription setup to complete before emitting events.
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-  }
+    Future<void> initAndSelectSession() async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      // Allow async subscription setup to complete before emitting events.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
 
     // ── server.heartbeat ──
 
@@ -104,56 +104,47 @@ void main() {
     // ── session.created ──
 
     group('session.created', () {
-  test('adds new session to the session list', () async {
-      await initAndSelectSession();
-      final countBefore = provider.sessions.length;
-      final nowMs = DateTime.now().millisecondsSinceEpoch;
-      chatRepository.emitEvent(
-        ChatEvent(
-          type: 'session.created',
-          properties: <String, dynamic>{
-            'info': <String, dynamic>{
-              'id': 'ses_new',
-              'workspaceId': 'default',
-              'time': <String, dynamic>{
-                'created': nowMs,
-                'updated': nowMs,
+      test('adds new session to the session list', () async {
+        await initAndSelectSession();
+        final countBefore = provider.sessions.length;
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'session.created',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'id': 'ses_new',
+                'workspaceId': 'default',
+                'time': <String, dynamic>{'created': nowMs, 'updated': nowMs},
+                'title': 'New from SSE',
               },
-              'title': 'New from SSE',
             },
-          },
-        ),
-      );
+          ),
+        );
         await settleUntil(
           () => provider.sessions.length == countBefore + 1,
           reason: 'Expected new session from session.created event.',
         );
-        expect(
-          provider.sessions.any((s) => s.id == 'ses_new'),
-          isTrue,
-        );
+        expect(provider.sessions.any((s) => s.id == 'ses_new'), isTrue);
       });
 
-  test('ignores session with empty id', () async {
-      await initAndSelectSession();
-      final countBefore = provider.sessions.length;
-      final nowMs = DateTime.now().millisecondsSinceEpoch;
-      chatRepository.emitEvent(
-        ChatEvent(
-          type: 'session.created',
-          properties: <String, dynamic>{
-            'info': <String, dynamic>{
-              'id': '',
-              'workspaceId': 'default',
-              'time': <String, dynamic>{
-                'created': nowMs,
-                'updated': nowMs,
+      test('ignores session with empty id', () async {
+        await initAndSelectSession();
+        final countBefore = provider.sessions.length;
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'session.created',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'id': '',
+                'workspaceId': 'default',
+                'time': <String, dynamic>{'created': nowMs, 'updated': nowMs},
+                'title': 'Empty ID',
               },
-              'title': 'Empty ID',
             },
-          },
-        ),
-      );
+          ),
+        );
         await Future<void>.delayed(const Duration(milliseconds: 30));
         await Future<void>.delayed(const Duration(milliseconds: 30));
         expect(provider.sessions.length, countBefore);
@@ -163,26 +154,27 @@ void main() {
     // ── session.updated ──
 
     group('session.updated', () {
-  test('updates existing session title', () async {
-      await initAndSelectSession();
-      final futureMs =
-          DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch;
-      chatRepository.emitEvent(
-        ChatEvent(
-          type: 'session.updated',
-          properties: <String, dynamic>{
-            'info': <String, dynamic>{
-              'id': 'ses_1',
-              'workspaceId': 'default',
-              'time': <String, dynamic>{
-                'created': futureMs,
-                'updated': futureMs,
+      test('updates existing session title', () async {
+        await initAndSelectSession();
+        final futureMs = DateTime.now()
+            .add(const Duration(hours: 1))
+            .millisecondsSinceEpoch;
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'session.updated',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'id': 'ses_1',
+                'workspaceId': 'default',
+                'time': <String, dynamic>{
+                  'created': futureMs,
+                  'updated': futureMs,
+                },
+                'title': 'Updated Title',
               },
-              'title': 'Updated Title',
             },
-          },
-        ),
-      );
+          ),
+        );
         await settleUntil(
           () =>
               provider.sessions
@@ -194,31 +186,26 @@ void main() {
         );
       });
 
-  test('ignores stale event with older timestamp', () async {
-      await initAndSelectSession();
-      final currentTitle = provider.sessions.first.title;
-      // Use a very old timestamp that is before the existing session time.
-      chatRepository.emitEvent(
-        const ChatEvent(
-          type: 'session.updated',
-          properties: <String, dynamic>{
-            'info': <String, dynamic>{
-              'id': 'ses_1',
-              'workspaceId': 'default',
-              'time': <String, dynamic>{
-                'created': 1,
-                'updated': 1,
+      test('ignores stale event with older timestamp', () async {
+        await initAndSelectSession();
+        final currentTitle = provider.sessions.first.title;
+        // Use a very old timestamp that is before the existing session time.
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.updated',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'id': 'ses_1',
+                'workspaceId': 'default',
+                'time': <String, dynamic>{'created': 1, 'updated': 1},
+                'title': 'Stale Title',
               },
-              'title': 'Stale Title',
             },
-          },
-        ),
-      );
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        final updated = provider.sessions.firstWhere(
-          (s) => s.id == 'ses_1',
+          ),
         );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        final updated = provider.sessions.firstWhere((s) => s.id == 'ses_1');
         expect(updated.title, currentTitle);
       });
     });
@@ -268,9 +255,7 @@ void main() {
         chatRepository.emitEvent(
           const ChatEvent(
             type: 'session.deleted',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_delete_alt',
-            },
+            properties: <String, dynamic>{'sessionID': 'ses_delete_alt'},
           ),
         );
         await settleUntil(
@@ -317,52 +302,54 @@ void main() {
         );
       });
 
-      test('updates session status to idle and marks non-current as unread',
-          () async {
-        await initAndSelectSession();
-        // Add another session so we have a non-current one.
-        chatRepository.sessions.add(
-          ChatSession(
-            id: 'ses_other',
-            workspaceId: 'default',
-            time: DateTime.now(),
-            title: 'Other Session',
-          ),
-        );
-        await provider.loadSessions();
-        // First set busy.
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.status',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_other',
-              'status': <String, dynamic>{'type': 'busy'},
-            },
-          ),
-        );
-        await settleUntil(
-          () =>
-              provider.sessionStatusById['ses_other']?.type ==
-              SessionStatusType.busy,
-          reason: 'Expected other session status to become busy.',
-        );
-        // Now set idle — should mark unread since it's not the current session.
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.status',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_other',
-              'status': <String, dynamic>{'type': 'idle'},
-            },
-          ),
-        );
-        await settleUntil(
-          () =>
-              provider.sessionStatusById['ses_other']?.type ==
-              SessionStatusType.idle,
-          reason: 'Expected other session status to become idle.',
-        );
-      });
+      test(
+        'updates session status to idle and marks non-current as unread',
+        () async {
+          await initAndSelectSession();
+          // Add another session so we have a non-current one.
+          chatRepository.sessions.add(
+            ChatSession(
+              id: 'ses_other',
+              workspaceId: 'default',
+              time: DateTime.now(),
+              title: 'Other Session',
+            ),
+          );
+          await provider.loadSessions();
+          // First set busy.
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_other',
+                'status': <String, dynamic>{'type': 'busy'},
+              },
+            ),
+          );
+          await settleUntil(
+            () =>
+                provider.sessionStatusById['ses_other']?.type ==
+                SessionStatusType.busy,
+            reason: 'Expected other session status to become busy.',
+          );
+          // Now set idle — should mark unread since it's not the current session.
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_other',
+                'status': <String, dynamic>{'type': 'idle'},
+              },
+            ),
+          );
+          await settleUntil(
+            () =>
+                provider.sessionStatusById['ses_other']?.type ==
+                SessionStatusType.idle,
+            reason: 'Expected other session status to become idle.',
+          );
+        },
+      );
 
       test('ignores status event with missing sessionID', () async {
         await initAndSelectSession();
@@ -537,29 +524,30 @@ void main() {
     // ── session.error ──
 
     group('session.error', () {
-      test('enqueues UI notice with error message for current session',
-          () async {
-        await initAndSelectSession();
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.error',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_1',
-              'error': <String, dynamic>{
-                'message': 'Something went wrong',
+      test(
+        'enqueues UI notice with error message for current session',
+        () async {
+          await initAndSelectSession();
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.error',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'error': <String, dynamic>{'message': 'Something went wrong'},
               },
-            },
-          ),
-        );
-        await settleUntil(
-          () => provider.pendingUiNotice != null,
-          reason: 'Expected UI notice to be enqueued for current session error.',
-        );
-        expect(
-          provider.pendingUiNotice!.message,
-          contains('Something went wrong'),
-        );
-      });
+            ),
+          );
+          await settleUntil(
+            () => provider.pendingUiNotice != null,
+            reason:
+                'Expected UI notice to be enqueued for current session error.',
+          );
+          expect(
+            provider.pendingUiNotice!.message,
+            contains('Something went wrong'),
+          );
+        },
+      );
 
       test('sets idle status for non-current session on error', () async {
         await initAndSelectSession();
@@ -603,8 +591,7 @@ void main() {
           () =>
               provider.sessionStatusById['ses_other']?.type ==
               SessionStatusType.idle,
-          reason:
-              'Expected non-current session to go idle on session.error.',
+          reason: 'Expected non-current session to go idle on session.error.',
         );
       });
 
@@ -625,8 +612,7 @@ void main() {
     // ── message.created / message.updated ──
 
     group('message.created', () {
-      test('triggers fallback fetch for message in current session',
-          () async {
+      test('triggers fallback fetch for message in current session', () async {
         await initAndSelectSession();
         final getMessagesBefore = chatRepository.getMessagesCallCount;
         chatRepository.emitEvent(
@@ -653,9 +639,7 @@ void main() {
         chatRepository.emitEvent(
           const ChatEvent(
             type: 'message.created',
-            properties: <String, dynamic>{
-              'info': <String, dynamic>{},
-            },
+            properties: <String, dynamic>{'info': <String, dynamic>{}},
           ),
         );
         await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -698,6 +682,27 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
         expect(provider.state, isNot(equals(ChatState.initial)));
       });
+
+      test(
+        'message.part.delta with direct IDs falls back to message fetch',
+        () async {
+          await initAndSelectSession();
+          final callsBefore = chatRepository.getMessageCallCount;
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'message.part.delta',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'messageID': 'msg_missing',
+                'delta': 'chunk',
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          expect(chatRepository.getMessageCallCount, greaterThan(callsBefore));
+        },
+      );
     });
 
     // ── message.part.removed ──
@@ -789,14 +794,32 @@ void main() {
           () => provider.currentSessionPermissions.isNotEmpty,
           reason: 'Expected permission request to be added.',
         );
-        expect(
-          provider.currentSessionPermissions.first.id,
-          'perm_1',
+        expect(provider.currentSessionPermissions.first.id, 'perm_1');
+        expect(provider.currentSessionPermissions.first.permission, 'bash');
+      });
+
+      test('adds v2 nested permission request to current session', () async {
+        await initAndSelectSession();
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'permission.v2.asked',
+            properties: <String, dynamic>{
+              'request': <String, dynamic>{
+                'id': 'perm_v2',
+                'sessionID': 'ses_1',
+                'permission': 'bash',
+                'patterns': <dynamic>['pwd'],
+                'always': <dynamic>[],
+                'metadata': <String, dynamic>{},
+              },
+            },
+          ),
         );
-        expect(
-          provider.currentSessionPermissions.first.permission,
-          'bash',
+        await settleUntil(
+          () => provider.currentSessionPermissions.isNotEmpty,
+          reason: 'Expected v2 permission request to be added.',
         );
+        expect(provider.currentSessionPermissions.first.id, 'perm_v2');
       });
     });
 
@@ -836,8 +859,7 @@ void main() {
           ),
         );
         await settleUntil(
-          () =>
-              provider.currentSessionPermissions.first.always.isNotEmpty,
+          () => provider.currentSessionPermissions.first.always.isNotEmpty,
           reason: 'Expected permission to be updated with always field.',
         );
         expect(
@@ -936,6 +958,40 @@ void main() {
           'Which model?',
         );
       });
+
+      test('adds v2 nested question request to current session', () async {
+        await initAndSelectSession();
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'question.v2.asked',
+            properties: <String, dynamic>{
+              'request': <String, dynamic>{
+                'id': 'q_v2',
+                'sessionID': 'ses_1',
+                'questions': <dynamic>[
+                  <String, dynamic>{
+                    'question': 'Proceed?',
+                    'header': 'Confirm',
+                    'options': <dynamic>[
+                      <String, dynamic>{
+                        'label': 'Yes',
+                        'description': 'Continue',
+                      },
+                    ],
+                    'multiple': false,
+                    'custom': true,
+                  },
+                ],
+              },
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.currentSessionQuestions.isNotEmpty,
+          reason: 'Expected v2 question request to be added.',
+        );
+        expect(provider.currentSessionQuestions.first.id, 'q_v2');
+      });
     });
 
     // ── question.updated ──
@@ -999,14 +1055,12 @@ void main() {
         );
         await settleUntil(
           () =>
-              provider
-                  .currentSessionQuestions.first.questions.first.multiple ==
+              provider.currentSessionQuestions.first.questions.first.multiple ==
               true,
           reason: 'Expected question to be updated with multiple=true.',
         );
         expect(
-          provider
-              .currentSessionQuestions.first.questions.first.options.length,
+          provider.currentSessionQuestions.first.questions.first.options.length,
           2,
         );
       });
@@ -1111,32 +1165,31 @@ void main() {
     // ── global event routing ──
 
     group('global event routing', () {
-      test('global permission.asked event adds permission for active context',
-          () async {
-        await initAndSelectSession();
-        chatRepository.emitGlobalEvent(
-          const ChatEvent(
-            type: 'permission.asked',
-            properties: <String, dynamic>{
-              'id': 'perm_global_1',
-              'sessionID': 'ses_1',
-              'permission': 'bash',
-              'patterns': <dynamic>['ls'],
-              'always': <dynamic>[],
-              'metadata': <String, dynamic>{},
-            },
-          ),
-        );
-        await settleUntil(
-          () => provider.currentSessionPermissions.isNotEmpty,
-          reason:
-              'Expected global permission.asked to add permission for active context.',
-        );
-        expect(
-          provider.currentSessionPermissions.first.id,
-          'perm_global_1',
-        );
-      });
+      test(
+        'global permission.asked event adds permission for active context',
+        () async {
+          await initAndSelectSession();
+          chatRepository.emitGlobalEvent(
+            const ChatEvent(
+              type: 'permission.asked',
+              properties: <String, dynamic>{
+                'id': 'perm_global_1',
+                'sessionID': 'ses_1',
+                'permission': 'bash',
+                'patterns': <dynamic>['ls'],
+                'always': <dynamic>[],
+                'metadata': <String, dynamic>{},
+              },
+            ),
+          );
+          await settleUntil(
+            () => provider.currentSessionPermissions.isNotEmpty,
+            reason:
+                'Expected global permission.asked to add permission for active context.',
+          );
+          expect(provider.currentSessionPermissions.first.id, 'perm_global_1');
+        },
+      );
 
       test('global server.heartbeat is silently ignored', () async {
         await initAndSelectSession();
@@ -1169,79 +1222,82 @@ void main() {
 
     group('event deduplication', () {
       test(
-          'permission.replied on session stream then global duplicate is skipped by dedup',
-          () async {
-        await initAndSelectSession();
-        // First add a permission.
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'permission.asked',
-            properties: <String, dynamic>{
-              'id': 'perm_dedup_1',
-              'sessionID': 'ses_1',
-              'permission': 'bash',
-              'patterns': <dynamic>['ls'],
-              'always': <dynamic>[],
-              'metadata': <String, dynamic>{},
-            },
-          ),
-        );
-        await settleUntil(
-          () => provider.currentSessionPermissions.isNotEmpty,
-          reason: 'Pre-condition: permission must be added first.',
-        );
-        // Emit permission.replied on session stream — removes the permission.
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'permission.replied',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_1',
-              'requestID': 'perm_dedup_1',
-            },
-          ),
-        );
-        await settleUntil(
-          () => provider.currentSessionPermissions.isEmpty,
-          reason: 'Pre-condition: permission must be removed by session stream reply.',
-        );
-        // Re-add permission so we can test global dedup.
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'permission.asked',
-            properties: <String, dynamic>{
-              'id': 'perm_dedup_1',
-              'sessionID': 'ses_1',
-              'permission': 'bash',
-              'patterns': <dynamic>['ls'],
-              'always': <dynamic>[],
-              'metadata': <String, dynamic>{},
-            },
-          ),
-        );
-        await settleUntil(
-          () => provider.currentSessionPermissions.isNotEmpty,
-          reason: 'Pre-condition: permission must be re-added for dedup test.',
-        );
-        // Emit same permission.replied on global stream — should be deduped.
-        chatRepository.emitGlobalEvent(
-          const ChatEvent(
-            type: 'permission.replied',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_1',
-              'requestID': 'perm_dedup_1',
-            },
-          ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        // Permission should still exist since the global duplicate was deduped.
-        expect(
-          provider.currentSessionPermissions.isNotEmpty,
-          isTrue,
-          reason:
-              'Global duplicate permission.replied should have been deduped, leaving the permission intact.',
-        );
-      });
+        'permission.replied on session stream then global duplicate is skipped by dedup',
+        () async {
+          await initAndSelectSession();
+          // First add a permission.
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'permission.asked',
+              properties: <String, dynamic>{
+                'id': 'perm_dedup_1',
+                'sessionID': 'ses_1',
+                'permission': 'bash',
+                'patterns': <dynamic>['ls'],
+                'always': <dynamic>[],
+                'metadata': <String, dynamic>{},
+              },
+            ),
+          );
+          await settleUntil(
+            () => provider.currentSessionPermissions.isNotEmpty,
+            reason: 'Pre-condition: permission must be added first.',
+          );
+          // Emit permission.replied on session stream — removes the permission.
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'permission.replied',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'requestID': 'perm_dedup_1',
+              },
+            ),
+          );
+          await settleUntil(
+            () => provider.currentSessionPermissions.isEmpty,
+            reason:
+                'Pre-condition: permission must be removed by session stream reply.',
+          );
+          // Re-add permission so we can test global dedup.
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'permission.asked',
+              properties: <String, dynamic>{
+                'id': 'perm_dedup_1',
+                'sessionID': 'ses_1',
+                'permission': 'bash',
+                'patterns': <dynamic>['ls'],
+                'always': <dynamic>[],
+                'metadata': <String, dynamic>{},
+              },
+            ),
+          );
+          await settleUntil(
+            () => provider.currentSessionPermissions.isNotEmpty,
+            reason:
+                'Pre-condition: permission must be re-added for dedup test.',
+          );
+          // Emit same permission.replied on global stream — should be deduped.
+          chatRepository.emitGlobalEvent(
+            const ChatEvent(
+              type: 'permission.replied',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'requestID': 'perm_dedup_1',
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          // Permission should still exist since the global duplicate was deduped.
+          expect(
+            provider.currentSessionPermissions.isNotEmpty,
+            isTrue,
+            reason:
+                'Global duplicate permission.replied should have been deduped, leaving the permission intact.',
+          );
+        },
+      );
     });
 
     // ── event stream failure ──

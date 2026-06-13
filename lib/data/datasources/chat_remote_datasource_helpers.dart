@@ -265,6 +265,40 @@ extension _ChatRemoteDataSourceCommandAndErrorHelpers
     return prefix;
   }
 
+  String _extractNamedServerError(Map<String, dynamic> map) {
+    final name = map['name']?.toString().trim();
+    final code = map['code']?.toString().trim();
+    if ((name == null || name.isEmpty) && (code == null || code.isEmpty)) {
+      return '';
+    }
+
+    final data = map['data'];
+    final dataMap = data is Map ? Map<String, dynamic>.from(data) : null;
+    final dataMessage = dataMap?['message']?.toString().trim();
+    final directMessage = map['message']?.toString().trim();
+    final detail = map['detail']?.toString().trim();
+    final details = <String, dynamic>{};
+    final sourceDetails = map['details'] ?? map['meta'];
+    if (sourceDetails is Map) {
+      details.addAll(Map<String, dynamic>.from(sourceDetails));
+    }
+    if (dataMap != null) {
+      details.addAll(dataMap);
+    }
+    details.remove('message');
+
+    return _composeTypedServerMessage(
+      code: code,
+      name: name,
+      message: dataMessage != null && dataMessage.isNotEmpty
+          ? dataMessage
+          : directMessage != null && directMessage.isNotEmpty
+          ? directMessage
+          : detail,
+      details: _extractTypedDetails(details),
+    );
+  }
+
   String _extractServerMessage(dynamic payload) {
     if (payload == null) {
       return '';
@@ -286,6 +320,10 @@ extension _ChatRemoteDataSourceCommandAndErrorHelpers
       final validationErrors = _extractValidationErrors(map['errors']);
       if (validationErrors.isNotEmpty) {
         return validationErrors;
+      }
+      final namedError = _extractNamedServerError(map);
+      if (namedError.isNotEmpty) {
+        return namedError;
       }
       final errorPayload = map['error'];
       final nestedError = _extractServerMessage(errorPayload);
