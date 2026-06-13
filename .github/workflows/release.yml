@@ -73,7 +73,14 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - runner: windows-latest
+          # Pinned to the windows-2025 image (VS 2022) because the newer
+          # `windows-2025-vs2026` image ships MSVC 14.51 which deprecates
+          # the `<experimental/coroutine>` headers still used by
+          # third-party plugins (`audioplayers_windows`,
+          # `flutter_local_notifications_windows`). Re-evaluate when those
+          # plugins migrate to C++20 `<coroutine>`. See issue #46 review
+          # history for details.
+          - runner: windows-2025
             arch_tag: x64
             flutter_arch: x64
             build_dir: build/windows/x64/runner/Release
