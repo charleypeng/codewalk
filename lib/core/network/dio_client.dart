@@ -56,6 +56,7 @@ class DioClient {
   Dio get sseDio => _sseDio;
 
   void updateBaseUrl(String baseUrl) {
+    _stickySessionId = null;
     _dio.options.baseUrl = baseUrl;
     _sseDio.options.baseUrl = baseUrl;
     AppLogger.debug('[Dio] Base URL updated: $baseUrl');
@@ -113,6 +114,7 @@ class DioClient {
 
   /// Clear every auth owner when the active profile changes.
   void clearAuth() {
+    _stickySessionId = null;
     clearBasicAuth();
     clearOAuthToken();
     AppLogger.debug('[Dio] All auth headers cleared');

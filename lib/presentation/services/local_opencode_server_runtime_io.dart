@@ -748,6 +748,8 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
           'OpenCode is already available. You can use the detected command immediately.';
     }
     if (defaultTargetPlatform == TargetPlatform.windows && !wsl.available) {
+      // Fallback only: localized builds use the ARB value until the next safe
+      // localization sync updates `arb_strings.dart` and regenerated files.
       return L10nBridge
               .current
               ?.onboardingPreconditionWindowsWslRecommendation ??

@@ -116,5 +116,29 @@ void main() {
         expect(adapter.requests.last.headers['X-Session-Id'], 'sticky-session');
       },
     );
+
+    test('clears sticky session when base URL changes', () async {
+      final client = DioClient(baseUrl: 'https://code.example.com');
+      final adapter = _StickySessionAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.get<dynamic>('/global/health');
+      client.updateBaseUrl('https://other.example.com');
+      await client.get<dynamic>('/session');
+
+      expect(adapter.requests.last.headers['X-Session-Id'], isNull);
+    });
+
+    test('clears sticky session when auth is cleared', () async {
+      final client = DioClient(baseUrl: 'https://code.example.com');
+      final adapter = _StickySessionAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.get<dynamic>('/global/health');
+      client.clearAuth();
+      await client.get<dynamic>('/session');
+
+      expect(adapter.requests.last.headers['X-Session-Id'], isNull);
+    });
   });
 }

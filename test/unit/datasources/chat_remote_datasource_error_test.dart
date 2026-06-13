@@ -32,9 +32,21 @@ class _JsonErrorAdapter implements HttpClientAdapter {
 
 void main() {
   group('ChatRemoteDataSource structured errors', () {
-    test('keeps OpenCode named error and reference details', () async {
+    Future<String> errorMessageFor(Map<String, dynamic> payload) async {
       final dio = Dio(BaseOptions(baseUrl: 'http://localhost'));
-      dio.httpClientAdapter = _JsonErrorAdapter(<String, dynamic>{
+      dio.httpClientAdapter = _JsonErrorAdapter(payload);
+      final datasource = ChatRemoteDataSourceImpl(dio: dio);
+
+      try {
+        await datasource.getSessions();
+      } on ServerException catch (exception) {
+        return exception.message;
+      }
+      fail('Expected ServerException');
+    }
+
+    test('keeps OpenCode named error and reference details', () async {
+      final message = await errorMessageFor(<String, dynamic>{
         'error': <String, dynamic>{
           'name': 'UnknownError',
           'data': <String, dynamic>{
@@ -43,24 +55,48 @@ void main() {
           },
         },
       });
-      final datasource = ChatRemoteDataSourceImpl(dio: dio);
 
-      expect(
-        datasource.getSessions(),
-        throwsA(
-          isA<ServerException>()
-              .having(
-                (exception) => exception.message,
-                'message',
-                contains('UnknownError'),
-              )
-              .having(
-                (exception) => exception.message,
-                'reference',
-                contains('log_ref_123'),
-              ),
-        ),
-      );
+      expect(message, contains('UnknownError'));
+      expect(message, contains('Stored message is corrupt'));
+      expect(message, contains('log_ref_123'));
+    });
+
+    test('keeps named error code and direct message', () async {
+      final message = await errorMessageFor(<String, dynamic>{
+        'error': <String, dynamic>{
+          'name': 'ServiceUnavailableError',
+          'code': 'retry_later',
+          'message': 'Mutation is not available yet',
+        },
+      });
+
+      expect(message, contains('ServiceUnavailableError'));
+      expect(message, contains('retry_later'));
+      expect(message, contains('Mutation is not available yet'));
+    });
+
+    test('surfaces details when data is absent', () async {
+      final message = await errorMessageFor(<String, dynamic>{
+        'error': <String, dynamic>{
+          'name': 'SessionNotFoundError',
+          'details': <String, dynamic>{'reference': 'log_ref_456'},
+        },
+      });
+
+      expect(message, contains('SessionNotFoundError'));
+      expect(message, contains('log_ref_456'));
+    });
+
+    test('surfaces meta fields as details', () async {
+      final message = await errorMessageFor(<String, dynamic>{
+        'error': <String, dynamic>{
+          'name': 'UnknownError',
+          'meta': <String, dynamic>{'traceId': 'trace_789'},
+        },
+      });
+
+      expect(message, contains('UnknownError'));
+      expect(message, contains('trace_789'));
     });
   });
 }

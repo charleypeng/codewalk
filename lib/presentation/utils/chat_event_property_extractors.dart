@@ -13,6 +13,8 @@ String? extractEventSessionId(Map<String, dynamic> properties) {
     return _readTrimmed(info, 'id');
   }
 
+  // V2 permission/question events place the authoritative request payload under
+  // `request`; keep it first so notification cleanup uses the request owner.
   for (final key in const <String>[
     'request',
     'permission',

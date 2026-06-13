@@ -906,6 +906,44 @@ void main() {
         );
       });
 
+      test('removes permission request after v2 nested reply', () async {
+        await initAndSelectSession();
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'permission.v2.asked',
+            properties: <String, dynamic>{
+              'request': <String, dynamic>{
+                'id': 'perm_v2_reply',
+                'sessionID': 'ses_1',
+                'permission': 'bash',
+                'patterns': <dynamic>['pwd'],
+                'always': <dynamic>[],
+                'metadata': <String, dynamic>{},
+              },
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.currentSessionPermissions.isNotEmpty,
+          reason: 'Pre-condition: v2 permission must be added first.',
+        );
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'permission.v2.replied',
+            properties: <String, dynamic>{
+              'request': <String, dynamic>{
+                'sessionID': 'ses_1',
+                'id': 'perm_v2_reply',
+              },
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.currentSessionPermissions.isEmpty,
+          reason: 'Expected v2 permission to be removed after reply.',
+        );
+      });
+
       test('skips event with missing sessionID or requestID', () async {
         await initAndSelectSession();
         chatRepository.emitEvent(
@@ -1158,6 +1196,54 @@ void main() {
         await settleUntil(
           () => provider.currentSessionQuestions.isEmpty,
           reason: 'Expected question to be removed after rejection.',
+        );
+      });
+
+      test('removes question request after v2 nested rejection', () async {
+        await initAndSelectSession();
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'question.v2.asked',
+            properties: <String, dynamic>{
+              'request': <String, dynamic>{
+                'id': 'q_v2_reject',
+                'sessionID': 'ses_1',
+                'questions': <dynamic>[
+                  <String, dynamic>{
+                    'question': 'Proceed?',
+                    'header': 'Confirm',
+                    'options': <dynamic>[
+                      <String, dynamic>{
+                        'label': 'Yes',
+                        'description': 'Continue',
+                      },
+                    ],
+                    'multiple': false,
+                    'custom': true,
+                  },
+                ],
+              },
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.currentSessionQuestions.isNotEmpty,
+          reason: 'Pre-condition: v2 question must be added first.',
+        );
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'question.v2.rejected',
+            properties: <String, dynamic>{
+              'request': <String, dynamic>{
+                'sessionID': 'ses_1',
+                'id': 'q_v2_reject',
+              },
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.currentSessionQuestions.isEmpty,
+          reason: 'Expected v2 question to be removed after rejection.',
         );
       });
     });
