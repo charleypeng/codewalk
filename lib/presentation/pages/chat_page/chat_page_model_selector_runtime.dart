@@ -52,7 +52,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 child: Badge.count(
                   isLabelVisible:
                       chatProvider.currentThreadPermissionRequests.isNotEmpty,
-                  count: chatProvider.currentThreadPermissionRequests.length > 99
+                  count:
+                      chatProvider.currentThreadPermissionRequests.length > 99
                       ? 99
                       : chatProvider.currentThreadPermissionRequests.length,
                   child: IconButton(
@@ -75,22 +76,25 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                         Size(40, 40),
                       ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      foregroundColor:
-                          WidgetStateProperty.resolveWith<Color?>((states) {
+                      foregroundColor: WidgetStateProperty.resolveWith<Color?>((
+                        states,
+                      ) {
                         if (states.contains(WidgetState.selected)) {
                           return autoApproveColor;
                         }
                         return colorScheme.onSurfaceVariant;
                       }),
-                      backgroundColor:
-                          WidgetStateProperty.resolveWith<Color?>((states) {
+                      backgroundColor: WidgetStateProperty.resolveWith<Color?>((
+                        states,
+                      ) {
                         if (states.contains(WidgetState.pressed)) {
                           return autoApproveColor.withValues(alpha: 0.18);
                         }
                         return Colors.transparent;
                       }),
-                      overlayColor:
-                          WidgetStateProperty.resolveWith<Color?>((states) {
+                      overlayColor: WidgetStateProperty.resolveWith<Color?>((
+                        states,
+                      ) {
                         if (states.contains(WidgetState.pressed) ||
                             states.contains(WidgetState.hovered) ||
                             states.contains(WidgetState.focused)) {
@@ -102,10 +106,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                     onPressed: settingsProvider == null
                         ? null
                         : () => unawaited(
-                            settingsProvider
-                                .setComposerAutoApprovePermissions(
-                                  !autoApproveEnabled,
-                                ),
+                            settingsProvider.setComposerAutoApprovePermissions(
+                              !autoApproveEnabled,
+                            ),
                           ),
                   ),
                 ),
@@ -127,8 +130,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       key: const ValueKey<String>('agent_selector_button'),
                       side: BorderSide.none,
                       shape: const StadiumBorder(),
-                      backgroundColor:
-                          selectedAgentColor?.withValues(alpha: 0.16),
+                      backgroundColor: selectedAgentColor?.withValues(
+                        alpha: 0.16,
+                      ),
                       label: Text(
                         selectedAgent == null
                             ? context.l10n.chatChooseAgent
@@ -160,9 +164,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   : context.l10n.chatChooseModel,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: isCompact
-                      ? compactChipMaxWidth
-                      : modelChipMaxWidth,
+                  maxWidth: isCompact ? compactChipMaxWidth : modelChipMaxWidth,
                 ),
                 child: ActionChip(
                   key: isSubConversation
@@ -628,13 +630,16 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     if (_containsAnyBrandToken(normalizedProvider, const ['mistral'])) {
       return SimpleIcons.mistralai;
     }
-  if (_containsAnyBrandToken(normalizedProvider, const ['xai'])) {
-    return SimpleIcons.spacex;
-  }
-  if (_containsAnyBrandToken(normalizedProvider, const ['digitalocean', 'digitalocean_inference'])) {
-    return SimpleIcons.digitalocean;
-  }
-  if (_containsAnyBrandToken(normalizedProvider, const ['github'])) {
+    if (_containsAnyBrandToken(normalizedProvider, const ['xai'])) {
+      return SimpleIcons.spacex;
+    }
+    if (_containsAnyBrandToken(normalizedProvider, const [
+      'digitalocean',
+      'digitalocean_inference',
+    ])) {
+      return SimpleIcons.digitalocean;
+    }
+    if (_containsAnyBrandToken(normalizedProvider, const ['github'])) {
       return SimpleIcons.github;
     }
     if (_containsAnyBrandToken(normalizedProvider, const ['gitlab'])) {
@@ -672,6 +677,36 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     }
     if (_containsAnyBrandToken(normalizedProvider, const ['v0'])) {
       return SimpleIcons.v0;
+    }
+    if (_containsAnyBrandToken(normalizedProvider, const [
+      'opencode',
+      'opencode-go',
+    ])) {
+      // simple_icons does not ship an OpenCode glyph; use a code-braces stand-in.
+      return Symbols.code;
+    }
+    if (_containsAnyBrandToken(normalizedProvider, const [
+      'snowflake',
+      'cortex',
+    ])) {
+      // simple_icons does not ship a Snowflake glyph; use the Material
+      // "ac_unit" glyph as a snowflake stand-in.
+      return Symbols.ac_unit;
+    }
+    if (_containsAnyBrandToken(normalizedProvider, const [
+      'cohere',
+      'cohere-north',
+    ])) {
+      // simple_icons does not ship a Cohere glyph; fall back to a sparkle.
+      return Symbols.auto_awesome;
+    }
+    if (_containsAnyBrandToken(normalizedProvider, const [
+      'grok',
+      'xai',
+      'x-ai',
+    ])) {
+      // simple_icons does not ship an xAI/Grok glyph; fall back to a bolt.
+      return Symbols.bolt;
     }
 
     return Symbols.smart_toy;
@@ -838,14 +873,19 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     final entries = <_ModelSelectorEntry>[];
     final providers = _sortedProviders(chatProvider);
     for (final provider in providers) {
-      final models = provider.models.values.toList(growable: false)
-        ..sort((a, b) {
-          final byName = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          if (byName != 0) {
-            return byName;
-          }
-          return a.id.compareTo(b.id);
-        });
+      final models =
+          provider.models.values
+              .where((model) => !model.hidden)
+              .toList(growable: false)
+            ..sort((a, b) {
+              final byName = a.name.toLowerCase().compareTo(
+                b.name.toLowerCase(),
+              );
+              if (byName != 0) {
+                return byName;
+              }
+              return a.id.compareTo(b.id);
+            });
       for (final model in models) {
         entries.add(
           _ModelSelectorEntry(
@@ -1367,8 +1407,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                               maxLines: 1,
                                             ),
                                           ),
-                                          subtitle: entry.modelName ==
-                                                  entry.modelId
+                                          subtitle:
+                                              entry.modelName == entry.modelId
                                               ? null
                                               : Tooltip(
                                                   message: entry.modelId,

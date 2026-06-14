@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 
 /// Technical comment translated to English.
 class Provider extends Equatable {
-
   const Provider({
     required this.id,
     required this.name,
@@ -24,7 +23,6 @@ class Provider extends Equatable {
 
 /// Technical comment translated to English.
 class Model extends Equatable {
-
   const Model({
     required this.id,
     required this.name,
@@ -41,6 +39,7 @@ class Model extends Equatable {
     this.lastUpdated,
     this.modalities,
     this.openWeights,
+    this.hidden = false,
   });
   final String id;
   final String name;
@@ -57,6 +56,7 @@ class Model extends Equatable {
   final String? lastUpdated;
   final Map<String, dynamic>? modalities;
   final bool? openWeights;
+  final bool hidden;
 
   @override
   List<Object?> get props => [
@@ -75,6 +75,7 @@ class Model extends Equatable {
     lastUpdated,
     modalities,
     openWeights,
+    hidden,
   ];
 }
 
@@ -98,7 +99,6 @@ class ModelVariant extends Equatable {
 
 /// Technical comment translated to English.
 class ModelCost extends Equatable {
-
   const ModelCost({
     required this.input,
     required this.output,
@@ -116,7 +116,6 @@ class ModelCost extends Equatable {
 
 /// Technical comment translated to English.
 class ModelLimit extends Equatable {
-
   const ModelLimit({required this.context, required this.output});
   final int context;
   final int output;
@@ -127,7 +126,6 @@ class ModelLimit extends Equatable {
 
 /// Technical comment translated to English.
 class ProvidersResponse extends Equatable {
-
   const ProvidersResponse({
     required this.providers,
     required this.defaultModels,

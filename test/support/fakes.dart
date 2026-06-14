@@ -1521,8 +1521,8 @@ class FakeChatRepository implements ChatRepository {
   // Per-message diff map keyed by sessionId. When populated, the fake
   // returns the entry matching the requested messageId; otherwise it falls
   // back to the legacy `sessionDiffById` map for backward compatibility.
-  final Map<String, Map<String, List<SessionDiff>>>
-      sessionDiffByMessageId = <String, Map<String, List<SessionDiff>>>{};
+  final Map<String, Map<String, List<SessionDiff>>> sessionDiffByMessageId =
+      <String, Map<String, List<SessionDiff>>>{};
 
   // Optional delay hooks for concurrency verification in tests.
   Future<void> Function()? getSessionsDelay;
@@ -1596,6 +1596,8 @@ class FakeChatRepository implements ChatRepository {
   List<List<String>>? lastQuestionAnswers;
   String? lastQuestionRejectRequestId;
   String? lastQuestionRejectSessionId;
+  Failure? replyQuestionFailure;
+  Failure? rejectQuestionFailure;
   int abortSessionCallCount = 0;
   String? lastAbortProjectId;
   String? lastAbortSessionId;
@@ -1910,6 +1912,9 @@ class FakeChatRepository implements ChatRepository {
     lastQuestionReplySessionId = sessionId;
     lastQuestionReplyRequestId = requestId;
     lastQuestionAnswers = answers;
+    if (replyQuestionFailure != null) {
+      return Left(replyQuestionFailure!);
+    }
     pendingQuestions = pendingQuestions
         .where((item) => item.id != requestId)
         .toList(growable: false);
@@ -1924,6 +1929,9 @@ class FakeChatRepository implements ChatRepository {
   }) async {
     lastQuestionRejectSessionId = sessionId;
     lastQuestionRejectRequestId = requestId;
+    if (rejectQuestionFailure != null) {
+      return Left(rejectQuestionFailure!);
+    }
     pendingQuestions = pendingQuestions
         .where((item) => item.id != requestId)
         .toList(growable: false);

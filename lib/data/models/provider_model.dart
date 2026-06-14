@@ -218,6 +218,7 @@ class ModelModel {
       lastUpdated: ProviderModel._safeString(json['last_updated']),
       modalities: modalities,
       openWeights: json['open_weights'] as bool?,
+      hidden: json['hidden'] as bool? ?? false,
     );
   }
   const ModelModel({
@@ -236,6 +237,7 @@ class ModelModel {
     this.lastUpdated,
     this.modalities,
     this.openWeights,
+    this.hidden = false,
   });
 
   final String id;
@@ -253,6 +255,7 @@ class ModelModel {
   final String? lastUpdated;
   final Map<String, dynamic>? modalities;
   final bool? openWeights;
+  final bool hidden;
 
   static bool _coerceBool(dynamic value) {
     if (value is bool) return value;
@@ -336,6 +339,7 @@ class ModelModel {
     'last_updated': lastUpdated,
     'modalities': modalities,
     'open_weights': openWeights,
+    'hidden': hidden,
   };
 
   Model toDomain() {
@@ -355,6 +359,7 @@ class ModelModel {
       lastUpdated: lastUpdated,
       modalities: modalities,
       openWeights: openWeights,
+      hidden: hidden,
     );
   }
 }

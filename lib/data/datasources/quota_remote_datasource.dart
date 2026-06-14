@@ -68,6 +68,16 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     'cursor',
     'ollama-cloud',
     'ollamacloud',
+    // OpenCode v1.16.2 (Snowflake Cortex) and v1.17.x (Grok/xAI, Cohere North).
+    'snowflake-cortex',
+    'snowflake',
+    'cortex',
+    'grok',
+    'xai',
+    'x-ai',
+    'cohere',
+    'cohere-north',
+    'cohere-north-mini-code',
   };
 
   @override
@@ -365,10 +375,9 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       ..write(_jsCodexProvider())
       ..write(_jsGoogleProvider())
       ..write(_jsGitHubCopilotProvider())
-      ..write(_jsOpenCodeGoProvider(
-        openCodeGoWsB64: wsB64,
-        openCodeGoCkB64: ckB64,
-      ))
+      ..write(
+        _jsOpenCodeGoProvider(openCodeGoWsB64: wsB64, openCodeGoCkB64: ckB64),
+      )
       ..write(_jsNanoGptProvider())
       ..write(_jsWaferProvider())
       ..write(_jsGitHubCopilotAddonProvider())

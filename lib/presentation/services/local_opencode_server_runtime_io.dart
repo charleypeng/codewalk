@@ -753,7 +753,7 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
       return L10nBridge
               .current
               ?.onboardingPreconditionWindowsWslRecommendation ??
-          'Windows build detected. OpenCode recommends WSL for the best server experience; run opencode serve inside WSL with OPENCODE_SERVER_PASSWORD and --hostname 0.0.0.0, then connect to the WSL IP. npm install can still be used as a fallback.';
+          'Windows build detected. Prefer the native opencode.cmd / opencode.exe path; WSL is the power-user fallback — run opencode serve inside WSL with OPENCODE_SERVER_PASSWORD and --hostname 0.0.0.0, then connect to the WSL IP. npm install can still be used as a fallback.';
     }
     if (bun.available) {
       return L10nBridge

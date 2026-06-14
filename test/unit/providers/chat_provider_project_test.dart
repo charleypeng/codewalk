@@ -144,8 +144,8 @@ void main() {
           ],
         );
         expect(chatRepository.lastQuestionReplyRequestId, 'q_1');
-  expect(chatRepository.lastQuestionReplyRequestId, 'q_1');
-  expect(chatRepository.lastQuestionAnswers, const <List<String>>[
+        expect(chatRepository.lastQuestionReplyRequestId, 'q_1');
+        expect(chatRepository.lastQuestionAnswers, const <List<String>>[
           <String>['Yes'],
         ]);
       },
@@ -493,8 +493,70 @@ void main() {
 
         await provider.rejectQuestionRequest(requestId: 'q_reject_1');
 
-  expect(chatRepository.lastQuestionRejectRequestId, 'q_reject_1');
-  expect(provider.currentQuestionRequest, isNull);
+        expect(chatRepository.lastQuestionRejectRequestId, 'q_reject_1');
+        expect(provider.currentQuestionRequest, isNull);
+      },
+    );
+
+    test(
+      'submitQuestionAnswers marks request as submit-failed on failure',
+      () async {
+        chatRepository.pendingQuestions = const <ChatQuestionRequest>[
+          ChatQuestionRequest(
+            id: 'q_submit_1',
+            sessionId: 'ses_1',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Pick one',
+                header: 'Pick',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'A', description: 'Alpha'),
+                ],
+              ),
+            ],
+          ),
+        ];
+        chatRepository.replyQuestionFailure = const ServerFailure(
+          'submit rejected',
+        );
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        expect(provider.currentQuestionRequest?.id, 'q_submit_1');
+
+        await provider.submitQuestionAnswers(
+          requestId: 'q_submit_1',
+          answers: <List<String>>[
+            <String>['A'],
+          ],
+        );
+
+        // Request stays in the pending list so the UI can show a retry state.
+        expect(provider.currentQuestionRequest?.id, 'q_submit_1');
+        expect(provider.questionSubmitFailedRequestIds, contains('q_submit_1'));
+
+        // Clearing the error marker is exposed for the UI to use on retry.
+        provider.dismissQuestionSubmitError('q_submit_1');
+        expect(
+          provider.questionSubmitFailedRequestIds,
+          isNot(contains('q_submit_1')),
+        );
       },
     );
 

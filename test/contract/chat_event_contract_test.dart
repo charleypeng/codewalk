@@ -519,6 +519,49 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
         expect(provider.state, isNot(equals(ChatState.initial)));
       });
+
+      test(
+        'trailing session.error after session.idle still surfaces a notice',
+        () async {
+          // OpenChamber 1.12.1 fixed a class of regressions where late
+          // session.error events after session.idle were silently dropped. Lock
+          // in CodeWalk's P-002 invariant by emitting idle first and verifying a
+          // subsequent session.error still enqueues a UI notice.
+          await initAndSelectSession();
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.idle',
+              properties: <String, dynamic>{'sessionID': 'ses_1'},
+            ),
+          );
+          await settleUntil(
+            () =>
+                provider.sessionStatusById['ses_1']?.type ==
+                SessionStatusType.idle,
+            reason: 'Pre-condition: session must be idle.',
+          );
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.error',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'error': <String, dynamic>{
+                  'message': 'Late failure after idle',
+                },
+              },
+            ),
+          );
+          await settleUntil(
+            () => provider.pendingUiNotice != null,
+            reason:
+                'Expected trailing session.error to enqueue a UI notice after session.idle.',
+          );
+          expect(
+            provider.pendingUiNotice!.message,
+            contains('Late failure after idle'),
+          );
+        },
+      );
     });
 
     // ── session.error ──

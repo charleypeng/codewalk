@@ -241,5 +241,25 @@ void main() {
       expect(m.cost.input, 0.0, reason: 'invalid cost fallback to default');
       expect(m.limit.context, 0, reason: 'invalid limit fallback to default');
     });
+
+    test('parses model-level hidden flag and defaults to false', () {
+      final hiddenModel = ProvidersResponseModel.fromJson(<String, dynamic>{
+        'providers': <dynamic>[
+          <String, dynamic>{
+            'id': 'anthropic',
+            'models': <String, dynamic>{
+              'claude-hidden': <String, dynamic>{
+                'id': 'claude-hidden',
+                'hidden': true,
+              },
+              'claude-visible': <String, dynamic>{'id': 'claude-visible'},
+            },
+          },
+        ],
+      }).providers.single;
+
+      expect(hiddenModel.models['claude-hidden']?.hidden, isTrue);
+      expect(hiddenModel.models['claude-visible']?.hidden, isFalse);
+    });
   });
 }

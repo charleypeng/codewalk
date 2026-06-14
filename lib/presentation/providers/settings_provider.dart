@@ -1418,6 +1418,10 @@ class SettingsProvider extends ChangeNotifier {
     for (final provider in parsed.providers) {
       for (final entry in provider.models.entries) {
         final model = entry.value;
+        if (model.hidden) {
+          // Honor upstream `hidden` flag parity with the chat model selector.
+          continue;
+        }
         options.add(
           OpenCodeDefaultModelOption(
             key: '${provider.id}/${model.id}',

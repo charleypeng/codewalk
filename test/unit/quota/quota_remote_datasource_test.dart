@@ -169,7 +169,19 @@ void main() {
       script,
       contains('w.rolling = tUW({ uP: sub.rolling.usedPercent, wS: null'),
     );
-    expect(script, contains('"ollamacloud"].includes(k)'));
+    // The unsupported-keys filter is a minified string literal in the JS
+    // shell-fallback; assert on a robust anchor (the trailing "].includes(k)"
+    // pattern) plus the order-stable quota auth key set so the assertion
+    // survives adding new provider keys to the Dart register.
+    expect(script, contains('].includes(k)'));
+    expect(
+      script,
+      contains('"ollama-cloud","ollamacloud"'),
+      reason:
+          'Quota shell-fallback must keep the ollama/ollamacloud aliases '
+          'in its unsupported-filter list so the ollama-cloud register is '
+          'honored.',
+    );
     expect(script, contains("const GDP = 'rising-fact-p41fc';"));
     expect(
       script,

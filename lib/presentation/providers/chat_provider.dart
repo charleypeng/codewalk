@@ -279,6 +279,11 @@ class ChatProvider extends ChangeNotifier {
       <String, List<ChatPermissionRequest>>{};
   Map<String, List<ChatQuestionRequest>> _pendingQuestionsBySession =
       <String, List<ChatQuestionRequest>>{};
+  // Tracks question submit/dismiss calls that returned an error so the UI can
+  // surface a transient "submit failed" state instead of silently dropping the
+  // request. Cleared on the next successful reply/reject, a fresh ask event,
+  // or an explicit `dismissQuestionSubmitError` call.
+  final Set<String> _questionSubmitFailedRequestIds = <String>{};
   final Set<String> _sessionUnreadCompletionIds = <String>{};
   final Map<String, DateTime> _sessionUnreadCompletionTimestamps =
       <String, DateTime>{};
@@ -646,6 +651,19 @@ class ChatProvider extends ChangeNotifier {
       Map<String, int>.unmodifiable(_modelUsageCounts);
   String get activeServerId => _activeServerId;
   bool get isRespondingInteraction => _isRespondingInteraction;
+
+  /// Request IDs whose last submit/dismiss attempt returned an error.
+  /// The UI can show a transient retry affordance for these requests.
+  Set<String> get questionSubmitFailedRequestIds =>
+      Set<String>.unmodifiable(_questionSubmitFailedRequestIds);
+
+  void dismissQuestionSubmitError(String requestId) {
+    if (_questionSubmitFailedRequestIds.remove(requestId)) {
+      _threadPermissionsVersion++;
+      notifyListeners();
+    }
+  }
+
   ChatProvidersRefreshState get providersRefreshState => _providersRefreshState;
   String? get providersRefreshErrorMessage => _providersRefreshErrorMessage;
   bool get isProvidersRefreshInProgress =>
@@ -1483,10 +1501,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  bool _sessionDiffListEquals(
-    List<SessionDiff> a,
-    List<SessionDiff> b,
-  ) {
+  bool _sessionDiffListEquals(List<SessionDiff> a, List<SessionDiff> b) {
     if (identical(a, b)) {
       return true;
     }
@@ -1771,7 +1786,8 @@ class ChatProvider extends ChangeNotifier {
           final snapshot = diffResolution.appliedIfStillEquals;
           if (snapshot != null) {
             final current = _sessionDiffById[sessionId];
-            final stillMatches = identical(current, snapshot) ||
+            final stillMatches =
+                identical(current, snapshot) ||
                 (current != null &&
                     current.length == snapshot.length &&
                     _sessionDiffListEquals(current, snapshot));
@@ -1808,8 +1824,8 @@ class ChatProvider extends ChangeNotifier {
         if (diffResolution.error != null) {
           // Latch the error only when we have no usable cached diff data
           // (mirrors the failure case in _resolveSessionDiff).
-          final hasUsableCached = (_sessionDiffById[sessionId] ?? const <SessionDiff>[])
-              .isNotEmpty;
+          final hasUsableCached =
+              (_sessionDiffById[sessionId] ?? const <SessionDiff>[]).isNotEmpty;
           if (!hasUsableCached) {
             _sessionDiffErrorById[sessionId] = diffResolution.error!;
           }
@@ -1955,9 +1971,13 @@ class ChatProvider extends ChangeNotifier {
     result.fold(
       (failure) {
         _dismissedInteractionTombstones.remove(tombstoneKey);
+        // Mirror OpenChamber 1.12.1: when submit/dismiss fails, keep the
+        // request visible with an error indicator so the user can retry.
+        _questionSubmitFailedRequestIds.add(requestId);
         _handleFailure(failure);
       },
       (_) {
+        _questionSubmitFailedRequestIds.remove(requestId);
         for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
           final filtered = _pendingQuestionsBySession[sessionId]!
               .where((item) => item.id != requestId)
@@ -1994,9 +2014,11 @@ class ChatProvider extends ChangeNotifier {
     result.fold(
       (failure) {
         _dismissedInteractionTombstones.remove(tombstoneKey);
+        _questionSubmitFailedRequestIds.add(requestId);
         _handleFailure(failure);
       },
       (_) {
+        _questionSubmitFailedRequestIds.remove(requestId);
         for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
           final filtered = _pendingQuestionsBySession[sessionId]!
               .where((item) => item.id != requestId)
@@ -2012,6 +2034,7 @@ class ChatProvider extends ChangeNotifier {
     );
     notifyListeners();
   }
+
   Future<void> retryProvidersRefresh() async {
     AppLogger.info('providers_refresh_retry');
     await initializeProviders();
@@ -4027,7 +4050,6 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
-
   @override
   void dispose() {
     _cellularDataSaverService.removeListener(_handleCellularDataSaverChanged);
@@ -4051,5 +4073,4 @@ class ChatProvider extends ChangeNotifier {
     _sessionUnreadHighlightTimer?.cancel();
     super.dispose();
   }
-
 }
