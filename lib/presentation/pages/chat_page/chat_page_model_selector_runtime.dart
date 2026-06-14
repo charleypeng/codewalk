@@ -700,12 +700,11 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
       // simple_icons does not ship a Cohere glyph; fall back to a sparkle.
       return Symbols.auto_awesome;
     }
-    if (_containsAnyBrandToken(normalizedProvider, const [
-      'grok',
-      'xai',
-      'x-ai',
-    ])) {
-      // simple_icons does not ship an xAI/Grok glyph; fall back to a bolt.
+    if (_containsAnyBrandToken(normalizedProvider, const ['grok', 'x-ai'])) {
+      // The earlier `'xai'` matcher (line ~633) already returns
+      // `SimpleIcons.spacex` for that token, so this block covers only
+      // `grok` and `x-ai`. simple_icons does not ship a Grok glyph; fall
+      // back to a bolt.
       return Symbols.bolt;
     }
 

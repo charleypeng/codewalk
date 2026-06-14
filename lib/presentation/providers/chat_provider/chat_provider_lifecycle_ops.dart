@@ -364,4 +364,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
   void clearSseSettledTimestamps() {
     _sseSettledAtBySessionId.clear();
   }
+
+  @visibleForTesting
+  Future<void> reloadPendingInteractionsForTest() async {
+    await _loadPendingInteractions();
+  }
 }

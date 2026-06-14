@@ -561,6 +561,69 @@ void main() {
     );
 
     test(
+      'questionSubmitFailedRequestIds is pruned when the request disappears',
+      () async {
+        // Seed a failure via the real submit path; the reply will fail
+        // and the request will end up in questionSubmitFailedRequestIds.
+        chatRepository.pendingQuestions = const <ChatQuestionRequest>[
+          ChatQuestionRequest(
+            id: 'q_orphan_1',
+            sessionId: 'ses_1',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Pick one',
+                header: 'Pick',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'A', description: 'Alpha'),
+                ],
+              ),
+            ],
+          ),
+        ];
+        chatRepository.replyQuestionFailure = const ServerFailure(
+          'submit rejected',
+        );
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.submitQuestionAnswers(
+          requestId: 'q_orphan_1',
+          answers: <List<String>>[<String>['A']],
+        );
+        expect(
+          provider.questionSubmitFailedRequestIds,
+          contains('q_orphan_1'),
+        );
+
+        // Now the server list no longer includes the request; the
+        // reload prunes the orphan failure marker.
+        chatRepository.pendingQuestions = const <ChatQuestionRequest>[];
+        await provider.reloadPendingInteractionsForTest();
+
+        expect(
+          provider.questionSubmitFailedRequestIds,
+          isNot(contains('q_orphan_1')),
+        );
+      },
+    );
+
+    test(
       'switches project context with isolated directory session state',
       () async {
         final scopedRepository = FakeChatRepository(

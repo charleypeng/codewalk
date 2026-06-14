@@ -303,6 +303,18 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
               .putIfAbsent(item.sessionId, () => <ChatQuestionRequest>[])
               .add(item);
         }
+        // Prune submit-failure markers whose request IDs are no longer
+        // present in the server's pending list, preventing the local
+        // failure set from growing unbounded over a long-lived session.
+        // Note: this uses the *server-provided* list, not the merged
+        // snapshot, so locally-orphaned markers get reaped even if the
+        // local merge retained them.
+        final serverPendingIds = <String>{
+          for (final list in grouped.values) ...list.map((q) => q.id),
+        };
+        _questionSubmitFailedRequestIds.removeWhere(
+          (id) => !serverPendingIds.contains(id),
+        );
         _pendingQuestionsBySession = _mergePendingQuestionsBySession(grouped);
         _threadPermissionsVersion++;
       },

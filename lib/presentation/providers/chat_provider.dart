@@ -1960,38 +1960,41 @@ class ChatProvider extends ChangeNotifier {
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
-    final result = await replyQuestion(
-      ReplyQuestionParams(
-        requestId: requestId,
-        answers: answers,
-        directory: projectProvider.currentDirectory,
-      ),
-    );
-    _isRespondingInteraction = false;
-    result.fold(
-      (failure) {
-        _dismissedInteractionTombstones.remove(tombstoneKey);
-        // Mirror OpenChamber 1.12.1: when submit/dismiss fails, keep the
-        // request visible with an error indicator so the user can retry.
-        _questionSubmitFailedRequestIds.add(requestId);
-        _handleFailure(failure);
-      },
-      (_) {
-        _questionSubmitFailedRequestIds.remove(requestId);
-        for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
-          final filtered = _pendingQuestionsBySession[sessionId]!
-              .where((item) => item.id != requestId)
-              .toList(growable: false);
-          if (filtered.isEmpty) {
-            _pendingQuestionsBySession.remove(sessionId);
-          } else {
-            _pendingQuestionsBySession[sessionId] = filtered;
+    try {
+      final result = await replyQuestion(
+        ReplyQuestionParams(
+          requestId: requestId,
+          answers: answers,
+          directory: projectProvider.currentDirectory,
+        ),
+      );
+      result.fold(
+        (failure) {
+          _dismissedInteractionTombstones.remove(tombstoneKey);
+          // Mirror OpenChamber 1.12.1: when submit/dismiss fails, keep the
+          // request visible with an error indicator so the user can retry.
+          _questionSubmitFailedRequestIds.add(requestId);
+          _handleFailure(failure);
+        },
+        (_) {
+          _questionSubmitFailedRequestIds.remove(requestId);
+          for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
+            final filtered = _pendingQuestionsBySession[sessionId]!
+                .where((item) => item.id != requestId)
+                .toList(growable: false);
+            if (filtered.isEmpty) {
+              _pendingQuestionsBySession.remove(sessionId);
+            } else {
+              _pendingQuestionsBySession[sessionId] = filtered;
+            }
           }
-        }
-        _threadPermissionsVersion++;
-      },
-    );
-    notifyListeners();
+          _threadPermissionsVersion++;
+        },
+      );
+    } finally {
+      _isRespondingInteraction = false;
+      notifyListeners();
+    }
   }
 
   Future<void> rejectQuestionRequest({required String requestId}) async {
@@ -2004,35 +2007,38 @@ class ChatProvider extends ChangeNotifier {
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
-    final result = await rejectQuestion(
-      RejectQuestionParams(
-        requestId: requestId,
-        directory: projectProvider.currentDirectory,
-      ),
-    );
-    _isRespondingInteraction = false;
-    result.fold(
-      (failure) {
-        _dismissedInteractionTombstones.remove(tombstoneKey);
-        _questionSubmitFailedRequestIds.add(requestId);
-        _handleFailure(failure);
-      },
-      (_) {
-        _questionSubmitFailedRequestIds.remove(requestId);
-        for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
-          final filtered = _pendingQuestionsBySession[sessionId]!
-              .where((item) => item.id != requestId)
-              .toList(growable: false);
-          if (filtered.isEmpty) {
-            _pendingQuestionsBySession.remove(sessionId);
-          } else {
-            _pendingQuestionsBySession[sessionId] = filtered;
+    try {
+      final result = await rejectQuestion(
+        RejectQuestionParams(
+          requestId: requestId,
+          directory: projectProvider.currentDirectory,
+        ),
+      );
+      result.fold(
+        (failure) {
+          _dismissedInteractionTombstones.remove(tombstoneKey);
+          _questionSubmitFailedRequestIds.add(requestId);
+          _handleFailure(failure);
+        },
+        (_) {
+          _questionSubmitFailedRequestIds.remove(requestId);
+          for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
+            final filtered = _pendingQuestionsBySession[sessionId]!
+                .where((item) => item.id != requestId)
+                .toList(growable: false);
+            if (filtered.isEmpty) {
+              _pendingQuestionsBySession.remove(sessionId);
+            } else {
+              _pendingQuestionsBySession[sessionId] = filtered;
+            }
           }
-        }
-        _threadPermissionsVersion++;
-      },
-    );
-    notifyListeners();
+          _threadPermissionsVersion++;
+        },
+      );
+    } finally {
+      _isRespondingInteraction = false;
+      notifyListeners();
+    }
   }
 
   Future<void> retryProvidersRefresh() async {
