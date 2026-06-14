@@ -271,9 +271,6 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
         AppLogger.warn('Failed to load pending permissions: $failure');
       },
       (permissions) {
-        if (directory != projectProvider.currentDirectory) {
-          return;
-        }
         final grouped = <String, List<ChatPermissionRequest>>{};
         for (final item in permissions) {
           if (_dismissedInteractionTombstones.contains(
@@ -301,9 +298,6 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
         AppLogger.warn('Failed to load pending questions: $failure');
       },
       (questions) {
-        if (directory != projectProvider.currentDirectory) {
-          return;
-        }
         final grouped = <String, List<ChatQuestionRequest>>{};
         for (final item in questions) {
           if (_dismissedInteractionTombstones.contains(
