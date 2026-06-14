@@ -43,6 +43,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       isNewChatDraftActive: _isNewChatDraftActive,
       activeSendDraft: _activeSendDraft,
       rejectedDraft: _rejectedDraft,
+      questionSubmitFailedRequestIds: Set<String>.from(
+        _questionSubmitFailedRequestIds,
+      ),
     );
   }
 
@@ -74,6 +77,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _isNewChatDraftActive = false;
       _clearActiveSendDraft();
       _clearRejectedDraft();
+      _questionSubmitFailedRequestIds.clear();
       _threadPermissionsVersion++;
       return;
     }
@@ -117,6 +121,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _isNewChatDraftActive = snapshot.isNewChatDraftActive;
     _activeSendDraft = snapshot.activeSendDraft;
     _rejectedDraft = snapshot.rejectedDraft;
+    _questionSubmitFailedRequestIds
+      ..clear()
+      ..addAll(snapshot.questionSubmitFailedRequestIds);
     _pendingCurrentSessionHydrationId =
         !_isNewChatDraftActive && _currentSession != null && _messages.isEmpty
         ? _currentSession!.id

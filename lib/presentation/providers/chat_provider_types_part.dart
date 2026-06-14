@@ -147,6 +147,7 @@ class _ChatContextSnapshot {
     required this.isNewChatDraftActive,
     required this.activeSendDraft,
     required this.rejectedDraft,
+    required this.questionSubmitFailedRequestIds,
   });
 
   final List<ChatSession> sessions;
@@ -169,6 +170,7 @@ class _ChatContextSnapshot {
   final bool isNewChatDraftActive;
   final ChatComposerDraft? activeSendDraft;
   final _RejectedDraftEnvelope? rejectedDraft;
+  final Set<String> questionSubmitFailedRequestIds;
 }
 
 class _AutoTitleCandidateMessage {

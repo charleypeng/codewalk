@@ -1204,6 +1204,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       isNewChatDraftActive: snapshot.isNewChatDraftActive,
       activeSendDraft: snapshot.activeSendDraft,
       rejectedDraft: snapshot.rejectedDraft,
+      questionSubmitFailedRequestIds: snapshot.questionSubmitFailedRequestIds,
     );
     _scheduleSessionUnreadHighlightTimer();
     _notifyListeners();

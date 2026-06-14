@@ -407,6 +407,7 @@ extension ChatProviderSessionAttentionOps on ChatProvider {
         isNewChatDraftActive: snapshot.isNewChatDraftActive,
         activeSendDraft: snapshot.activeSendDraft,
         rejectedDraft: snapshot.rejectedDraft,
+        questionSubmitFailedRequestIds: snapshot.questionSubmitFailedRequestIds,
       );
     }
     if (updatedSnapshots.isNotEmpty) {

@@ -1899,36 +1899,39 @@ class ChatProvider extends ChangeNotifier {
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
-    final result = await replyPermission(
-      ReplyPermissionParams(
-        sessionId: sessionId,
-        requestId: requestId,
-        reply: reply,
-        message: message,
-        directory: projectProvider.currentDirectory,
-      ),
-    );
-    _isRespondingInteraction = false;
-    result.fold(
-      (failure) {
-        _dismissedInteractionTombstones.remove(tombstoneKey);
-        _handleFailure(failure);
-      },
-      (_) {
-        for (final sessionId in _pendingPermissionsBySession.keys.toList()) {
-          final filtered = _pendingPermissionsBySession[sessionId]!
-              .where((item) => item.id != requestId)
-              .toList(growable: false);
-          if (filtered.isEmpty) {
-            _pendingPermissionsBySession.remove(sessionId);
-          } else {
-            _pendingPermissionsBySession[sessionId] = filtered;
+    try {
+      final result = await replyPermission(
+        ReplyPermissionParams(
+          sessionId: sessionId,
+          requestId: requestId,
+          reply: reply,
+          message: message,
+          directory: projectProvider.currentDirectory,
+        ),
+      );
+      result.fold(
+        (failure) {
+          _dismissedInteractionTombstones.remove(tombstoneKey);
+          _handleFailure(failure);
+        },
+        (_) {
+          for (final sessionId in _pendingPermissionsBySession.keys.toList()) {
+            final filtered = _pendingPermissionsBySession[sessionId]!
+                .where((item) => item.id != requestId)
+                .toList(growable: false);
+            if (filtered.isEmpty) {
+              _pendingPermissionsBySession.remove(sessionId);
+            } else {
+              _pendingPermissionsBySession[sessionId] = filtered;
+            }
           }
-        }
-        _threadPermissionsVersion++;
-      },
-    );
-    notifyListeners();
+          _threadPermissionsVersion++;
+        },
+      );
+    } finally {
+      _isRespondingInteraction = false;
+      notifyListeners();
+    }
   }
 
   String? _sessionIdForPendingQuestion(String requestId) {
