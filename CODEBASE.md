@@ -118,7 +118,7 @@ lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid fi
 lib/data/cache/chat_cache_payload_store_stub.dart # Non-IO platforms: disabled payload store (returns null)
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
-  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + per-provider quota-fetch functions (Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, Ollama Cloud); modularized with `_supportedAuthKeys` Set as single source of truth for provider auth key whitelisting
+  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + per-provider quota-fetch functions (Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, Ollama Cloud, Snowflake Cortex, Grok/xAI, Cohere/Cohere North); modularized with `_supportedAuthKeys` Set as single source of truth for provider auth key whitelisting
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle, Tailscale transport orchestration; supportsTailscale (Android/iOS/Linux/macOS), _applyTailscaleTransport() drives per-profile Tailscale node lifecycle (upForProfile/auth URL launch/down), swaps Dio adapter via TailscaleHttpAdapter, propagates active adapter to health-check Dio via createHealthCheckDio; tailscaleEnabled in addServerProfile/updateServerProfile CRUD; exposes reactive Tailscale state getters: tailscaleState, tailscaleNodeState, tailscaleAuthUrl, tailscaleMessage, tailscaleNeedsAuth, tailscaleNeedsMachineAuth, and authenticateTailscale() method; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out
@@ -227,7 +227,7 @@ chat_page_chrome.dart
 chat_page_file_runtime.dart
 chat_page_terminal_runtime.dart              # Terminal panel toggle, attach/detach lifecycle, mobile info sheet, and panel height management
 chat_page_composer_widgets.dart                   # Reserved-height composer progress slot with in-place slide/fade updates so busy status changes do not move the timeline
-chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit)
+chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit); brand-token Material icon overrides per providerId; `hidden` model-level filtering excludes `model.hidden` from selector and settings lists
 chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile; composer stays enabled during draft-first New Chat (`currentSession != null || isDraftingNewChat`) and in sub-conversation sessions; sub-conversation model/agent selection remains session-context aware/locked; child-thread footer keeps `Return to main conversation` visible (stop behavior managed by composer); wires latest inline undo and historical server-confirmed user-message rewind while excluding `local_user_*` optimistic IDs
 chat_page_timeline_viewport.dart             # Extension `_ChatPageTimelineViewport` on `_ChatPageState` for timeline viewport management
 chat_page_timeline_entries.dart              # Extension `_ChatPageTimelineEntries` on `_ChatPageState` for generating/handling timeline entry widgets
@@ -321,10 +321,10 @@ lib/presentation/providers/settings_provider.dart               # In-memory + pe
 ## Data & Domain Layers
 
 ```text
-lib/domain/entities/       # Core business entities (chat, provider, project, worktree, settings, server_profile.dart with tailscaleEnabled/oauthEnabled flags, and `chat_composer_draft.dart` for persisted session drafts)
+lib/domain/entities/       # Core business entities (chat, provider, project, worktree, settings, server_profile.dart with tailscaleEnabled/oauthEnabled flags, `chat_composer_draft.dart` for persisted session drafts; Model entity includes `hidden` field — excluded from selector and settings when true)
 lib/domain/repositories/   # Repository contracts
 lib/domain/usecases/       # Use case boundaries used by providers
-lib/data/models/           # API/storage models and JSON adapters
+lib/data/models/           # API/storage models and JSON adapters (includes provider_model.dart with `hidden` on ModelModel)
 lib/data/repositories/     # Repository implementations (includes chat_repository.dart, reply_question.dart, reject_question.dart); sessionId removed from replyQuestion/rejectQuestion (ADR-023 contract compliance)
 lib/data/datasources/      # Remote/local IO boundaries
 lib/data/cache/            # Hybrid payload cache primitives used by AppLocalDataSource
