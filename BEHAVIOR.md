@@ -1,7 +1,7 @@
 # Behavior Specification
 
 > How CodeWalk behaves from the user's perspective.
-> Only documents **current, implemented** behavior. Planned features live in ROADMAP.md.
+> Only documents **current, implemented** behavior. Planned features live in GitHub Issues.
 
 ---
 
