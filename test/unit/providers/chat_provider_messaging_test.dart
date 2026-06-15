@@ -330,6 +330,94 @@ void main() {
     );
 
     test(
+      'cached snapshot prunes reconciled optimistic echo but preserves pending prompt',
+      () async {
+        await provider.projectProvider.initializeProject();
+
+        final snapshotSession = chatRepository.sessions.first;
+        final canonicalUser = UserMessage(
+          id: 'msg_user_canonical',
+          sessionId: snapshotSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1010),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_canonical',
+              messageId: 'msg_user_canonical',
+              sessionId: 'ses_1',
+              text: 'already reconciled prompt',
+            ),
+          ],
+        );
+        final reconciledOptimisticUser = UserMessage(
+          id: 'local_user_reconciled',
+          sessionId: snapshotSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_local_user_reconciled',
+              messageId: 'local_user_reconciled',
+              sessionId: 'ses_1',
+              text: 'already reconciled prompt',
+            ),
+          ],
+        );
+        final pendingOptimisticUser = UserMessage(
+          id: 'local_user_pending',
+          sessionId: snapshotSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1020),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_local_user_pending',
+              messageId: 'local_user_pending',
+              sessionId: 'ses_1',
+              text: 'still pending prompt',
+            ),
+          ],
+        );
+        final snapshotPayload = jsonEncode(<String, dynamic>{
+          'session': ChatSessionModel.fromDomain(snapshotSession).toJson(),
+          'messages': <Map<String, dynamic>>[
+            ChatMessageModel.fromDomain(reconciledOptimisticUser).toJson(),
+            ChatMessageModel.fromDomain(canonicalUser).toJson(),
+            ChatMessageModel.fromDomain(pendingOptimisticUser).toJson(),
+          ],
+        });
+
+        await localDataSource.saveCurrentSessionId(
+          snapshotSession.id,
+          serverId: 'srv_test',
+          scopeId: '/tmp',
+        );
+        await localDataSource.saveLastSessionSnapshot(
+          snapshotPayload,
+          serverId: 'srv_test',
+          scopeId: '/tmp',
+        );
+        await localDataSource.saveLastSessionSnapshotUpdatedAt(
+          DateTime.now().millisecondsSinceEpoch,
+          serverId: 'srv_test',
+          scopeId: '/tmp',
+        );
+        chatRepository.getMessagesFailure = const NetworkFailure(
+          'offline',
+          503,
+        );
+
+        await provider.loadSessions();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(
+          provider.messages.map((message) => message.id),
+          containsAll(<String>['msg_user_canonical', 'local_user_pending']),
+        );
+        expect(
+          provider.messages.map((message) => message.id),
+          isNot(contains('local_user_reconciled')),
+        );
+      },
+    );
+
+    test(
       'selectSession restores per-session snapshot cache before remote revalidation',
       () async {
         await provider.projectProvider.initializeProject();

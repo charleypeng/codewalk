@@ -635,6 +635,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               _dedupeNextDeltaFieldKeys.remove(partFieldKey);
             }
           }
+          resolvedPart = _preserveNonRegressivePartUpdate(
+            existingPart: nextParts[existingPartIndex],
+            incomingPart: resolvedPart,
+          );
           if (nextParts[existingPartIndex] == resolvedPart) {
             break;
           }

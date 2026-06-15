@@ -60,6 +60,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         completedTime: message.completedTime,
         providerId: message.providerId,
         modelId: message.modelId,
+        variant: message.variant,
         cost: message.cost,
         tokens: message.tokens,
         error: message.error,
@@ -73,6 +74,83 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       time: message.time,
       parts: parts,
     );
+  }
+
+  bool _isTerminalToolState(ToolState state) {
+    return state.status == ToolStatus.completed ||
+        state.status == ToolStatus.error;
+  }
+
+  MessagePart _preserveNonRegressivePartUpdate({
+    required MessagePart existingPart,
+    required MessagePart incomingPart,
+  }) {
+    if (existingPart.id != incomingPart.id ||
+        existingPart.type != incomingPart.type) {
+      return incomingPart;
+    }
+    if (existingPart is TextPart && incomingPart is TextPart) {
+      if (existingPart.text == incomingPart.text) {
+        return existingPart;
+      }
+      if (incomingPart.text.isEmpty ||
+          existingPart.text.startsWith(incomingPart.text)) {
+        return existingPart;
+      }
+      return incomingPart;
+    }
+    if (existingPart is ReasoningPart && incomingPart is ReasoningPart) {
+      if (existingPart.text == incomingPart.text) {
+        return existingPart;
+      }
+      if (incomingPart.text.isEmpty ||
+          existingPart.text.startsWith(incomingPart.text)) {
+        return existingPart;
+      }
+      return incomingPart;
+    }
+    if (existingPart is ToolPart &&
+        incomingPart is ToolPart &&
+        _isTerminalToolState(existingPart.state) &&
+        !_isTerminalToolState(incomingPart.state)) {
+      return existingPart;
+    }
+    return incomingPart;
+  }
+
+  AssistantMessage _mergeCompletedAssistantUpdate(
+    AssistantMessage existing,
+    AssistantMessage incoming,
+  ) {
+    final unmatchedIncomingById = <String, MessagePart>{
+      for (final part in incoming.parts) part.id: part,
+    };
+    final mergedParts = <MessagePart>[];
+    for (final existingPart in existing.parts) {
+      final incomingPart = unmatchedIncomingById.remove(existingPart.id);
+      if (incomingPart == null) {
+        mergedParts.add(existingPart);
+        continue;
+      }
+      mergedParts.add(
+        _preserveNonRegressivePartUpdate(
+          existingPart: existingPart,
+          incomingPart: incomingPart,
+        ),
+      );
+    }
+    for (final incomingPart in incoming.parts) {
+      if (unmatchedIncomingById.containsKey(incomingPart.id)) {
+        mergedParts.add(incomingPart);
+      }
+    }
+    return _copyMessageWithParts(incoming, mergedParts) as AssistantMessage;
+  }
+
+  void _persistOptimisticReconciliation(String sessionId) {
+    _cacheSessionMessages(sessionId, _messages);
+    unawaited(_persistSessionMessagesSnapshotBestEffort(sessionId, _messages));
+    unawaited(_persistLastSessionSnapshotBestEffort());
   }
 
   MessagePart? _mergeIncrementalPartUpdate({
@@ -287,6 +365,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       return;
     }
 
+    var optimisticEchoRemoved = false;
     if (message is UserMessage) {
       final pendingLocalIndex = _findPendingLocalUserMessageIndex(message);
       if (pendingLocalIndex != -1) {
@@ -305,6 +384,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
           _messages.removeAt(pendingLocalIndex);
           _messagesVersion++;
           _notifyListeners();
+          _persistOptimisticReconciliation(message.sessionId);
           _attemptPendingRemoteSelectionSync(reason: 'message-user-deduped');
           _scheduleAutoTitleRefresh(message.sessionId);
           _scheduleScrollToBottom(reason: 'message-state-user-deduped');
@@ -318,37 +398,45 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         _messages[pendingLocalIndex] = message;
         _messagesVersion++;
         _notifyListeners();
+        _persistOptimisticReconciliation(message.sessionId);
         _attemptPendingRemoteSelectionSync(reason: 'message-user-replaced');
         _scheduleAutoTitleRefresh(message.sessionId);
         _scheduleScrollToBottom(reason: 'message-state-user-replaced');
         return;
       }
-      _removeDuplicateOptimisticLocalUserEcho(message);
+      optimisticEchoRemoved = _removeDuplicateOptimisticLocalUserEcho(message);
     }
 
-  final index = _messages.indexWhere((m) => m.id == message.id);
-  if (index != -1) {
-    // Monotonic completion guard (ADR-023): once an AssistantMessage has
-    // been marked completed (by session.idle →
-    // _markIncompleteAssistantMessagesAsCompleted, or by authoritative
-    // message.updated with time.completed), never allow a late incomplete
-    // event from the draining send stream or a stale fallback fetch to
-    // regress it. The guard lifts when the incoming message is also
-    // completed — allowing server-authoritative completedTime to replace
-    // the locally-synthesized one.
-    final existing = _messages[index];
-    if (existing is AssistantMessage &&
-        existing.isCompleted &&
-        message is AssistantMessage &&
-        !message.isCompleted) {
-      AppLogger.debug(
-        'Skipping incomplete overwrite of completed assistant message: '
-        '${message.id} (existing completedTime=${existing.completedTime})',
-      );
-      return;
-    }
-    // Update existing message
-    _messages[index] = message;
+    final index = _messages.indexWhere((m) => m.id == message.id);
+    if (index != -1) {
+      // Monotonic completion guard (ADR-023): once an AssistantMessage has
+      // been marked completed (by session.idle →
+      // _markIncompleteAssistantMessagesAsCompleted, or by authoritative
+      // message.updated with time.completed), never allow a late incomplete
+      // event from the draining send stream or a stale fallback fetch to
+      // regress it. The guard lifts when the incoming message is also
+      // completed — allowing server-authoritative completedTime to replace
+      // the locally-synthesized one.
+      final existing = _messages[index];
+      if (existing is AssistantMessage &&
+          existing.isCompleted &&
+          message is AssistantMessage &&
+          !message.isCompleted) {
+        AppLogger.debug(
+          'Skipping incomplete overwrite of completed assistant message: '
+          '${message.id} (existing completedTime=${existing.completedTime})',
+        );
+        return;
+      }
+      // Update existing message without allowing completed snapshots or terminal
+      // tool states to lose content already visible to the user.
+      _messages[index] =
+          existing is AssistantMessage &&
+              existing.isCompleted &&
+              message is AssistantMessage &&
+              message.isCompleted
+          ? _mergeCompletedAssistantUpdate(existing, message)
+          : message;
       _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);
@@ -390,6 +478,9 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     }
 
     _notifyListeners();
+    if (optimisticEchoRemoved) {
+      _persistOptimisticReconciliation(message.sessionId);
+    }
     _attemptPendingRemoteSelectionSync(reason: 'message-update');
     _scheduleAutoTitleRefresh(message.sessionId);
 
@@ -673,13 +764,13 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return bestLikelyMatchIndex;
   }
 
-  void _removeDuplicateOptimisticLocalUserEcho(UserMessage incoming) {
+  bool _removeDuplicateOptimisticLocalUserEcho(UserMessage incoming) {
     if (_isOptimisticLocalUserMessageId(incoming.id)) {
-      return;
+      return false;
     }
     final incomingSignature = _normalizedUserMessageSignature(incoming);
     if (incomingSignature.isEmpty) {
-      return;
+      return false;
     }
 
     var bestIndex = -1;
@@ -709,7 +800,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     }
 
     if (bestIndex == -1) {
-      return;
+      return false;
     }
     // Realtime fallback can sometimes deliver the canonical server user after
     // the pending-local set has already been drained by another merge path.
@@ -718,6 +809,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     final removedId = _messages[bestIndex].id;
     _messages.removeAt(bestIndex);
     _pendingLocalUserMessageIds.remove(removedId);
+    return true;
   }
 
   /// Matches a server [UserMessage] (with empty content signature) to a pending

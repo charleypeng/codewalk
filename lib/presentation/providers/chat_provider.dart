@@ -336,6 +336,9 @@ class ChatProvider extends ChangeNotifier {
   bool _historyRevertInFlight = false;
   final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
       LinkedHashMap<String, List<ChatMessage>>();
+  final Map<String, Future<void>> _sessionMessagesSnapshotWriteQueue =
+      <String, Future<void>>{};
+  Future<void> _lastSessionSnapshotWriteQueue = Future<void>.value();
 
   // Project and provider-related state
   String? _currentProjectId;

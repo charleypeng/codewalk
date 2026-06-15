@@ -166,6 +166,23 @@ void main() {
         expect(userMessagesAfterEcho, hasLength(1));
         expect(userMessagesAfterEcho.single.id, 'msg_user_server');
 
+        String? reconciledSnapshot;
+        for (var tick = 0; tick < 40; tick += 1) {
+          await pumpEventQueue();
+          final candidate = await localDataSource.getSessionMessagesSnapshot(
+            sessionId: 'ses_1',
+            serverId: 'srv_test',
+            scopeId: '/tmp',
+          );
+          if (candidate != null &&
+              candidate.contains('msg_user_server') &&
+              !candidate.contains(localUser.id)) {
+            reconciledSnapshot = candidate;
+            break;
+          }
+        }
+        expect(reconciledSnapshot, isNotNull);
+
         final assistantDraft = AssistantMessage(
           id: 'msg_assistant_contract',
           sessionId: 'ses_1',
@@ -1763,6 +1780,116 @@ void main() {
 
         await sendController.close();
         await Future<void>.delayed(const Duration(milliseconds: 80));
+      },
+    );
+
+    test(
+      'completed assistant update preserves richer parts and terminal tool state',
+      () async {
+        final sendController =
+            StreamController<Either<Failure, ChatMessage>>.broadcast();
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            sendController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('preserve completed response');
+        sendController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_completed_rich',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(3500),
+              parts: <MessagePart>[
+                const ReasoningPart(
+                  id: 'part_completed_reasoning',
+                  messageId: 'msg_completed_rich',
+                  sessionId: 'ses_1',
+                  text: 'complete reasoning',
+                ),
+                const TextPart(
+                  id: 'part_completed_text',
+                  messageId: 'msg_completed_rich',
+                  sessionId: 'ses_1',
+                  text: 'complete response',
+                ),
+                ToolPart(
+                  id: 'part_completed_tool',
+                  messageId: 'msg_completed_rich',
+                  sessionId: 'ses_1',
+                  callId: 'call_completed_tool',
+                  tool: 'bash',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'command': 'pwd'},
+                    output: '/workspace',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(3100),
+                      end: DateTime.fromMillisecondsSinceEpoch(3400),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        await settleUntil(
+          () =>
+              provider.messages.whereType<AssistantMessage>().lastOrNull?.id ==
+              'msg_completed_rich',
+        );
+
+        sendController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_completed_rich',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(3600),
+              parts: <MessagePart>[
+                const TextPart(
+                  id: 'part_completed_text',
+                  messageId: 'msg_completed_rich',
+                  sessionId: 'ses_1',
+                  text: 'complete',
+                ),
+                ToolPart(
+                  id: 'part_completed_tool',
+                  messageId: 'msg_completed_rich',
+                  sessionId: 'ses_1',
+                  callId: 'call_completed_tool',
+                  tool: 'bash',
+                  state: ToolStateRunning(
+                    input: const <String, dynamic>{'command': 'pwd'},
+                    time: DateTime.fromMillisecondsSinceEpoch(3100),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        await pumpEventQueue();
+
+        final assistant = provider.messages
+            .whereType<AssistantMessage>()
+            .lastWhere((message) => message.id == 'msg_completed_rich');
+        expect(assistant.completedTime, DateTime.fromMillisecondsSinceEpoch(3600));
+        expect(
+          assistant.parts.whereType<ReasoningPart>().single.text,
+          'complete reasoning',
+        );
+        expect(
+          assistant.parts.whereType<TextPart>().single.text,
+          'complete response',
+        );
+        expect(
+          assistant.parts.whereType<ToolPart>().single.state.status,
+          ToolStatus.completed,
+        );
+
+        await sendController.close();
       },
     );
 

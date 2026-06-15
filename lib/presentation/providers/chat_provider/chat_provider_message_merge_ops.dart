@@ -512,6 +512,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         continue;
       }
       if (message is UserMessage &&
+          _isOptimisticLocalUserMessageId(message.id) &&
+          !_pendingLocalUserMessageIds.contains(message.id)) {
+        continue;
+      }
+      if (message is UserMessage &&
           _shouldSkipLocalUserAppendAsDuplicateEcho(
             localMessage: message,
             mergedMessages: merged,

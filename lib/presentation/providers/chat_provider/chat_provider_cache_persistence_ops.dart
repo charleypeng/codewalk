@@ -1,14 +1,52 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderCachePersistenceOps on ChatProvider {
+  List<ChatMessage> _restoreableCachedMessages(List<ChatMessage> messages) {
+    final canonicalUserMessages = messages
+        .whereType<UserMessage>()
+        .where((message) => !_isOptimisticLocalUserMessageId(message.id))
+        .cast<ChatMessage>()
+        .toList(growable: false);
+    final restored = messages
+        .where(
+          (message) =>
+              message is! UserMessage ||
+              !_isOptimisticLocalUserMessageId(message.id) ||
+              !_shouldSkipLocalUserAppendAsDuplicateEcho(
+                localMessage: message,
+                mergedMessages: canonicalUserMessages,
+              ),
+        )
+        .toList(growable: false);
+    _pendingLocalUserMessageIds.addAll(
+      restored
+          .whereType<UserMessage>()
+          .where((message) => _isOptimisticLocalUserMessageId(message.id))
+          .map((message) => message.id),
+    );
+    return restored;
+  }
+
+  List<ChatMessage> _cacheableSessionMessages(
+    String sessionId,
+    List<ChatMessage> messages,
+  ) {
+    return messages
+        .where(
+          (message) =>
+              message.sessionId == sessionId &&
+              (!_isOptimisticLocalUserMessageId(message.id) ||
+                  _pendingLocalUserMessageIds.contains(message.id)),
+        )
+        .toList(growable: false);
+  }
+
   void _cacheSessionMessages(String sessionId, List<ChatMessage> messages) {
     final normalizedSessionId = sessionId.trim();
     if (normalizedSessionId.isEmpty) {
       return;
     }
-    final filtered = messages
-        .where((message) => message.sessionId == normalizedSessionId)
-        .toList(growable: false);
+    final filtered = _cacheableSessionMessages(normalizedSessionId, messages);
     if (filtered.isEmpty) {
       _sessionMessagesLruCache.remove(normalizedSessionId);
       return;
@@ -53,13 +91,42 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
     if (normalizedSessionId.isEmpty) {
       return;
     }
-    final filteredMessages = messages
-        .where((message) => message.sessionId == normalizedSessionId)
-        .toList(growable: false);
+    final filteredMessages = _cacheableSessionMessages(
+      normalizedSessionId,
+      messages,
+    );
     if (filteredMessages.isEmpty) {
       return;
     }
 
+    final previousWrite =
+        _sessionMessagesSnapshotWriteQueue[normalizedSessionId] ??
+        Future<void>.value();
+    late final Future<void> queuedWrite;
+    queuedWrite = previousWrite.then(
+      (_) => _writeSessionMessagesSnapshotBestEffort(
+        normalizedSessionId,
+        filteredMessages,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+    _sessionMessagesSnapshotWriteQueue[normalizedSessionId] = queuedWrite;
+    await queuedWrite;
+    if (identical(
+      _sessionMessagesSnapshotWriteQueue[normalizedSessionId],
+      queuedWrite,
+    )) {
+      _sessionMessagesSnapshotWriteQueue.remove(normalizedSessionId);
+    }
+  }
+
+  Future<void> _writeSessionMessagesSnapshotBestEffort(
+    String normalizedSessionId,
+    List<ChatMessage> filteredMessages, {
+    String? serverId,
+    String? scopeId,
+  }) async {
     try {
       final resolvedServerId = serverId ?? await _resolveServerIdForStorage();
       final resolvedScopeId = scopeId ?? _resolveContextScopeId();
@@ -181,11 +248,13 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       if (messagesJson is! List) {
         return null;
       }
-      final messages = messagesJson
-          .whereType<Map<String, dynamic>>()
-          .map((item) => ChatMessageModel.fromJson(item).toDomain())
-          .where((message) => message.sessionId == normalizedSessionId)
-          .toList(growable: false);
+      final messages = _restoreableCachedMessages(
+        messagesJson
+            .whereType<Map<String, dynamic>>()
+            .map((item) => ChatMessageModel.fromJson(item).toDomain())
+            .where((message) => message.sessionId == normalizedSessionId)
+            .toList(growable: false),
+      );
       if (messages.isEmpty) {
         return null;
       }
@@ -371,11 +440,13 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       final selectedSession =
           _sessions.where((item) => item.id == session.id).firstOrNull ??
           session;
-      final cachedMessages = messagesJson
-          .whereType<Map<String, dynamic>>()
-          .map((item) => ChatMessageModel.fromJson(item).toDomain())
-          .where((message) => message.sessionId == selectedSession.id)
-          .toList(growable: false);
+      final cachedMessages = _restoreableCachedMessages(
+        messagesJson
+            .whereType<Map<String, dynamic>>()
+            .map((item) => ChatMessageModel.fromJson(item).toDomain())
+            .where((message) => message.sessionId == selectedSession.id)
+            .toList(growable: false),
+      );
       if (cachedMessages.isEmpty) {
         return;
       }
@@ -410,9 +481,10 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
     required String serverId,
     required String scopeId,
   }) async {
+    final cacheableMessages = _cacheableSessionMessages(session.id, messages);
     final payload = <String, dynamic>{
       'session': ChatSessionModel.fromDomain(session).toJson(),
-      'messages': messages
+      'messages': cacheableMessages
           .map((message) => ChatMessageModel.fromDomain(message).toJson())
           .toList(growable: false),
     };
@@ -429,6 +501,21 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
   }
 
   Future<void> _persistLastSessionSnapshotBestEffort({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    late final Future<void> queuedWrite;
+    queuedWrite = _lastSessionSnapshotWriteQueue.then(
+      (_) => _writeLastSessionSnapshotBestEffort(
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+    _lastSessionSnapshotWriteQueue = queuedWrite;
+    await queuedWrite;
+  }
+
+  Future<void> _writeLastSessionSnapshotBestEffort({
     String? serverId,
     String? scopeId,
   }) async {
