@@ -479,7 +479,7 @@ bool _timelineMessageHasVisibleContent(
         if (!showThinkingBubbles) {
           continue;
         }
-        if (parseReasoningStatusLabel(reasoningPart.text) == null &&
+        if (!isReasoningStatusMarker(reasoningPart.text) &&
             reasoningPart.text.trim().isNotEmpty) {
           return true;
         }

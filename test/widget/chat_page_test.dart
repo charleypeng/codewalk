@@ -66,6 +66,7 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
 
@@ -2279,6 +2280,92 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'mobile app bar migrates pins, reserves slots, and evicts oldest pin',
+      (WidgetTester tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          'codewalk.mobile_appbar_pinned_actions': <String>[
+            'undo',
+            'search',
+            'newChat',
+          ],
+        });
+        addTearDown(() => SharedPreferences.setMockInitialValues({}));
+        await tester.binding.setSurfaceSize(const Size(390, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_undo_button')),
+          findsNothing,
+        );
+        for (var index = 0; index < 2; index += 1) {
+          expect(
+            tester.getSize(
+              find.byKey(
+                ValueKey<String>('mobile_appbar_pinned_slot_$index'),
+              ),
+            ),
+            const Size(kMinInteractiveDimension, kMinInteractiveDimension),
+          );
+        }
+
+        var prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
+          <String>['search', 'newChat'],
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+        );
+        await tester.pumpAndSettle();
+        final terminalItem = find.byKey(
+          const ValueKey<String>('mobile_overflow_item_terminal'),
+        );
+        await tester.tap(
+          find.descendant(
+            of: terminalItem,
+            matching: find.byIcon(Symbols.push_pin),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_terminal_button')),
+          findsOneWidget,
+        );
+        prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
+          <String>['newChat', 'terminal'],
+        );
+      },
+    );
 
     testWidgets('desktop terminal button toggles terminal panel', (
       WidgetTester tester,
@@ -14217,7 +14304,7 @@ void main() {
   );
 
   testWidgets(
-    'surfaces latest tool activity in composer and hides mirrored live thinking bubble',
+    'surfaces latest tool activity in composer and renders prior reasoning bubble',
     (WidgetTester tester) async {
       final repository = FakeChatRepository(
         sessions: <ChatSession>[
@@ -14301,9 +14388,9 @@ void main() {
       expect(find.text('Reading'), findsOneWidget);
       expect(
         find.text('Inspecting the latest workspace changes'),
-        findsNothing,
+        findsOneWidget,
       );
-      expect(find.text('Thinking Process'), findsNothing);
+      expect(find.text('Thinking Process'), findsOneWidget);
     },
   );
 

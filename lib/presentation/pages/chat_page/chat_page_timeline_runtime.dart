@@ -474,38 +474,51 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     );
   }
 
-  String? _resolveLatestReasoningPartKey(List<ChatMessage> messages) {
-    // Cache: skip O(N*M) backward scan when messages haven't changed.
-    final lastId = messages.isNotEmpty ? messages.last.id : null;
+  String? _resolveLatestReasoningPartKey(ChatProvider chatProvider) {
+    final messages = chatProvider.messages;
+    // Cache: skip O(N*M) backward scan when message state hasn't changed.
     if (_cachedReasoningKeyComputed &&
-        messages.length == _cachedReasoningKeyMsgCount &&
-        lastId == _cachedReasoningKeyLastMsgId) {
+        chatProvider.messagesVersion == _cachedReasoningKeyMessagesVersion) {
       return _cachedReasoningKeyResult;
     }
 
     String? result;
+    scanMessages:
     for (
       var messageIndex = messages.length - 1;
       messageIndex >= 0;
       messageIndex -= 1
     ) {
       final message = messages[messageIndex];
+      if (message is! AssistantMessage || message.isCompleted) {
+        continue;
+      }
       for (
         var partIndex = message.parts.length - 1;
         partIndex >= 0;
         partIndex -= 1
       ) {
         final part = message.parts[partIndex];
+        if (part is ToolPart) {
+          if (_shouldIgnoreProgressTool(part)) {
+            continue;
+          }
+          break scanMessages;
+        }
+        if (part is PatchPart) {
+          break scanMessages;
+        }
         if (part is ReasoningPart) {
+          if (part.text.trim().isEmpty) {
+            continue;
+          }
           result = '${part.messageId}::${part.id}';
-          break;
+          break scanMessages;
         }
       }
-      if (result != null) break;
     }
 
-    _cachedReasoningKeyMsgCount = messages.length;
-    _cachedReasoningKeyLastMsgId = lastId;
+    _cachedReasoningKeyMessagesVersion = chatProvider.messagesVersion;
     _cachedReasoningKeyResult = result;
     _cachedReasoningKeyComputed = true;
     return result;

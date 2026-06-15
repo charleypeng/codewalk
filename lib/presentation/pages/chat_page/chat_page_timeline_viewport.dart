@@ -339,9 +339,7 @@ Widget _buildMessageList(ChatProvider chatProvider) {
   }
 
   final progressStage = _resolveAssistantProgressStage(chatProvider);
-  final latestReasoningPartKey = _resolveLatestReasoningPartKey(
-    chatProvider.messages,
-  );
+  final latestReasoningPartKey = _resolveLatestReasoningPartKey(chatProvider);
   final showMessageProgressIndicator =
       progressStage == _AssistantProgressStage.retrying;
   final interactionPermissions = chatProvider.currentThreadPermissionRequests;

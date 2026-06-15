@@ -13,7 +13,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     if (shouldSuppressLiveReasoningPart(part)) {
       return const SizedBox.shrink();
     }
-    if (parseReasoningStatusLabel(part.text) != null) {
+    if (isReasoningStatusMarker(part.text)) {
       return const SizedBox.shrink();
     }
 

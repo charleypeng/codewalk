@@ -626,7 +626,9 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     required String messageId,
     required String reason,
     int attempt = 0,
+    int? generation,
   }) {
+    final effectiveGeneration = generation ?? _returnRevealGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
         _runLatestMessageReturnReveal(
@@ -634,6 +636,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           messageId: messageId,
           reason: reason,
           attempt: attempt,
+          generation: effectiveGeneration,
         ),
       );
     });
@@ -644,6 +647,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     required String messageId,
     required String reason,
     required int attempt,
+    required int generation,
   }) async {
     void releaseReturnRevealOwner() {
       if (_currentScrollOwner == _ScrollOwner.returnReveal) {
@@ -662,6 +666,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     if (!mounted) {
+      return;
+    }
+    if (generation != _returnRevealGeneration) {
+      releaseReturnRevealOwner();
       return;
     }
 
@@ -695,6 +703,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         sessionId: sessionId,
         messageId: latestRevealableAssistantMessageId,
         reason: reason,
+        generation: generation,
       );
       return;
     }
@@ -707,6 +716,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           messageId: messageId,
           reason: reason,
           attempt: attempt + 1,
+          generation: generation,
         );
       } else {
         fallbackToBottom('no-scroll-clients');
@@ -735,7 +745,9 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         );
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         await Future<void>.delayed(const Duration(milliseconds: 16));
-        if (!mounted || _chatProvider?.currentSession?.id != sessionId) {
+        if (!mounted ||
+            generation != _returnRevealGeneration ||
+            _chatProvider?.currentSession?.id != sessionId) {
           releaseReturnRevealOwner();
           return;
         }
@@ -753,6 +765,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           messageId: messageId,
           reason: reason,
           attempt: attempt + 1,
+          generation: generation,
         );
         return;
       }
@@ -766,6 +779,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       }
     }
 
+    if (generation != _returnRevealGeneration) {
+      releaseReturnRevealOwner();
+      return;
+    }
     _setScrollOwner(_ScrollOwner.returnReveal);
     try {
       await Scrollable.ensureVisible(
@@ -987,6 +1004,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
   void _prepareForOutgoingUserMessage() {
     _deferAssistantWorkCollapse = true;
+    _pendingInitialScrollSessionId = null;
+    _pendingCachedViewportRestoreTarget = _CachedViewportRestoreTarget.none;
+    _scrollToBottomRequestToken += 1;
+    _returnRevealGeneration += 1;
+    if (_currentScrollOwner == _ScrollOwner.returnReveal) {
+      _setScrollOwner(_ScrollOwner.none);
+    }
     _shouldRevealFinalAssistantOnCompletion = false;
     _pendingFinalAssistantRevealMessageId = null;
     _finalAssistantRevealSettledMessageId = null;

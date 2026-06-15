@@ -289,7 +289,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         return (part as TextPart).text.trim().isNotEmpty;
       case PartType.reasoning:
         final reasoningPart = part as ReasoningPart;
-        return parseReasoningStatusLabel(reasoningPart.text) == null &&
+        return !isReasoningStatusMarker(reasoningPart.text) &&
             reasoningPart.text.trim().isNotEmpty;
       case PartType.stepStart:
       case PartType.stepFinish:

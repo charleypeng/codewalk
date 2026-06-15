@@ -282,6 +282,7 @@ class _ChatPageState extends State<ChatPage>
   _CachedViewportRestoreTarget _pendingCachedViewportRestoreTarget =
       _CachedViewportRestoreTarget.none;
   int _scrollToBottomRequestToken = 0;
+  int _returnRevealGeneration = 0;
   int _responseSettleFramesRemaining = 0;
   bool _wasCurrentSessionActivelyResponding = false;
   bool _deferAssistantWorkCollapse = false;
@@ -493,7 +494,7 @@ class _ChatPageState extends State<ChatPage>
   int _timelineSearchScrollOpId = 0;
   int _timelineSearchLastMessagesVersion = -1;
   String? _timelineSearchLastSessionId;
-  Set<String> _pinnedMobileAppBarActionIds = <String>{};
+  List<String> _pinnedMobileAppBarActionIds = <String>[];
   DateTime? _lastResumeRefreshAt;
   DateTime? _lastReturnToChatAt;
   String? _lastReturnToChatSignature;
@@ -539,8 +540,7 @@ class _ChatPageState extends State<ChatPage>
   _SessionContextUsageSnapshot? _cachedContextUsage;
 
   // Cache for _resolveLatestReasoningPartKey (O(N*M) backward scan).
-  int _cachedReasoningKeyMsgCount = -1;
-  String? _cachedReasoningKeyLastMsgId;
+  int _cachedReasoningKeyMessagesVersion = -1;
   String? _cachedReasoningKeyResult;
   bool _cachedReasoningKeyComputed = false;
 

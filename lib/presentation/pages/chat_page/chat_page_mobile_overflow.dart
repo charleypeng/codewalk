@@ -23,18 +23,37 @@ class _MobileAppBarActionDef {
 extension _ChatPageMobileOverflow on _ChatPageState {
   static const String _pinnedActionsPrefKey =
       'codewalk.mobile_appbar_pinned_actions';
+  static const int _maxPinnedMobileActions = 2;
+
+  List<String> _normalizePinnedMobileActionIds(Iterable<String> ids) {
+    final normalized = <String>[];
+    for (final rawId in ids) {
+      final id = rawId.trim();
+      if (id.isEmpty) {
+        continue;
+      }
+      normalized.remove(id);
+      normalized.add(id);
+    }
+    if (normalized.length <= _maxPinnedMobileActions) {
+      return normalized;
+    }
+    return normalized.sublist(normalized.length - _maxPinnedMobileActions);
+  }
 
   Future<void> _loadPinnedMobileActionsFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList(_pinnedActionsPrefKey);
       if (ids != null && mounted) {
+        final normalizedIds = _normalizePinnedMobileActionIds(ids);
         _setState(() {
-          _pinnedMobileAppBarActionIds = Set<String>.from(ids);
+          _pinnedMobileAppBarActionIds = normalizedIds;
         });
+        unawaited(_savePinnedMobileActionsToPrefs());
       }
     } catch (_) {
-      // Non-critical; defaults to empty set.
+      // Non-critical; defaults to an empty list.
     }
   }
 
@@ -54,6 +73,9 @@ extension _ChatPageMobileOverflow on _ChatPageState {
       if (wasPinned) {
         _pinnedMobileAppBarActionIds.remove(actionId);
       } else {
+        if (_pinnedMobileAppBarActionIds.length >= _maxPinnedMobileActions) {
+          _pinnedMobileAppBarActionIds.removeAt(0);
+        }
         _pinnedMobileAppBarActionIds.add(actionId);
       }
     });
@@ -144,38 +166,41 @@ extension _ChatPageMobileOverflow on _ChatPageState {
     final visibleDefs = allDefs
         .where((def) => def.visible())
         .toList(growable: false);
-    final isCompact = context.windowSizeClass.isCompact;
-    final maxPinned = isCompact ? 2 : visibleDefs.length;
-    final pinnedDefs = visibleDefs
-        .where((def) => _pinnedMobileAppBarActionIds.contains(def.id))
-        .take(maxPinned)
+    final visibleDefsById = <String, _MobileAppBarActionDef>{
+      for (final def in visibleDefs) def.id: def,
+    };
+    final pinnedDefs = _pinnedMobileAppBarActionIds
+        .map((id) => visibleDefsById[id])
+        .whereType<_MobileAppBarActionDef>()
         .toList(growable: false);
     final overflowDefs = visibleDefs
         .where((def) => !pinnedDefs.contains(def))
         .toList(growable: false);
 
-    final children = <Widget>[];
-    for (final def in pinnedDefs) {
-      final onTap = def.onTap();
-      children.add(
-        _buildPinnableMobileAction(
-          def,
-          isPinned: true,
-          child: IconButton(
-            key: ValueKey<String>('appbar_pinned_${def.id}_button'),
-            icon: Icon(def.icon),
-            onPressed: onTap,
-          ),
+    final children = <Widget>[
+      for (var index = 0; index < _maxPinnedMobileActions; index += 1)
+        SizedBox(
+          key: ValueKey<String>('mobile_appbar_pinned_slot_$index'),
+          width: kMinInteractiveDimension,
+          height: kMinInteractiveDimension,
+          child: index < pinnedDefs.length
+              ? _buildPinnableMobileAction(
+                  pinnedDefs[index],
+                  isPinned: true,
+                  child: IconButton(
+                    key: ValueKey<String>(
+                      'appbar_pinned_${pinnedDefs[index].id}_button',
+                    ),
+                    icon: Icon(pinnedDefs[index].icon),
+                    onPressed: pinnedDefs[index].onTap(),
+                  ),
+                )
+              : null,
         ),
-      );
-    }
+    ];
 
     if (overflowDefs.isNotEmpty) {
       children.add(_buildMobileOverflowMenu(overflowDefs: overflowDefs));
-    }
-
-    if (children.isEmpty) {
-      return const SizedBox.shrink();
     }
 
     return Row(mainAxisSize: MainAxisSize.min, children: children);
