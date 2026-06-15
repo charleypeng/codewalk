@@ -42,6 +42,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-036: Userspace Tailscale Transport with Profile-Scoped Activation
 - ADR-037: Chat Viewport and Scroll/Follow Synchronization Revamp
 - ADR-038: Disable On-Device STT Engines on Windows Desktop
+- ADR-039: Real Windows STT Fix — Actionable Settings Links and Typed Microphone Preflight
 
 ---
 
@@ -489,7 +490,7 @@ Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles`
 
 The codebase used Flutter `Icons.*` references broadly, but feature requirements introduced symbols that are only available in Material Symbols (for example, panel-specific close icons). The project also needs broader icon coverage and a future-proof path aligned with Google's current design direction.
 
-Related: See `featM` in `ROADMAP.md` (commit `e05d2fb`).
+Related: historical `featM` workstream (commit `e05d2fb`).
 
 ### Decision
 
@@ -524,7 +525,7 @@ Standardize icon usage on `Symbols.*` from `material_symbols_icons` and migrate 
 
 The UI layer relied on hardcoded pixel breakpoints (e.g. `_isMobileViewport` checks against arbitrary widths) scattered across multiple widgets and pages. This made responsive behavior inconsistent and difficult to reason about, especially when distinguishing phone, tablet, and desktop layouts. The `featN` Material You revamp required a systematic approach aligned with MD3 guidelines.
 
-Related: See `featN` in `ROADMAP.md`.
+Related: historical `featN` workstream.
 
 ### Decision
 
@@ -568,7 +569,7 @@ Additionally, redefine the mobile-viewport guard: the previous `_isMobileViewpor
 
 Shape values (border radii) were scattered across 15+ widgets as magic `BorderRadius.circular(...)` literals with no consistent scale. Color seed selection for non-dynamic-color scenarios had no structured fallback. The `featN` Material You revamp required centralizing these design tokens to align with MD3 specifications.
 
-Related: See `featN` in `ROADMAP.md`.
+Related: historical `featN` workstream.
 
 ### Decision
 
@@ -650,40 +651,36 @@ Enforce runtime usage through platform services: Android notifications use `@dra
 
 ---
 
-## ADR-016: Hybrid File-Backed Cache for Large Chat Payloads (2026-02-20)
+## ADR-016: SharedPreferences-Backed Chat Snapshot Cache (2026-02-20, updated 2026-06-15)
 
 **Status**: Accepted
 
 ### Context
 
-SharedPreferences has platform-specific size limits and performance degradation for large JSON payloads (session lists, full session snapshots). On some Android devices, payloads exceeding a few hundred KB cause observable write delays and risk silent data truncation.
+CodeWalk caches session lists, last-session snapshots, and per-session message snapshots so project/session switching can restore a useful chat view before remote revalidation finishes. The implementation must keep those payloads scoped by server and project context, and it must remain simple enough to preserve reliably across mobile and desktop targets.
 
 ### Decision
 
-Introduce a two-tier cache architecture: large chat payloads are written to a file-backed store (`ChatCachePayloadStore`) in the app support directory (`chat_cache_v1/`), while metadata and small values remain in SharedPreferences. The file store uses SHA-1 key hashing for deterministic filenames and maintains a 24-entry LRU in-memory read cache. Transparent lazy migration moves existing large values from SharedPreferences to the file store on first access, tracked by a `_migratedLargeCacheKeys` set. Platform-conditional imports provide a no-op stub on web.
+Store cached chat payloads directly in `SharedPreferences` under the same server/context-scoped key scheme used by the rest of `AppLocalDataSource`. Snapshot timestamps and LRU metadata remain separate preference keys. The earlier file-backed cache-store layer has been removed from the active implementation; `_readLargeCachePayload`, `_writeLargeCachePayload`, and related helpers are now compatibility-shaped private wrappers around `SharedPreferences`.
 
 ### Rationale
 
-- SharedPreferences is designed for small key-value pairs; using it for multi-hundred-KB JSON blobs violates platform contracts.
-- A file-backed store removes size limits and improves write performance for large payloads.
-- Lazy migration avoids a blocking startup cost while ensuring data is progressively moved.
-- Full fallback to SharedPreferences on file-store failure ensures the app never breaks due to storage layer issues.
+- Keeping the cache in the existing local datasource reduces platform-conditional storage paths and removes an inactive cache abstraction.
+- Context-scoped keys are the load-bearing part of the cache contract; the storage backend is an implementation detail.
+- The private helper names preserve local call-site clarity without keeping the removed file-store API alive.
 
 ### Consequences
 
-- ✅ Eliminates payload size limits and improves write performance for large session data.
-- ✅ Transparent migration requires no user action; existing data is preserved.
-- ✅ Full fallback to SharedPreferences ensures resilience against file-store failures.
-- ⚠ Adds platform-conditional compilation paths (io vs. stub) and migration tracking state.
-- ❌ Web platform uses stub (no file store); large payloads remain in SharedPreferences on web.
+- ✅ Eliminates a stale dedicated cache-store dependency and keeps local persistence behavior uniform across platforms.
+- ✅ Cached sessions and snapshots continue to survive app restart through the existing preference store.
+- ✅ Tests assert the active SharedPreferences-backed behavior instead of the removed cache-store injection path.
+- ⚠ Large payloads still depend on platform preference-store limits; if oversized snapshot writes become a measured problem again, reintroduce a file-backed store behind a new ADR update and regression tests.
 
 ### Key Files
 
-- `lib/data/cache/chat_cache_payload_store.dart`
-- `lib/data/cache/chat_cache_payload_store_base.dart`
-- `lib/data/cache/chat_cache_payload_store_io.dart`
-- `lib/data/cache/chat_cache_payload_store_stub.dart`
 - `lib/data/datasources/app_local_datasource.dart`
+- `lib/data/datasources/app_local_datasource_storage_helpers.dart`
+- `test/unit/datasources/app_local_datasource_impl_test.dart`
 
 ---
 
@@ -747,7 +744,7 @@ Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClie
 ### Rationale
 
 - A separate `HttpClient` with its own connection pool eliminates TCP connection contention between regular HTTP requests and long-lived SSE streams entirely.
-- Conditional imports follow the same pattern used by `ChatCachePayloadStore` (ADR-016), providing a no-op stub on web where browsers manage connections natively.
+- Conditional imports provide a no-op stub on web where browsers manage connections natively.
 - Optional `sseDio` injection maintains backward compatibility with all existing tests without requiring mock changes.
 - Mirroring auth/baseUrl in both instances keeps configuration synchronized without requiring a shared interceptor chain.
 
@@ -840,7 +837,7 @@ Server APIs currently expose full message list reads (with optional `limit`) and
 Adopt a cache-first SWR policy per session:
 
 1. Add an in-memory per-session LRU message cache in `ChatProvider` (20 entries).
-2. Persist recent per-session message snapshots using ADR-016 file-backed storage (`ChatCachePayloadStore`) plus SharedPreferences metadata for recency and timestamps.
+2. Persist recent per-session message snapshots through ADR-016 local storage helpers plus SharedPreferences metadata for recency and timestamps.
 3. On `selectSession`, restore cached messages immediately when available and trigger background `loadMessages(...preserveVisibleState: true)` revalidation.
 4. Project Switch Fast-Path: During workspace/project transitions (`serverId::directory`), prioritize restoring the last known session snapshot for that context from cache immediately, bypassing the full "loading" state if valid data exists.
 5. Keep full-fetch correctness path, but incrementally patch non-current session caches on `message.created` / `message.updated` via single-message fallback fetch.
@@ -1452,17 +1449,18 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 
 1. **Server-Host-Only Quota Ownership** — The app never manages or stores provider credentials for quota checking. It relies entirely on the connected host's environment and discovered provider configurations.
 2. **Strategy-Chain Transport** — Quota data is fetched using a tiered discovery strategy:
-    - **OpenChamber REST** — Use `GET /api/v1/quota` and related endpoints when detected.
-    - **Hidden Shell Fallback** — Fall back to execution of provider-specific CLI tools (e.g., `openai-quota`, `anthropic-limit`) via the existing server-hosted PTY transport (ADR-027) when REST endpoints are missing.
+    - **OpenChamber REST** — Use `GET /api/quota/providers` and then `GET /api/quota/{providerId}` when those endpoints are available.
+    - **Hidden Shell Fallback** — Create a hidden ephemeral OpenCode session, execute a Base64-encoded Node.js probe through `POST /session/:id/shell`, parse the final `CW_QUOTA_JSON:` line, and delete the probe session after completion.
 3. **Popup-Only UI (Compact-First)** — The monitoring interface is restricted to the "Context usage" popup. It is hidden by default in compact/mobile layouts to preserve composer real-estate, appearing only on explicit user invocation.
 4. **Grouped Providers with Pace/Progress Semantics** — UI displays providers grouped by parent organization (OpenAI, Anthropic, etc.) using progress bars that reflect both absolute remaining quota and "Pace" (usage rate over time) to warn of imminent rate-limiting.
-5. **Explicit Feature-by-Feature Parity Opt-in** — Future OpenChamber features will not be auto-adopted. Each parity addition must be explicitly evaluated, documented via ADR, and gated behind feature-specific capability checks.
+5. **Auth Key Register** — `_supportedAuthKeys` is the single Dart-side register for shell fallback provider aliases and the `unsupportedConfigured` diagnostic filter. Adding a new shell probe requires updating both the dispatcher and this register.
+6. **Explicit Feature-by-Feature Parity Opt-in** — Future OpenChamber features will not be auto-adopted. Each parity addition must be explicitly evaluated, documented via ADR, and gated behind feature-specific capability checks.
 
 ### Rationale
 
 - **ADR-023 Priority** — Official OpenCode remains the primary contract. OpenChamber parity is additive and must never conflict with official lifecycle or API semantics.
 - **Security** — By enforcing server-host ownership, the client avoids the risk of credential leakage and maintains the security boundaries established in ADR-001.
-- **Resilience** — The strategy-chain ensures monitoring works across both official servers (via shell fallback) and OpenChamber-enhanced servers (via REST).
+- **Resilience** — The strategy-chain ensures monitoring works across both official servers (via hidden shell fallback) and OpenChamber-enhanced servers (via REST).
 - **UX** — Grouping and Pace semantics provide actionable insights rather than just raw numbers, helping users manage long-running agent tasks.
 
 ### Consequences
@@ -1491,25 +1489,28 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 
 ### Provider Register
 
-The following OpenChamber quota providers are supported by the strategy-chain. Each provider entry includes the provider key used in REST/shell discovery, a brief description, and its grouping.
+The following shell fallback probes are implemented by the strategy-chain. REST can return any provider supported by an OpenChamber-compatible host; the shell fallback covers the providers below from the host's `auth.json`, environment, or provider-specific local files as noted in code.
 
 | # | Provider Key | Description | Group |
 |---|-------------|-------------|-------|
-| 1 | `openai` | OpenAI API usage and rate-limits | OpenAI |
-| 2 | `anthropic` | Anthropic API usage and rate-limits | Anthropic |
-| 3 | `openrouter` | OpenRouter aggregated usage | OpenRouter |
-| 4 | `google-gemini` | Google Gemini API usage | Google |
-| 5 | `groq` | Groq API usage and rate-limits | Groq |
-| 6 | `nano-gpt` | NanoGPT API usage and rate-limits | NanoGPT |
-| 7 | `wafer` | Wafer API usage and rate-limits | Wafer |
-| 8 | `github-copilot-addon` | GitHub Copilot addon quota (usage vs. included allowance) | GitHub |
-| 9 | `kimi-for-coding` | Kimi for Coding API usage | Moonshot |
-| 10 | `zhipuai-coding-plan` | ZhipuAI coding plan quota | ZhipuAI |
-| 11 | `minimax-coding-plan` | MiniMax coding plan quota (international) | MiniMax |
-| 12 | `minimax-cn-coding-plan` | MiniMax coding plan quota (China domestic) | MiniMax |
-| 13 | `zai-coding-plan` | ZAI coding plan quota | ZAI |
-| 14 | `cursor` | Cursor API usage and rate-limits | Cursor |
-| 15 | `ollama-cloud` | Ollama Cloud hosted model usage | Ollama |
+| 1 | `anthropic` / `claude` | Anthropic Claude OAuth usage windows | Anthropic |
+| 2 | `openrouter` | OpenRouter credit usage | OpenRouter |
+| 3 | `openai` / `codex` / `chatgpt` | Codex / ChatGPT usage windows and credits | OpenAI |
+| 4 | `google` / `google.oauth` | Gemini and Antigravity quota windows | Google |
+| 5 | `github-copilot` / `copilot` | GitHub Copilot quota | GitHub |
+| 6 | `github-copilot-addon` | GitHub Copilot add-on quota | GitHub |
+| 7 | `opencode-go` | OpenCode Go rolling, weekly, and monthly dashboard usage | OpenCode |
+| 8 | `nano-gpt` | NanoGPT API usage and rate-limits | NanoGPT |
+| 9 | `wafer` | Wafer API usage and rate-limits | Wafer |
+| 10 | `kimi-for-coding` | Kimi for Coding API usage | Moonshot |
+| 11 | `zhipuai-coding-plan` | ZhipuAI coding plan quota | ZhipuAI |
+| 12 | `minimax-coding-plan` | MiniMax coding plan quota (international) | MiniMax |
+| 13 | `minimax-cn-coding-plan` | MiniMax coding plan quota (China domestic, inverted remains semantics) | MiniMax |
+| 14 | `zai-coding-plan` | ZAI coding plan quota | ZAI |
+| 15 | `cursor` | Cursor usage, plan limits, and credits | Cursor |
+| 16 | `ollama-cloud` | Ollama Cloud hosted model usage | Ollama |
+
+`_supportedAuthKeys` also recognizes aliases for recent OpenCode provider additions (`snowflake-cortex`, `grok`/`xai`, and `cohere-north`) so they are not misreported as unknown configuration. Dedicated shell probes for those providers are not yet implemented; they become visible through REST only when the connected host supplies them.
 
 ### Exception: OpenCode Go Dashboard Credential Opt-In
 
@@ -1815,7 +1816,7 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - `lib/core/auth/oauth_token_storage.dart` — `OAuthTokenStorage` backed by `flutter_secure_storage`, keys scoped by `profileId + serverUrl`
 - `lib/core/auth/oauth_credential.dart` — `OAuthCredential` encapsulating access/refresh tokens and expiry
 - `lib/core/network/dio_client.dart` — Bearer token interceptor management for matching OAuth profile origin, proxy-401/403 detection
-- `lib/core/providers/app_provider.dart` — `supportsCloudflareAccessOAuth` desktop-only gating
+- `lib/core/providers/app_provider.dart` — `supportsCloudflareAccessOAuth` desktop + Android gating
 - Onboarding and settings pages — `oauthEnabled` toggle and configuration UI
 - Tests under `test/unit/auth` — OAuth service, token storage, credential, PKCE, DCR, callback validation
 - Tests under `test/unit/network` — Bearer interceptor scoping, health check OAuth challenge detection, Basic Auth non-regression
@@ -1883,7 +1884,7 @@ ADR-014 centralized **shape** tokens (`AppShapes`) and **brand color** tokens (`
 
 **Status**: Accepted
 
-Related: See Feature 7 in ROADMAP.md
+Related: historical Feature 7 workstream; `ROADMAP.md` is intentionally removed and current implemented behavior is tracked in `BEHAVIOR.md`.
 
 ### Context
 
@@ -2171,4 +2172,3 @@ Build on top of ADR-038 (still the runtime contract) and add the parts of the fi
 - `test/unit/services/windows_microphone_service_test.dart` — new probe unit tests (happy path + `PlatformException` + `MissingPluginException`)
 - `BEHAVIOR.md` — Windows STT table updated; "Windows on-device STT is intentionally disabled (with actionable Windows settings links)" section
 - Ref: issue #43, llfbandit/record#453, https://learn.microsoft.com/en-us/windows/apps/develop/launch/launch-settings, https://learn.microsoft.com/en-us/windows/win32/coreaudio/wasapi
-

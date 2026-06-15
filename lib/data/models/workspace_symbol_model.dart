@@ -31,8 +31,17 @@ class WorkspaceSymbolModel {
   static String _normalizeSymbolPath(String value) {
     final trimmed = value.trim();
     if (trimmed.startsWith('file://')) {
-      return Uri.tryParse(trimmed)?.toFilePath() ?? trimmed.substring(7);
+      final uri = Uri.tryParse(trimmed);
+      if (uri == null) {
+        return trimmed.substring(7);
+      }
+      final decodedPath = Uri.decodeComponent(uri.path);
+      final windowsDrivePath = RegExp(r'^/[A-Za-z]:/').firstMatch(decodedPath);
+      if (windowsDrivePath != null) {
+        return decodedPath.substring(1).replaceAll('\\', '/');
+      }
+      return decodedPath.replaceAll('\\', '/');
     }
-    return trimmed;
+    return trimmed.replaceAll('\\', '/');
   }
 }

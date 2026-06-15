@@ -840,6 +840,7 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Given** the host exposes OpenChamber-compatible REST endpoints (`GET /api/quota/providers`)
 - **When** the popup is opened (or every 60 seconds in background)
 - **Then** CodeWalk fetches live quota data from those endpoints without any client-side credentials
+- **Then** any provider returned by the REST endpoint can appear in the popup, including newer host-side providers such as Snowflake Cortex, Grok/xAI, or Cohere North when the connected server supplies them
 - **Given** the host does not expose OpenChamber endpoints
 - **When** quota data is requested
 - **Then** CodeWalk falls back to a hidden ephemeral shell session that probes `CW_QUOTA_JSON` without appearing in the user's conversation list
@@ -860,6 +861,8 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Then** the fallback computes `usedPercent = max(0, min(100, 100 - remainingPercent))` to keep the value in the standard 0–100 range
 - **Then** `cursor` falls back to querying the local Cursor SQLite database on macOS hosts if environment tokens are missing
 - **Then** `ollama-cloud` parses HTML scraping safely, falling back to a descriptive error if the HTML format changes
+- **Then** newer provider aliases for Snowflake Cortex, Grok/xAI, and Cohere North are recognized by the shell fallback diagnostics so they are not shown as unknown configuration
+- **Then** those newer providers only produce visible quota rows through REST until a dedicated shell probe is implemented
 
 ---
 

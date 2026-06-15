@@ -244,6 +244,11 @@ jobs:
       - name: List artifacts
         run: find artifacts/ -type f
 
+      - name: Prepare release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          python3 tool/release/changelog.py extract "$version" --output release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -252,6 +257,7 @@ jobs:
             artifacts/codewalk-windows-x64/codewalk-windows-x64.zip
             artifacts/codewalk-macos-arm64/codewalk-macos-arm64.tar.gz
             artifacts/codewalk-android/codewalk-android-arm64.apk
+          body_path: release-notes.md
           generate_release_notes: true
           draft: false
           prerelease: false

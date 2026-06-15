@@ -1225,11 +1225,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "381d0cbd7e75591c9e3c81058b86b7dda6a89e07"
-      resolved-ref: "381d0cbd7e75591c9e3c81058b86b7dda6a89e07"
+      ref: fb5003c6628e0695b6a0941a2b861a0b6717b9d0
+      resolved-ref: fb5003c6628e0695b6a0941a2b861a0b6717b9d0
       url: "https://github.com/jlnrrg/simple_icons.git"
     source: git
-    version: "16.8.0"
+    version: "16.23.0"
   sky_engine:
     dependency: transitive
     description: flutter

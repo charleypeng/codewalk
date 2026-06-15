@@ -59,7 +59,7 @@ help:
 	@echo "  make desktop    Build desktop app for current host OS"
 	@echo "  make android    Build Android APK (arm64)"
 	@echo "  make precommit  check + android"
-	@echo "  make release V=patch|minor|major  Bump version, commit, tag, push"
+	@echo "  make release V=patch|minor|major  Bump version, changelog, commit, tag, push"
 	@echo "  make clean      Clean and restore dependencies"
 
 deps:
@@ -397,6 +397,10 @@ precommit: check icons-check android
 release:
 	@set -e; \
 	if [ -z "$(V)" ]; then echo "Usage: make release V=patch|minor|major"; exit 1; fi; \
+	if [ -n "$$(git status --porcelain)" ]; then \
+		echo "Worktree has pending changes. Commit or resolve them before release."; \
+		exit 1; \
+	fi; \
 	cur_ver=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); sub(/\r$$/, "", $$0); split($$0, parts, "+"); print parts[1]; exit}' pubspec.yaml); \
 	cur_build=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); sub(/\r$$/, "", $$0); split($$0, parts, "+"); if (parts[2] != "") print parts[2]; exit}' pubspec.yaml); \
 	if [ -z "$$cur_ver" ] || [ -z "$$cur_build" ]; then echo "Unable to parse version from pubspec.yaml (expected name+build)."; exit 1; fi; \
@@ -412,8 +416,9 @@ release:
 		*) echo "V must be patch, minor, or major"; exit 1 ;; \
 	esac; \
 	echo "$$cur_ver+$$cur_build -> $$new_ver+$$new_build"; \
+	python3 tool/release/changelog.py update "$$new_ver"; \
 	sed -i "s/^version: .*/version: $$new_ver+$$new_build/" pubspec.yaml; \
-	git add pubspec.yaml; \
+	git add pubspec.yaml CHANGELOG.md; \
 	git commit -m "release: cut v$$new_ver"; \
 	git tag -a "v$$new_ver" -m "v$$new_ver"; \
 	git push --follow-tags; \

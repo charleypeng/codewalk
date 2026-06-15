@@ -112,77 +112,19 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
   }
 
   Future<String?> _readLargeCachePayload(String key) async {
-    final store = _chatCachePayloadStore;
-    if (store == null) {
-      return sharedPreferences.getString(key);
-    }
-
-    try {
-      final stored = await store.read(key);
-      if (stored != null) {
-        return stored;
-      }
-    } catch (_) {
-      // Skip the file store on subsequent reads if it is persistently broken.
-      _migratedLargeCacheKeys.add(key);
-      return sharedPreferences.getString(key);
-    }
-
-    if (_migratedLargeCacheKeys.contains(key)) {
-      return null;
-    }
-
-    final legacy = sharedPreferences.getString(key);
-    if (legacy == null || legacy.trim().isEmpty) {
-      _migratedLargeCacheKeys.add(key);
-      // Return null for both absent and whitespace-only values so first and
-      // subsequent reads within the same session are consistent.
-      return null;
-    }
-
-    try {
-      await store.write(key, legacy);
-      await sharedPreferences.remove(key);
-      _migratedLargeCacheKeys.add(key);
-    } catch (_) {
-      return legacy;
-    }
-    return legacy;
+    return sharedPreferences.getString(key);
   }
 
   Future<void> _writeLargeCachePayload(String key, String value) async {
-    final store = _chatCachePayloadStore;
-    if (store == null) {
-      await sharedPreferences.setString(key, value);
-      return;
-    }
-    try {
-      await store.write(key, value);
-      await sharedPreferences.remove(key);
-      _migratedLargeCacheKeys.add(key);
-    } catch (_) {
-      await sharedPreferences.setString(key, value);
-    }
+    await sharedPreferences.setString(key, value);
   }
 
   Future<void> _removeLargeCachePayload(String key) async {
-    final store = _chatCachePayloadStore;
-    if (store != null) {
-      try {
-        await store.remove(key);
-      } catch (_) {}
-      _migratedLargeCacheKeys.add(key);
-    }
     await sharedPreferences.remove(key);
   }
 
   Future<void> _clearLargeCachePayloads() async {
-    final store = _chatCachePayloadStore;
-    if (store != null) {
-      try {
-        await store.clear();
-      } catch (_) {}
-    }
-    _migratedLargeCacheKeys.clear();
+    // Large cache payloads are stored in SharedPreferences; clearAll() clears
+    // them together with the rest of local state.
   }
 }

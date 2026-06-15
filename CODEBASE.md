@@ -15,14 +15,15 @@
 ```text
 codewalk/
 ├── ai-docs/                            # AI docs and engineering artifacts
-│   ├── implement.md                    # Synthesized upstream alignment plan (OpenCode v1.14.x - v1.15.0)
 │   ├── opencode_server.md              # Server contract local anchor (used by ADR-023)
 │   ├── opencode_web.md                 # Web contract local anchor (used by ADR-023)
 │   ├── opencode_config.md              # Config schema local anchor (used by ADR-023)
 │   └── opencode_models.md              # Model/provider compatibility notes (used by ADR-023)
 ├── assets/
 │   ├── images/                           # Source and generated launcher/tray icon assets used by `make icons`
+│   ├── moonshine_models.json             # Moonshine STT model catalog
 │   ├── parakeet_models.json              # Parakeet STT model catalog (id, label, download URL, lang)
+│   ├── sherpa_models.json                # Sherpa STT model catalog
 │   └── sensevoice_models.json            # SenseVoice STT model catalog (id, label, download URL, lang)
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
@@ -31,11 +32,10 @@ codewalk/
 │   │   ├── i18n/                        # Locale registry, context bridge, localization helpers
 │   │   ├── tailscale/                    # Tailscale transport: service (IO/stub), node state, Dio adapter
 │   │   └── utils/                       # Core utilities (path, timeline search)
-│   ├── data/                           # Data layer: datasources, search models, repositories, cache
-│   │   └── cache/                      # Hybrid file+memory cache for large chat payloads
+│   ├── data/                           # Data layer: datasources, API/storage models, repositories
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
 │   ├── l10n/                           # Flutter gen_l10n ARB files (14 locales) and generated delegates
-│   │   ├── app_en.arb                  # English source ARB (~200 UI keys with metadata)
+│   │   ├── app_en.arb                  # English source ARB (1280 UI keys with metadata)
 │   │   ├── app_*.arb                   # Translation ARBs (ar, bn, de, es, fr, hi, it, ja, ko, pt, ru, ur, zh)
 │   │   └── generated/                  # Auto-generated AppLocalizations classes via flutter gen-l10n
 │   └── presentation/                   # UI, state providers, runtime services
@@ -110,15 +110,11 @@ lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/provide
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures; SSE backoff loop fix — streamAliveStart enforces 5-second threshold before resetting reconnect counter, ±20% jitter to prevent thundering-herd
   └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc); structured named error extraction (`_extractServerMessage`, `_extractValidationErrors`, `_extractNamedServerError`, `_extractTypedDetails`) preserves typed upstream error names/codes/details in surfaced failures
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
-lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models, session composer drafts, and per-agent selection memory; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
-  └── app_local_datasource_storage_helpers.dart # Secure storage, SharedPreferences, and large-cache migration helpers (part of app_local_datasource.dart; see commit 8759defc)
-lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
-lib/data/cache/chat_cache_payload_store_base.dart # Abstract interface for cache store (read/write/remove/clear)
-lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid file+LRU memory cache (24 entries) for chat payloads
-lib/data/cache/chat_cache_payload_store_stub.dart # Non-IO platforms: disabled payload store (returns null)
+lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, SharedPreferences-backed caches, credentials, favorite models, session composer drafts, and per-agent selection memory
+  └── app_local_datasource_storage_helpers.dart # Secure storage, scoped SharedPreferences keys, and large-cache helper wrappers (part of app_local_datasource.dart)
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
-  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + per-provider quota-fetch functions (Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, Ollama Cloud, Snowflake Cortex, Grok/xAI, Cohere/Cohere North); modularized with `_supportedAuthKeys` Set as single source of truth for provider auth key whitelisting
+  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + shell probes for Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, and Ollama Cloud; `_supportedAuthKeys` also recognizes newer provider aliases for diagnostics
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle, Tailscale transport orchestration; supportsTailscale (Android/iOS/Linux/macOS), _applyTailscaleTransport() drives per-profile Tailscale node lifecycle (upForProfile/auth URL launch/down), swaps Dio adapter via TailscaleHttpAdapter, propagates active adapter to health-check Dio via createHealthCheckDio; tailscaleEnabled in addServerProfile/updateServerProfile CRUD; exposes reactive Tailscale state getters: tailscaleState, tailscaleNodeState, tailscaleAuthUrl, tailscaleMessage, tailscaleNeedsAuth, tailscaleNeedsMachineAuth, and authenticateTailscale() method; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out
@@ -327,7 +323,7 @@ lib/domain/usecases/       # Use case boundaries used by providers
 lib/data/models/           # API/storage models and JSON adapters (includes provider_model.dart with `hidden` on ModelModel)
 lib/data/repositories/     # Repository implementations (includes chat_repository.dart, reply_question.dart, reject_question.dart); sessionId removed from replyQuestion/rejectQuestion (ADR-023 contract compliance)
 lib/data/datasources/      # Remote/local IO boundaries
-lib/data/cache/            # Hybrid payload cache primitives used by AppLocalDataSource
+lib/data/datasources/      # Remote/local IO boundaries, including SharedPreferences-backed local cache helpers
 ```
 
 ## Key API/DataSource locations
@@ -351,8 +347,8 @@ lib/data/datasources/project_remote_datasource.dart
   - /file, /file/content, /find/file, /find?pattern=, /find/symbol, /vcs
 
 lib/data/datasources/quota_remote_datasource.dart
-  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + per-provider quota-fetch functions (Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, Ollama Cloud); modularized with `_supportedAuthKeys` Set as single source of truth for provider auth key whitelisting
-  - Strategy-chain: OpenChamber REST (`GET /api/quota/providers`) → shell probe fallback (`CW_QUOTA_JSON:`)
+  └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + implemented shell probes; `_supportedAuthKeys` is the auth-alias/unsupported-filter register
+  - Strategy-chain: OpenChamber REST (`GET /api/quota/providers` -> `GET /api/quota/{provider}`) -> hidden ephemeral shell probe (`CW_QUOTA_JSON:`)
 ```
 
 ## Main Commands
@@ -372,6 +368,8 @@ dart tool/i18n/generate_arb.dart && flutter gen-l10n  # Regenerate all 14 locale
 make android
 make desktop
 make release V=patch|minor|major
+python tool/release/changelog.py update X.Y.Z
+python tool/release/changelog.py extract X.Y.Z --output release-notes.md
 flutter analyze --no-fatal-infos --no-fatal-warnings
 flutter test
 flutter run -d linux
@@ -410,6 +408,7 @@ test/support/                          # Test helpers/fakes; `mock_opencode_serv
 test/contract/                         # Contract tests; `chat_event_contract_test.dart` covers 43 SSE event dispatch contract tests
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
+tool/release/changelog.py              # Changelog update/extract helper used by `make release` and GitHub Releases
 .github/workflows/ci.yml               # CI executes analyze + tests + coverage gate; includes Go setup (actions/setup-go@v5) in quality, test_shards, and coverage jobs for Tailscale dep
 ```
 
@@ -429,12 +428,13 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 ## Notes
 
 - `make android` builds an arm64 APK, uses a monotonic installable build number aligned with release versioning (so repeated local uploads replace the previous installation without making later releases look like downgrades), and sends the artifact with `~/bin/hey`; use `HEY_CAPTION` to override the upload caption.
+- `make release V=patch|minor|major` requires a clean worktree, updates `CHANGELOG.md` through `tool/release/changelog.py`, bumps `pubspec.yaml`, commits, tags, and pushes.
 - Android manifest declares `REQUEST_INSTALL_PACKAGES` permission and a `FileProvider` authority (`com.verseles.codewalk.fileprovider`) required for APK sideload installs via `open_filex`.
 - Sensitive server credentials are persisted through `flutter_secure_storage` (v10.0.0) via `AppLocalDataSource`.
 - Platform folders currently present: `android/`, `linux/`, `macos/`, `web/`, `windows/`.
 - Linux keeps native STT disabled; new installs default to Parakeet while Sherpa, Moonshine, Parakeet, and SenseVoice remain explicit desktop-selectable alternatives.
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
-- featM icon migration is largely complete in `lib/presentation/**` and `test/widget/**`; one notifications settings widget still uses `Icons.*` while the rest has moved to `Symbols.*` (`material_symbols_icons`).
+- Material Symbols are the default app icon set in UI surfaces; `SimpleIcons` remains intentional for brand/file-type icons and a few legacy Material `Icons.*` calls remain in focused quota/open/close controls.
 - Cloudflare Access OAuth now supported on Android via `flutter_appauth` (Chrome Custom Tab + manifest-verified loopback redirect) in addition to desktop (local HTTP redirect server).`
 - `package:tailscale` (`third_party/tailscale/`, path dependency in `pubspec.yaml`) provides embedded userspace Tailscale networking via a Go native build hook (`hook/build.dart`). The hook skips Windows native asset registration to keep the package importable while runtime Tailscale support remains stubbed on Windows — preserving Windows release builds. Supports Android, iOS, Linux, macOS; excluded from Web/Windows platform declarations.
 
@@ -467,7 +467,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 - **Storage key**: `favoriteModelsKey` in `AppConstants` (`app_constants.dart`).
 - **Local persistence**: `AppLocalDataSource` exposes `getFavoriteModelsJson` /
-  `saveFavoriteModelsJson` (scoped by server + project, same pattern as recent models).
+  `saveFavoriteModelsJson`; current provider loading stores favorites server-scoped so they are shared across projects on the same server.
 - **Provider state**: `ChatProvider._favoriteModelKeys` list, getter `favoriteModelKeys`,
   query method `isModelFavorite`, and toggle method `toggleModelFavorite` (local-only, no
   remote sync). Loaded and persisted in `chat_provider_preference_ops.dart` alongside

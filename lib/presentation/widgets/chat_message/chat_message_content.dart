@@ -104,32 +104,50 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                         children: [
                           Row(
                             children: [
-                              if (isUser) ...[
-                                Text(
-                                  context.l10n.chatMessageYou,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: colorScheme.primary,
-                                        fontWeight: FontWeight.w700,
+                              Expanded(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isUser) ...[
+                                      Flexible(
+                                        child: Text(
+                                          context.l10n.chatMessageYou,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium
+                                              ?.copyWith(
+                                                color: colorScheme.primary,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
                                       ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              Text(
-                                _formatTime(message.time),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontSize: 11,
+                                      const SizedBox(width: 8),
+                                    ],
+                                    Flexible(
+                                      child: Text(
+                                        _formatTime(message.time),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                              fontSize: 11,
+                                            ),
+                                      ),
                                     ),
+                                  ],
+                                ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 4),
                               _buildForwardButton(context),
                               _buildShareImageButton(context),
-                              if (!isUser &&
-                                  message is AssistantMessage) ...[
+                              if (!isUser && message is AssistantMessage) ...[
                                 _buildReadAloudButton(
                                   context,
                                   message as AssistantMessage,
@@ -156,8 +174,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                           else
                             SelectionArea(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: renderedParts,
                               ),
                             ),
@@ -512,12 +529,18 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
           if (message.modelId != null)
             PopupMenuItem(
               enabled: false,
-                  child: Text(context.l10n.chatMessageModelMessageModelId(message.modelId!)),
+              child: Text(
+                context.l10n.chatMessageModelMessageModelId(message.modelId!),
+              ),
             ),
           if (message.providerId != null)
             PopupMenuItem(
               enabled: false,
-                  child: Text(context.l10n.chatMessageProviderMessageProviderId(message.providerId!)),
+              child: Text(
+                context.l10n.chatMessageProviderMessageProviderId(
+                  message.providerId!,
+                ),
+              ),
             ),
           if (message.tokens != null)
             PopupMenuItem(

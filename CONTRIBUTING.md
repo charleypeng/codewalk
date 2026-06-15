@@ -7,7 +7,7 @@ Thanks for contributing. This project keeps changes small, testable, and releasa
 1. Create a branch from `main`.
 2. Run local validation:
    - `make check`
-   - `make precommit` when your change touches build/release paths
+   - `HEY_CAPTION="specific caption" make android` only when an APK artifact is needed
 3. Open a PR with:
    - problem statement
    - change summary
@@ -29,6 +29,7 @@ Use Conventional Commits:
 - Keep generated code committed (`*.g.dart`).
 - Do not introduce new analyzer debt beyond current budget.
 - Keep coverage above the repository threshold.
+- Use `make check` and `make android` as separate gates; do not rely on a combined local target as normal validation.
 
 ## Coding Guidelines
 

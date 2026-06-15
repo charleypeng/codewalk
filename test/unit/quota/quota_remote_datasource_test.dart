@@ -277,10 +277,13 @@ void main() {
       }
     });
 
-    final result = await Process.run('node', <String>[
-      '--check',
-      tempFile.path,
-    ]);
+    late final ProcessResult result;
+    try {
+      result = await Process.run('node', <String>['--check', tempFile.path]);
+    } on ProcessException {
+      markTestSkipped('Node.js is not available; skipping JS syntax check.');
+      return;
+    }
     expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
   });
 
@@ -539,7 +542,10 @@ void main() {
     final results = await dataSource.fetchQuotaResults();
     expect(results, hasLength(1));
     expect(results.first.providerId, 'wafer');
-    expect(results.first.usage?.windows['5h']?.valueLabel, contains('+5 overage'));
+    expect(
+      results.first.usage?.windows['5h']?.valueLabel,
+      contains('+5 overage'),
+    );
   });
 
   test('parses github-copilot-addon quota payload from shell fallback', () async {
@@ -582,15 +588,18 @@ void main() {
     expect(results.first.providerId, 'minimax-coding-plan');
   });
 
-  test('parses minimax-cn-coding-plan quota payload from shell fallback', () async {
-    final dio = createMockDio(
-      '{"results":[{"providerId":"minimax-cn-coding-plan","providerName":"MiniMax Coding Plan (minimaxi.com)","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":30,"windowSeconds":18000,"resetAt":1000,"valueLabel":"70 / 100 remains"}}},"fetchedAt":1}]}',
-    );
-    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
-    final results = await dataSource.fetchQuotaResults();
-    expect(results, hasLength(1));
-    expect(results.first.providerId, 'minimax-cn-coding-plan');
-  });
+  test(
+    'parses minimax-cn-coding-plan quota payload from shell fallback',
+    () async {
+      final dio = createMockDio(
+        '{"results":[{"providerId":"minimax-cn-coding-plan","providerName":"MiniMax Coding Plan (minimaxi.com)","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":30,"windowSeconds":18000,"resetAt":1000,"valueLabel":"70 / 100 remains"}}},"fetchedAt":1}]}',
+      );
+      final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+      final results = await dataSource.fetchQuotaResults();
+      expect(results, hasLength(1));
+      expect(results.first.providerId, 'minimax-cn-coding-plan');
+    },
+  );
 
   test('parses zai-coding-plan quota payload from shell fallback', () async {
     final dio = createMockDio(
@@ -625,39 +634,99 @@ void main() {
   test('supported auth keys hydration matches generated JS', () async {
     final dio = Dio();
     String? shellCommand;
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (options.path == '/api/quota/providers') {
-          handler.reject(DioException(requestOptions: options, response: Response<dynamic>(requestOptions: options, statusCode: 404)));
-          return;
-        }
-        if (options.path == '/session' && options.method == 'POST') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'id': 'ses_quota_probe'}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe/shell') {
-          shellCommand = (options.data as Map<String, dynamic>)['command'] as String?;
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'parts': <Map<String, dynamic>>[]}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe' && options.method == 'DELETE') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200));
-          return;
-        }
-      }
-    ));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/api/quota/providers') {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 404,
+                ),
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session' && options.method == 'POST') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'id': 'ses_quota_probe'},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe/shell') {
+            shellCommand =
+                (options.data as Map<String, dynamic>)['command'] as String?;
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'parts': <Map<String, dynamic>>[]},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe' &&
+              options.method == 'DELETE') {
+            handler.resolve(
+              Response<dynamic>(requestOptions: options, statusCode: 200),
+            );
+            return;
+          }
+        },
+      ),
+    );
     final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
     await dataSource.fetchQuotaResults();
     final script = _decodeShellScript(shellCommand!);
-    
-    final expectedKeys = [
-      'anthropic', 'claude', 'openrouter', 'openai', 'codex', 'chatgpt',
-      'google', 'google.oauth', 'github-copilot', 'copilot', 'github-copilot-addon',
+
+    final expectedKeys = <String>[
+      'anthropic',
+      'claude',
+      'openrouter',
+      'openai',
+      'codex',
+      'chatgpt',
+      'google',
+      'google.oauth',
+      'github-copilot',
+      'copilot',
+      'github-copilot-addon',
       'opencode-go',
-      'nano-gpt', 'nanogpt', 'nano_gpt', 'wafer', 'wafer-ai', 'wafer_ai', 'wafer.ai',
-      'kimi-for-coding', 'kimi', 'zhipuai-coding-plan', 'zhipuai', 'zhipu',
-      'minimax-coding-plan', 'minimax-cn-coding-plan', 'zai-coding-plan', 'zai', 'z.ai',
-      'cursor', 'ollama-cloud', 'ollamacloud'
+      'nano-gpt',
+      'nanogpt',
+      'nano_gpt',
+      'wafer',
+      'wafer-ai',
+      'wafer_ai',
+      'wafer.ai',
+      'kimi-for-coding',
+      'kimi',
+      'zhipuai-coding-plan',
+      'zhipuai',
+      'zhipu',
+      'minimax-coding-plan',
+      'minimax-cn-coding-plan',
+      'zai-coding-plan',
+      'zai',
+      'z.ai',
+      'cursor',
+      'ollama-cloud',
+      'ollamacloud',
+      'snowflake-cortex',
+      'snowflake',
+      'cortex',
+      'grok',
+      'xai',
+      'x-ai',
+      'cohere',
+      'cohere-north',
+      'cohere-north-mini-code',
     ];
     for (final key in expectedKeys) {
       expect(script, contains('"$key"'));
@@ -667,27 +736,53 @@ void main() {
   test('minimax-cn uses inverted semantics in JS code', () async {
     final dio = Dio();
     String? shellCommand;
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (options.path == '/api/quota/providers') {
-          handler.reject(DioException(requestOptions: options, response: Response<dynamic>(requestOptions: options, statusCode: 404)));
-          return;
-        }
-        if (options.path == '/session' && options.method == 'POST') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'id': 'ses_quota_probe'}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe/shell') {
-          shellCommand = (options.data as Map<String, dynamic>)['command'] as String?;
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'parts': <Map<String, dynamic>>[]}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe' && options.method == 'DELETE') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200));
-          return;
-        }
-      }
-    ));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/api/quota/providers') {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 404,
+                ),
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session' && options.method == 'POST') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'id': 'ses_quota_probe'},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe/shell') {
+            shellCommand =
+                (options.data as Map<String, dynamic>)['command'] as String?;
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'parts': <Map<String, dynamic>>[]},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe' &&
+              options.method == 'DELETE') {
+            handler.resolve(
+              Response<dynamic>(requestOptions: options, statusCode: 200),
+            );
+            return;
+          }
+        },
+      ),
+    );
     final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
     await dataSource.fetchQuotaResults();
     final script = _decodeShellScript(shellCommand!);
@@ -696,44 +791,73 @@ void main() {
     expect(script, contains('weeklyTotal - weeklyUsage'));
   });
 
-  test('minimax providers fall back to remaining_percent when total is 0', () async {
-    // Regression for the Coding Plan rate-limit response, which returns
-    // total=0 / usage=0 with a separate `current_*_remaining_percent` field
-    // that the popup filter would otherwise hide (usedPercent == null).
-    final dio = Dio();
-    String? shellCommand;
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (options.path == '/api/quota/providers') {
-          handler.reject(DioException(requestOptions: options, response: Response<dynamic>(requestOptions: options, statusCode: 404)));
-          return;
-        }
-        if (options.path == '/session' && options.method == 'POST') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'id': 'ses_quota_probe'}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe/shell') {
-          shellCommand = (options.data as Map<String, dynamic>)['command'] as String?;
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'parts': <Map<String, dynamic>>[]}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe' && options.method == 'DELETE') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200));
-          return;
-        }
-      }
-    ));
-    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
-    await dataSource.fetchQuotaResults();
-    final script = _decodeShellScript(shellCommand!);
+  test(
+    'minimax providers fall back to remaining_percent when total is 0',
+    () async {
+      // Regression for the Coding Plan rate-limit response, which returns
+      // total=0 / usage=0 with a separate `current_*_remaining_percent` field
+      // that the popup filter would otherwise hide (usedPercent == null).
+      final dio = Dio();
+      String? shellCommand;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (options.path == '/api/quota/providers') {
+              handler.reject(
+                DioException(
+                  requestOptions: options,
+                  response: Response<dynamic>(
+                    requestOptions: options,
+                    statusCode: 404,
+                  ),
+                ),
+              );
+              return;
+            }
+            if (options.path == '/session' && options.method == 'POST') {
+              handler.resolve(
+                Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: <String, dynamic>{'id': 'ses_quota_probe'},
+                ),
+              );
+              return;
+            }
+            if (options.path == '/session/ses_quota_probe/shell') {
+              shellCommand =
+                  (options.data as Map<String, dynamic>)['command'] as String?;
+              handler.resolve(
+                Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: <String, dynamic>{'parts': <Map<String, dynamic>>[]},
+                ),
+              );
+              return;
+            }
+            if (options.path == '/session/ses_quota_probe' &&
+                options.method == 'DELETE') {
+              handler.resolve(
+                Response<dynamic>(requestOptions: options, statusCode: 200),
+              );
+              return;
+            }
+          },
+        ),
+      );
+      final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+      await dataSource.fetchQuotaResults();
+      final script = _decodeShellScript(shellCommand!);
 
-    // Both providers must consult the remaining_percent fallback.
-    expect(script, contains('current_interval_remaining_percent'));
-    expect(script, contains('current_weekly_remaining_percent'));
-    // The fallback must compute usedPercent as (100 - remaining).
-    expect(script, contains('100 - intervalRemPct'));
-    expect(script, contains('100 - weeklyRemPct'));
-  });
+      // Both providers must consult the remaining_percent fallback.
+      expect(script, contains('current_interval_remaining_percent'));
+      expect(script, contains('current_weekly_remaining_percent'));
+      // The fallback must compute usedPercent as (100 - remaining).
+      expect(script, contains('100 - intervalRemPct'));
+      expect(script, contains('100 - weeklyRemPct'));
+    },
+  );
 
   test('fGHA reads github-copilot-addon key alias', () async {
     // Regression: fGHA must read the standalone 'github-copilot-addon' key,
@@ -741,27 +865,53 @@ void main() {
     // configure the addon would have fGHA return null and no quota row.
     final dio = Dio();
     String? shellCommand;
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (options.path == '/api/quota/providers') {
-          handler.reject(DioException(requestOptions: options, response: Response<dynamic>(requestOptions: options, statusCode: 404)));
-          return;
-        }
-        if (options.path == '/session' && options.method == 'POST') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'id': 'ses_quota_probe'}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe/shell') {
-          shellCommand = (options.data as Map<String, dynamic>)['command'] as String?;
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200, data: <String, dynamic>{'parts': <Map<String, dynamic>>[]}));
-          return;
-        }
-        if (options.path == '/session/ses_quota_probe' && options.method == 'DELETE') {
-          handler.resolve(Response<dynamic>(requestOptions: options, statusCode: 200));
-          return;
-        }
-      }
-    ));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/api/quota/providers') {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 404,
+                ),
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session' && options.method == 'POST') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'id': 'ses_quota_probe'},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe/shell') {
+            shellCommand =
+                (options.data as Map<String, dynamic>)['command'] as String?;
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'parts': <Map<String, dynamic>>[]},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe' &&
+              options.method == 'DELETE') {
+            handler.resolve(
+              Response<dynamic>(requestOptions: options, statusCode: 200),
+            );
+            return;
+          }
+        },
+      ),
+    );
     final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
     await dataSource.fetchQuotaResults();
     final script = _decodeShellScript(shellCommand!);

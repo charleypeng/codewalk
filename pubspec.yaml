@@ -102,7 +102,7 @@ dependencies:
   simple_icons:
     git:
       url: https://github.com/jlnrrg/simple_icons.git
-      ref: 381d0cbd7e75591c9e3c81058b86b7dda6a89e07
+      ref: fb5003c6628e0695b6a0941a2b861a0b6717b9d0
   showcaseview: ^5.0.2
   flutter_mermaid: ^0.1.0
   flutter_math_fork: ^0.7.4

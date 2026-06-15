@@ -1,13 +1,7 @@
 # CodeWalk
 
-> ⚠️ **Visual glitches known**: The conversation screen has some visual glitches we're working to fix. If you notice layout issues, flickering, or rendering artifacts, they are being actively addressed.
-
 <p align="center"><img src="demo-desktop.gif" alt="CodeWalk desktop demo" /></p>
 <p align="center">https://github.com/user-attachments/assets/032f64e2-e8ee-4024-b49a-ca95a774653f</p>
-
-
-
-
 
 ![CodeWalk Logo](assets/images/logo.256.png)
 
@@ -18,7 +12,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - 🌐 Fully translated into 14 languages: English, Português (Brasil), Español, Deutsch, Français, Italiano, Русский, 中文, 日本語, 한국어, हिन्दी, বাংলা, العربية, اردو
 - 🎙 Speech-to-text on every platform, including Linux
 - 🔊 Text-to-speech read-aloud for assistant messages
-- 📊 Real-time quota monitoring for OpenCode Go, Codex, Gemini, and GitHub Copilot
+- 📊 Host quota monitoring through official/OpenChamber REST when available, plus shell fallback probes for Claude, OpenRouter, Codex/OpenAI, Gemini, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, z.ai, Cursor, and Ollama Cloud
 - 📈 Inline Mermaid diagram rendering from fenced markdown blocks
 - 💬 Canned answers for faster replies
 - ↩️ Easier undo and redo
@@ -139,8 +133,10 @@ make check      # deps + codegen + analyze + test
 make check-fast # deps + codegen + analyze + test-fast
 make test-fast  # excludes slow/integration tags
 make android    # build arm64 APK
-make precommit  # check + android
+make release V=patch # bump pubspec, update CHANGELOG.md, commit, tag, push
 ```
+
+Use `make check` for normal validation. When you need a testable Android artifact, run `HEY_CAPTION="specific caption" make android` after checks pass.
 
 ### Server Configuration
 

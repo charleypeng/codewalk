@@ -1,5 +1,7 @@
 # Release Notes
 
+This file is an archived release-readiness note for the 2026-02-10 parity wave. Current tagged release history lives in `CHANGELOG.md` and GitHub Releases.
+
 ## 2026-02-10 - Parity Wave 011-016 Signoff
 
 Scope: reliability hardening and release-readiness closure for the parity wave.
@@ -23,11 +25,11 @@ Scope: reliability hardening and release-readiness closure for the parity wave.
 
 | Gate | Status | Evidence |
 |------|--------|----------|
-| `make precommit` (deps + gen + analyze + test + icons-check + android upload) | PASS | `/tmp/codewalk_feat016_gate/20260210_024416_precommit/make_precommit_success.txt` |
+| Historical combined gate (deps + gen + analyze + test + icons-check + Android upload) | PASS | archived local gate log |
 | Coverage gate (`flutter test --coverage` + `check_coverage.sh >=35%`) | PASS (59.44%) | `/tmp/codewalk_feat016_gate/20260210_024255_ci/flutter_test_coverage.txt`, `/tmp/codewalk_feat016_gate/20260210_024255_ci/check_coverage.txt` |
 | Linux release build | PASS | `/tmp/codewalk_feat016_gate/20260210_024255_ci/build_linux_release.txt` |
 | Web release build | PASS | `/tmp/codewalk_feat016_gate/20260210_024255_ci/build_web_release.txt` |
-| Android release build + Telegram upload caption flow | PASS | `make precommit` log above (caption derived from last commit subject unless `TDL_CAPTION` override is provided) |
+| Android release build + Telegram upload caption flow | PASS | archived local gate log above |
 
 ### Known Limitations
 
