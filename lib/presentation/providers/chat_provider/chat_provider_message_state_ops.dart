@@ -122,14 +122,14 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     AssistantMessage existing,
     AssistantMessage incoming,
   ) {
-    final unmatchedIncomingById = <String, MessagePart>{
-      for (final part in incoming.parts) part.id: part,
+    final unmatchedExistingById = <String, MessagePart>{
+      for (final part in existing.parts) part.id: part,
     };
     final mergedParts = <MessagePart>[];
-    for (final existingPart in existing.parts) {
-      final incomingPart = unmatchedIncomingById.remove(existingPart.id);
-      if (incomingPart == null) {
-        mergedParts.add(existingPart);
+    for (final incomingPart in incoming.parts) {
+      final existingPart = unmatchedExistingById.remove(incomingPart.id);
+      if (existingPart == null) {
+        mergedParts.add(incomingPart);
         continue;
       }
       mergedParts.add(
@@ -139,9 +139,9 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         ),
       );
     }
-    for (final incomingPart in incoming.parts) {
-      if (unmatchedIncomingById.containsKey(incomingPart.id)) {
-        mergedParts.add(incomingPart);
+    for (final existingPart in existing.parts) {
+      if (unmatchedExistingById.containsKey(existingPart.id)) {
+        mergedParts.add(existingPart);
       }
     }
     return _copyMessageWithParts(incoming, mergedParts) as AssistantMessage;

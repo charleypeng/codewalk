@@ -421,6 +421,123 @@ void main() {
     );
 
     test(
+      'completed assistant fallback keeps server part order without regressing content',
+      () async {
+        final initialCompleted = AssistantMessage(
+          id: 'msg_assistant_ordered_parts',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(3000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(3300),
+          parts: <MessagePart>[
+            const TextPart(
+              id: 'part_ordered_text',
+              messageId: 'msg_assistant_ordered_parts',
+              sessionId: 'ses_1',
+              text: 'Final answer with details',
+            ),
+            ToolPart(
+              id: 'part_ordered_tool',
+              messageId: 'msg_assistant_ordered_parts',
+              sessionId: 'ses_1',
+              callId: 'call_ordered_tool',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/workspace',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(3010),
+                  end: DateTime.fromMillisecondsSinceEpoch(3200),
+                ),
+              ),
+            ),
+          ],
+        );
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(initialCompleted);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.sendMessage('order parts');
+        await settleUntil(
+          () =>
+              provider.messages.whereType<AssistantMessage>().singleOrNull !=
+              null,
+          reason: 'Expected the completed assistant message to load.',
+        );
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_assistant_ordered_parts',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(3000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(3400),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_ordered_tool',
+                messageId: 'msg_assistant_ordered_parts',
+                sessionId: 'ses_1',
+                callId: 'call_ordered_tool',
+                tool: 'bash',
+                state: ToolStateRunning(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  time: DateTime.fromMillisecondsSinceEpoch(3010),
+                ),
+              ),
+              const TextPart(
+                id: 'part_ordered_text',
+                messageId: 'msg_assistant_ordered_parts',
+                sessionId: 'ses_1',
+                text: 'Final answer',
+              ),
+            ],
+          ),
+        ];
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.updated',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'sessionID': 'ses_1',
+                'id': 'msg_assistant_ordered_parts',
+              },
+            },
+          ),
+        );
+
+        await settleUntil(
+          () {
+            final message = provider.messages
+                .whereType<AssistantMessage>()
+                .singleOrNull;
+            return message is AssistantMessage &&
+                message.parts.map((part) => part.id).toList().firstOrNull ==
+                    'part_ordered_tool';
+          },
+          reason:
+              'Expected completed fallback merge to adopt server part ordering.',
+        );
+
+        final assistant = provider.messages
+            .whereType<AssistantMessage>()
+            .single;
+        expect(assistant.parts.map((part) => part.id), <String>[
+          'part_ordered_tool',
+          'part_ordered_text',
+        ]);
+        expect(
+          assistant.parts.whereType<ToolPart>().single.state.status,
+          ToolStatus.completed,
+        );
+        expect(
+          assistant.parts.whereType<TextPart>().single.text,
+          'Final answer with details',
+        );
+      },
+    );
+
+    test(
       'refresh keeps active tool stream visible while replay reconciles optimistic echo',
       () async {
         final sendStream = StreamController<Either<Failure, ChatMessage>>();

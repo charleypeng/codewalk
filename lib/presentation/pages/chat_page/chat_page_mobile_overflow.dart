@@ -178,24 +178,22 @@ extension _ChatPageMobileOverflow on _ChatPageState {
         .toList(growable: false);
 
     final children = <Widget>[
-      for (var index = 0; index < _maxPinnedMobileActions; index += 1)
+      for (var index = 0; index < pinnedDefs.length; index += 1)
         SizedBox(
           key: ValueKey<String>('mobile_appbar_pinned_slot_$index'),
           width: kMinInteractiveDimension,
           height: kMinInteractiveDimension,
-          child: index < pinnedDefs.length
-              ? _buildPinnableMobileAction(
-                  pinnedDefs[index],
-                  isPinned: true,
-                  child: IconButton(
-                    key: ValueKey<String>(
-                      'appbar_pinned_${pinnedDefs[index].id}_button',
-                    ),
-                    icon: Icon(pinnedDefs[index].icon),
-                    onPressed: pinnedDefs[index].onTap(),
-                  ),
-                )
-              : null,
+          child: _buildPinnableMobileAction(
+            pinnedDefs[index],
+            isPinned: true,
+            child: IconButton(
+              key: ValueKey<String>(
+                'appbar_pinned_${pinnedDefs[index].id}_button',
+              ),
+              icon: Icon(pinnedDefs[index].icon),
+              onPressed: pinnedDefs[index].onTap(),
+            ),
+          ),
         ),
     ];
 

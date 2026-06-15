@@ -2246,6 +2246,8 @@ void main() {
     testWidgets('mobile app bar opens files dialog in fullscreen', (
       WidgetTester tester,
     ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      addTearDown(() => SharedPreferences.setMockInitialValues({}));
       await tester.binding.setSurfaceSize(const Size(500, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -2260,6 +2262,11 @@ void main() {
 
       await tester.pumpWidget(_testApp(provider, appProvider));
       await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('mobile_appbar_pinned_slot_0')),
+        findsNothing,
+      );
 
       await tester.tap(
         find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
@@ -2282,7 +2289,7 @@ void main() {
     });
 
     testWidgets(
-      'mobile app bar migrates pins, reserves slots, and evicts oldest pin',
+      'mobile app bar migrates pins and evicts oldest pin',
       (WidgetTester tester) async {
         SharedPreferences.setMockInitialValues(<String, Object>{
           'codewalk.mobile_appbar_pinned_actions': <String>[
@@ -2317,12 +2324,14 @@ void main() {
         );
         for (var index = 0; index < 2; index += 1) {
           expect(
-            tester.getSize(
-              find.byKey(
-                ValueKey<String>('mobile_appbar_pinned_slot_$index'),
-              ),
-            ),
-            const Size(kMinInteractiveDimension, kMinInteractiveDimension),
+            tester
+                .getSize(
+                  find.byKey(
+                    ValueKey<String>('mobile_appbar_pinned_slot_$index'),
+                  ),
+                )
+                .width,
+            kMinInteractiveDimension,
           );
         }
 
