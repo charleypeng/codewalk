@@ -437,29 +437,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     return widget.taskToolChildSummariesByPartId[partId];
   }
 
-  bool shouldSuppressLiveReasoningPart(ReasoningPart part) {
-    if (!isSessionActivelyResponding) {
-      return false;
-    }
-    final currentMessage = message;
-    if (currentMessage is! AssistantMessage) {
-      return false;
-    }
-    final activeReasoningKey = activeReasoningPartKey;
-    final isActiveReasoningMessage =
-        activeReasoningKey != null &&
-        activeReasoningKey.startsWith('${currentMessage.id}::');
-    final hasToolSurfacePart = currentMessage.parts.any(
-      (messagePart) => messagePart is ToolPart || messagePart is PatchPart,
-    );
-    if (hasToolSurfacePart && isActiveReasoningMessage) {
-      return true;
-    }
-    if (currentMessage.isCompleted) {
-      return false;
-    }
-    final currentReasoningKey = '${part.messageId}::${part.id}';
-    return activeReasoningKey == currentReasoningKey;
+  bool shouldSuppressLiveReasoningPart(ReasoningPart _) {
+    // Status-only reasoning markers are filtered in the part builder; real
+    // reasoning text should stay visible in both main and subagent timelines.
+    return false;
   }
 
   void _seedPartAnimationBaseline(ChatMessage currentMessage) {

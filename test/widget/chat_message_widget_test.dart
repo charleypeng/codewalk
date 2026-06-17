@@ -2702,7 +2702,7 @@ void main() {
     },
   );
 
-  testWidgets('suppresses the mirrored live reasoning bubble while busy', (
+  testWidgets('renders the active live reasoning bubble while busy', (
     WidgetTester tester,
   ) async {
     final message = AssistantMessage(
@@ -2731,23 +2731,23 @@ void main() {
       ),
     );
 
-    expect(find.text('Thinking Process'), findsNothing);
+    expect(find.text('Thinking Process'), findsOneWidget);
     expect(
       find.byKey(
         const ValueKey<String>(
           'thinking_content_text_msg_busy_reasoning::thinking_busy',
         ),
       ),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('message_bubble_msg_busy_reasoning')),
-      findsNothing,
+      findsOneWidget,
     );
   });
 
   testWidgets(
-    'suppresses sequential reasoning bubbles for the active collapsed tool run',
+    'renders sequential reasoning bubbles for the active collapsed tool run',
     (WidgetTester tester) async {
       final message = AssistantMessage(
         id: 'msg_busy_tool_reasoning_chain',
@@ -2804,9 +2804,9 @@ void main() {
         ),
       );
 
-      expect(find.text('Inspecting the repository structure'), findsNothing);
-      expect(find.text('Comparing the latest tool results'), findsNothing);
-      expect(find.text('Thinking Process'), findsNothing);
+      expect(find.text('Inspecting the repository structure'), findsOneWidget);
+      expect(find.text('Comparing the latest tool results'), findsOneWidget);
+      expect(find.text('Thinking Process'), findsNWidgets(2));
       expect(
         find.byKey(
           const ValueKey<String>(

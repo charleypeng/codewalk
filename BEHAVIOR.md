@@ -609,7 +609,7 @@
 - **Then** if a single visible tool block grows into a multi-tool chain during that same active response, the user-open state is carried into the grouped view instead of snapping shut
 - **Then** collapsed multi-tool chains surface an active progress summary (for example `1 running • 1 queued`) while the response is still in flight
 - **Then** the composer status slot surfaces the latest live tool, patch, or reasoning activity in a fixed position so the newest progress stays visible without shifting the main chat viewport
-- **Then** if that fixed progress slot mirrors the active in-flight reasoning block, the matching inline Thinking bubble is temporarily hidden until the assistant response settles, avoiding a misleading stuck-looking duplicate
+- **Then** real in-flight reasoning text remains visible as an inline Thinking bubble in the main timeline and subagent timelines; status-only reasoning markers stay in the fixed composer slot and are not rendered as Thinking bubbles
 - **Then** when the official `session.idle` signal arrives for the current session, the composer status slot stops showing active progress even if fallback delivery streams are still draining internally
 - **Then** completed tool badges use an explicit success-green treatment so finished work stays visually distinct from queued, active, and error states
 - **Then** when a contiguous visible run contains multiple `task` tool bubbles, settled task bubbles render before still-active running or queued task bubbles without crossing the surrounding text/reasoning boundaries of that same assistant message
@@ -618,7 +618,7 @@
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming
-- **Then** content shrink from active tool/work regrouping, collapse deferral, or inline reasoning suppression must not trigger outer chat snap-back while that same response is still active
+- **Then** content shrink from active tool/work regrouping, collapse deferral, or status-marker filtering must not trigger outer chat snap-back while that same response is still active
 - **Then** manual expansion is temporary and is not restored after return/revalidation
 - **Then** when the final completed assistant-work group is compacted for the finished response, that completed group is shown collapsed by default even if a streaming-era tool block was manually expanded earlier in the turn
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
@@ -735,13 +735,15 @@
 - **Then** the chat reveals the **start** of the final assistant message (not the end)
 - **Then** if the whole final assistant message already fits in the current viewport, the chat does not perform an extra reposition
 - **Then** otherwise the reveal lands with the start of the final assistant message around 40% of the viewport height so reading starts near the middle of the screen instead of hard at the top
+- **Then** a final assistant message revealed this way is considered read even when its full body extends below the viewport, so the `Go to latest` affordance is not shown solely because the viewport is no longer pinned to the bottom
 
 ### Post-completion reading remains stable
 
 - **Given** the final assistant response is already visible
 - **When** the user is reading without sending new input
 - **Then** the chat does not perform autonomous jump/scroll corrections
-- **Then** if active response updates or new messages arrive below the visible reading position, the viewport stays anchored where the user was reading and only the unread/latest affordance updates
+- **Then** passive status/revalidation updates for that same revealed final response keep the viewport in read `reading` mode without showing unread/latest affordances
+- **Then** if a newer active response update or new message arrives below the visible reading position, the viewport stays anchored where the user was reading and only the unread/latest affordance updates
 - **Then** auto-follow resumes only after explicit user intent (e.g., sending a new message or tapping `Go to latest`)
 - **Then** once the final response settles, shrink-correction may clean up empty space below the last message, but only after the active-turn viewport owner has been released
 
@@ -1533,6 +1535,8 @@ Top-history loading must only trigger from real upward user scrolling. Content s
 ### Never let passive busy-turn updates fight the viewport owner
 
 During an active busy/retry turn, only one viewport owner may control the outer chat scroll position. Passive refresh merges, realtime part deltas, status pulses, and collapse/re-layout side effects must never stack a second autonomous scroll correction on top of the active-turn follow/reveal policy, because that causes the classic up/down bounce regression.
+
+Passive updates for the same already revealed final assistant response must also stay in read `reading` mode instead of promoting the viewport to `pausedByUser`/unread or re-entering active-response collapse deferral.
 
 ### Never show stale data after resume
 

@@ -230,6 +230,31 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     );
   }
 
+  bool _isReadingLatestSettledAssistantResponse() {
+    final chatProvider = _chatProvider;
+    if (chatProvider == null ||
+        _scrollFollowMode != _ScrollFollowMode.reading ||
+        _hasUnreadMessagesBelow) {
+      return false;
+    }
+
+    final latestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+    if (latestRevealableAssistantMessageId == null ||
+        latestRevealableAssistantMessageId.isEmpty ||
+        latestRevealableAssistantMessageId !=
+            _finalAssistantRevealSettledMessageId) {
+      return false;
+    }
+
+    for (final message in chatProvider.messages) {
+      if (message.id == latestRevealableAssistantMessageId) {
+        return message is AssistantMessage && message.isCompleted;
+      }
+    }
+    return false;
+  }
+
   void _restoreSettledAssistantWorkOwnership(
     ChatProvider chatProvider, {
     required String reason,
@@ -505,20 +530,33 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         compactionDecision.settledLatestAssistantWorkGroupId;
 
     if (isResponding) {
+      final readingLatestSettledResponse =
+          _isReadingLatestSettledAssistantResponse();
       _debugStartActiveTurnPassiveScrollTracking(sessionId);
       if (_scrollFollowMode != _ScrollFollowMode.following) {
-        // Active updates below a reader-owned viewport should surface unread
-        // work without reclaiming the scroll position.
-        _markUnreadMessagesBelow();
+        if (readingLatestSettledResponse) {
+          _traceFinalUi(
+            'viewport-policy-keep-reading-latest-during-responding-pulse',
+            details:
+                'latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
+          );
+        } else {
+          // Active updates below a reader-owned viewport should surface unread
+          // work without reclaiming the scroll position.
+          _markUnreadMessagesBelow();
+        }
       }
-      _deferAssistantWorkCollapse =
-          compactionDecision.shouldDeferLatestCollapse;
-      _shouldRevealFinalAssistantOnCompletion = true;
+      _deferAssistantWorkCollapse = readingLatestSettledResponse
+          ? false
+          : compactionDecision.shouldDeferLatestCollapse;
+      _shouldRevealFinalAssistantOnCompletion = !readingLatestSettledResponse;
       _pendingFinalAssistantRevealMessageId = null;
-      _finalAssistantRevealSettledMessageId = null;
-      _settledLatestAssistantWorkGroupId = null;
+      if (!readingLatestSettledResponse) {
+        _finalAssistantRevealSettledMessageId = null;
+        _settledLatestAssistantWorkGroupId = null;
+      }
       _pendingFinalAssistantRevealAttempts = 0;
-      _wasCurrentSessionActivelyResponding = true;
+      _wasCurrentSessionActivelyResponding = !readingLatestSettledResponse;
     } else {
       _debugFinishActiveTurnPassiveScrollTracking(
         sessionId: sessionId,
@@ -544,6 +582,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
             _lastRevealedAssistantMessageId =
                 latestRevealableAssistantMessageId;
             if (_scrollFollowMode == _ScrollFollowMode.following) {
+              _scrollToBottomRequestToken += 1;
               _scrollFollowMode = _ScrollFollowMode.reading;
               _pendingFinalAssistantRevealMessageId =
                   latestRevealableAssistantMessageId;
@@ -809,11 +848,12 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final shouldAutoFollow = _isNearBottom();
     final targetMode = shouldAutoFollow
         ? _ScrollFollowMode.following
-        : _ScrollFollowMode.pausedByUser;
-    final shouldShowFirstFab = !shouldAutoFollow && _shouldShowJumpToFirstFab();
+        : _ScrollFollowMode.reading;
+    const shouldShowFirstFab = false;
     if (_scrollFollowMode == targetMode &&
         !_hasUnreadMessagesBelow &&
-        _showScrollToFirstFab == shouldShowFirstFab) {
+        _showScrollToFirstFab == shouldShowFirstFab &&
+        _finalAssistantRevealSettledMessageId == messageId) {
       return;
     }
 
@@ -821,6 +861,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _scrollFollowMode = targetMode;
       _hasUnreadMessagesBelow = false;
       _showScrollToFirstFab = shouldShowFirstFab;
+      _finalAssistantRevealSettledMessageId = messageId;
+      _lastRevealedAssistantMessageId = messageId;
     });
   }
 
@@ -963,15 +1005,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   void _finalizeFinalAssistantReveal(String messageId) {
     _traceFinalUi('final-reveal-finalize', details: 'messageId=$messageId');
     final nearBottom = _isNearBottom();
-    final shouldShowLatestFab = _scrollController.hasClients && !nearBottom;
     _setState(() {
       _scrollFollowMode = nearBottom
           ? _ScrollFollowMode.following
           : _ScrollFollowMode.reading;
       _shouldRevealFinalAssistantOnCompletion = false;
       _hasUnreadMessagesBelow = false;
-      _showScrollToFirstFab =
-          shouldShowLatestFab && _shouldShowJumpToFirstFab();
+      _showScrollToFirstFab = false;
       _deferAssistantWorkCollapse = false;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = messageId;

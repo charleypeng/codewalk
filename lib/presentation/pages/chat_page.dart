@@ -261,7 +261,8 @@ class _ChatPageState extends State<ChatPage>
   String? _pendingInitialScrollSessionId;
   _ScrollFollowMode _scrollFollowMode = _ScrollFollowMode.following;
   bool get _showScrollToLatestFab =>
-      _scrollFollowMode != _ScrollFollowMode.following;
+      _hasUnreadMessagesBelow ||
+      _scrollFollowMode == _ScrollFollowMode.pausedByUser;
   String? _lastRevealedAssistantMessageId;
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
@@ -323,6 +324,13 @@ class _ChatPageState extends State<ChatPage>
       return;
     }
     if (_scrollFollowMode != _ScrollFollowMode.following) {
+      if (_isReadingLatestSettledAssistantResponse()) {
+        _traceFinalUi(
+          'passive-scroll-suppressed-reading-latest',
+          details: 'reason=$reason mode=${_scrollFollowMode.name}',
+        );
+        return;
+      }
       _traceFinalUi(
         'passive-scroll-suppressed-not-following',
         details: 'reason=$reason mode=${_scrollFollowMode.name}',

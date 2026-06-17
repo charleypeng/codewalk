@@ -9311,6 +9311,105 @@ void main() {
     },
   );
 
+  testWidgets('treats revealed long final response as read without jump FAB', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const sessionId = 'ses_long_final_read';
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: sessionId,
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Long Final Read Session',
+        ),
+      ],
+    );
+
+    final streamController = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      if (!streamController.isClosed) {
+        await streamController.close();
+      }
+    });
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    await provider.sendMessage('trigger long final response');
+    await tester.pump();
+
+    final longFinalText = <String>[
+      'Long final response starts here.',
+      ...List<String>.generate(
+        90,
+        (index) =>
+            'Result line ${index + 1}: enough detail to make the final response taller than the viewport.',
+      ),
+      'Long final response ends here.',
+    ].join('\n');
+
+    streamController.add(
+      Right(
+        AssistantMessage(
+          id: 'msg_long_final_answer',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(2300),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2400),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_long_final_answer',
+              messageId: 'msg_long_final_answer',
+              sessionId: sessionId,
+              text: longFinalText,
+            ),
+          ],
+        ),
+      ),
+    );
+    await streamController.close();
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+    final scrollableAfterReveal = tester.state<ScrollableState>(
+      scrollableFinder,
+    );
+
+    expect(
+      scrollableAfterReveal.position.maxScrollExtent -
+          scrollableAfterReveal.position.pixels,
+      greaterThan(1),
+      reason:
+          'The final reveal should land near the start of the long response, not the bottom.',
+    );
+    expect(
+      find.byKey(const ValueKey<String>('jump_to_latest_fab')),
+      findsNothing,
+    );
+    expect(find.byTooltip('Go to latest message'), findsNothing);
+  });
+
   testWidgets(
     'sending a follow-up invalidates previous final-message reveal jump',
     (WidgetTester tester) async {
@@ -13293,7 +13392,7 @@ void main() {
           scrollableAfter.position.pixels,
       greaterThan(1),
     );
-    expect(find.byTooltip('Go to latest message'), findsOneWidget);
+    expect(find.byTooltip('Go to latest message'), findsNothing);
   });
 
   testWidgets(
@@ -13388,7 +13487,7 @@ void main() {
             scrollableAfter.position.pixels,
         greaterThan(1),
       );
-      expect(find.byTooltip('Go to latest message'), findsOneWidget);
+      expect(find.byTooltip('Go to latest message'), findsNothing);
     },
   );
 
@@ -13485,7 +13584,7 @@ void main() {
             scrollableBefore.position.pixels,
         greaterThan(1),
       );
-      expect(find.byTooltip('Go to latest message'), findsOneWidget);
+      expect(find.byTooltip('Go to latest message'), findsNothing);
 
       final activeUpdate = AssistantMessage(
         id: 'msg_reading_active_update',

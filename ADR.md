@@ -1415,6 +1415,11 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 4. **Final reveal skips when the whole answer already fits and otherwise targets the clarified mid-screen contract** — the viewport math only runs when the full final message would not already be fully visible.
 5. **Final reveal viewport math is guarded by mounted/hasSize checks** (`4aa9a00`) — fast navigation/unmount races now reschedule instead of touching invalid render contexts.
 
+**Note** (2026-06-17): Reading-mode final reveal now separates "not pinned to bottom" from "unread below":
+1. **Revealed final responses are read** — once the start of the latest completed assistant response is shown, `reading` mode does not show `Go to latest` merely because the answer is taller than the viewport.
+2. **Passive pulses preserve settled reading** — status/revalidation events for that same latest completed assistant response keep the settled work ownership and do not re-enter active collapse deferral or mark the response unread.
+3. **Manual pause remains distinct** — user-initiated scrolling still moves the viewport to `pausedByUser`, where new content below the visible position may surface the unread/latest affordance.
+
 **Note** (commits `80ad3a5`, `49c0f7d`): Active-turn assistant work rendering now defers synthetic tool-only merge until settlement:
 1. **Raw tool-call bubbles remain visible during the active turn** — consecutive tool-only assistant messages are rendered as separate entries while the current run is still responding.
 2. **Synthetic tool-only merge now happens only after settlement** — merged tool-run bubbles remain a settled/history presentation and are no longer used as a live-turn optimization.
