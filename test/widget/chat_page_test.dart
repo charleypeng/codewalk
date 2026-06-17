@@ -5358,8 +5358,26 @@ void main() {
     expect(find.text('Usage'), findsOneWidget);
     expect(find.text('Tokens'), findsOneWidget);
     expect(find.text('Cost'), findsOneWidget);
+    expect(find.text('Limit'), findsOneWidget);
     expect(find.text('300'), findsOneWidget);
     expect(find.text(r'$0.0000'), findsOneWidget);
+    expect(find.text('1,000'), findsOneWidget);
+
+    final usageCenter = tester.getCenter(find.text('Usage'));
+    final tokensCenter = tester.getCenter(find.text('Tokens'));
+    final costCenter = tester.getCenter(find.text('Cost'));
+    final limitCenter = tester.getCenter(find.text('Limit'));
+    expect(tokensCenter.dx, greaterThan(usageCenter.dx));
+    expect(costCenter.dy, greaterThan(usageCenter.dy));
+    expect(limitCenter.dx, greaterThan(costCenter.dx));
+    expect(
+      (tokensCenter.dy - usageCenter.dy).abs(),
+      lessThan(1),
+    );
+    expect(
+      (limitCenter.dy - costCenter.dy).abs(),
+      lessThan(1),
+    );
 
     final popoverRect = tester.getRect(
       find.byKey(const ValueKey<String>('context_usage_popover')),

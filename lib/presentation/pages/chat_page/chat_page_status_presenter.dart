@@ -177,31 +177,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
             style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
-          _buildContextUsageRow(
-            context,
-            label: context.l10n.chatPageStatusUsage,
-            value: '${usage.usagePercent}%',
-          ),
-          const SizedBox(height: 6),
-          _buildContextUsageRow(
-            context,
-            label: context.l10n.chatPageStatusTokens,
-            value: _formatIntWithGroup(usage.totalTokens),
-          ),
-          const SizedBox(height: 6),
-          _buildContextUsageRow(
-            context,
-            label: context.l10n.chatPageStatusCost,
-            value: _formatUsd(usage.totalCost),
-          ),
-          if (usage.modelLimit != null) ...[
-            const SizedBox(height: 6),
-            _buildContextUsageRow(
-              context,
-              label: context.l10n.chatPageStatusLimit,
-              value: _formatIntWithGroup(usage.modelLimit!),
-            ),
-          ],
+          _buildContextUsageGrid(context, usage: usage),
           const SizedBox(height: 10),
           Text(
             isCompacting
@@ -258,6 +234,90 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           QuotaPopupSection(serverId: serverId),
         ],
       ),
+    );
+  }
+
+  Widget _buildContextUsageGrid(
+    BuildContext context, {
+    required _SessionContextUsageSnapshot usage,
+  }) {
+    final limit = usage.modelLimit;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildContextUsageMetricCell(
+                context,
+                label: context.l10n.chatPageStatusUsage,
+                value: '${usage.usagePercent}%',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildContextUsageMetricCell(
+                context,
+                label: context.l10n.chatPageStatusTokens,
+                value: _formatIntWithGroup(usage.totalTokens),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: _buildContextUsageMetricCell(
+                context,
+                label: context.l10n.chatPageStatusCost,
+                value: _formatUsd(usage.totalCost),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: limit == null
+                  ? const SizedBox.shrink()
+                  : _buildContextUsageMetricCell(
+                      context,
+                      label: context.l10n.chatPageStatusLimit,
+                      value: _formatIntWithGroup(limit),
+                    ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContextUsageMetricCell(
+    BuildContext context, {
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 
