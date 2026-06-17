@@ -5360,6 +5360,23 @@ void main() {
     expect(find.text('Cost'), findsOneWidget);
     expect(find.text('300'), findsOneWidget);
     expect(find.text(r'$0.0000'), findsOneWidget);
+
+    final popoverRect = tester.getRect(
+      find.byKey(const ValueKey<String>('context_usage_popover')),
+    );
+    final compactActionInkWell = find.ancestor(
+      of: find.text(L10nBridge.current!.chatPageStatusCompactNow),
+      matching: find.byType(InkWell),
+    );
+    expect(compactActionInkWell, findsWidgets);
+    expect(
+      compactActionInkWell.evaluate().map(
+        (element) => tester
+            .getRect(find.byElementPredicate((item) => item == element))
+            .width,
+      ),
+      contains(moreOrLessEquals(popoverRect.width, epsilon: 0.1)),
+    );
   });
 
   testWidgets('context usage popover shows quota groups after compact action', (

@@ -225,30 +225,33 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                     unawaited(onCompactNow());
                   }
                 : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Symbols.compress,
-                    size: 16,
-                    color: canCompact
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isCompacting
-                        ? context.l10n.chatPageStatusCompacting
-                        : context.l10n.chatPageStatusCompactNow,
-                    style: textTheme.labelLarge?.copyWith(
+            child: SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Symbols.compress,
+                      size: 16,
                       color: canCompact
-                          ? Theme.of(context).colorScheme.onSurface
+                          ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      isCompacting
+                          ? context.l10n.chatPageStatusCompacting
+                          : context.l10n.chatPageStatusCompactNow,
+                      style: textTheme.labelLarge?.copyWith(
+                        color: canCompact
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
