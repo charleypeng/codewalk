@@ -221,61 +221,92 @@ extension _ChatPageScaffold on _ChatPageState {
                                     ),
                             ),
                           ),
-                          if (!isSessionSearchExpanded)
-                            IconButton(
-                              icon: const Icon(Symbols.search),
-                              onPressed: expandSessionSearch,
-                              tooltip: context.l10n.chatSearchConversations,
-                            ),
-                          if (isSessionSearchExpanded)
-                            const SizedBox(width: 40, height: 40),
-                          _buildTourTarget(
-                            showcaseKey: _projectContextTourKey,
-                            targetKey: _projectContextTourTargetKey,
-                            title: postOnboardingSidebarTourCopy(
-                              context: context,
-                              isMobile: false,
-                              showConversationPane: true,
-                            ).title,
-                            description: postOnboardingSidebarTourCopy(
-                              context: context,
-                              isMobile: false,
-                              showConversationPane: true,
-                            ).description,
-                            tooltipPosition: TooltipPosition.right,
-                            child: IconButton(
-                              key: const ValueKey<String>(
-                                'conversations_project_context_button',
-                              ),
-                              icon: const Icon(Symbols.folder_open),
-                              onPressed: () =>
-                                  unawaited(_openProjectSelectorDialog()),
-                              tooltip: context.l10n.chatProjectContext,
+                          AnimatedSize(
+                            duration: AppAnimations.standard,
+                            curve: AppAnimations.emphasizedCurve,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: AnimatedSwitcher(
+                              duration: AppAnimations.standard,
+                              switchInCurve: AppAnimations.emphasizedCurve,
+                              switchOutCurve: AppAnimations.accelerateCurve,
+                              child: isSessionSearchExpanded
+                                  ? const SizedBox.shrink(
+                                      key: ValueKey<String>(
+                                        'session_header_actions_hidden',
+                                      ),
+                                    )
+                                  : Row(
+                                      key: const ValueKey<String>(
+                                        'session_header_actions',
+                                      ),
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Symbols.search),
+                                          onPressed: expandSessionSearch,
+                                          tooltip: context
+                                              .l10n
+                                              .chatSearchConversations,
+                                        ),
+                                        _buildTourTarget(
+                                          showcaseKey: _projectContextTourKey,
+                                          targetKey:
+                                              _projectContextTourTargetKey,
+                                          title: postOnboardingSidebarTourCopy(
+                                            context: context,
+                                            isMobile: false,
+                                            showConversationPane: true,
+                                          ).title,
+                                          description:
+                                              postOnboardingSidebarTourCopy(
+                                                context: context,
+                                                isMobile: false,
+                                                showConversationPane: true,
+                                              ).description,
+                                          tooltipPosition:
+                                              TooltipPosition.right,
+                                          child: IconButton(
+                                            key: const ValueKey<String>(
+                                              'conversations_project_context_button',
+                                            ),
+                                            icon: const Icon(
+                                              Symbols.folder_open,
+                                            ),
+                                            onPressed: () => unawaited(
+                                              _openProjectSelectorDialog(),
+                                            ),
+                                            tooltip:
+                                                context.l10n.chatProjectContext,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Symbols.add),
+                                          onPressed: _createNewSession,
+                                          tooltip: context.l10n.chatNewChat,
+                                        ),
+                                        if (!FeatureFlags.refreshlessRealtime)
+                                          IconButton(
+                                            icon: const Icon(Symbols.refresh),
+                                            onPressed: _refreshData,
+                                            tooltip: context.l10n.chatRefresh,
+                                          ),
+                                        if (onCollapseRequested != null)
+                                          IconButton(
+                                            key: const ValueKey<String>(
+                                              'hide_conversations_sidebar_button',
+                                            ),
+                                            icon: const Icon(
+                                              Symbols.left_panel_close_rounded,
+                                            ),
+                                            onPressed: onCollapseRequested,
+                                            tooltip: context
+                                                .l10n
+                                                .chatHideConversationsSidebar,
+                                          ),
+                                      ],
+                                    ),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Symbols.add),
-                            onPressed: _createNewSession,
-                            tooltip: context.l10n.chatNewChat,
-                          ),
-                          if (!FeatureFlags.refreshlessRealtime)
-                            IconButton(
-                              icon: const Icon(Symbols.refresh),
-                              onPressed: _refreshData,
-                              tooltip: context.l10n.chatRefresh,
-                            ),
-                          if (onCollapseRequested != null)
-                            IconButton(
-                              key: const ValueKey<String>(
-                                'hide_conversations_sidebar_button',
-                              ),
-                              icon: const Icon(
-                                Symbols.left_panel_close_rounded,
-                              ),
-                              onPressed: onCollapseRequested,
-                              tooltip:
-                                  context.l10n.chatHideConversationsSidebar,
-                            ),
                         ],
                       ),
                       Wrap(

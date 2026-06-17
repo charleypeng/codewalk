@@ -2010,6 +2010,72 @@ void main() {
       expect(find.text(L10nBridge.current!.chatConversations), findsOneWidget);
     });
 
+    testWidgets('session search hides sidebar actions while expanded', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1300, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('conversations_project_context_button'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('hide_conversations_sidebar_button')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byTooltip(L10nBridge.current!.chatSearchConversations),
+      );
+      await tester.pumpAndSettle();
+
+      final searchField = find.byKey(
+        const ValueKey<String>('session_search_field'),
+      );
+      expect(searchField, findsOneWidget);
+      expect(tester.getSize(searchField).width, greaterThan(220));
+      expect(
+        find.byKey(
+          const ValueKey<String>('conversations_project_context_button'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('hide_conversations_sidebar_button')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byTooltip(L10nBridge.current!.onboardingClear));
+      await tester.pumpAndSettle();
+
+      expect(searchField, findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>('conversations_project_context_button'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('hide_conversations_sidebar_button')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('desktop sidebars can be hidden and restored from menu', (
       WidgetTester tester,
     ) async {
