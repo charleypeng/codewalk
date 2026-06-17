@@ -1425,6 +1425,13 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<ChatMessage> _messagesForSettledStatusGuard(String sessionId) {
+    if (_currentSession?.id == sessionId) {
+      return _messages;
+    }
+    return _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
+  }
+
   /// Returns true if [event] belongs to an ephemeral title-generation session.
   /// Checks both the session ID set and the session title as fallback
   /// (the title is known before the POST /session response arrives,
@@ -1447,14 +1454,13 @@ class ChatProvider extends ChangeNotifier {
         statusMap.removeWhere(
           (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
         );
-        // Guard: prevent stale REST busy (from the onDone-triggered
+        // Guard: prevent stale REST busy/retry (from the onDone-triggered
         // loadSessionInsights) from re-enabling Stop after the SSE
         // send-stream has settled with a final revealable response.
-        // The SSE-settled flag is consumed here immediately so it is
-        // strictly a one-shot: only the very first status refresh after
-        // onDone is protected. Subsequent refreshes accept REST status
-        // normally, avoiding turn-unscoped suppression of legitimate
-        // later busy (e.g. resumed/reconnected work or another client).
+        // The SSE-settled timestamp is time-bounded: only status refreshes
+        // immediately after onDone are protected. Later refreshes accept REST
+        // status normally, avoiding turn-unscoped suppression of legitimate
+        // busy/retry states (e.g. resumed work or another client).
         // currentIdAtCall is captured before the await above so the guard
         // applies to the session that was current when the request was
         // made, not the session current when the response arrives
@@ -1468,9 +1474,11 @@ class ChatProvider extends ChangeNotifier {
           const idle = SessionStatusType.idle;
           if (sseSettledToIdle &&
               (currentStatus == null || currentStatus == idle) &&
-              statusMap[currentIdAtCall]?.type == SessionStatusType.busy &&
+              (statusMap[currentIdAtCall]?.type == SessionStatusType.busy ||
+                  statusMap[currentIdAtCall]?.type ==
+                      SessionStatusType.retry) &&
               hasCompletedRevealableAssistantMessage(
-                _messages,
+                _messagesForSettledStatusGuard(currentIdAtCall),
                 currentIdAtCall,
               )) {
             statusMap[currentIdAtCall] = const SessionStatusInfo(type: idle);
@@ -1846,14 +1854,13 @@ class ChatProvider extends ChangeNotifier {
           statusMap.removeWhere(
             (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
           );
-          // Guard: prevent stale REST busy (from the onDone-triggered
+          // Guard: prevent stale REST busy/retry (from the onDone-triggered
           // loadSessionInsights) from re-enabling Stop after the SSE
           // send-stream has settled with a final revealable response.
-          // The SSE-settled flag is consumed at method entry above so it is
-          // strictly a one-shot: only the very first status refresh after
-          // onDone is protected. Subsequent refreshes accept REST status
-          // normally, avoiding turn-unscoped suppression of legitimate
-          // later busy (e.g. resumed/reconnected work or another client).
+          // The SSE-settled timestamp is time-bounded: only status refreshes
+          // immediately after onDone are protected. Later refreshes accept REST
+          // status normally, avoiding turn-unscoped suppression of legitimate
+          // busy/retry states (e.g. resumed work or another client).
           // currentIdAtCall was captured before any await so the guard uses
           // the session that was current when the request was made, not the
           // one current now (user may have switched during the in-flight
@@ -1868,9 +1875,11 @@ class ChatProvider extends ChangeNotifier {
             const idle = SessionStatusType.idle;
             if (sseSettledToIdle &&
                 (currentStatus == null || currentStatus == idle) &&
-                statusMap[currentIdAtCall]?.type == SessionStatusType.busy &&
+                (statusMap[currentIdAtCall]?.type == SessionStatusType.busy ||
+                    statusMap[currentIdAtCall]?.type ==
+                        SessionStatusType.retry) &&
                 hasCompletedRevealableAssistantMessage(
-                  _messages,
+                  _messagesForSettledStatusGuard(currentIdAtCall),
                   currentIdAtCall,
                 )) {
               statusMap[currentIdAtCall] = const SessionStatusInfo(type: idle);

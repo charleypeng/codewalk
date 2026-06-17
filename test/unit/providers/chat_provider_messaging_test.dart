@@ -1748,12 +1748,8 @@ void main() {
         expect(provider.isCurrentSessionActivelyResponding, isFalse);
         expect(provider.canAbortActiveResponse, isFalse);
 
-        // A subsequent REST refresh returns busy. The SSE-settled guard
-        // is a strict one-shot consumed by the onDone-triggered call, so
-        // this independent refresh accepts the REST busy. The session
-        // status is now busy but isSessionActivelyResponding still returns
-        // false because the latest message is text-only (no ToolPart/PatchPart).
-        // canAbortActiveResponse is also false for the same reason.
+        // Even if a subsequent REST refresh reports busy, a settled text-only
+        // response must not re-enable Stop or active-response attention.
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
         };
@@ -1796,11 +1792,8 @@ void main() {
         expect(provider.state, ChatState.loaded);
         expect(provider.canAbortActiveResponse, isFalse);
 
-        // A subsequent REST refresh returns busy. The SSE-settled guard
-        // is a strict one-shot consumed by the onDone-triggered call, so
-        // this independent refresh accepts the REST busy. The session
-        // status is now busy but canAbortActiveResponse still returns false
-        // because the latest message is text-only (no ToolPart/PatchPart).
+        // Even if a subsequent REST refresh reports busy, a settled text-only
+        // response must not re-enable Stop.
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
         };
@@ -1897,10 +1890,9 @@ void main() {
 
         expect(provider.state, ChatState.loaded);
 
-        // A subsequent REST refresh returns busy. This is accepted normally
-        // because the SSE-settled guard is a strict one-shot consumed by the
-        // onDone-triggered loadSessionInsights. The session is still
-        // actively responding for scroll/follow purposes (busy with tool
+        // Clearing the SSE-settled timestamp makes the subsequent REST busy
+        // refresh accepted normally. The session is still actively responding
+        // for scroll/follow purposes (busy with tool
         // surface parts), but canAbortActiveResponse returns false because
         // the latest completed assistant has revealable text content.
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{

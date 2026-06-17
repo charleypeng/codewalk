@@ -701,8 +701,14 @@ bool _isSuccessfulFinalAssistantMessage(AssistantMessage message) {
 }
 
 String? _resolveLatestRevealableAssistantMessageId(
-  List<ChatMessage> messages,
-) {
+  List<ChatMessage> messages, {
+  bool? showThinkingBubbles,
+  bool? showToolCallBubbles,
+}) {
+  final effectiveShowThinkingBubbles =
+      showThinkingBubbles ?? _settingsProvider?.showThinkingBubbles ?? true;
+  final effectiveShowToolCallBubbles =
+      showToolCallBubbles ?? _settingsProvider?.showToolCallBubbles ?? true;
   for (var index = messages.length - 1; index >= 0; index -= 1) {
     final message = messages[index];
     if (message is UserMessage) {
@@ -711,7 +717,13 @@ String? _resolveLatestRevealableAssistantMessageId(
     if (message is! AssistantMessage) {
       continue;
     }
-    if (message.summary == true) {
+    if (message.summary == true ||
+        _isMergeableAssistantToolOnlyMessage(message) ||
+        !_timelineMessageHasVisibleContent(
+          message,
+          showThinkingBubbles: effectiveShowThinkingBubbles,
+          showToolCallBubbles: effectiveShowToolCallBubbles,
+        )) {
       continue;
     }
     return message.id;

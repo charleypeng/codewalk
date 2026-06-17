@@ -9366,25 +9366,75 @@ void main() {
       'Long final response ends here.',
     ].join('\n');
 
-    streamController.add(
-      Right(
-        AssistantMessage(
-          id: 'msg_long_final_answer',
+    final completedLongFinalMessage = AssistantMessage(
+      id: 'msg_long_final_answer',
+      sessionId: sessionId,
+      time: DateTime.fromMillisecondsSinceEpoch(2300),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(2400),
+      parts: <MessagePart>[
+        TextPart(
+          id: 'part_long_final_answer',
+          messageId: 'msg_long_final_answer',
           sessionId: sessionId,
-          time: DateTime.fromMillisecondsSinceEpoch(2300),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(2400),
-          parts: <MessagePart>[
-            TextPart(
-              id: 'part_long_final_answer',
-              messageId: 'msg_long_final_answer',
-              sessionId: sessionId,
-              text: longFinalText,
-            ),
-          ],
+          text: longFinalText,
         ),
+      ],
+    );
+
+    streamController.add(Right(completedLongFinalMessage));
+    await streamController.close();
+    await tester.pump();
+
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'session.status',
+        properties: <String, dynamic>{
+          'sessionID': sessionId,
+          'status': <String, dynamic>{'type': 'busy'},
+        },
       ),
     );
-    await streamController.close();
+    await tester.pump();
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'session.status',
+        properties: <String, dynamic>{
+          'sessionID': sessionId,
+          'status': <String, dynamic>{'type': 'idle'},
+        },
+      ),
+    );
+    await tester.pump();
+
+    repository.messagesBySession[sessionId] = <ChatMessage>[
+      for (final message in provider.messages)
+        if (message.id == completedLongFinalMessage.id)
+          AssistantMessage(
+            id: completedLongFinalMessage.id,
+            sessionId: sessionId,
+            time: completedLongFinalMessage.time,
+            completedTime: completedLongFinalMessage.completedTime,
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_long_final_answer_refreshed',
+                messageId: completedLongFinalMessage.id,
+                sessionId: sessionId,
+                text: '$longFinalText\nRefreshed from server.',
+              ),
+            ],
+          )
+        else
+          message,
+    ];
+
+    await provider.refreshActiveSessionView(
+      reason: 'test-final-reveal-passive-refresh',
+      includeStatus: false,
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Go to latest message'), findsNothing);
+
     await tester.pumpAndSettle();
 
     final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));

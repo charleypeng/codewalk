@@ -8,7 +8,13 @@ import '../../domain/entities/chat_message.dart';
 /// semantics: tool/patch parts are structural work surfaces; everything
 /// else (text, reasoning, subtask, etc.) is user-facing content.
 bool hasRevealableAssistantContent(AssistantMessage message) {
-  return message.parts.any((part) => part is! ToolPart && part is! PatchPart);
+  return message.parts.any(
+    (part) =>
+        part is! ToolPart &&
+        part is! PatchPart &&
+        part is! StepStartPart &&
+        part is! StepFinishPart,
+  );
 }
 
 /// Determines whether a list of messages for a given session has a settled,
@@ -26,9 +32,10 @@ bool hasCompletedRevealableAssistantMessage(
   for (var i = messages.length - 1; i >= 0; i--) {
     final message = messages[i];
     if (message.sessionId != sessionId) continue;
+    if (message is UserMessage) return false;
     if (message is! AssistantMessage) continue;
     if (!message.isCompleted) return false;
-    return hasRevealableAssistantContent(message);
+    if (hasRevealableAssistantContent(message)) return true;
   }
   return false;
 }

@@ -205,7 +205,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
     final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
     final latestRevealableAssistantMessageId =
-        _resolveLatestRevealableAssistantMessageId(messages);
+        _resolveLatestRevealableAssistantMessageId(
+          messages,
+          showThinkingBubbles: showThinkingBubbles,
+          showToolCallBubbles: showToolCallBubbles,
+        );
     final latestSettledAssistantWorkGroupId =
         _resolveLatestSettledAssistantWorkGroupId(
           messages: messages,
@@ -240,10 +244,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     final latestRevealableAssistantMessageId =
         _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+    final isLatestSettledOrPending =
+        latestRevealableAssistantMessageId ==
+            _finalAssistantRevealSettledMessageId ||
+        latestRevealableAssistantMessageId ==
+            _pendingFinalAssistantRevealMessageId;
     if (latestRevealableAssistantMessageId == null ||
         latestRevealableAssistantMessageId.isEmpty ||
-        latestRevealableAssistantMessageId !=
-            _finalAssistantRevealSettledMessageId) {
+        !isLatestSettledOrPending) {
       return false;
     }
 
@@ -532,6 +540,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     if (isResponding) {
       final readingLatestSettledResponse =
           _isReadingLatestSettledAssistantResponse();
+      final readingPendingFinalReveal =
+          readingLatestSettledResponse &&
+          latestRevealableAssistantMessageId ==
+              _pendingFinalAssistantRevealMessageId;
       _debugStartActiveTurnPassiveScrollTracking(sessionId);
       if (_scrollFollowMode != _ScrollFollowMode.following) {
         if (readingLatestSettledResponse) {
@@ -549,8 +561,12 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _deferAssistantWorkCollapse = readingLatestSettledResponse
           ? false
           : compactionDecision.shouldDeferLatestCollapse;
-      _shouldRevealFinalAssistantOnCompletion = !readingLatestSettledResponse;
-      _pendingFinalAssistantRevealMessageId = null;
+      _shouldRevealFinalAssistantOnCompletion = readingPendingFinalReveal
+          ? true
+          : !readingLatestSettledResponse;
+      if (!readingPendingFinalReveal) {
+        _pendingFinalAssistantRevealMessageId = null;
+      }
       if (!readingLatestSettledResponse) {
         _finalAssistantRevealSettledMessageId = null;
         _settledLatestAssistantWorkGroupId = null;
@@ -601,6 +617,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
               );
               _pendingFinalAssistantRevealMessageId = null;
             }
+          }
+        } else if (latestRevealableAssistantMessageId == null) {
+          _shouldRevealFinalAssistantOnCompletion = false;
+          _pendingFinalAssistantRevealMessageId = null;
+          if (_scrollFollowMode == _ScrollFollowMode.following) {
+            _traceFinalUi('viewport-policy-finished-no-revealable-keep-bottom');
+            _scrollToBottom(force: false);
           }
         }
       }
@@ -943,6 +966,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         !measurementContext.mounted ||
         anchorRenderObject is! RenderBox ||
         measurementRenderObject is! RenderBox ||
+        !anchorRenderObject.attached ||
+        !measurementRenderObject.attached ||
         !anchorRenderObject.hasSize ||
         !measurementRenderObject.hasSize) {
       _traceFinalUi(
@@ -1030,6 +1055,12 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         .findRenderObject();
     if (anchorRenderObject is! RenderBox ||
         viewportRenderObject is! RenderBox) {
+      return false;
+    }
+    if (!anchorRenderObject.attached ||
+        !viewportRenderObject.attached ||
+        !anchorRenderObject.hasSize ||
+        !viewportRenderObject.hasSize) {
       return false;
     }
     final viewportHeight = _scrollController.position.viewportDimension;
