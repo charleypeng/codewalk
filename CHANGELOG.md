@@ -2,6 +2,18 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.128.0 - 2026-06-18
+
+- fix(review): address group A release findings
+- merge: integrate android cache payload hotfix
+- fix(android): move chat cache payloads back to files
+- docs: update behavior for group A UI changes
+- feat(mobile): allow three pinned app bar actions
+- fix(files): show file tree loading and retry states
+- fix(chat): give session search the sidebar header
+- feat(chat): grid context usage metrics
+- fix(chat): widen compact context hit area
+
 ## v1.127.1 - 2026-06-17
 
 - fix(chat): stabilize final response settlement
