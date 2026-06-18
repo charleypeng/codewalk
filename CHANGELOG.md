@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.129.0 - 2026-06-18
+
+- fix(review): restore data saver realtime transitions
+- feat: add aggressive data saver resume policy
+
 ## v1.128.0 - 2026-06-18
 
 - fix(review): address group A release findings
