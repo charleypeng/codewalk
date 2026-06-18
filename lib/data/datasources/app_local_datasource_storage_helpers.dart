@@ -112,19 +112,75 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
   }
 
   Future<String?> _readLargeCachePayload(String key) async {
-    return sharedPreferences.getString(key);
+    final store = _chatCachePayloadStore;
+    if (store == null) {
+      return sharedPreferences.getString(key);
+    }
+
+    try {
+      final stored = await store.read(key);
+      if (stored != null) {
+        return stored;
+      }
+    } catch (_) {
+      // Keep the app functional if the file-backed store is unavailable.
+      _migratedLargeCacheKeys.add(key);
+      return sharedPreferences.getString(key);
+    }
+
+    if (_migratedLargeCacheKeys.contains(key)) {
+      return null;
+    }
+
+    final legacy = sharedPreferences.getString(key);
+    if (legacy == null || legacy.trim().isEmpty) {
+      _migratedLargeCacheKeys.add(key);
+      return null;
+    }
+
+    try {
+      await store.write(key, legacy);
+      await sharedPreferences.remove(key);
+      _migratedLargeCacheKeys.add(key);
+    } catch (_) {
+      return legacy;
+    }
+    return legacy;
   }
 
   Future<void> _writeLargeCachePayload(String key, String value) async {
-    await sharedPreferences.setString(key, value);
+    final store = _chatCachePayloadStore;
+    if (store == null) {
+      await sharedPreferences.setString(key, value);
+      return;
+    }
+    try {
+      await store.write(key, value);
+      await sharedPreferences.remove(key);
+      _migratedLargeCacheKeys.add(key);
+    } catch (_) {
+      await sharedPreferences.setString(key, value);
+    }
   }
 
   Future<void> _removeLargeCachePayload(String key) async {
+    final store = _chatCachePayloadStore;
+    if (store != null) {
+      try {
+        await store.remove(key);
+      } catch (_) {}
+      _migratedLargeCacheKeys.add(key);
+    }
     await sharedPreferences.remove(key);
   }
 
   Future<void> _clearLargeCachePayloads() async {
-    // Large cache payloads are stored in SharedPreferences; clearAll() clears
-    // them together with the rest of local state.
+    final store = _chatCachePayloadStore;
+    if (store != null) {
+      try {
+        await store.clear();
+      } catch (_) {}
+    }
+    _migratedLargeCacheKeys.clear();
   }
 }

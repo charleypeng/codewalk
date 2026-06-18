@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../cache/chat_cache_payload_store.dart';
 
 part 'app_local_datasource_storage_helpers.dart';
 
@@ -404,10 +405,15 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   AppLocalDataSourceImpl({
     required this.sharedPreferences,
     FlutterSecureStorage? secureStorage,
-  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+    ChatCachePayloadStore? chatCachePayloadStore,
+  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _chatCachePayloadStore =
+           chatCachePayloadStore ?? createChatCachePayloadStore();
 
   final SharedPreferences sharedPreferences;
   final FlutterSecureStorage _secureStorage;
+  final ChatCachePayloadStore? _chatCachePayloadStore;
+  final Set<String> _migratedLargeCacheKeys = <String>{};
 
   @override
   Future<String?> getServerHost() async {
