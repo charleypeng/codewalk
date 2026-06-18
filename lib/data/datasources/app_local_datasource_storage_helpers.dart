@@ -124,7 +124,6 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
       }
     } catch (_) {
       // Keep the app functional if the file-backed store is unavailable.
-      _migratedLargeCacheKeys.add(key);
       return sharedPreferences.getString(key);
     }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:codewalk/core/constants/app_constants.dart';
 import 'package:codewalk/data/cache/chat_cache_payload_store.dart';
@@ -51,6 +52,20 @@ class _ThrowingChatCachePayloadStore implements ChatCachePayloadStore {
   }
 }
 
+class _ReadFailsOnceChatCachePayloadStore
+    extends _InMemoryChatCachePayloadStore {
+  bool _failed = false;
+
+  @override
+  Future<String?> read(String key) async {
+    if (!_failed) {
+      _failed = true;
+      throw StateError('cache read failed once');
+    }
+    return super.read(key);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -100,6 +115,14 @@ void main() {
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(secureStorageChannel, null);
+  });
+
+  test('does not create file cache store on non-Android IO platforms', () {
+    if (Platform.isAndroid) {
+      return;
+    }
+
+    expect(createChatCachePayloadStore(), isNull);
   });
 
   test(
@@ -207,6 +230,39 @@ void main() {
       final payload = await dataSource.getCachedSessions();
 
       expect(payload, '[{"id":"legacy"}]');
+      expect(
+        cacheStore.values[AppConstants.cachedSessionsKey],
+        '[{"id":"legacy"}]',
+      );
+      expect(prefs.getString(AppConstants.cachedSessionsKey), isNull);
+    },
+  );
+
+  test(
+    'does not mark legacy payload migrated when cache store read fails',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        AppConstants.cachedSessionsKey: '[{"id":"legacy"}]',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final cacheStore = _ReadFailsOnceChatCachePayloadStore();
+      final dataSource = AppLocalDataSourceImpl(
+        sharedPreferences: prefs,
+        chatCachePayloadStore: cacheStore,
+      );
+
+      final firstPayload = await dataSource.getCachedSessions();
+
+      expect(firstPayload, '[{"id":"legacy"}]');
+      expect(cacheStore.values, isEmpty);
+      expect(
+        prefs.getString(AppConstants.cachedSessionsKey),
+        '[{"id":"legacy"}]',
+      );
+
+      final secondPayload = await dataSource.getCachedSessions();
+
+      expect(secondPayload, '[{"id":"legacy"}]');
       expect(
         cacheStore.values[AppConstants.cachedSessionsKey],
         '[{"id":"legacy"}]',

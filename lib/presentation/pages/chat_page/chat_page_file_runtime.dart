@@ -662,18 +662,19 @@ extension _ChatPageFileRuntime on _ChatPageState {
               rowCount: 2,
             ),
           );
-        } else if (errorMessage != null) {
-          rows.add(
-            _buildFileTreeErrorRow(
-              fileState: fileState,
-              projectProvider: projectProvider,
-              cacheKey: node.path,
-              requestPath: node.path,
-              message: errorMessage,
-              depth: depth + 1,
-            ),
-          );
         } else {
+          if (errorMessage != null) {
+            rows.add(
+              _buildFileTreeErrorRow(
+                fileState: fileState,
+                projectProvider: projectProvider,
+                cacheKey: node.path,
+                requestPath: node.path,
+                message: errorMessage,
+                depth: depth + 1,
+              ),
+            );
+          }
           rows.addAll(
             _buildFileTreeChildren(
               fileState: fileState,

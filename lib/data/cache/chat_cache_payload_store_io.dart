@@ -10,6 +10,9 @@ import 'package:path_provider/path_provider.dart';
 import 'chat_cache_payload_store_base.dart';
 
 ChatCachePayloadStore? createChatCachePayloadStore() {
+  if (!Platform.isAndroid) {
+    return null;
+  }
   return _FileBackedChatCachePayloadStore();
 }
 

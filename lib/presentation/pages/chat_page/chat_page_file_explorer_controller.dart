@@ -650,14 +650,25 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                   }
                   return ListView(
                     key: const ValueKey<String>('file_tree_list'),
-                    children: _buildFileTreeChildren(
-                      fileState: fileState,
-                      projectProvider: projectProvider,
-                      dialogFullscreen: isMobileLayout,
-                      onStateChanged: onStateChanged,
-                      parentCacheKey: _ChatPageState._rootTreeCacheKey,
-                      depth: 0,
-                    ),
+                    children: [
+                      if (fileState.treeError != null)
+                        _buildFileTreeErrorRow(
+                          fileState: fileState,
+                          projectProvider: projectProvider,
+                          cacheKey: _ChatPageState._rootTreeCacheKey,
+                          requestPath: '.',
+                          message: fileState.treeError!,
+                          depth: 0,
+                        ),
+                      ..._buildFileTreeChildren(
+                        fileState: fileState,
+                        projectProvider: projectProvider,
+                        dialogFullscreen: isMobileLayout,
+                        onStateChanged: onStateChanged,
+                        parentCacheKey: _ChatPageState._rootTreeCacheKey,
+                        depth: 0,
+                      ),
+                    ],
                   );
                 },
               ),

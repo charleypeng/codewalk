@@ -5072,6 +5072,42 @@ void main() {
         findsOneWidget,
       );
 
+      projectRepository.fileFailuresByPath['.'] = const ServerFailure(
+        'Root unavailable',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('file_tree_refresh_button')),
+      );
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_error___root__')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_item_/repo/a/lib')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_item_/repo/a/docs')),
+        findsOneWidget,
+      );
+
+      projectRepository.fileFailuresByPath.clear();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('file_tree_retry___root__')),
+      );
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_error___root__')),
+        findsNothing,
+      );
+
       await tester.tap(
         find.byKey(const ValueKey<String>('file_tree_item_/repo/a/lib')),
       );
