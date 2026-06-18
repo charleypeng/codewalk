@@ -298,6 +298,7 @@
 - **Given** the user taps the search icon button
 - **When** the button is pressed
 - **Then** the "Conversations" title cross-fades into an inline `TextField` with `hintText` "Search conversations" and a prefix search icon
+- **Then** sidebar header action buttons are hidden while search is expanded so the search field can use the full header width
 - **Then** the `TextField` auto-focuses so the user can start typing immediately
 - **Then** a clear (✕) button appears as a suffix when text is present and clears the query + collapses the field back to the title
 - **Then** pressing the `Escape` key clears the query and collapses the field
@@ -835,6 +836,8 @@ Additional commands may be provided by the connected OpenCode server and merged 
 
 - **Given** the user opens the `Context usage` popup from the chat status bar
 - **When** quota data is available from the connected host
+- **Then** usage, token, cost, and limit metrics are shown in a compact two-column grid
+- **Then** the `Compact now` action fills the popup width so tapping anywhere on that action row triggers compaction
 - **Then** CodeWalk shows a `Provider Quotas` section at the bottom of that popup after the `Compact now` action
 - **Then** providers are grouped by parent organisation; each group shows a severity-colored progress bar for the most constrained sub-quota and a `Pace` chip that shows the predicted percentage of the window that will be consumed at the current usage rate
 - **Then** tapping a provider group row expands it to reveal individual quota entries (requests, tokens, cost, etc.) each with its own bar and remaining figure
@@ -983,6 +986,8 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **Given** the user opens the file explorer panel
 - **When** the project tree loads
 - **Then** the user sees the file/folder structure of the current project in read-only mode (no create, edit, or delete)
+- **Then** slow root and directory loads show inline skeleton rows instead of a blocking centered spinner
+- **Then** per-directory load failures stay localized to the expanded directory and expose a retry action without replacing the whole tree
 
 ### File preview
 
@@ -1032,6 +1037,15 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **Given** the app is running on a mobile device (compact screen)
 - **When** the user navigates the app
 - **Then** the chat occupies the full screen, with the session list accessible via a lateral drawer
+
+### Mobile app bar pinned actions
+
+- **Given** the app is running on a mobile device (compact screen)
+- **When** the user has app-bar actions pinned
+- **Then** up to three pinned action icons are shown before the overflow menu
+- **Then** persisted two-action pin lists remain unchanged after upgrade
+- **Then** persisted oversized pin lists are normalized to the latest three actions
+- **Then** pinning a fourth action drops the oldest pinned action and keeps the latest three visible
 
 ### Mobile back follows conversation hierarchy
 
