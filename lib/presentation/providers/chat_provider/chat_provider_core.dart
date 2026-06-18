@@ -439,9 +439,7 @@ extension _ChatProviderCorePart on ChatProvider {
       } else {
         await _startRealtimeEventSubscription();
       }
-      if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
-        await _loadPendingInteractions();
-      }
+      await _loadPendingInteractions();
       await refreshSessionStatusSnapshot();
       _setProvidersRefreshState(
         ChatProvidersRefreshState.ready,

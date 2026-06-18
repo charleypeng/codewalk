@@ -553,30 +553,39 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
-            SegmentedButton<DataSaverLevel>(
-              key: const ValueKey<String>('settings_data_saver_level'),
-              segments: [
-                ButtonSegment<DataSaverLevel>(
-                  value: DataSaverLevel.off,
-                  label: Text(context.l10n.behaviorDataSaverOff),
+            SizedBox(
+              width: double.infinity,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SegmentedButton<DataSaverLevel>(
+                    key: const ValueKey<String>('settings_data_saver_level'),
+                    segments: [
+                      ButtonSegment<DataSaverLevel>(
+                        value: DataSaverLevel.off,
+                        label: Text(context.l10n.behaviorDataSaverOff),
+                      ),
+                      ButtonSegment<DataSaverLevel>(
+                        value: DataSaverLevel.standard,
+                        label: Text(context.l10n.behaviorDataSaverStandard),
+                      ),
+                      ButtonSegment<DataSaverLevel>(
+                        value: DataSaverLevel.aggressive,
+                        label: Text(context.l10n.behaviorDataSaverAggressive),
+                      ),
+                    ],
+                    selected: <DataSaverLevel>{settingsProvider.dataSaverLevel},
+                    onSelectionChanged: (selection) {
+                      if (selection.isEmpty) {
+                        return;
+                      }
+                      final level = selection.first;
+                      unawaited(settingsProvider.setDataSaverLevel(level));
+                    },
+                  ),
                 ),
-                ButtonSegment<DataSaverLevel>(
-                  value: DataSaverLevel.standard,
-                  label: Text(context.l10n.behaviorDataSaverStandard),
-                ),
-                ButtonSegment<DataSaverLevel>(
-                  value: DataSaverLevel.aggressive,
-                  label: Text(context.l10n.behaviorDataSaverAggressive),
-                ),
-              ],
-              selected: <DataSaverLevel>{settingsProvider.dataSaverLevel},
-              onSelectionChanged: (selection) {
-                if (selection.isEmpty) {
-                  return;
-                }
-                final level = selection.first;
-                unawaited(settingsProvider.setDataSaverLevel(level));
-              },
+              ),
             ),
             const SizedBox(height: 8),
             Text(switch (settingsProvider.dataSaverLevel) {

@@ -78,9 +78,16 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       return;
     }
     if (!_cellularDataSaverService.isDataSaverActive) {
-      if (_idleRealtimePausedForDataSaver && _isForegroundActive) {
-        _idleRealtimePausedForDataSaver = false;
+      if (!_isForegroundActive) {
+        return;
+      }
+      _idleRealtimePausedForDataSaver = false;
+      if (_eventSubscription == null) {
         await _startRealtimeEventSubscription();
+      } else if (_globalEventSubscription == null) {
+        await _startGlobalRealtimeEventSubscription();
+      } else {
+        _startSyncHealthMonitor();
       }
       return;
     }
@@ -117,7 +124,66 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       }
     }
     _idleRealtimePausedForDataSaver = false;
+    if (!_cellularDataSaverService.isAggressiveDataSaverActive &&
+        _eventSubscription != null &&
+        _globalEventSubscription == null) {
+      await _startGlobalRealtimeEventSubscription();
+      return;
+    }
     await _startRealtimeEventSubscription();
+  }
+
+  Future<void> _startGlobalRealtimeEventSubscription() async {
+    if (_globalEventSubscription != null ||
+        _cellularDataSaverService.isAggressiveDataSaverActive) {
+      return;
+    }
+    final generation = _eventStreamGeneration;
+    final globalSubscription = watchGlobalChatEvents().listen(
+      (result) {
+        if (generation != _eventStreamGeneration) {
+          return;
+        }
+        result.fold(
+          (failure) {
+            _handleRealtimeStreamFailure(
+              source: 'global-stream-failure',
+              error: failure,
+            );
+          },
+          (event) {
+            _markRealtimeSignal(source: 'global-stream');
+            _handleGlobalEvent(event);
+          },
+        );
+      },
+      onError: (error) {
+        if (generation != _eventStreamGeneration) {
+          return;
+        }
+        _handleRealtimeStreamFailure(
+          source: 'global-stream-exception',
+          error: error,
+        );
+      },
+      onDone: () {
+        if (generation != _eventStreamGeneration) {
+          return;
+        }
+        _handleRealtimeStreamFailure(source: 'global-stream-done');
+      },
+    );
+
+    if (generation != _eventStreamGeneration) {
+      await _cancelSubscriptionSafely(
+        globalSubscription,
+        label: 'global event (stale generation)',
+      );
+      return;
+    }
+
+    _globalEventSubscription = globalSubscription;
+    _startSyncHealthMonitor();
   }
 
   Future<void> _runAutomaticForegroundSyncForDataSaver({
@@ -135,9 +201,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       reason: 'data-saver:$reason',
       includeStatus: true,
     );
-    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
-      await _loadPendingInteractions();
-    }
+    await _loadPendingInteractions();
     await _syncSelectionFromRemote(reason: 'data-saver:$reason', force: true);
     await _syncCellularDataSaverRealtimePolicy(reason: '$reason:post-sync');
   }

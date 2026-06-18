@@ -84,6 +84,20 @@ void main() {
       provider = buildProvider();
     });
 
+    Future<void> settleUntil(
+      bool Function() predicate, {
+      int maxTicks = 40,
+      String? reason,
+    }) async {
+      for (var tick = 0; tick < maxTicks; tick += 1) {
+        if (predicate()) {
+          return;
+        }
+        await pumpEventQueue();
+      }
+      fail(reason ?? 'Condition was not met before event queue settled.');
+    }
+
     test(
       'aggressive data saver keeps local realtime open and pauses global stream',
       () async {
@@ -111,22 +125,79 @@ void main() {
         expect(provider.debugHasRealtimeEventSubscription, isTrue);
         expect(provider.debugHasGlobalEventSubscription, isFalse);
         expect(provider.syncState, ChatSyncState.connected);
+
+        dataSaverService.debugSetDataSaverLevel(DataSaverLevel.standard);
+        await provider.refresh();
+        await settleUntil(
+          () => provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected standard data saver to restore global realtime while foreground realtime stays active.',
+        );
+
+        expect(provider.debugHasRealtimeEventSubscription, isTrue);
+        expect(provider.debugHasGlobalEventSubscription, isTrue);
+
+        dataSaverService.debugSetDataSaverLevel(DataSaverLevel.aggressive);
+        await settleUntil(
+          () =>
+              provider.debugHasRealtimeEventSubscription &&
+              !provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected aggressive data saver to pause global realtime again.',
+        );
+
+        expect(provider.debugHasRealtimeEventSubscription, isTrue);
+        expect(provider.debugHasGlobalEventSubscription, isFalse);
+
+        dataSaverService.debugSetDataSaverLevel(DataSaverLevel.off);
+        await settleUntil(
+          () => provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected disabling aggressive data saver to restore global realtime.',
+        );
+
+        expect(provider.debugHasRealtimeEventSubscription, isTrue);
+        expect(provider.debugHasGlobalEventSubscription, isTrue);
       },
     );
 
-    Future<void> settleUntil(
-      bool Function() predicate, {
-      int maxTicks = 40,
-      String? reason,
-    }) async {
-      for (var tick = 0; tick < maxTicks; tick += 1) {
-        if (predicate()) {
-          return;
-        }
-        await pumpEventQueue();
-      }
-      fail(reason ?? 'Condition was not met before event queue settled.');
-    }
+    test(
+      'aggressive foreground resume still loads active session pending interactions',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_aggressive_resume',
+            sessionId: 'ses_1',
+            permission: 'bash',
+            patterns: <String>['git status'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+
+        await provider.setForegroundActive(false);
+        await provider.setForegroundActive(true);
+        await settleUntil(
+          () => provider.currentSessionPermissions.isNotEmpty,
+          reason:
+              'Expected aggressive foreground sync to load active pending permission.',
+        );
+
+        expect(
+          provider.currentSessionPermissions.single.id,
+          'perm_aggressive_resume',
+        );
+      },
+    );
 
     test(
       'replays optimistic echo and assistant delta using current SSE baseline',

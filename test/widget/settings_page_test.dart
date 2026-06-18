@@ -260,16 +260,18 @@ void main() {
       ),
       findsOneWidget,
     );
-    final dataSaverToggleFinder = find.byKey(
-      const ValueKey<String>('settings_toggle_cellular_data_saver'),
+    final dataSaverLevelFinder = find.byKey(
+      const ValueKey<String>('settings_data_saver_level'),
     );
-    expect(dataSaverToggleFinder, findsOneWidget);
-    expect(tester.widget<SwitchListTile>(dataSaverToggleFinder).value, isTrue);
+    expect(dataSaverLevelFinder, findsOneWidget);
+    expect(settingsProvider.dataSaverLevel, DataSaverLevel.standard);
 
-    await tester.tap(dataSaverToggleFinder);
+    await tester.tap(
+      find.descendant(of: dataSaverLevelFinder, matching: find.text('Off')),
+    );
     await tester.pumpAndSettle();
 
-    expect(tester.widget<SwitchListTile>(dataSaverToggleFinder).value, isFalse);
+    expect(settingsProvider.dataSaverLevel, DataSaverLevel.off);
     expect(settingsProvider.dataSaverEnabled, isFalse);
 
     final syncToggleFinder = find.byKey(
