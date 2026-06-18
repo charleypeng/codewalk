@@ -573,6 +573,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     for (final node in nodes) {
       final isExpanded = fileState.expandedDirectories.contains(node.path);
       final isLoading = fileState.loadingDirectories.contains(node.path);
+      final errorMessage = fileState.directoryErrors[node.path];
       final isActiveFile = fileState.tabSelection.activePath == node.path;
       rows.add(
         InkWell(
@@ -653,19 +654,201 @@ extension _ChatPageFileRuntime on _ChatPageState {
         ),
       );
       if (node.isDirectory && isExpanded) {
-        rows.addAll(
-          _buildFileTreeChildren(
-            fileState: fileState,
-            projectProvider: projectProvider,
-            dialogFullscreen: dialogFullscreen,
-            onStateChanged: onStateChanged,
-            parentCacheKey: node.path,
-            depth: depth + 1,
-          ),
-        );
+        if (isLoading) {
+          rows.addAll(
+            _buildFileTreeLoadingRows(
+              depth: depth + 1,
+              cacheKey: node.path,
+              rowCount: 2,
+            ),
+          );
+        } else if (errorMessage != null) {
+          rows.add(
+            _buildFileTreeErrorRow(
+              fileState: fileState,
+              projectProvider: projectProvider,
+              cacheKey: node.path,
+              requestPath: node.path,
+              message: errorMessage,
+              depth: depth + 1,
+            ),
+          );
+        } else {
+          rows.addAll(
+            _buildFileTreeChildren(
+              fileState: fileState,
+              projectProvider: projectProvider,
+              dialogFullscreen: dialogFullscreen,
+              onStateChanged: onStateChanged,
+              parentCacheKey: node.path,
+              depth: depth + 1,
+            ),
+          );
+        }
       }
     }
     return rows;
+  }
+
+  List<Widget> _buildFileTreeLoadingRows({
+    required int depth,
+    required String cacheKey,
+    required int rowCount,
+  }) {
+    return <Widget>[
+      Padding(
+        key: ValueKey<String>('file_tree_loading_$cacheKey'),
+        padding: EdgeInsetsDirectional.only(
+          start: 8 + (depth * 14),
+          end: 8,
+          top: 4,
+          bottom: 2,
+        ),
+        child: const LinearProgressIndicator(minHeight: 2),
+      ),
+      for (var index = 0; index < rowCount; index += 1)
+        _buildFileTreeSkeletonRow(
+          depth: depth,
+          cacheKey: cacheKey,
+          index: index,
+        ),
+    ];
+  }
+
+  Widget _buildFileTreeSkeletonRow({
+    required int depth,
+    required String cacheKey,
+    required int index,
+  }) {
+    final density = _settingsProvider?.appDensity ?? AppDensity.normal;
+    final gap = AppDensitySpacing.itemGap(density);
+    final smallGap = AppDensitySpacing.smallGap(density) + 2;
+    final lineHeight = density == AppDensity.extraDense ? 7.0 : 8.0;
+    final color = Theme.of(
+      context,
+    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.18);
+
+    return Padding(
+      key: ValueKey<String>('file_tree_skeleton_${cacheKey}_$index'),
+      padding: EdgeInsetsDirectional.only(
+        start: 8 + (depth * 14),
+        end: 8,
+        top: smallGap + 2,
+        bottom: smallGap + 2,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          SizedBox(width: gap),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FractionallySizedBox(
+                  widthFactor: index.isEven ? 0.74 : 0.58,
+                  child: Container(
+                    height: lineHeight,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(lineHeight),
+                    ),
+                  ),
+                ),
+                SizedBox(height: smallGap + 2),
+                FractionallySizedBox(
+                  widthFactor: index.isEven ? 0.42 : 0.34,
+                  child: Container(
+                    height: lineHeight,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(lineHeight),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFileTreeErrorRow({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String cacheKey,
+    required String requestPath,
+    required String message,
+    required int depth,
+  }) {
+    final density = _settingsProvider?.appDensity ?? AppDensity.normal;
+    final gap = AppDensitySpacing.itemGap(density);
+
+    return Padding(
+      key: ValueKey<String>('file_tree_error_$cacheKey'),
+      padding: EdgeInsetsDirectional.only(
+        start: 8 + (depth * 14),
+        end: 8,
+        top: gap,
+        bottom: gap,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Symbols.error,
+            size: 16,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          SizedBox(width: gap),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextButton(
+            key: ValueKey<String>('file_tree_retry_$cacheKey'),
+            style: TextButton.styleFrom(
+              visualDensity: Theme.of(context).visualDensity,
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () {
+              if (cacheKey == _ChatPageState._rootTreeCacheKey) {
+                unawaited(
+                  _loadRootDirectoryNodes(
+                    state: fileState,
+                    projectProvider: projectProvider,
+                    force: true,
+                  ),
+                );
+                return;
+              }
+              unawaited(
+                _loadDirectoryNodes(
+                  state: fileState,
+                  projectProvider: projectProvider,
+                  cacheKey: cacheKey,
+                  requestPath: requestPath,
+                  force: true,
+                ),
+              );
+            },
+            child: Text(context.l10n.chatRetry),
+          ),
+        ],
+      ),
+    );
   }
 
   IconData _fileIconForNode(FileNode node) {

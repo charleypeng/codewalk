@@ -9,6 +9,7 @@ class _FileExplorerContextState {
       <String, List<FileNode>>{};
   final Set<String> expandedDirectories = <String>{};
   final Set<String> loadingDirectories = <String>{};
+  final Map<String, String> directoryErrors = <String, String>{};
   final Map<String, _FileTabViewState> tabsByPath =
       <String, _FileTabViewState>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
@@ -29,6 +30,7 @@ class _FileExplorerContextState {
     directoryChildren.clear();
     expandedDirectories.clear();
     loadingDirectories.clear();
+    directoryErrors.clear();
     selectedLinesByPath.clear();
     lastSelectedLineByPath.clear();
     pendingScrollToLine = null;

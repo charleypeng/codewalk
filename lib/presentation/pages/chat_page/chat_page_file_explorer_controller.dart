@@ -16,6 +16,8 @@ class _QuickOpenResult {
   final int? lineNumber;
 }
 
+const _fileExplorerMinimumLoaderDuration = Duration(milliseconds: 120);
+
 extension _ChatPageFileExplorerController on _ChatPageState {
   Widget _buildDesktopFilePane(
     ChatProvider chatProvider, {
@@ -80,9 +82,14 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       return;
     }
 
+    final loadStartedAt = DateTime.now();
     if (mounted) {
       _setState(() {
         state.loadingDirectories.add(cacheKey);
+        state.directoryErrors.remove(cacheKey);
+        if (cacheKey == _ChatPageState._rootTreeCacheKey) {
+          state.treeError = null;
+        }
       });
     }
 
@@ -90,6 +97,10 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       projectProvider: projectProvider,
       requestPath: requestPath,
     );
+    final elapsed = DateTime.now().difference(loadStartedAt);
+    if (elapsed < _fileExplorerMinimumLoaderDuration) {
+      await Future<void>.delayed(_fileExplorerMinimumLoaderDuration - elapsed);
+    }
     if (!mounted) {
       return;
     }
@@ -97,11 +108,15 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     _setState(() {
       state.loadingDirectories.remove(cacheKey);
       if (listed == null) {
+        final message = projectProvider.error ?? 'Failed to load files';
         if (cacheKey == _ChatPageState._rootTreeCacheKey) {
-          state.treeError = projectProvider.error ?? 'Failed to load files';
+          state.treeError = message;
+        } else {
+          state.directoryErrors[cacheKey] = message;
         }
         return;
       }
+      state.directoryErrors.remove(cacheKey);
       state.directoryChildren[cacheKey] = listed;
       if (cacheKey == _ChatPageState._rootTreeCacheKey) {
         state.treeError = null;
@@ -604,37 +619,30 @@ extension _ChatPageFileExplorerController on _ChatPageState {
               child: Builder(
                 builder: (_) {
                   if (rootLoading && (rootNodes == null || rootNodes.isEmpty)) {
-                    return const Center(child: CircularProgressIndicator());
+                    return ListView(
+                      key: const ValueKey<String>('file_tree_loading_skeleton'),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      children: _buildFileTreeLoadingRows(
+                        depth: 0,
+                        cacheKey: _ChatPageState._rootTreeCacheKey,
+                        rowCount: 5,
+                      ),
+                    );
                   }
                   if (fileState.treeError != null &&
                       (rootNodes == null || rootNodes.isEmpty)) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              fileState.treeError!,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: () {
-                                unawaited(
-                                  _loadRootDirectoryNodes(
-                                    state: fileState,
-                                    projectProvider: projectProvider,
-                                    force: true,
-                                  ),
-                                );
-                              },
-                              child: Text(context.l10n.chatRetry),
-                            ),
-                          ],
+                    return ListView(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      children: [
+                        _buildFileTreeErrorRow(
+                          fileState: fileState,
+                          projectProvider: projectProvider,
+                          cacheKey: _ChatPageState._rootTreeCacheKey,
+                          requestPath: '.',
+                          message: fileState.treeError!,
+                          depth: 0,
                         ),
-                      ),
+                      ],
                     );
                   }
                   if (rootNodes == null || rootNodes.isEmpty) {

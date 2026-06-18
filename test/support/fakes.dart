@@ -2199,11 +2199,13 @@ class FakeProjectRepository implements ProjectRepository {
   Failure? worktreeFailure;
   Failure? directoryFailure;
   Failure? fileContentFailure;
+  Future<void> Function(String path)? listFilesDelay;
   String? lastCreatedWorktreeName;
   String? lastCreatedWorktreeDirectory;
   final Set<String> gitDirectories = <String>{};
   final Map<String, List<String>> directoriesByPath = <String, List<String>>{};
   final Map<String, List<FileNode>> filesByPath = <String, List<FileNode>>{};
+  final Map<String, Failure> fileFailuresByPath = <String, Failure>{};
   final Map<String, FileContent> fileContentsByPath = <String, FileContent>{};
   final Map<String, List<FileNode>> searchResultsByQuery =
       <String, List<FileNode>>{};
@@ -2357,10 +2359,17 @@ class FakeProjectRepository implements ProjectRepository {
     String? directory,
     required String path,
   }) async {
+    if (listFilesDelay != null) {
+      await listFilesDelay!(path);
+    }
     if (directoryFailure != null) {
       return Left(directoryFailure!);
     }
     final key = path.trim();
+    final pathFailure = fileFailuresByPath[key];
+    if (pathFailure != null) {
+      return Left(pathFailure);
+    }
     final seeded = filesByPath[key];
     if (seeded != null) {
       return Right(List<FileNode>.from(seeded));

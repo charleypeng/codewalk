@@ -4934,6 +4934,170 @@ void main() {
     },
   );
 
+  testWidgets(
+    'file explorer shows directory loading skeletons and retry errors',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1300, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final rootGate = Completer<void>();
+      final libGate = Completer<void>();
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final projectRepository = FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_file_tree_loading',
+          name: 'Project File Tree Loading',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_file_tree_loading',
+            name: 'Project File Tree Loading',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+        ],
+      );
+      projectRepository.filesByPath['.'] = const <FileNode>[
+        FileNode(
+          path: '/repo/a/lib',
+          name: 'lib',
+          type: FileNodeType.directory,
+        ),
+        FileNode(
+          path: '/repo/a/docs',
+          name: 'docs',
+          type: FileNodeType.directory,
+        ),
+      ];
+      projectRepository.filesByPath['/repo/a/lib'] = const <FileNode>[
+        FileNode(
+          path: '/repo/a/lib/main.dart',
+          name: 'main.dart',
+          type: FileNodeType.file,
+        ),
+      ];
+      projectRepository.listFilesDelay = (path) {
+        if (path == '.' && !rootGate.isCompleted) {
+          return rootGate.future;
+        }
+        if (path == '/repo/a/lib' && !libGate.isCompleted) {
+          return libGate.future;
+        }
+        return Future<void>.value();
+      };
+
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        projectRepository: projectRepository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_loading_skeleton')),
+        findsOneWidget,
+      );
+
+      rootGate.complete();
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_item_/repo/a/lib')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_item_/repo/a/docs')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('file_tree_item_/repo/a/lib')),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_loading_/repo/a/lib')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_skeleton_/repo/a/lib_0')),
+        findsOneWidget,
+      );
+
+      libGate.complete();
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+        ),
+        findsOneWidget,
+      );
+
+      projectRepository.fileFailuresByPath['/repo/a/docs'] =
+          const ServerFailure('Permission denied');
+      projectRepository.fileFailuresByPath['docs'] = const ServerFailure(
+        'Permission denied',
+      );
+      projectRepository.fileFailuresByPath['./docs'] = const ServerFailure(
+        'Permission denied',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('file_tree_item_/repo/a/docs')),
+      );
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_error_/repo/a/docs')),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Failed to list files: Permission denied'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_retry_/repo/a/docs')),
+        findsOneWidget,
+      );
+
+      projectRepository.fileFailuresByPath.clear();
+      projectRepository.filesByPath['/repo/a/docs'] = const <FileNode>[
+        FileNode(
+          path: '/repo/a/docs/readme.md',
+          name: 'readme.md',
+          type: FileNodeType.file,
+        ),
+      ];
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('file_tree_retry_/repo/a/docs')),
+      );
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('file_tree_item_/repo/a/docs/readme.md'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('file_tree_error_/repo/a/docs')),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('desktop open files button opens centered dialog with tabs', (
     WidgetTester tester,
   ) async {
