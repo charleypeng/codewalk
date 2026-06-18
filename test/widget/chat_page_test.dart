@@ -2359,13 +2359,15 @@ void main() {
       (WidgetTester tester) async {
         SharedPreferences.setMockInitialValues(<String, Object>{
           'codewalk.mobile_appbar_pinned_actions': <String>[
+            'display',
             'undo',
             'search',
             'newChat',
+            'quickOpen',
           ],
         });
         addTearDown(() => SharedPreferences.setMockInitialValues({}));
-        await tester.binding.setSurfaceSize(const Size(390, 900));
+        await tester.binding.setSurfaceSize(const Size(320, 900));
         addTearDown(() => tester.binding.setSurfaceSize(null));
 
         final localDataSource = InMemoryAppLocalDataSource()
@@ -2385,10 +2387,18 @@ void main() {
           findsOneWidget,
         );
         expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_quickOpen_button')),
+          findsOneWidget,
+        );
+        expect(
           find.byKey(const ValueKey<String>('appbar_pinned_undo_button')),
           findsNothing,
         );
-        for (var index = 0; index < 2; index += 1) {
+        expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_display_button')),
+          findsNothing,
+        );
+        for (var index = 0; index < 3; index += 1) {
           expect(
             tester
                 .getSize(
@@ -2404,7 +2414,7 @@ void main() {
         var prefs = await SharedPreferences.getInstance();
         expect(
           prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
-          <String>['search', 'newChat'],
+          <String>['search', 'newChat', 'quickOpen'],
         );
 
         await tester.tap(
@@ -2431,16 +2441,61 @@ void main() {
           findsOneWidget,
         );
         expect(
+          find.byKey(const ValueKey<String>('appbar_pinned_quickOpen_button')),
+          findsOneWidget,
+        );
+        expect(
           find.byKey(const ValueKey<String>('appbar_pinned_terminal_button')),
           findsOneWidget,
         );
         prefs = await SharedPreferences.getInstance();
         expect(
           prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
-          <String>['newChat', 'terminal'],
+          <String>['newChat', 'quickOpen', 'terminal'],
         );
       },
     );
+
+    testWidgets('mobile app bar preserves two migrated pins', (
+      WidgetTester tester,
+    ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'codewalk.mobile_appbar_pinned_actions': <String>[
+          'search',
+          'newChat',
+        ],
+      });
+      addTearDown(() => SharedPreferences.setMockInitialValues({}));
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mobile_appbar_pinned_slot_2')),
+        findsNothing,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
+        <String>['search', 'newChat'],
+      );
+    });
 
     testWidgets('desktop terminal button toggles terminal panel', (
       WidgetTester tester,

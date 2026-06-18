@@ -23,7 +23,7 @@ class _MobileAppBarActionDef {
 extension _ChatPageMobileOverflow on _ChatPageState {
   static const String _pinnedActionsPrefKey =
       'codewalk.mobile_appbar_pinned_actions';
-  static const int _maxPinnedMobileActions = 2;
+  static const int _maxPinnedMobileActions = 3;
 
   List<String> _normalizePinnedMobileActionIds(Iterable<String> ids) {
     final normalized = <String>[];
