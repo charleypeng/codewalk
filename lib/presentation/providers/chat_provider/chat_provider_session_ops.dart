@@ -51,6 +51,9 @@ extension _ChatProviderSessionOps on ChatProvider {
     _lastRealtimeSignalAt = null;
     _degradedMode = false;
     _degradedModeStartedAt = null;
+    _resumeGraceTimer?.cancel();
+    _resumeGraceTimer = null;
+    _isInResumeGrace = false;
     _foregroundResumeSyncTimer?.cancel();
     _foregroundResumeSyncTimer = null;
     _foregroundResumeSyncCycleCount = 0;

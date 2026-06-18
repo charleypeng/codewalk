@@ -70,8 +70,13 @@ extension _ChatProviderRealtimeOps on ChatProvider {
       return;
     }
     final stale =
-        DateTime.now().difference(signalAt) > _syncSignalStaleThreshold;
+        DateTime.now().difference(signalAt) >
+        _effectiveSyncSignalStaleThreshold;
     if (!stale) {
+      return;
+    }
+    if (_isInResumeGrace) {
+      AppLogger.info('sync_resume_grace_suppressed reason=stale-signal');
       return;
     }
     _setSyncState(ChatSyncState.delayed, reason: 'stale-signal');
@@ -97,6 +102,7 @@ extension _ChatProviderRealtimeOps on ChatProvider {
 
   Future<void> _resumeRealtimeAfterForeground() async {
     if (_cellularDataSaverService.isDataSaverActive) {
+      await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-resume');
       await _runAutomaticForegroundSyncForDataSaver(
         reason: 'foreground-resume',
       );
@@ -150,7 +156,12 @@ extension _ChatProviderRealtimeOps on ChatProvider {
           previousGlobalSubscription,
           label: 'global event',
         );
-        _setSyncState(ChatSyncState.reconnecting, reason: 'subscription-start');
+        if (!_isInResumeGrace) {
+          _setSyncState(
+            ChatSyncState.reconnecting,
+            reason: 'subscription-start',
+          );
+        }
         _startSyncHealthMonitor();
 
         final directory = projectProvider.currentDirectory;
@@ -198,6 +209,11 @@ extension _ChatProviderRealtimeOps on ChatProvider {
         }
 
         _eventSubscription = newSubscription;
+
+        if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+          AppLogger.info('data_saver_aggressive_global_stream_paused');
+          continue;
+        }
 
         final globalSubscription = watchGlobalChatEvents().listen(
           (result) {

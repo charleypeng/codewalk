@@ -2,10 +2,56 @@ part of '../chat_provider.dart';
 
 extension _ChatProviderRealtimeAuxOps on ChatProvider {
   Duration get _effectiveSyncHealthCheckInterval {
+    if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+      return CellularDataSaverService.aggressiveSyncHealthCheckInterval;
+    }
     if (_cellularDataSaverService.shouldThrottleAutomaticForegroundSync) {
       return _cellularDataSaverService.automaticSyncInterval;
     }
     return _syncHealthCheckInterval;
+  }
+
+  void _startResumeGrace({required String reason}) {
+    final duration = clampSyncResumeGracePeriod(
+      settingsProvider?.settings.syncResumeGracePeriod ??
+          _foregroundResumeGracePeriod,
+    );
+    _resumeGraceTimer?.cancel();
+    if (duration == Duration.zero) {
+      _isInResumeGrace = false;
+      return;
+    }
+    _isInResumeGrace = true;
+    AppLogger.info(
+      'sync_resume_grace_started reason=$reason duration_s=${duration.inSeconds}',
+    );
+    _resumeGraceTimer = Timer(duration, () {
+      _resumeGraceTimer = null;
+      if (!_isInResumeGrace) {
+        return;
+      }
+      _isInResumeGrace = false;
+      AppLogger.info('sync_resume_grace_elapsed reason=$reason');
+      _startSyncHealthMonitor();
+      if (_wasDegradedModeBeforeBackground) {
+        _wasDegradedModeBeforeBackground = false;
+        _enterDegradedMode(reason: 'resume-grace-elapsed');
+      } else {
+        _evaluateSyncHealth();
+      }
+      _notifyListeners();
+    });
+  }
+
+  void _cancelResumeGrace({required String reason}) {
+    final wasInGrace = _isInResumeGrace;
+    _resumeGraceTimer?.cancel();
+    _resumeGraceTimer = null;
+    _isInResumeGrace = false;
+    if (wasInGrace) {
+      AppLogger.info('sync_resume_grace_canceled reason=$reason');
+      _notifyListeners();
+    }
   }
 
   Future<void> _stopRealtimeEventSubscriptions({required String reason}) async {
@@ -46,7 +92,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     }
 
     final shouldKeepActive =
-        forceBurst || _shouldKeepRealtimeActiveForDataSaver;
+        _cellularDataSaverService.isAggressiveDataSaverActive
+        ? _currentSession != null
+        : (forceBurst || _shouldKeepRealtimeActiveForDataSaver);
     if (!shouldKeepActive) {
       if (_idleRealtimePausedForDataSaver &&
           _eventSubscription == null &&
@@ -59,10 +107,14 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       return;
     }
 
-    if (_eventSubscription != null &&
-        _globalEventSubscription != null &&
-        !_idleRealtimePausedForDataSaver) {
-      return;
+    if (!_idleRealtimePausedForDataSaver) {
+      final hasExpectedSubscriptions =
+          _cellularDataSaverService.isAggressiveDataSaverActive
+          ? _eventSubscription != null && _globalEventSubscription == null
+          : _eventSubscription != null && _globalEventSubscription != null;
+      if (hasExpectedSubscriptions) {
+        return;
+      }
     }
     _idleRealtimePausedForDataSaver = false;
     await _startRealtimeEventSubscription();
@@ -76,12 +128,16 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     )) {
       return;
     }
-    await loadSessions(preserveVisibleState: true);
+    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
+      await loadSessions(preserveVisibleState: true);
+    }
     await refreshActiveSessionView(
       reason: 'data-saver:$reason',
       includeStatus: true,
     );
-    await _loadPendingInteractions();
+    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
+      await _loadPendingInteractions();
+    }
     await _syncSelectionFromRemote(reason: 'data-saver:$reason', force: true);
     await _syncCellularDataSaverRealtimePolicy(reason: '$reason:post-sync');
   }
@@ -174,6 +230,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     // status changes, and completion notifications.
     final needsRecovery = _consecutiveRealtimeFailures > 0;
     _consecutiveRealtimeFailures = 0;
+    _cancelResumeGrace(reason: 'signal:$source');
     _stopForegroundResumeSyncIndicator(reason: 'signal:$source');
     if (_degradedMode) {
       _exitDegradedMode(reason: 'signal-restored:$source');
@@ -190,6 +247,12 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       'event_stream_reconnecting source=$source attempts=$_consecutiveRealtimeFailures',
       error: error,
     );
+    if (_isInResumeGrace) {
+      AppLogger.info(
+        'sync_resume_grace_suppressed reason=stream-failure:$source',
+      );
+      return;
+    }
     _setSyncState(ChatSyncState.reconnecting, reason: 'stream-failure:$source');
     if (_refreshlessRealtimeEnabled &&
         _consecutiveRealtimeFailures >= _degradedFailureThreshold) {
@@ -224,17 +287,22 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   }
 
   void _enterDegradedMode({required String reason}) {
-    if (!_refreshlessRealtimeEnabled || !_isForegroundActive || _degradedMode) {
+    if (!_refreshlessRealtimeEnabled ||
+        !_isForegroundActive ||
+        _degradedMode ||
+        _isInResumeGrace) {
       return;
     }
     _degradedMode = true;
     _degradedModeStartedAt = DateTime.now();
     _setSyncState(ChatSyncState.delayed, reason: 'degraded-enter:$reason');
     AppLogger.warn(
-      'sync_degraded_entered reason=$reason interval=${_degradedPollingInterval.inSeconds}s',
+      'sync_degraded_entered reason=$reason interval=${_effectiveDegradedPollingInterval.inSeconds}s',
     );
     _degradedPollingTimer?.cancel();
-    _degradedPollingTimer = Timer.periodic(_degradedPollingInterval, (_) {
+    _degradedPollingTimer = Timer.periodic(_effectiveDegradedPollingInterval, (
+      _,
+    ) {
       unawaited(_runDegradedScopedSync(reason: 'degraded-periodic'));
     });
     unawaited(_runDegradedScopedSync(reason: 'degraded-enter'));

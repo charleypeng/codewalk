@@ -26,6 +26,8 @@ enum DesktopPane { conversations, files, utility }
 
 enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
 
+enum DataSaverLevel { off, standard, aggressive }
+
 enum ThemeModeOption { system, light, dark }
 
 enum OpenCodeThemePreset {
@@ -85,6 +87,8 @@ const double kMaxChatFontScale = 1.6;
 const double kMinTerminalFontSize = 9.0;
 const double kMaxTerminalFontSize = 22.0;
 const double kDefaultTerminalFontSize = 13.0;
+const Duration kDefaultSyncResumeGracePeriod = Duration(seconds: 5);
+const Duration kMaxSyncResumeGracePeriod = Duration(seconds: 30);
 
 double clampSystemFontScale(double value) {
   return value.clamp(kMinSystemFontScale, kMaxSystemFontScale);
@@ -539,6 +543,33 @@ AppDensity appDensityFromKey(String value) {
   };
 }
 
+String dataSaverLevelKey(DataSaverLevel level) {
+  return switch (level) {
+    DataSaverLevel.off => 'off',
+    DataSaverLevel.standard => 'standard',
+    DataSaverLevel.aggressive => 'aggressive',
+  };
+}
+
+DataSaverLevel dataSaverLevelFromKey(String value) {
+  return switch (value.trim().toLowerCase()) {
+    'aggressive' => DataSaverLevel.aggressive,
+    'standard' => DataSaverLevel.standard,
+    'on' || 'enabled' || 'true' => DataSaverLevel.standard,
+    _ => DataSaverLevel.off,
+  };
+}
+
+Duration clampSyncResumeGracePeriod(Duration value) {
+  if (value.isNegative) {
+    return Duration.zero;
+  }
+  if (value > kMaxSyncResumeGracePeriod) {
+    return kMaxSyncResumeGracePeriod;
+  }
+  return value;
+}
+
 class ExperienceSettings {
   factory ExperienceSettings.defaults() {
     final defaultSpeechEngine =
@@ -600,12 +631,14 @@ class ExperienceSettings {
       showRecentSessions: true,
       taskListCollapsed: false,
       showComposerTips: true,
-  showMathRendering: true,
+      showMathRendering: true,
       composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       dataSaverEnabled: true,
+      dataSaverLevel: DataSaverLevel.standard,
       androidBackgroundAlertsEnabled: true,
       keepMobileRealtimeForShortPeriod: true,
+      syncResumeGracePeriod: kDefaultSyncResumeGracePeriod,
       enableExperimentalMultiDeviceSync: false,
       themeMode: ThemeModeOption.system,
       localeCode: null,
@@ -658,8 +691,10 @@ class ExperienceSettings {
     required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
     required this.dataSaverEnabled,
+    required this.dataSaverLevel,
     required this.androidBackgroundAlertsEnabled,
     required this.keepMobileRealtimeForShortPeriod,
+    required this.syncResumeGracePeriod,
     this.enableExperimentalMultiDeviceSync = false,
     this.themeMode = ThemeModeOption.system,
     this.localeCode,
@@ -712,8 +747,10 @@ class ExperienceSettings {
   final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
   final bool dataSaverEnabled;
+  final DataSaverLevel dataSaverLevel;
   final bool androidBackgroundAlertsEnabled;
   final bool keepMobileRealtimeForShortPeriod;
+  final Duration syncResumeGracePeriod;
   final bool enableExperimentalMultiDeviceSync;
   final ThemeModeOption themeMode;
   final String? localeCode;
@@ -766,8 +803,10 @@ class ExperienceSettings {
     bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
     bool? dataSaverEnabled,
+    DataSaverLevel? dataSaverLevel,
     bool? androidBackgroundAlertsEnabled,
     bool? keepMobileRealtimeForShortPeriod,
+    Duration? syncResumeGracePeriod,
     bool? enableExperimentalMultiDeviceSync,
     ThemeModeOption? themeMode,
     String? Function()? localeCode,
@@ -793,6 +832,13 @@ class ExperienceSettings {
     double? chatFontScale,
     double? terminalFontSize,
   }) {
+    final nextDataSaverLevel =
+        dataSaverLevel ??
+        (dataSaverEnabled == null
+            ? this.dataSaverLevel
+            : (dataSaverEnabled
+                  ? DataSaverLevel.standard
+                  : DataSaverLevel.off));
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
       sounds: sounds ?? this.sounds,
@@ -821,16 +867,20 @@ class ExperienceSettings {
       showRecentSessions: showRecentSessions ?? this.showRecentSessions,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
-    showMathRendering: showMathRendering ?? this.showMathRendering,
+      showMathRendering: showMathRendering ?? this.showMathRendering,
       composerAutoApprovePermissions:
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
-      dataSaverEnabled: dataSaverEnabled ?? this.dataSaverEnabled,
+      dataSaverEnabled: nextDataSaverLevel != DataSaverLevel.off,
+      dataSaverLevel: nextDataSaverLevel,
       androidBackgroundAlertsEnabled:
           androidBackgroundAlertsEnabled ?? this.androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
+      syncResumeGracePeriod: clampSyncResumeGracePeriod(
+        syncResumeGracePeriod ?? this.syncResumeGracePeriod,
+      ),
       enableExperimentalMultiDeviceSync:
           enableExperimentalMultiDeviceSync ??
           this.enableExperimentalMultiDeviceSync,
@@ -928,10 +978,12 @@ class ExperienceSettings {
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
       'dataSaverEnabled': dataSaverEnabled,
+      'dataSaverLevel': dataSaverLevelKey(dataSaverLevel),
       'keepDesktopRunningInTray':
           desktopCloseBehavior != DesktopCloseBehavior.close,
       'androidBackgroundAlertsEnabled': androidBackgroundAlertsEnabled,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
+      'syncResumeGracePeriodMs': syncResumeGracePeriod.inMilliseconds,
       'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
       'themeMode': themeModeOptionKey(themeMode),
       if (localeCode != null) 'localeCode': localeCode,
@@ -995,15 +1047,17 @@ class ExperienceSettings {
     var showRecentSessions = defaults.showRecentSessions;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
-  var showMathRendering = defaults.showMathRendering;
+    var showMathRendering = defaults.showMathRendering;
     var composerAutoApprovePermissions =
         defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
     var dataSaverEnabled = defaults.dataSaverEnabled;
+    var dataSaverLevel = defaults.dataSaverLevel;
     var androidBackgroundAlertsEnabled =
         defaults.androidBackgroundAlertsEnabled;
     var keepMobileRealtimeForShortPeriod =
         defaults.keepMobileRealtimeForShortPeriod;
+    var syncResumeGracePeriod = defaults.syncResumeGracePeriod;
     var enableExperimentalMultiDeviceSync =
         defaults.enableExperimentalMultiDeviceSync;
     var speechToTextEngine = defaults.speechToTextEngine;
@@ -1015,7 +1069,7 @@ class ExperienceSettings {
     var readAloudEnabled = defaults.readAloudEnabled;
     var readAloudRate = defaults.readAloudRate;
     var readAloudPitch = defaults.readAloudPitch;
-    String? readAloudVoice = defaults.readAloudVoice;
+    var readAloudVoice = defaults.readAloudVoice;
     var systemFontScale = defaults.systemFontScale;
     var chatFontScale = defaults.chatFontScale;
     var terminalFontSize = defaults.terminalFontSize;
@@ -1217,12 +1271,28 @@ class ExperienceSettings {
     final dataSaverEnabledJson = json['dataSaverEnabled'];
     if (dataSaverEnabledJson is bool) {
       dataSaverEnabled = dataSaverEnabledJson;
+      dataSaverLevel = dataSaverEnabled
+          ? DataSaverLevel.standard
+          : DataSaverLevel.off;
+    }
+
+    final dataSaverLevelJson = json['dataSaverLevel'];
+    if (dataSaverLevelJson is String && dataSaverLevelJson.trim().isNotEmpty) {
+      dataSaverLevel = dataSaverLevelFromKey(dataSaverLevelJson);
+      dataSaverEnabled = dataSaverLevel != DataSaverLevel.off;
     }
 
     final keepMobileRealtimeForShortPeriodJson =
         json['keepMobileRealtimeForShortPeriod'];
     if (keepMobileRealtimeForShortPeriodJson is bool) {
       keepMobileRealtimeForShortPeriod = keepMobileRealtimeForShortPeriodJson;
+    }
+
+    final syncResumeGracePeriodJson = json['syncResumeGracePeriodMs'];
+    if (syncResumeGracePeriodJson is num) {
+      syncResumeGracePeriod = clampSyncResumeGracePeriod(
+        Duration(milliseconds: syncResumeGracePeriodJson.toInt()),
+      );
     }
 
     final androidBackgroundAlertsEnabledJson =
@@ -1402,8 +1472,10 @@ class ExperienceSettings {
       composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
       dataSaverEnabled: dataSaverEnabled,
+      dataSaverLevel: dataSaverLevel,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
+      syncResumeGracePeriod: syncResumeGracePeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
       themeMode: themeMode,
       localeCode: localeCode,

@@ -10,6 +10,7 @@ import 'package:codewalk/data/models/chat_message_model.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -39,6 +40,7 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
+import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,6 +60,7 @@ void main() {
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
       SettingsProvider? settingsProvider,
+      CellularDataSaverService? cellularDataSaverService,
     }) {
       return buildChatProvider(
         chatRepository: chatRepository,
@@ -68,6 +71,7 @@ void main() {
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
         settingsProvider: settingsProvider,
+        cellularDataSaverService: cellularDataSaverService,
       );
     }
 
@@ -79,6 +83,36 @@ void main() {
       defaultSettingsProvider = fixtures.defaultSettingsProvider;
       provider = buildProvider();
     });
+
+    test(
+      'aggressive data saver keeps local realtime open and pauses global stream',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        for (var tick = 0; tick < 20; tick += 1) {
+          if (provider.debugHasRealtimeEventSubscription) {
+            break;
+          }
+          await pumpEventQueue();
+        }
+        chatRepository.emitEvent(
+          const ChatEvent(type: 'test.signal', properties: <String, dynamic>{}),
+        );
+        await pumpEventQueue();
+
+        expect(provider.debugHasRealtimeEventSubscription, isTrue);
+        expect(provider.debugHasGlobalEventSubscription, isFalse);
+        expect(provider.syncState, ChatSyncState.connected);
+      },
+    );
 
     Future<void> settleUntil(
       bool Function() predicate, {
@@ -1852,9 +1886,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         // Assert: message stays completed, completedTime unchanged
-        latestAssistant = provider.messages
-            .whereType<AssistantMessage>()
-            .last;
+        latestAssistant = provider.messages.whereType<AssistantMessage>().last;
         expect(latestAssistant.isCompleted, isTrue);
         expect(latestAssistant.completedTime, completedTimeAfterIdle);
 
@@ -1882,9 +1914,7 @@ void main() {
 
         // Assert: message IS updated to the new content
         // (complete → complete allowed through guard)
-        latestAssistant = provider.messages
-            .whereType<AssistantMessage>()
-            .last;
+        latestAssistant = provider.messages.whereType<AssistantMessage>().last;
         expect(latestAssistant.isCompleted, isTrue);
         expect(
           (latestAssistant.parts.single as TextPart).text,
@@ -1992,7 +2022,10 @@ void main() {
         final assistant = provider.messages
             .whereType<AssistantMessage>()
             .lastWhere((message) => message.id == 'msg_completed_rich');
-        expect(assistant.completedTime, DateTime.fromMillisecondsSinceEpoch(3600));
+        expect(
+          assistant.completedTime,
+          DateTime.fromMillisecondsSinceEpoch(3600),
+        );
         expect(
           assistant.parts.whereType<ReasoningPart>().single.text,
           'complete reasoning',
@@ -2010,78 +2043,75 @@ void main() {
       },
     );
 
-    test(
-      'debounced fallback timers cancelled on session.idle',
-      () async {
-        // Set up an assistant message in the session that would normally
-        // trigger a debounced fallback fetch via message.part.updated
-        const initialPart = TextPart(
-          id: 'prt_debounce_cancel',
-          messageId: 'msg_debounce_cancel',
+    test('debounced fallback timers cancelled on session.idle', () async {
+      // Set up an assistant message in the session that would normally
+      // trigger a debounced fallback fetch via message.part.updated
+      const initialPart = TextPart(
+        id: 'prt_debounce_cancel',
+        messageId: 'msg_debounce_cancel',
+        sessionId: 'ses_1',
+        text: 'Draft',
+      );
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_debounce_cancel',
           sessionId: 'ses_1',
-          text: 'Draft',
-        );
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          AssistantMessage(
-            id: 'msg_debounce_cancel',
-            sessionId: 'ses_1',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            parts: const <MessagePart>[initialPart],
-          ),
-        ];
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[initialPart],
+        ),
+      ];
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-        await provider.initializeProviders();
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
 
-        // Emit message.part.updated to schedule a debounced fallback
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          AssistantMessage(
-            id: 'msg_debounce_cancel',
-            sessionId: 'ses_1',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            parts: const <MessagePart>[],
-          ),
-        ];
-        chatRepository.emitEvent(
-          ChatEvent(
-            type: 'message.part.updated',
-            properties: <String, dynamic>{
-              'part': MessagePartModel.fromDomain(
-                const TextPart(
-                  id: 'prt_debounce_cancel',
-                  messageId: 'msg_debounce_cancel',
-                  sessionId: 'ses_1',
-                  text: ' Draft',
-                ),
-              ).toJson(),
-              'delta': ' Draft',
-            },
-          ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 40));
+      // Emit message.part.updated to schedule a debounced fallback
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_debounce_cancel',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[],
+        ),
+      ];
+      chatRepository.emitEvent(
+        ChatEvent(
+          type: 'message.part.updated',
+          properties: <String, dynamic>{
+            'part': MessagePartModel.fromDomain(
+              const TextPart(
+                id: 'prt_debounce_cancel',
+                messageId: 'msg_debounce_cancel',
+                sessionId: 'ses_1',
+                text: ' Draft',
+              ),
+            ).toJson(),
+            'delta': ' Draft',
+          },
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
 
-  final callsBeforeIdle = chatRepository.getMessageCallCount;
+      final callsBeforeIdle = chatRepository.getMessageCallCount;
 
-  // Fire session.idle — should cancel pending debounced timers
-  chatRepository.emitEvent(
-    const ChatEvent(
-      type: 'session.idle',
-      properties: <String, dynamic>{'sessionID': 'ses_1'},
-    ),
-  );
-  await Future<void>.delayed(const Duration(milliseconds: 200));
+      // Fire session.idle — should cancel pending debounced timers
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'session.idle',
+          properties: <String, dynamic>{'sessionID': 'ses_1'},
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 200));
 
-  // Assert: the debounced fallback timer was cancelled and no
-  // extra HTTP GET was made (getMessageCallCount unchanged)
-  expect(
-    chatRepository.getMessageCallCount,
-    equals(callsBeforeIdle),
-    reason: 'debounced fallback should not fire after session.idle',
-  );
-      },
-    );
+      // Assert: the debounced fallback timer was cancelled and no
+      // extra HTTP GET was made (getMessageCallCount unchanged)
+      expect(
+        chatRepository.getMessageCallCount,
+        equals(callsBeforeIdle),
+        reason: 'debounced fallback should not fire after session.idle',
+      );
+    });
 
     test(
       'idle status pulse does not settle the current session while an assistant message is still incomplete',

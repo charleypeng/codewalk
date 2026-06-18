@@ -7,12 +7,12 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/i18n/app_locales.dart';
 import '../../../../core/i18n/l10n_context.dart';
+import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
-
 
 class BehaviorSettingsSection extends StatefulWidget {
   const BehaviorSettingsSection({super.key});
@@ -57,7 +57,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
         return ListView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
-            Text(context.l10n.settingsBehaviorTitle, style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              context.l10n.settingsBehaviorTitle,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 8),
             Text(
               context.l10n.settingsBehaviorDescription,
@@ -304,8 +307,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 decoration: InputDecoration(
                   labelText: context.l10n.settingsDefaultAgent,
                   border: const OutlineInputBorder(),
-                  helperText:
-                      context.l10n.behaviorPrimaryAgentAgent,
+                  helperText: context.l10n.behaviorPrimaryAgentAgent,
                 ),
                 isExpanded: true,
                 searchHintText: context.l10n.settingsSearchDefaultAgent,
@@ -339,8 +341,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 decoration: InputDecoration(
                   labelText: context.l10n.settingsConversationUsername,
                   border: const OutlineInputBorder(),
-                  helperText:
-                      context.l10n.behaviorCustomDisplayName,
+                  helperText: context.l10n.behaviorCustomDisplayName,
                 ),
                 onFieldSubmitted: (_) => unawaited(_applyUsername(context)),
               ),
@@ -395,8 +396,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 decoration: InputDecoration(
                   labelText: context.l10n.settingsSmallModel,
                   border: const OutlineInputBorder(),
-                  helperText:
-                      context.l10n.behaviorLightweightTasksLike,
+                  helperText: context.l10n.behaviorLightweightTasksLike,
                 ),
                 isExpanded: true,
                 searchHintText: context.l10n.settingsSearchSmallModel,
@@ -440,8 +440,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 decoration: InputDecoration(
                   labelText: context.l10n.settingsOpenCodeAutoUpdate,
                   border: const OutlineInputBorder(),
-                  helperText:
-                      context.l10n.behaviorControlsUpstreamOpenCode,
+                  helperText: context.l10n.behaviorControlsUpstreamOpenCode,
                 ),
                 searchHintText: context.l10n.settingsSearchAutoUpdateMode,
                 searchTermsBuilder: (value) => <String>[
@@ -482,8 +481,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 decoration: InputDecoration(
                   labelText: context.l10n.settingsOpenCodeSharingDefault,
                   border: const OutlineInputBorder(),
-                  helperText:
-                      context.l10n.behaviorControlsOfficialGlobal,
+                  helperText: context.l10n.behaviorControlsOfficialGlobal,
                 ),
                 searchHintText: context.l10n.settingsSearchSharingMode,
                 searchTermsBuilder: (value) => <String>[_shareModeLabel(value)],
@@ -549,27 +547,49 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             ),
             const SizedBox(height: 6),
             Text(
-              context.l10n.behaviorCutsAutomaticMobile(settingsProvider.cellularDataSaverInterval.inSeconds),
+              context.l10n.behaviorCutsAutomaticMobile(
+                settingsProvider.cellularDataSaverInterval.inSeconds,
+              ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
-            SwitchListTile.adaptive(
-              key: const ValueKey<String>(
-                'settings_toggle_cellular_data_saver',
-              ),
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.settingsBehaviorEnableDataSaver),
-              subtitle: Text(
+            SegmentedButton<DataSaverLevel>(
+              key: const ValueKey<String>('settings_data_saver_level'),
+              segments: [
+                ButtonSegment<DataSaverLevel>(
+                  value: DataSaverLevel.off,
+                  label: Text(context.l10n.behaviorDataSaverOff),
+                ),
+                ButtonSegment<DataSaverLevel>(
+                  value: DataSaverLevel.standard,
+                  label: Text(context.l10n.behaviorDataSaverStandard),
+                ),
+                ButtonSegment<DataSaverLevel>(
+                  value: DataSaverLevel.aggressive,
+                  label: Text(context.l10n.behaviorDataSaverAggressive),
+                ),
+              ],
+              selected: <DataSaverLevel>{settingsProvider.dataSaverLevel},
+              onSelectionChanged: (selection) {
+                if (selection.isEmpty) {
+                  return;
+                }
+                final level = selection.first;
+                unawaited(settingsProvider.setDataSaverLevel(level));
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(switch (settingsProvider.dataSaverLevel) {
+              DataSaverLevel.off => context.l10n.behaviorDataSaverOffHint,
+              DataSaverLevel.standard =>
                 saverActive
                     ? context.l10n.behaviorDataSaverActive
                     : (isCellularActive
                           ? context.l10n.behaviorDataSaverWaiting
                           : context.l10n.behaviorDataSaverCellularOnly),
-              ),
-              value: settingsProvider.dataSaverEnabled,
-              onChanged: (value) =>
-                  unawaited(settingsProvider.setDataSaverEnabled(value)),
-            ),
+              DataSaverLevel.aggressive =>
+                context.l10n.behaviorDataSaverAggressiveDescription,
+            }, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),
@@ -788,7 +808,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        context.l10n.settingsBehaviorConfigUpdateFailed('conversation username'),
+        context.l10n.settingsBehaviorConfigUpdateFailed(
+          'conversation username',
+        ),
       );
     }
   }
@@ -823,10 +845,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       final generation =
           (_deferredConfigMutationGenerationByKey[mutationKey] ?? 0) + 1;
       _deferredConfigMutationGenerationByKey[mutationKey] = generation;
-      _showFailureSnackBar(
-        context,
-        context.l10n.settingsConfigUpdateDeferred,
-      );
+      _showFailureSnackBar(context, context.l10n.settingsConfigUpdateDeferred);
       final becameSafe = await _waitForConfigMutationsToBeSafe(chatProvider);
       if (!becameSafe) {
         return false;
@@ -886,10 +905,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       if (!context.mounted) {
         return;
       }
-      _showFailureSnackBar(
-        context,
-        context.l10n.settingsConfigRefreshFailed,
-      );
+      _showFailureSnackBar(context, context.l10n.settingsConfigRefreshFailed);
     }
   }
 

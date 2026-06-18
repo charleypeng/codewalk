@@ -692,6 +692,36 @@ abstract class AppLocalizations {
   /// **'Waiting for the next mobile-data sync window.'**
   String get behaviorDataSaverWaiting;
 
+  /// CodeWalk UI string — behaviorDataSaverOff
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get behaviorDataSaverOff;
+
+  /// CodeWalk UI string — behaviorDataSaverStandard
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get behaviorDataSaverStandard;
+
+  /// CodeWalk UI string — behaviorDataSaverAggressive
+  ///
+  /// In en, this message translates to:
+  /// **'Aggressive'**
+  String get behaviorDataSaverAggressive;
+
+  /// CodeWalk UI string — behaviorDataSaverOffHint
+  ///
+  /// In en, this message translates to:
+  /// **'Full realtime and automatic refreshes are enabled.'**
+  String get behaviorDataSaverOffHint;
+
+  /// CodeWalk UI string — behaviorDataSaverAggressiveDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.'**
+  String get behaviorDataSaverAggressiveDescription;
+
   /// CodeWalk UI string — behaviorDisabled
   ///
   /// In en, this message translates to:

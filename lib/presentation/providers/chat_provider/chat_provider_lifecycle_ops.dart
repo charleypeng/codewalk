@@ -1,13 +1,13 @@
 part of '../chat_provider.dart';
 
 extension ChatProviderLifecycleOps on ChatProvider {
-
   // Foreground/background lifecycle.
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
     _cellularDataSaverService.setAppForeground(isActive);
     if (!isActive) {
+      _cancelResumeGrace(reason: 'background');
       _stopForegroundResumeSyncIndicator(reason: 'background');
     }
 
@@ -41,6 +41,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
     }
 
     if (!wasActive) {
+      _startResumeGrace(reason: 'foreground');
       _startForegroundResumeSyncIndicator(reason: 'foreground');
     }
 
@@ -51,8 +52,12 @@ extension ChatProviderLifecycleOps on ChatProvider {
     // that _markRealtimeSignal can eventually exit degraded mode when the
     // SSE connection succeeds.
     if (_wasDegradedModeBeforeBackground) {
-      _wasDegradedModeBeforeBackground = false;
-      _enterDegradedMode(reason: 'foreground-resume-degraded');
+      if (_isInResumeGrace) {
+        AppLogger.info('sync_resume_grace_deferred reason=degraded-resume');
+      } else {
+        _wasDegradedModeBeforeBackground = false;
+        _enterDegradedMode(reason: 'foreground-resume-degraded');
+      }
     }
     await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-return');
     await _resumeRealtimeAfterForeground();
@@ -124,7 +129,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
           projectId: projectProvider.currentProjectId,
           sessionId: session.id,
           directory: projectProvider.currentDirectory,
-          limit: canUseDelta ? ChatProvider._defaultOlderMessagesChunkSize : null,
+          limit: canUseDelta
+              ? ChatProvider._defaultOlderMessagesChunkSize
+              : null,
         ),
       );
 
@@ -169,7 +176,8 @@ extension ChatProviderLifecycleOps on ChatProvider {
           );
           final nextHasMoreOldMessages =
               usedGapRecovery ||
-              serverMessagesForMerge.length >= ChatProvider._defaultOlderMessagesChunkSize;
+              serverMessagesForMerge.length >=
+                  ChatProvider._defaultOlderMessagesChunkSize;
           final messagesChanged = !_areMessageListsSemanticallyEqual(
             cachedMessages,
             mergedMessages,
@@ -272,7 +280,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
     }
   }
 
-
   /// Delete session
   Future<void> deleteSession(String sessionId) async {
     _currentProjectId = projectProvider.currentProjectId;
@@ -339,7 +346,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
       },
     );
   }
-
 
   /// Refresh current session
   Future<void> refresh() async {

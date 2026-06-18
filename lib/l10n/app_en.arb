@@ -355,6 +355,21 @@
   "@behaviorDataSaverWaiting": {
     "description": "CodeWalk UI string — behaviorDataSaverWaiting"
   },
+  "@behaviorDataSaverOff": {
+    "description": "CodeWalk UI string — behaviorDataSaverOff"
+  },
+  "@behaviorDataSaverStandard": {
+    "description": "CodeWalk UI string — behaviorDataSaverStandard"
+  },
+  "@behaviorDataSaverAggressive": {
+    "description": "CodeWalk UI string — behaviorDataSaverAggressive"
+  },
+  "@behaviorDataSaverOffHint": {
+    "description": "CodeWalk UI string — behaviorDataSaverOffHint"
+  },
+  "@behaviorDataSaverAggressiveDescription": {
+    "description": "CodeWalk UI string — behaviorDataSaverAggressiveDescription"
+  },
   "@behaviorDisabled": {
     "description": "CodeWalk UI string — behaviorDisabled"
   },
@@ -4432,6 +4447,11 @@
   "behaviorDataSaverActive": "Active now on mobile data.",
   "behaviorDataSaverCellularOnly": "Only applies when the connection is cellular/mobile.",
   "behaviorDataSaverWaiting": "Waiting for the next mobile-data sync window.",
+  "behaviorDataSaverOff": "Off",
+  "behaviorDataSaverStandard": "Standard",
+  "behaviorDataSaverAggressive": "Aggressive",
+  "behaviorDataSaverOffHint": "Full realtime and automatic refreshes are enabled.",
+  "behaviorDataSaverAggressiveDescription": "Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.",
   "behaviorDisabled": "Disabled",
   "behaviorLightweightTasksLike": "Used for lightweight tasks like title generation.",
   "behaviorManual": "Manual",

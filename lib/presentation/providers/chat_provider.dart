@@ -7,6 +7,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/config/feature_flags.dart';
+import '../../core/di/injection_container.dart' as di;
 import '../../core/errors/failures.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
@@ -22,6 +23,7 @@ import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
+import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/provider.dart';
 import '../../domain/entities/session.dart';
 import '../../domain/usecases/abort_chat_session.dart';
@@ -51,11 +53,10 @@ import '../../domain/usecases/unshare_chat_session.dart';
 import '../../domain/usecases/update_chat_session.dart';
 import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
-import '../../core/di/injection_container.dart' as di;
+import '../services/android_background_alert_worker.dart';
 import '../services/chat_title_generator.dart';
 import '../services/cellular_data_saver_service.dart';
 import '../services/event_feedback_dispatcher.dart';
-import '../services/android_background_alert_worker.dart';
 import '../services/read_aloud_service.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_assistant_settlement.dart';
@@ -161,6 +162,7 @@ class ChatProvider extends ChangeNotifier {
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
     Duration syncHealthCheckInterval = const Duration(seconds: 5),
     Duration degradedPollingInterval = const Duration(seconds: 30),
+    Duration foregroundResumeGracePeriod = kDefaultSyncResumeGracePeriod,
     Duration foregroundResumeSyncIndicatorDuration = const Duration(
       seconds: 12,
     ),
@@ -175,6 +177,9 @@ class ChatProvider extends ChangeNotifier {
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
+    _foregroundResumeGracePeriod = clampSyncResumeGracePeriod(
+      foregroundResumeGracePeriod,
+    );
     _foregroundResumeSyncIndicatorDuration =
         foregroundResumeSyncIndicatorDuration;
     _foregroundResumeSyncIndicatorMaxCycles =
@@ -193,6 +198,12 @@ class ChatProvider extends ChangeNotifier {
   @visibleForTesting
   bool debugIsOptimisticLocalUserMessageId(String messageId) =>
       _isOptimisticLocalUserMessageId(messageId);
+
+  @visibleForTesting
+  bool get debugHasRealtimeEventSubscription => _eventSubscription != null;
+
+  @visibleForTesting
+  bool get debugHasGlobalEventSubscription => _globalEventSubscription != null;
 
   @visibleForTesting
   bool debugShouldSkipLocalUserAppendAsDuplicateEcho({
@@ -390,6 +401,7 @@ class ChatProvider extends ChangeNotifier {
   final Set<String> _dirtyContextKeys = <String>{};
   Timer? _syncHealthTimer;
   Timer? _degradedPollingTimer;
+  Timer? _resumeGraceTimer;
   Timer? _foregroundResumeSyncTimer;
   Timer? _sessionUnreadHighlightTimer;
   bool _idleRealtimePausedForDataSaver = false;
@@ -398,6 +410,7 @@ class ChatProvider extends ChangeNotifier {
   ChatSyncState _syncState = ChatSyncState.reconnecting;
   bool _isForegroundActive = true;
   bool _degradedMode = false;
+  bool _isInResumeGrace = false;
   bool _isForegroundResumeSyncing = false;
   bool _foregroundResumeReconcileInFlight = false;
   final Map<String, DateTime> _lastAutomaticSessionInsightsAtBySessionId =
@@ -422,6 +435,7 @@ class ChatProvider extends ChangeNotifier {
   late final Duration _syncSignalStaleThreshold;
   late final Duration _syncHealthCheckInterval;
   late final Duration _degradedPollingInterval;
+  late final Duration _foregroundResumeGracePeriod;
   late final Duration _foregroundResumeSyncIndicatorDuration;
   late final int _foregroundResumeSyncIndicatorMaxCycles;
   late final int _degradedFailureThreshold;
@@ -517,6 +531,18 @@ class ChatProvider extends ChangeNotifier {
     }
     return _hasPendingThreadInteractions;
   }
+
+  bool get _isAggressiveDataSaverActive =>
+      _cellularDataSaverService.isAggressiveDataSaverActive;
+
+  Duration get _effectiveSyncSignalStaleThreshold =>
+      _isAggressiveDataSaverActive
+      ? CellularDataSaverService.aggressiveSyncSignalStaleThreshold
+      : _syncSignalStaleThreshold;
+
+  Duration get _effectiveDegradedPollingInterval => _isAggressiveDataSaverActive
+      ? CellularDataSaverService.aggressiveDegradedPollingInterval
+      : _degradedPollingInterval;
 
   void _handleCellularDataSaverChanged() {
     if (!_refreshlessRealtimeEnabled) {
@@ -752,6 +778,7 @@ class ChatProvider extends ChangeNotifier {
 
   ChatSyncState get syncState => _syncState;
   bool get isInDegradedMode => _degradedMode;
+  bool get isInResumeGrace => _isInResumeGrace;
   bool get isForegroundResumeSyncing => _isForegroundResumeSyncing;
   bool get isRecoverableSyncAlertEscalated => _recoverableSyncAlertEscalated;
   bool get refreshlessRealtimeEnabled => _refreshlessRealtimeEnabled;
@@ -4090,6 +4117,7 @@ class ChatProvider extends ChangeNotifier {
     _messageFallbackDebounceById.clear();
     _syncHealthTimer?.cancel();
     _degradedPollingTimer?.cancel();
+    _resumeGraceTimer?.cancel();
     _foregroundResumeSyncTimer?.cancel();
     _sessionUnreadHighlightTimer?.cancel();
     super.dispose();

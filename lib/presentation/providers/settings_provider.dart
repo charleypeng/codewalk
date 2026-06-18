@@ -19,10 +19,10 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/cellular_data_saver_service.dart';
-import '../utils/shortcut_l10n.dart';
 import '../services/sound_service.dart';
 import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
+import '../utils/shortcut_l10n.dart';
 
 part 'settings_provider_opencode_defaults.dart';
 part 'settings_provider_update_install.dart';
@@ -168,10 +168,13 @@ class SettingsProvider extends ChangeNotifier {
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get dataSaverEnabled => _settings.dataSaverEnabled;
+  DataSaverLevel get dataSaverLevel => _settings.dataSaverLevel;
   bool get isCellularConnection =>
       _cellularDataSaverService.isCellularConnection;
   bool get isCellularDataSaverActive =>
       _cellularDataSaverService.isDataSaverActive;
+  bool get isAggressiveDataSaverActive =>
+      _cellularDataSaverService.isAggressiveDataSaverActive;
   Duration get cellularDataSaverInterval =>
       _cellularDataSaverService.automaticSyncInterval;
   bool get androidBackgroundAlertsEnabled =>
@@ -293,7 +296,7 @@ class SettingsProvider extends ChangeNotifier {
       unawaited(_persist());
     }
 
-    _cellularDataSaverService.setDataSaverEnabled(_settings.dataSaverEnabled);
+    _cellularDataSaverService.applyLevel(_settings.dataSaverLevel);
     _lastBackgroundDataSaverDisableState =
         _cellularDataSaverService.shouldDisableBackgroundNetworkTasks;
     _dismissedUpdateVersion = await _localDataSource
@@ -650,11 +653,17 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setDataSaverEnabled(bool enabled) async {
-    if (_settings.dataSaverEnabled == enabled) {
+    await setDataSaverLevel(
+      enabled ? DataSaverLevel.standard : DataSaverLevel.off,
+    );
+  }
+
+  Future<void> setDataSaverLevel(DataSaverLevel level) async {
+    if (_settings.dataSaverLevel == level) {
       return;
     }
-    _settings = _settings.copyWith(dataSaverEnabled: enabled);
-    _cellularDataSaverService.setDataSaverEnabled(enabled);
+    _settings = _settings.copyWith(dataSaverLevel: level);
+    _cellularDataSaverService.applyLevel(level);
     notifyListeners();
     await _persist();
     await _syncAndroidBackgroundAlertRuntime();

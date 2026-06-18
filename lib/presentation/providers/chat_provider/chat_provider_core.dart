@@ -430,6 +430,8 @@ extension _ChatProviderCorePart on ChatProvider {
     if (fetchId == _providersFetchId) {
       if (_refreshlessRealtimeEnabled && !_isForegroundActive) {
         _setSyncState(ChatSyncState.reconnecting, reason: 'background-init');
+      } else if (_isInResumeGrace) {
+        _setSyncState(ChatSyncState.connected, reason: 'resume-grace-init');
       } else if (_cellularDataSaverService.isDataSaverActive &&
           !_shouldKeepRealtimeActiveForDataSaver) {
         _idleRealtimePausedForDataSaver = true;
@@ -437,7 +439,9 @@ extension _ChatProviderCorePart on ChatProvider {
       } else {
         await _startRealtimeEventSubscription();
       }
-      await _loadPendingInteractions();
+      if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
+        await _loadPendingInteractions();
+      }
       await refreshSessionStatusSnapshot();
       _setProvidersRefreshState(
         ChatProvidersRefreshState.ready,

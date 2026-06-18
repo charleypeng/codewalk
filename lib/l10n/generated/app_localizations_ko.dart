@@ -338,6 +338,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get behaviorDataSaverWaiting => '다음 모바일 데이터 동기화 주기를 대기 중입니다.';
 
   @override
+  String get behaviorDataSaverOff => 'Off';
+
+  @override
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverOffHint =>
+      'Full realtime and automatic refreshes are enabled.';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDisabled => '비활성화됨';
 
   @override

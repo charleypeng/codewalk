@@ -488,7 +488,8 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                     children: [
                       Flexible(
                         child: Text(
-                          active?.displayName ?? context.l10n.chatPageStatusServer,
+                          active?.displayName ??
+                              context.l10n.chatPageStatusServer,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.labelMedium,
@@ -523,7 +524,9 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            context.l10n.chatPageStatusSaver,
+                            settingsProvider.isAggressiveDataSaverActive
+                                ? context.l10n.behaviorDataSaverAggressive
+                                : context.l10n.chatPageStatusSaver,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelSmall

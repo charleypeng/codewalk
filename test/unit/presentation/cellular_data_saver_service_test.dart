@@ -1,3 +1,4 @@
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,6 +26,27 @@ void main() {
         expect(service.isDataSaverActive, isFalse);
       },
     );
+
+    test('aggressive tier stretches sync and burst intervals', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final service = CellularDataSaverService(
+        sharedPreferences: prefs,
+        startMonitoring: false,
+      );
+      addTearDown(service.dispose);
+
+      service.debugSetDataSaverLevel(DataSaverLevel.aggressive);
+      service.debugSetTransport(DataSaverTransport.cellular);
+
+      expect(service.isDataSaverActive, isTrue);
+      expect(service.isAggressiveDataSaverActive, isTrue);
+      expect(service.automaticSyncInterval, const Duration(minutes: 5));
+
+      service.noteExplicitUserAction(reason: 'manual-refresh');
+
+      expect(service.hasInteractiveBurst, isTrue);
+    });
 
     test(
       'blocks automatic foreground syncs inside the cooldown window',

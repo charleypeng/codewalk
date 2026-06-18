@@ -17,10 +17,11 @@ class CellularDataSaverService extends ChangeNotifier
   CellularDataSaverService({
     required SharedPreferences sharedPreferences,
     Connectivity? connectivity,
-    this.automaticSyncInterval = const Duration(minutes: 1),
+    Duration automaticSyncInterval = const Duration(minutes: 1),
     bool startMonitoring = true,
   }) : _sharedPreferences = sharedPreferences,
        _connectivity = connectivity ?? Connectivity(),
+       _standardAutomaticSyncInterval = automaticSyncInterval,
        _disabled = false {
     _bootstrapFromPrefs();
     if (!startMonitoring) {
@@ -43,7 +44,7 @@ class CellularDataSaverService extends ChangeNotifier
   CellularDataSaverService.disabled()
     : _sharedPreferences = null,
       _connectivity = null,
-      automaticSyncInterval = const Duration(minutes: 1),
+      _standardAutomaticSyncInterval = const Duration(minutes: 1),
       _disabled = true;
 
   static const String persistedTransportKey =
@@ -52,27 +53,47 @@ class CellularDataSaverService extends ChangeNotifier
   final SharedPreferences? _sharedPreferences;
   final Connectivity? _connectivity;
   final bool _disabled;
-  final Duration automaticSyncInterval;
+  final Duration _standardAutomaticSyncInterval;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _interactiveBurstTimer;
   DataSaverTransport _transport = DataSaverTransport.unknown;
-  bool _dataSaverEnabled = ExperienceSettings.defaults().dataSaverEnabled;
+  DataSaverLevel _dataSaverLevel = ExperienceSettings.defaults().dataSaverLevel;
   bool _appInForeground = true;
   DateTime? _lastAutomaticSyncAt;
   DateTime? _interactiveBurstUntil;
 
-  bool get dataSaverEnabled => _dataSaverEnabled;
+  static const Duration aggressiveAutomaticSyncInterval = Duration(minutes: 5);
+  static const Duration aggressiveInteractiveBurstDuration = Duration(
+    seconds: 45,
+  );
+  static const Duration aggressiveSyncHealthCheckInterval = Duration(
+    seconds: 60,
+  );
+  static const Duration aggressiveSyncSignalStaleThreshold = Duration(
+    minutes: 3,
+  );
+  static const Duration aggressiveDegradedPollingInterval = Duration(
+    seconds: 90,
+  );
+
+  DataSaverLevel get dataSaverLevel => _dataSaverLevel;
+  bool get dataSaverEnabled => _dataSaverLevel != DataSaverLevel.off;
   bool get isForeground => _appInForeground;
   DataSaverTransport get transport => _transport;
   bool get isCellularConnection => _transport == DataSaverTransport.cellular;
+  Duration get automaticSyncInterval => isAggressiveDataSaverActive
+      ? aggressiveAutomaticSyncInterval
+      : _standardAutomaticSyncInterval;
   bool get isDataSaverActive =>
       FeatureFlags.cellularDataSaver &&
-      _dataSaverEnabled &&
+      dataSaverEnabled &&
       isCellularConnection;
+  bool get isAggressiveDataSaverActive =>
+      isDataSaverActive && _dataSaverLevel == DataSaverLevel.aggressive;
   bool get shouldDisableBackgroundNetworkTasks =>
       FeatureFlags.cellularDataSaver &&
-      _dataSaverEnabled &&
+      dataSaverEnabled &&
       isCellularConnection;
   bool get shouldSuppressBackgroundWork =>
       shouldDisableBackgroundNetworkTasks && !_appInForeground;
@@ -139,17 +160,21 @@ class CellularDataSaverService extends ChangeNotifier
   }
 
   void setDataSaverEnabled(bool enabled) {
-    if (_disabled || _dataSaverEnabled == enabled) {
+    applyLevel(enabled ? DataSaverLevel.standard : DataSaverLevel.off);
+  }
+
+  void applyLevel(DataSaverLevel level) {
+    if (_disabled || _dataSaverLevel == level) {
       return;
     }
-    _dataSaverEnabled = enabled;
-    if (!enabled) {
+    _dataSaverLevel = level;
+    if (level == DataSaverLevel.off) {
       _interactiveBurstTimer?.cancel();
       _interactiveBurstTimer = null;
       _interactiveBurstUntil = null;
     }
     AppLogger.info(
-      'data_saver_enabled value=$enabled transport=${_transport.name}',
+      'data_saver_level_applied level=${level.name} transport=${_transport.name}',
     );
     notifyListeners();
   }
@@ -162,12 +187,14 @@ class CellularDataSaverService extends ChangeNotifier
     final last = _lastAutomaticSyncAt;
     if (last != null && now.difference(last) < automaticSyncInterval) {
       AppLogger.debug(
-        'data_saver_auto_sync_skipped reason=$reason remaining_ms=${automaticSyncInterval.inMilliseconds - now.difference(last).inMilliseconds}',
+        'data_saver_auto_sync_skipped reason=$reason level=${_dataSaverLevel.name} remaining_ms=${automaticSyncInterval.inMilliseconds - now.difference(last).inMilliseconds}',
       );
       return false;
     }
     _lastAutomaticSyncAt = now;
-    AppLogger.info('data_saver_auto_sync_allowed reason=$reason');
+    AppLogger.info(
+      'data_saver_auto_sync_allowed reason=$reason level=${_dataSaverLevel.name}',
+    );
     return true;
   }
 
@@ -182,7 +209,11 @@ class CellularDataSaverService extends ChangeNotifier
     if (!isDataSaverActive) {
       return;
     }
-    final duration = burstDuration ?? automaticSyncInterval;
+    final duration =
+        burstDuration ??
+        (isAggressiveDataSaverActive
+            ? aggressiveInteractiveBurstDuration
+            : automaticSyncInterval);
     _interactiveBurstUntil = DateTime.now().add(duration);
     _interactiveBurstTimer?.cancel();
     _interactiveBurstTimer = Timer(duration, () {
@@ -192,7 +223,7 @@ class CellularDataSaverService extends ChangeNotifier
       notifyListeners();
     });
     AppLogger.info(
-      'data_saver_interactive_burst_started reason=$reason duration_s=${duration.inSeconds}',
+      'data_saver_interactive_burst_started reason=$reason level=${_dataSaverLevel.name} duration_s=${duration.inSeconds}',
     );
     notifyListeners();
   }
@@ -227,7 +258,13 @@ class CellularDataSaverService extends ChangeNotifier
 
   @visibleForTesting
   void debugSetDataSaverEnabled(bool enabled) {
-    _dataSaverEnabled = enabled;
+    _dataSaverLevel = enabled ? DataSaverLevel.standard : DataSaverLevel.off;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void debugSetDataSaverLevel(DataSaverLevel level) {
+    _dataSaverLevel = level;
     notifyListeners();
   }
 
@@ -259,13 +296,11 @@ class CellularDataSaverService extends ChangeNotifier
     try {
       final decoded = jsonDecode(rawSettings);
       if (decoded is Map<String, dynamic>) {
-        _dataSaverEnabled = ExperienceSettings.fromJson(
-          decoded,
-        ).dataSaverEnabled;
+        _dataSaverLevel = ExperienceSettings.fromJson(decoded).dataSaverLevel;
       } else if (decoded is Map) {
-        _dataSaverEnabled = ExperienceSettings.fromJson(
+        _dataSaverLevel = ExperienceSettings.fromJson(
           Map<String, dynamic>.from(decoded),
-        ).dataSaverEnabled;
+        ).dataSaverLevel;
       }
     } catch (_) {
       // Falls back to defaults when persisted settings are malformed.

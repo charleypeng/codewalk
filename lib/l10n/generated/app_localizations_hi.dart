@@ -361,6 +361,23 @@ class AppLocalizationsHi extends AppLocalizations {
       'अगले मोबाइल-डेटा सिंक विंडो की प्रतीक्षा की जा रही है।';
 
   @override
+  String get behaviorDataSaverOff => 'Off';
+
+  @override
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverOffHint =>
+      'Full realtime and automatic refreshes are enabled.';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDisabled => 'अक्षम';
 
   @override
