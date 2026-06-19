@@ -43,6 +43,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-037: Chat Viewport and Scroll/Follow Synchronization Revamp
 - ADR-038: Disable On-Device STT Engines on Windows Desktop
 - ADR-039: Real Windows STT Fix — Actionable Settings Links and Typed Microphone Preflight
+- ADR-040: Client-Owned Per-Project Icon Discovery
 
 ---
 
@@ -2177,3 +2178,58 @@ Build on top of ADR-038 (still the runtime contract) and add the parts of the fi
 - `test/unit/services/windows_microphone_service_test.dart` — new probe unit tests (happy path + `PlatformException` + `MissingPluginException`)
 - `BEHAVIOR.md` — Windows STT table updated; "Windows on-device STT is intentionally disabled (with actionable Windows settings links)" section
 - Ref: issue #43, llfbandit/record#453, https://learn.microsoft.com/en-us/windows/apps/develop/launch/launch-settings, https://learn.microsoft.com/en-us/windows/win32/coreaudio/wasapi
+
+---
+
+## ADR-040: Client-Owned Per-Project Icon Discovery (2026-06-19)
+
+**Status**: Accepted for implementation planning.
+
+**Related**: ADR-002 (Context Isolation), ADR-022 (Unified Project Context Controls), ADR-023 (Official OpenCode contract-first compatibility), issue #68, follow-up issue #73.
+
+### Context
+
+The conversations sidebar and project selector currently use the same folder icon for every project. Users can only distinguish projects by text, which is slow when several project paths share similar names. OpenChamber provides a useful community reference: it discovers a project favicon on demand, stores icon bytes under app-owned storage, records icon metadata separately from the project path, and falls back to preset/folder icons when no favicon is found.
+
+Official OpenCode docs expose project list and project lookup endpoints, but they do not define a project icon field or an icon-discovery endpoint. Under ADR-023, CodeWalk must not invent OpenCode project payload fields or rely on server-side favicon endpoints as if they were official OpenCode behavior. The icon feature is therefore a client-owned personalization layer.
+
+### Decision
+
+Implement project icons as local CodeWalk metadata, not as OpenCode project state:
+
+1. **Discovery is user-initiated**: the first implementation uses an explicit action, not automatic background scanning on project add or file-watch events.
+2. **Discovery scope matches the conservative OpenChamber slice**: search only for `favicon.{ico,png,svg,jpg,jpeg,webp}`, case-insensitive, and rank by shortest path so root favicons win over deeply nested files.
+3. **No network favicon services**: discovery reads the local project filesystem only. It does not call external services, parse remotes, or fetch GitHub/raw assets.
+4. **Client-owned storage**: icon bytes and metadata live under CodeWalk app support storage, keyed by a stable project identity hash. OpenCode project responses remain unchanged.
+5. **Supported formats and cap**: PNG, JPEG, SVG, WebP, and ICO are accepted with a 5 MB maximum. Empty, oversized, unreadable, or unsupported files fall back to the default icon.
+6. **Flutter-native rendering**: CodeWalk should use a shared `ProjectIcon` widget backed by `ImageProvider`/local file bytes rather than adding an embedded HTTP route or custom URL scheme.
+7. **Fallback first**: if no icon is configured or loading fails, render `Symbols.folder_open`. Preset icons, custom uploads, SVG recoloring, manifest parsing, and `apple-touch-icon` are follow-ups, not v1 scope.
+8. **Search exclusions**: the walker must skip heavy/generated directories such as `.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `ios/Pods`, and platform build output folders.
+
+### Rationale
+
+- Keeping icon metadata local preserves the official OpenCode project contract and avoids an ADR-023 exception.
+- On-demand scanning avoids surprising mobile users and avoids background filesystem work on remote or cloud-mounted directories.
+- Restricting v1 to `favicon.*` keeps the matching rule predictable and close to the validated OpenChamber behavior.
+- A Flutter-native image path is simpler than an app-local HTTP route and works across desktop/mobile without an extra serving layer.
+- Deferring uploads and presets keeps the first implementation testable and easy to roll back.
+
+### Consequences
+
+- ✅ Project identity in the sidebar can become more scannable without server support.
+- ✅ The feature remains additive and local; OpenCode project APIs stay authoritative for project path/name/lifecycle only.
+- ✅ Backward compatibility is straightforward because existing `Project` JSON does not need new server-originated fields.
+- ⚠ Icon storage must be pruned when projects are forgotten/closed permanently or when metadata no longer points at a valid project identity.
+- ⚠ Local filesystem traversal must stay off the UI isolate and must enforce depth/entry/byte limits to avoid jank.
+- ❌ Automatic discovery, custom upload, icon presets, SVG recoloring, manifest parsing, and external favicon services are intentionally out of scope for the first implementation.
+
+### Key Files Planned
+
+- `lib/presentation/services/project_icon_store.dart` — local icon metadata and byte storage.
+- `lib/presentation/services/project_icon_discovery_service.dart` — bounded local filesystem discovery.
+- `lib/presentation/widgets/project_icon.dart` — shared rendering and fallback widget.
+- `lib/domain/entities/project.dart` and `lib/data/models/project_model.dart` — remain server-contract compatible; any icon metadata must be local and optional.
+- `lib/presentation/pages/chat_page/chat_page_scaffold.dart` — project group and recent-session project affordances.
+- `lib/presentation/pages/chat_page/chat_page_chrome.dart` and `chat_page_workspace_controller.dart` — project selector/workspace controls.
+- `CODEBASE.md` — map the local project icon subsystem after implementation.
+- Ref: issue #68, follow-up issue #73, OpenChamber `project-icon-routes.js`, OpenChamber `fs/search.js`, OpenChamber `projectMeta.ts`.
