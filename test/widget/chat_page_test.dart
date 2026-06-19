@@ -57,9 +57,12 @@ import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
+import 'package:codewalk/presentation/widgets/session_context_menu.dart';
+import 'package:codewalk/presentation/widgets/sidebar_selection_indicator.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
@@ -2354,116 +2357,112 @@ void main() {
       );
     });
 
-    testWidgets(
-      'mobile app bar migrates pins and evicts oldest pin',
-      (WidgetTester tester) async {
-        SharedPreferences.setMockInitialValues(<String, Object>{
-          'codewalk.mobile_appbar_pinned_actions': <String>[
-            'display',
-            'undo',
-            'search',
-            'newChat',
-            'quickOpen',
-          ],
-        });
-        addTearDown(() => SharedPreferences.setMockInitialValues({}));
-        await tester.binding.setSurfaceSize(const Size(320, 900));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('mobile app bar migrates pins and evicts oldest pin', (
+      WidgetTester tester,
+    ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'codewalk.mobile_appbar_pinned_actions': <String>[
+          'display',
+          'undo',
+          'search',
+          'newChat',
+          'quickOpen',
+        ],
+      });
+      addTearDown(() => SharedPreferences.setMockInitialValues({}));
+      await tester.binding.setSurfaceSize(const Size(320, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        final localDataSource = InMemoryAppLocalDataSource()
-          ..activeServerId = 'srv_test';
-        final provider = _buildChatProvider(localDataSource: localDataSource);
-        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
-        await tester.pumpWidget(_testApp(provider, appProvider));
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
 
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_quickOpen_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_undo_button')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_display_button')),
+        findsNothing,
+      );
+      for (var index = 0; index < 3; index += 1) {
         expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
-          findsOneWidget,
+          tester
+              .getSize(
+                find.byKey(
+                  ValueKey<String>('mobile_appbar_pinned_slot_$index'),
+                ),
+              )
+              .width,
+          kMinInteractiveDimension,
         );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_quickOpen_button')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_undo_button')),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_display_button')),
-          findsNothing,
-        );
-        for (var index = 0; index < 3; index += 1) {
-          expect(
-            tester
-                .getSize(
-                  find.byKey(
-                    ValueKey<String>('mobile_appbar_pinned_slot_$index'),
-                  ),
-                )
-                .width,
-            kMinInteractiveDimension,
-          );
-        }
+      }
 
-        var prefs = await SharedPreferences.getInstance();
-        expect(
-          prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
-          <String>['search', 'newChat', 'quickOpen'],
-        );
+      var prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
+        <String>['search', 'newChat', 'quickOpen'],
+      );
 
-        await tester.tap(
-          find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
-        );
-        await tester.pumpAndSettle();
-        final terminalItem = find.byKey(
-          const ValueKey<String>('mobile_overflow_item_terminal'),
-        );
-        await tester.tap(
-          find.descendant(
-            of: terminalItem,
-            matching: find.byIcon(Symbols.push_pin),
-          ),
-        );
-        await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+      );
+      await tester.pumpAndSettle();
+      final terminalItem = find.byKey(
+        const ValueKey<String>('mobile_overflow_item_terminal'),
+      );
+      await tester.tap(
+        find.descendant(
+          of: terminalItem,
+          matching: find.byIcon(Symbols.push_pin),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_quickOpen_button')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('appbar_pinned_terminal_button')),
-          findsOneWidget,
-        );
-        prefs = await SharedPreferences.getInstance();
-        expect(
-          prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
-          <String>['newChat', 'quickOpen', 'terminal'],
-        );
-      },
-    );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_search_button')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_newChat_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_quickOpen_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_pinned_terminal_button')),
+        findsOneWidget,
+      );
+      prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getStringList('codewalk.mobile_appbar_pinned_actions'),
+        <String>['newChat', 'quickOpen', 'terminal'],
+      );
+    });
 
     testWidgets('mobile app bar preserves two migrated pins', (
       WidgetTester tester,
     ) async {
       SharedPreferences.setMockInitialValues(<String, Object>{
-        'codewalk.mobile_appbar_pinned_actions': <String>[
-          'search',
-          'newChat',
-        ],
+        'codewalk.mobile_appbar_pinned_actions': <String>['search', 'newChat'],
       });
       addTearDown(() => SharedPreferences.setMockInitialValues({}));
       await tester.binding.setSurfaceSize(const Size(500, 900));
@@ -2718,7 +2717,29 @@ void main() {
           find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),
           findsOneWidget,
         );
+        expect(
+          find.descendant(
+            of: find.byKey(
+              const ValueKey<String>('recent_session_tile_ses_recent'),
+            ),
+            matching: find.byType(SessionContextMenuButton),
+          ),
+          findsOneWidget,
+        );
         expect(find.text('Project A'), findsWidgets);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),
+          buttons: kSecondaryMouseButton,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Pin'), findsOneWidget);
+        expect(find.text('Rename'), findsOneWidget);
+        expect(find.text('Share'), findsOneWidget);
+        expect(find.text('Archive'), findsOneWidget);
+        expect(find.text('Fork'), findsOneWidget);
+        expect(find.text('Delete'), findsOneWidget);
       },
     );
 
@@ -3069,16 +3090,6 @@ void main() {
       await provider.initializeProviders();
       await tester.pumpAndSettle();
 
-      final tileMaterial = tester
-          .widgetList<Material>(
-            find.ancestor(
-              of: find.byKey(
-                const ValueKey<String>('recent_session_tile_ses_current'),
-              ),
-              matching: find.byType(Material),
-            ),
-          )
-          .firstWhere((material) => material.color != null);
       final title = tester.widget<Text>(
         find.descendant(
           of: find.byKey(
@@ -3092,8 +3103,16 @@ void main() {
       );
       final colorScheme = Theme.of(recentSessionsContext).colorScheme;
 
-      expect(tileMaterial.color, colorScheme.secondaryContainer);
-      expect(title.style?.color, colorScheme.onSecondaryContainer);
+      expect(
+        find.ancestor(
+          of: find.byKey(
+            const ValueKey<String>('recent_session_tile_ses_current'),
+          ),
+          matching: find.byType(SidebarSelectionIndicator),
+        ),
+        findsOneWidget,
+      );
+      expect(title.style?.color, colorScheme.primary);
     });
 
     testWidgets('display toggles expose replay chat tour action', (
@@ -5691,14 +5710,8 @@ void main() {
     expect(tokensCenter.dx, greaterThan(usageCenter.dx));
     expect(costCenter.dy, greaterThan(usageCenter.dy));
     expect(limitCenter.dx, greaterThan(costCenter.dx));
-    expect(
-      (tokensCenter.dy - usageCenter.dy).abs(),
-      lessThan(1),
-    );
-    expect(
-      (limitCenter.dy - costCenter.dy).abs(),
-      lessThan(1),
-    );
+    expect((tokensCenter.dy - usageCenter.dy).abs(), lessThan(1));
+    expect((limitCenter.dy - costCenter.dy).abs(), lessThan(1));
 
     final popoverRect = tester.getRect(
       find.byKey(const ValueKey<String>('context_usage_popover')),
@@ -7514,9 +7527,7 @@ void main() {
             },
           ),
         ],
-        defaultModels: const <String, String>{
-          'deepseek': 'deepseek-reasoner',
-        },
+        defaultModels: const <String, String>{'deepseek': 'deepseek-reasoner'},
         connected: const <String>['deepseek'],
       );
 
@@ -7559,161 +7570,146 @@ void main() {
     },
   );
 
-  testWidgets(
-    'model chip truncates long names with TextOverflow.ellipsis',
-    (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(360, 800));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('model chip truncates long names with TextOverflow.ellipsis', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      const longModelName = 'minimax-text-01-very-long-experimental-tag-2026';
+    const longModelName = 'minimax-text-01-very-long-experimental-tag-2026';
 
-      final repository = FakeChatRepository(
-        sessions: <ChatSession>[
-          ChatSession(
-            id: 'ses_long_minimax',
-            workspaceId: 'default',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            title: 'Long Minimax Session',
-          ),
-        ],
-      );
-
-      final providersResponse = ProvidersResponse(
-        providers: <Provider>[
-          Provider(
-            id: 'minimax',
-            name: 'MiniMax',
-            env: const <String>[],
-            models: <String, Model>{
-              'minimax-text-01': _model(
-                'minimax-text-01',
-                name: longModelName,
-              ),
-            },
-          ),
-        ],
-        defaultModels: const <String, String>{'minimax': 'minimax-text-01'},
-        connected: const <String>['minimax'],
-      );
-
-      final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
-      final provider = _buildChatProvider(
-        chatRepository: repository,
-        localDataSource: localDataSource,
-        providersResponse: providersResponse,
-      );
-      final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
-      await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
-
-      await provider.loadSessions();
-      await provider.selectSession(provider.sessions.first);
-      await tester.pumpAndSettle();
-
-      final modelChipFinder = find.byKey(
-        const ValueKey<String>('model_selector_button'),
-      );
-      expect(modelChipFinder, findsOneWidget);
-
-      final modelTextWidget = tester.widget<Text>(
-        find.descendant(
-          of: modelChipFinder,
-          matching: find.byType(Text),
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_long_minimax',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Long Minimax Session',
         ),
-      );
-      expect(modelTextWidget.data, equals(longModelName));
-      expect(modelTextWidget.overflow, TextOverflow.ellipsis);
-      expect(modelTextWidget.maxLines, 1);
-      expect(modelTextWidget.softWrap, isFalse);
-    },
-  );
+      ],
+    );
 
-  testWidgets(
-    'model picker entry shows ellipsis and Tooltip with full name',
-    (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(360, 800));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      const longModelName =
-          'deepseek-reasoner-experimental-large-context-window-v3';
-
-      final repository = FakeChatRepository(
-        sessions: <ChatSession>[
-          ChatSession(
-            id: 'ses_picker',
-            workspaceId: 'default',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            title: 'Picker Session',
-          ),
-        ],
-      );
-
-      final providersResponse = ProvidersResponse(
-        providers: <Provider>[
-          Provider(
-            id: 'deepseek',
-            name: 'DeepSeek',
-            env: const <String>[],
-            models: <String, Model>{
-              'deepseek-reasoner': _model(
-                'deepseek-reasoner',
-                name: longModelName,
-              ),
-            },
-          ),
-        ],
-        defaultModels: const <String, String>{
-          'deepseek': 'deepseek-reasoner',
-        },
-        connected: const <String>['deepseek'],
-      );
-
-      final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
-      final provider = _buildChatProvider(
-        chatRepository: repository,
-        localDataSource: localDataSource,
-        providersResponse: providersResponse,
-      );
-      final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
-      await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
-
-      await provider.loadSessions();
-      await provider.selectSession(provider.sessions.first);
-      await tester.pumpAndSettle();
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('model_selector_button')),
-      );
-      await tester.pumpAndSettle();
-
-      final entryFinder = find.byKey(
-        const ValueKey<String>(
-          'model_selector_item_deepseek_deepseek-reasoner',
+    final providersResponse = ProvidersResponse(
+      providers: <Provider>[
+        Provider(
+          id: 'minimax',
+          name: 'MiniMax',
+          env: const <String>[],
+          models: <String, Model>{
+            'minimax-text-01': _model('minimax-text-01', name: longModelName),
+          },
         ),
-      );
-      expect(entryFinder, findsOneWidget);
+      ],
+      defaultModels: const <String, String>{'minimax': 'minimax-text-01'},
+      connected: const <String>['minimax'],
+    );
 
-      final tooltipFinder = find.descendant(
-        of: entryFinder,
-        matching: find.byTooltip(longModelName),
-      );
-      expect(tooltipFinder, findsOneWidget);
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+      providersResponse: providersResponse,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
-      final titleTextWidget = tester.widget<Text>(
-        find.descendant(
-          of: tooltipFinder,
-          matching: find.byType(Text),
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    final modelChipFinder = find.byKey(
+      const ValueKey<String>('model_selector_button'),
+    );
+    expect(modelChipFinder, findsOneWidget);
+
+    final modelTextWidget = tester.widget<Text>(
+      find.descendant(of: modelChipFinder, matching: find.byType(Text)),
+    );
+    expect(modelTextWidget.data, equals(longModelName));
+    expect(modelTextWidget.overflow, TextOverflow.ellipsis);
+    expect(modelTextWidget.maxLines, 1);
+    expect(modelTextWidget.softWrap, isFalse);
+  });
+
+  testWidgets('model picker entry shows ellipsis and Tooltip with full name', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const longModelName =
+        'deepseek-reasoner-experimental-large-context-window-v3';
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_picker',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Picker Session',
         ),
-      );
-      expect(titleTextWidget.overflow, TextOverflow.ellipsis);
-      expect(titleTextWidget.maxLines, 1);
-    },
-  );
+      ],
+    );
+
+    final providersResponse = ProvidersResponse(
+      providers: <Provider>[
+        Provider(
+          id: 'deepseek',
+          name: 'DeepSeek',
+          env: const <String>[],
+          models: <String, Model>{
+            'deepseek-reasoner': _model(
+              'deepseek-reasoner',
+              name: longModelName,
+            ),
+          },
+        ),
+      ],
+      defaultModels: const <String, String>{'deepseek': 'deepseek-reasoner'},
+      connected: const <String>['deepseek'],
+    );
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+      providersResponse: providersResponse,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('model_selector_button')),
+    );
+    await tester.pumpAndSettle();
+
+    final entryFinder = find.byKey(
+      const ValueKey<String>('model_selector_item_deepseek_deepseek-reasoner'),
+    );
+    expect(entryFinder, findsOneWidget);
+
+    final tooltipFinder = find.descendant(
+      of: entryFinder,
+      matching: find.byTooltip(longModelName),
+    );
+    expect(tooltipFinder, findsOneWidget);
+
+    final titleTextWidget = tester.widget<Text>(
+      find.descendant(of: tooltipFinder, matching: find.byType(Text)),
+    );
+    expect(titleTextWidget.overflow, TextOverflow.ellipsis);
+    expect(titleTextWidget.maxLines, 1);
+  });
 
   testWidgets(
     'sub-conversation shows composer parity and keeps sends scoped to the child session',

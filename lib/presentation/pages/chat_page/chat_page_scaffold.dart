@@ -12,39 +12,27 @@ extension _ChatPageScaffold on _ChatPageState {
   Widget _buildSidebarNavigation({required bool closeOnSelect}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: Card(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        child: Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildServerStatusControl(
-                      closeOnSelect: closeOnSelect,
-                    ),
+            Expanded(
+              child: _buildServerStatusControl(closeOnSelect: closeOnSelect),
+            ),
+            const SizedBox(width: 8),
+            Tooltip(
+              message: context.l10n.chatSettings,
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: FilledButton.tonal(
+                  key: const ValueKey<String>('sidebar_settings_icon_button'),
+                  style: FilledButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: () => unawaited(
+                    _openSettingsPage(closeOnSelect: closeOnSelect),
                   ),
-                  const SizedBox(width: 8),
-                  Tooltip(
-                    message: context.l10n.chatSettings,
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FilledButton.tonal(
-                        key: const ValueKey<String>(
-                          'sidebar_settings_icon_button',
-                        ),
-                        style: FilledButton.styleFrom(padding: EdgeInsets.zero),
-                        onPressed: () => unawaited(
-                          _openSettingsPage(closeOnSelect: closeOnSelect),
-                        ),
-                        child: const Icon(Symbols.settings),
-                      ),
-                    ),
-                  ),
-                ],
+                  child: const Icon(Symbols.settings),
+                ),
               ),
             ),
           ],
@@ -107,276 +95,270 @@ extension _ChatPageScaffold on _ChatPageState {
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration: AppAnimations.standard,
-                              switchInCurve: AppAnimations.emphasizedCurve,
-                              switchOutCurve: AppAnimations.accelerateCurve,
-                              child: isSessionSearchExpanded
-                                  ? SizedBox(
-                                      key: const ValueKey<String>(
-                                        'session_search_field',
-                                      ),
-                                      height: 40,
-                                      child: Focus(
-                                        onKeyEvent: (node, event) {
-                                          if (event is KeyDownEvent &&
-                                              event.logicalKey ==
-                                                  LogicalKeyboardKey.escape) {
-                                            collapseSessionSearch(
-                                              clearQuery: true,
-                                            );
-                                            return KeyEventResult.handled;
-                                          }
-                                          return KeyEventResult.ignored;
-                                        },
-                                        child: TextField(
-                                          controller: _sessionSearchController,
-                                          focusNode: _sessionSearchFocusNode,
-                                          onTap: expandSessionSearch,
-                                          onChanged: (query) {
-                                            if (!_isSessionSearchExpanded) {
-                                              _setState(
-                                                () => _isSessionSearchExpanded =
-                                                    true,
-                                              );
-                                            }
-                                            chatProvider.setSessionSearchQuery(
-                                              query,
-                                            );
-                                          },
-                                          onTapOutside: (event) {
-                                            if (_sessionSearchController.text
-                                                .trim()
-                                                .isEmpty) {
-                                              collapseSessionSearch(
-                                                clearQuery: false,
-                                              );
-                                            } else {
-                                              // Dismiss keyboard but keep field
-                                              // visible (query is still active).
-                                              _sessionSearchFocusNode.unfocus();
-                                            }
-                                          },
-                                          onSubmitted: (value) {
-                                            if (value.trim().isEmpty) {
-                                              collapseSessionSearch(
-                                                clearQuery: false,
-                                              );
-                                            } else {
-                                              // Dismiss keyboard but keep field
-                                              // visible (query is still active).
-                                              _sessionSearchFocusNode.unfocus();
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText: context
-                                                .l10n
-                                                .chatSearchConversations,
-                                            prefixIcon: const Icon(
-                                              Symbols.search,
-                                            ),
-                                            suffixIcon: IconButton(
-                                              icon: const Icon(Symbols.close),
-                                              onPressed: () =>
-                                                  collapseSessionSearch(
-                                                    clearQuery: true,
-                                                  ),
-                                              tooltip:
-                                                  context.l10n.onboardingClear,
-                                            ),
-                                            isDense: true,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  vertical: 10,
-                                                ),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : Align(
-                                      key: const ValueKey<String>(
-                                        'session_search_title',
-                                      ),
-                                      alignment:
-                                          AlignmentDirectional.centerStart,
-                                      child: Text(
-                                        context.l10n.chatConversations,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          AnimatedSize(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AnimatedSwitcher(
                             duration: AppAnimations.standard,
-                            curve: AppAnimations.emphasizedCurve,
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: AnimatedSwitcher(
-                              duration: AppAnimations.standard,
-                              switchInCurve: AppAnimations.emphasizedCurve,
-                              switchOutCurve: AppAnimations.accelerateCurve,
-                              child: isSessionSearchExpanded
-                                  ? const SizedBox.shrink(
-                                      key: ValueKey<String>(
-                                        'session_header_actions_hidden',
-                                      ),
-                                    )
-                                  : Row(
-                                      key: const ValueKey<String>(
-                                        'session_header_actions',
-                                      ),
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Symbols.search),
-                                          onPressed: expandSessionSearch,
-                                          tooltip: context
+                            switchInCurve: AppAnimations.emphasizedCurve,
+                            switchOutCurve: AppAnimations.accelerateCurve,
+                            child: isSessionSearchExpanded
+                                ? SizedBox(
+                                    key: const ValueKey<String>(
+                                      'session_search_field',
+                                    ),
+                                    height: 40,
+                                    child: Focus(
+                                      onKeyEvent: (node, event) {
+                                        if (event is KeyDownEvent &&
+                                            event.logicalKey ==
+                                                LogicalKeyboardKey.escape) {
+                                          collapseSessionSearch(
+                                            clearQuery: true,
+                                          );
+                                          return KeyEventResult.handled;
+                                        }
+                                        return KeyEventResult.ignored;
+                                      },
+                                      child: TextField(
+                                        controller: _sessionSearchController,
+                                        focusNode: _sessionSearchFocusNode,
+                                        onTap: expandSessionSearch,
+                                        onChanged: (query) {
+                                          if (!_isSessionSearchExpanded) {
+                                            _setState(
+                                              () => _isSessionSearchExpanded =
+                                                  true,
+                                            );
+                                          }
+                                          chatProvider.setSessionSearchQuery(
+                                            query,
+                                          );
+                                        },
+                                        onTapOutside: (event) {
+                                          if (_sessionSearchController.text
+                                              .trim()
+                                              .isEmpty) {
+                                            collapseSessionSearch(
+                                              clearQuery: false,
+                                            );
+                                          } else {
+                                            // Dismiss keyboard but keep field
+                                            // visible (query is still active).
+                                            _sessionSearchFocusNode.unfocus();
+                                          }
+                                        },
+                                        onSubmitted: (value) {
+                                          if (value.trim().isEmpty) {
+                                            collapseSessionSearch(
+                                              clearQuery: false,
+                                            );
+                                          } else {
+                                            // Dismiss keyboard but keep field
+                                            // visible (query is still active).
+                                            _sessionSearchFocusNode.unfocus();
+                                          }
+                                        },
+                                        decoration: InputDecoration(
+                                          hintText: context
                                               .l10n
                                               .chatSearchConversations,
-                                        ),
-                                        _buildTourTarget(
-                                          showcaseKey: _projectContextTourKey,
-                                          targetKey:
-                                              _projectContextTourTargetKey,
-                                          title: postOnboardingSidebarTourCopy(
-                                            context: context,
-                                            isMobile: false,
-                                            showConversationPane: true,
-                                          ).title,
-                                          description:
-                                              postOnboardingSidebarTourCopy(
-                                                context: context,
-                                                isMobile: false,
-                                                showConversationPane: true,
-                                              ).description,
-                                          tooltipPosition:
-                                              TooltipPosition.right,
-                                          child: IconButton(
-                                            key: const ValueKey<String>(
-                                              'conversations_project_context_button',
-                                            ),
-                                            icon: const Icon(
-                                              Symbols.folder_open,
-                                            ),
-                                            onPressed: () => unawaited(
-                                              _openProjectSelectorDialog(),
-                                            ),
+                                          prefixIcon: const Icon(
+                                            Symbols.search,
+                                          ),
+                                          suffixIcon: IconButton(
+                                            icon: const Icon(Symbols.close),
+                                            onPressed: () =>
+                                                collapseSessionSearch(
+                                                  clearQuery: true,
+                                                ),
                                             tooltip:
-                                                context.l10n.chatProjectContext,
+                                                context.l10n.onboardingClear,
+                                          ),
+                                          isDense: true,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                vertical: 10,
+                                              ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Symbols.add),
-                                          onPressed: _createNewSession,
-                                          tooltip: context.l10n.chatNewChat,
-                                        ),
-                                        if (!FeatureFlags.refreshlessRealtime)
-                                          IconButton(
-                                            icon: const Icon(Symbols.refresh),
-                                            onPressed: _refreshData,
-                                            tooltip: context.l10n.chatRefresh,
-                                          ),
-                                        if (onCollapseRequested != null)
-                                          IconButton(
-                                            key: const ValueKey<String>(
-                                              'hide_conversations_sidebar_button',
-                                            ),
-                                            icon: const Icon(
-                                              Symbols.left_panel_close_rounded,
-                                            ),
-                                            onPressed: onCollapseRequested,
-                                            tooltip: context
-                                                .l10n
-                                                .chatHideConversationsSidebar,
-                                          ),
-                                      ],
+                                      ),
                                     ),
-                            ),
+                                  )
+                                : Align(
+                                    key: const ValueKey<String>(
+                                      'session_search_title',
+                                    ),
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: Text(
+                                      context.l10n.chatConversations,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                  ),
                           ),
-                        ],
-                      ),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          PopupMenuButton<SessionListFilter>(
-                            tooltip: context.l10n.chatFilterSessions,
-                            onSelected: chatProvider.setSessionListFilter,
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: SessionListFilter.active,
-                                child: Text(context.l10n.chatFilterActive),
-                              ),
-                              PopupMenuItem(
-                                value: SessionListFilter.archived,
-                                child: Text(context.l10n.chatFilterArchived),
-                              ),
-                              PopupMenuItem(
-                                value: SessionListFilter.all,
-                                child: Text(context.l10n.chatFilterAll),
-                              ),
-                            ],
-                            child: _headerChip(
-                              context,
-                              icon: Symbols.filter_list,
-                              label: switch (chatProvider.sessionListFilter) {
-                                SessionListFilter.active =>
-                                  context.l10n.chatFilterActive,
-                                SessionListFilter.archived =>
-                                  context.l10n.chatFilterArchived,
-                                SessionListFilter.all =>
-                                  context.l10n.chatFilterAll,
-                              },
-                            ),
+                        ),
+                        AnimatedSize(
+                          duration: AppAnimations.standard,
+                          curve: AppAnimations.emphasizedCurve,
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: AnimatedSwitcher(
+                            duration: AppAnimations.standard,
+                            switchInCurve: AppAnimations.emphasizedCurve,
+                            switchOutCurve: AppAnimations.accelerateCurve,
+                            child: isSessionSearchExpanded
+                                ? const SizedBox.shrink(
+                                    key: ValueKey<String>(
+                                      'session_header_actions_hidden',
+                                    ),
+                                  )
+                                : Row(
+                                    key: const ValueKey<String>(
+                                      'session_header_actions',
+                                    ),
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Symbols.search),
+                                        onPressed: expandSessionSearch,
+                                        tooltip: context
+                                            .l10n
+                                            .chatSearchConversations,
+                                      ),
+                                      _buildTourTarget(
+                                        showcaseKey: _projectContextTourKey,
+                                        targetKey: _projectContextTourTargetKey,
+                                        title: postOnboardingSidebarTourCopy(
+                                          context: context,
+                                          isMobile: false,
+                                          showConversationPane: true,
+                                        ).title,
+                                        description:
+                                            postOnboardingSidebarTourCopy(
+                                              context: context,
+                                              isMobile: false,
+                                              showConversationPane: true,
+                                            ).description,
+                                        tooltipPosition: TooltipPosition.right,
+                                        child: IconButton(
+                                          key: const ValueKey<String>(
+                                            'conversations_project_context_button',
+                                          ),
+                                          icon: const Icon(Symbols.folder_open),
+                                          onPressed: () => unawaited(
+                                            _openProjectSelectorDialog(),
+                                          ),
+                                          tooltip:
+                                              context.l10n.chatProjectContext,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Symbols.add),
+                                        onPressed: _createNewSession,
+                                        tooltip: context.l10n.chatNewChat,
+                                      ),
+                                      if (!FeatureFlags.refreshlessRealtime)
+                                        IconButton(
+                                          icon: const Icon(Symbols.refresh),
+                                          onPressed: _refreshData,
+                                          tooltip: context.l10n.chatRefresh,
+                                        ),
+                                      if (onCollapseRequested != null)
+                                        IconButton(
+                                          key: const ValueKey<String>(
+                                            'hide_conversations_sidebar_button',
+                                          ),
+                                          icon: const Icon(
+                                            Symbols.left_panel_close_rounded,
+                                          ),
+                                          onPressed: onCollapseRequested,
+                                          tooltip: context
+                                              .l10n
+                                              .chatHideConversationsSidebar,
+                                        ),
+                                    ],
+                                  ),
                           ),
-                          PopupMenuButton<SessionListSort>(
-                            tooltip: context.l10n.chatSortSessions,
-                            onSelected: chatProvider.setSessionListSort,
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: SessionListSort.recent,
-                                child: Text(context.l10n.chatSortMostRecent),
-                              ),
-                              PopupMenuItem(
-                                value: SessionListSort.oldest,
-                                child: Text(context.l10n.chatSortOldest),
-                              ),
-                              PopupMenuItem(
-                                value: SessionListSort.title,
-                                child: Text(context.l10n.chatSortTitle),
-                              ),
-                            ],
-                            child: _headerChip(
-                              context,
-                              icon: Symbols.sort,
-                              label: switch (chatProvider.sessionListSort) {
-                                SessionListSort.recent =>
-                                  context.l10n.chatSortRecent,
-                                SessionListSort.oldest =>
-                                  context.l10n.chatSortOldest,
-                                SessionListSort.title =>
-                                  context.l10n.chatSortTitle,
-                              },
+                        ),
+                      ],
+                    ),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        PopupMenuButton<SessionListFilter>(
+                          tooltip: context.l10n.chatFilterSessions,
+                          onSelected: chatProvider.setSessionListFilter,
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: SessionListFilter.active,
+                              child: Text(context.l10n.chatFilterActive),
                             ),
+                            PopupMenuItem(
+                              value: SessionListFilter.archived,
+                              child: Text(context.l10n.chatFilterArchived),
+                            ),
+                            PopupMenuItem(
+                              value: SessionListFilter.all,
+                              child: Text(context.l10n.chatFilterAll),
+                            ),
+                          ],
+                          child: _headerChip(
+                            context,
+                            icon: Symbols.filter_list,
+                            label: switch (chatProvider.sessionListFilter) {
+                              SessionListFilter.active =>
+                                context.l10n.chatFilterActive,
+                              SessionListFilter.archived =>
+                                context.l10n.chatFilterArchived,
+                              SessionListFilter.all =>
+                                context.l10n.chatFilterAll,
+                            },
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        PopupMenuButton<SessionListSort>(
+                          tooltip: context.l10n.chatSortSessions,
+                          onSelected: chatProvider.setSessionListSort,
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: SessionListSort.recent,
+                              child: Text(context.l10n.chatSortMostRecent),
+                            ),
+                            PopupMenuItem(
+                              value: SessionListSort.oldest,
+                              child: Text(context.l10n.chatSortOldest),
+                            ),
+                            PopupMenuItem(
+                              value: SessionListSort.title,
+                              child: Text(context.l10n.chatSortTitle),
+                            ),
+                          ],
+                          child: _headerChip(
+                            context,
+                            icon: Symbols.sort,
+                            label: switch (chatProvider.sessionListSort) {
+                              SessionListSort.recent =>
+                                context.l10n.chatSortRecent,
+                              SessionListSort.oldest =>
+                                context.l10n.chatSortOldest,
+                              SessionListSort.title =>
+                                context.l10n.chatSortTitle,
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -415,58 +397,54 @@ extension _ChatPageScaffold on _ChatPageState {
           : Padding(
               key: ValueKey<_HamburgerBadgeReasonKind>(badgeReason.kind),
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: Card(
-                child: InkWell(
-                  key: const ValueKey<String>('drawer_hamburger_reason_notice'),
-                  onTap: _hamburgerReasonHasAction(badgeReason)
-                      ? () => unawaited(
-                          _handleHamburgerReasonTap(
-                            badgeReason: badgeReason,
-                            closeOnSelect: closeOnSelect,
-                          ),
-                        )
-                      : null,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _hamburgerReasonColor(
-                              context,
-                              badgeReason.kind,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
+              child: InkWell(
+                key: const ValueKey<String>('drawer_hamburger_reason_notice'),
+                onTap: _hamburgerReasonHasAction(badgeReason)
+                    ? () => unawaited(
+                        _handleHamburgerReasonTap(
+                          badgeReason: badgeReason,
+                          closeOnSelect: closeOnSelect,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _hamburgerReasonMessage(badgeReason),
-                            key: const ValueKey<String>(
-                              'drawer_hamburger_reason_notice_text',
-                            ),
-                            style: Theme.of(context).textTheme.bodyMedium,
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: _hamburgerReasonColor(
+                            context,
+                            badgeReason.kind,
                           ),
+                          shape: BoxShape.circle,
                         ),
-                        if (_hamburgerReasonHasAction(badgeReason)) ...[
-                          const SizedBox(width: 8),
-                          Icon(
-                            Symbols.arrow_forward,
-                            size: 18,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _hamburgerReasonMessage(badgeReason),
+                          key: const ValueKey<String>(
+                            'drawer_hamburger_reason_notice_text',
                           ),
-                        ],
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      if (_hamburgerReasonHasAction(badgeReason)) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Symbols.arrow_forward,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -481,14 +459,14 @@ extension _ChatPageScaffold on _ChatPageState {
       _HamburgerBadgeReasonKind.sessionError => context.l10n.sessionHasError(
         badgeReason.sessionTitle ?? context.l10n.chatConversation,
       ),
-      _HamburgerBadgeReasonKind.sessionPendingInteraction => context.l10n
-          .sessionNeedsInput(
-            badgeReason.sessionTitle ?? context.l10n.chatConversation,
-          ),
-      _HamburgerBadgeReasonKind.sessionUnreadCompletion => context.l10n
-          .sessionHasNewReply(
-            badgeReason.sessionTitle ?? context.l10n.chatConversation,
-          ),
+      _HamburgerBadgeReasonKind.sessionPendingInteraction =>
+        context.l10n.sessionNeedsInput(
+          badgeReason.sessionTitle ?? context.l10n.chatConversation,
+        ),
+      _HamburgerBadgeReasonKind.sessionUnreadCompletion =>
+        context.l10n.sessionHasNewReply(
+          badgeReason.sessionTitle ?? context.l10n.chatConversation,
+        ),
       _HamburgerBadgeReasonKind.syncLoading => context.l10n.sessionSyncing,
       _HamburgerBadgeReasonKind.dataSaver =>
         context.l10n.behaviorCellularDataSaverActive,
@@ -654,35 +632,33 @@ extension _ChatPageScaffold on _ChatPageState {
     required bool isMobileLayout,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(8, 8, 8, isMobileLayout ? 8 : 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8, 8, 8, isMobileLayout ? 8 : 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            child: Text(
+              context.l10n.chatRecentSessions,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          for (final entry in entries)
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-              child: Text(
-                context.l10n.chatRecentSessions,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              padding: const EdgeInsets.only(bottom: 4),
+              child: _buildRecentSessionTile(
+                chatProvider: chatProvider,
+                project: entry.key,
+                session: entry.value,
+                closeOnSelect: closeOnSelect,
+                isMobileLayout: isMobileLayout,
+                colorScheme: colorScheme,
               ),
             ),
-            for (final entry in entries)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: _buildRecentSessionTile(
-                  chatProvider: chatProvider,
-                  project: entry.key,
-                  session: entry.value,
-                  closeOnSelect: closeOnSelect,
-                  isMobileLayout: isMobileLayout,
-                  colorScheme: colorScheme,
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -703,80 +679,146 @@ extension _ChatPageScaffold on _ChatPageState {
     final highlighted = attention.hasRecentUnreadCompletion;
     final isBusy = attention.isActive;
     final showBusySweep = isBusy && !isCurrentSession;
-    final tileColor = isCurrentSession
-        ? colorScheme.secondaryContainer
-        : (highlighted
-              ? Color.alphaBlend(
-                  colorScheme.primary.withValues(alpha: 0.08),
-                  colorScheme.surfaceContainerLow,
-                )
-              : colorScheme.surfaceContainerLow);
+    final menuActions = _sessionContextMenuActions(
+      chatProvider: chatProvider,
+      closeOnSelect: closeOnSelect,
+    );
+    final selectedForeground = colorScheme.primary;
+    final projectLabelColor = isCurrentSession
+        ? selectedForeground
+        : colorScheme.onSurfaceVariant;
     final titleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontWeight: (highlighted || isCurrentSession)
           ? FontWeight.w700
           : FontWeight.w500,
-      color: isCurrentSession
-          ? colorScheme.onSecondaryContainer
-          : (highlighted ? colorScheme.primary : null),
+      color: (isCurrentSession || highlighted) ? selectedForeground : null,
     );
-    return Material(
-      color: tileColor,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        key: ValueKey<String>('recent_session_tile_${session.id}'),
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => unawaited(
-          _openSessionFromProjectGroup(
-            projectId: project.id,
-            sessionId: session.id,
-            closeOnSelect: closeOnSelect,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(10, isMobileLayout ? 8 : 6, 10, 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: KeyedSubtree(
-                  key: ValueKey<String>('recent_session_title_${session.id}'),
-                  child: showBusySweep
-                      ? _ComposerStatusLanternText(
-                          key: ValueKey<String>(
-                            'recent_session_busy_title_${session.id}',
-                          ),
-                          text: _sessionDisplayTitle(session),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: titleStyle,
-                        )
-                      : Text(
-                          _sessionDisplayTitle(session),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: titleStyle,
-                        ),
-                ),
+    return SidebarSelectionIndicator(
+      selected: isCurrentSession,
+      child: SessionContextMenuRegion(
+        session: session,
+        actions: menuActions,
+        surface: 'recent',
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            key: ValueKey<String>('recent_session_tile_${session.id}'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => unawaited(
+              _openSessionFromProjectGroup(
+                projectId: project.id,
+                sessionId: session.id,
+                closeOnSelect: closeOnSelect,
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  _projectDisplayLabel(project),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(10, isMobileLayout ? 8 : 6, 4, 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: KeyedSubtree(
+                      key: ValueKey<String>(
+                        'recent_session_title_${session.id}',
+                      ),
+                      child: showBusySweep
+                          ? _ComposerStatusLanternText(
+                              key: ValueKey<String>(
+                                'recent_session_busy_title_${session.id}',
+                              ),
+                              text: _sessionDisplayTitle(session),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: titleStyle,
+                            )
+                          : Text(
+                              _sessionDisplayTitle(session),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: titleStyle,
+                            ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Symbols.folder_open,
+                          size: 13,
+                          color: projectLabelColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            _projectDisplayLabel(project),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: projectLabelColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  SessionContextMenuButton(
+                    session: session,
+                    actions: menuActions,
+                    surface: 'recent',
+                    iconColor: isCurrentSession
+                        ? selectedForeground
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  SessionContextMenuActions _sessionContextMenuActions({
+    required ChatProvider chatProvider,
+    required bool closeOnSelect,
+  }) {
+    return SessionContextMenuActions(
+      onSessionDeleted: (session) async {
+        await chatProvider.deleteSession(session.id);
+      },
+      onSessionRenamed: (session, title) {
+        return chatProvider.renameSession(session, title);
+      },
+      onSessionShareToggled: (session) {
+        return chatProvider.toggleSessionShare(session);
+      },
+      onSessionArchiveToggled: (session, archived) {
+        return chatProvider.setSessionArchived(session, archived);
+      },
+      onSessionPinToggled: (session) {
+        return chatProvider.toggleSessionPinned(session);
+      },
+      onSessionForked: (session) async {
+        final created = await chatProvider.forkSession(session);
+        if (!context.mounted) {
+          return;
+        }
+        if (created == null) {
+          _showChatPageMessageSnackBar(
+            context.l10n.sessionForkFailed,
+            hideCurrent: false,
+          );
+          return;
+        }
+        _showChatPageMessageSnackBar(
+          context.l10n.sessionForked,
+          hideCurrent: false,
+        );
+        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+      },
+      pinnedSessionIds: chatProvider.pinnedSessionIds,
     );
   }
 
@@ -817,241 +859,266 @@ extension _ChatPageScaffold on _ChatPageState {
     );
     final displayName = _projectDisplayLabel(project);
     final subtitle = _directoryLabel(project.path);
+    final colorScheme = Theme.of(context).colorScheme;
+    final selectedForeground = colorScheme.primary;
+    final secondaryForeground = colorScheme.onSurfaceVariant;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Column(
-        children: [
-          ListTile(
-            key: ValueKey<String>('project_group_tile_${project.id}'),
-            dense: _useDenseListTiles(context),
-            visualDensity: isMobileLayout ? VisualDensity.compact : null,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobileLayout ? 6 : 8,
-            ),
-            leading: const Icon(Symbols.folder_open, size: 20),
-            title: Text(displayName, overflow: TextOverflow.ellipsis),
-            subtitle: subtitle == displayName
-                ? null
-                : Directionality(
-                    textDirection: TextDirection.rtl,
-                    child: Text(
-                      subtitle,
-                      textAlign: TextAlign.left,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-            selected: selected,
-            onTap: () {
-              if (selected) {
-                _toggleProjectGroupExpanded(
-                  projectId: project.id,
-                  selected: selected,
-                );
-                return;
-              }
-              unawaited(
-                _switchProjectFromGroup(
-                  projectId: project.id,
-                  closeOnSelect: closeOnSelect,
-                ),
-              );
-            },
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!selected && !hasSnapshot)
-                  Tooltip(
-                    message: context.l10n.sessionNoCachedConversations,
-                    child: Icon(
-                      Symbols.cloud_off,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: selected
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
-                  ),
-                  child: Text(
-                    '${sessions.length}',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                IconButton(
-                  key: ValueKey<String>('project_group_expand_${project.id}'),
-                  icon: Icon(
-                    expanded ? Symbols.expand_less : Symbols.expand_more,
-                  ),
-                  tooltip: expanded
-                      ? context.l10n.chatCollapseGroup
-                      : context.l10n.chatExpandGroup,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 32,
-                    height: 32,
-                  ),
-                  onPressed: () => _toggleProjectGroupExpanded(
-                    projectId: project.id,
-                    selected: selected,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (expanded) ...[
-            if (selected)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                child: Column(
-                  children: [
-                    ChatSessionList(
-                      sessions: sessions,
-                      currentSession: chatProvider.currentSession,
-                      pinnedSessionIds: chatProvider.pinnedSessionIds,
-                      isSessionActive: chatProvider.isSessionActivelyResponding,
-                      sessionAttentionFor: chatProvider.sessionAttentionFor,
-                      isMobileLayout: isMobileLayout,
-                      onSessionSelected: (session) async {
-                        if (closeOnSelect) {
-                          unawaited(
-                            Future.delayed(
-                              const Duration(milliseconds: 50),
-                              () {
-                                _closeDrawerIfNeeded(
-                                  closeOnSelect: closeOnSelect,
-                                );
-                              },
-                            ),
-                          );
-                          await _handleSessionSwitch(session);
-                          return;
-                        }
-                        await _handleSessionSwitch(session);
-                      },
-                      onSessionDeleted: (session) async {
-                        await chatProvider.deleteSession(session.id);
-                      },
-                      onSessionRenamed: (session, title) {
-                        return chatProvider.renameSession(session, title);
-                      },
-                      onSessionShareToggled: (session) {
-                        return chatProvider.toggleSessionShare(session);
-                      },
-                      onSessionArchiveToggled: (session, archived) {
-                        return chatProvider.setSessionArchived(
-                          session,
-                          archived,
-                        );
-                      },
-                      onSessionPinToggled: (session) {
-                        return chatProvider.toggleSessionPinned(session);
-                      },
-                      onSessionForked: (session) async {
-                        final created = await chatProvider.forkSession(session);
-                        if (!context.mounted) {
-                          return;
-                        }
-                        if (created == null) {
-                          _showChatPageMessageSnackBar(
-                            context.l10n.sessionForkFailed,
-                            hideCurrent: false,
-                          );
-                          return;
-                        }
-                        _showChatPageMessageSnackBar(
-                          context.l10n.sessionForked,
-                          hideCurrent: false,
-                        );
-                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
-                      },
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        4,
-                        0,
-                        4,
-                        isMobileLayout ? 4 : 8,
-                      ),
-                      verticalTilePadding: isMobileLayout ? 3 : 1,
-                    ),
-                    if (chatProvider.canLoadMoreSessions)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                        child: OutlinedButton.icon(
-                          onPressed: chatProvider.loadMoreSessions,
-                          icon: const Icon(Symbols.expand_more),
-                          label: Text(context.l10n.chatLoadMore),
-                        ),
-                      ),
-                  ],
-                ),
-              )
-            else if (preview.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.fromLTRB(isMobileLayout ? 12 : 20, 0, 8, 8),
-                child: Column(
-                  children: [
-                    for (final session in preview)
-                      ListTile(
-                        key: ValueKey<String>(
-                          'project_group_session_preview_${project.id}_${session.id}',
-                        ),
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        leading: const Icon(Symbols.chat_bubble, size: 16),
-                        title: Text(
-                          _sessionDisplayTitle(session),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        onTap: () => unawaited(
-                          _openSessionFromProjectGroup(
-                            projectId: project.id,
-                            sessionId: session.id,
-                            closeOnSelect: closeOnSelect,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              )
-            else
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isMobileLayout ? 12 : 20,
-                  0,
-                  8,
-                  12,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    hasSnapshot
-                        ? context.l10n.sessionNoConversationsInProject
-                        : context.l10n.sessionOpenProjectToLoad,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+    return SidebarSelectionIndicator(
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            ListTile(
+              key: ValueKey<String>('project_group_tile_${project.id}'),
+              dense: _useDenseListTiles(context),
+              visualDensity: isMobileLayout ? VisualDensity.compact : null,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isMobileLayout ? 6 : 8,
+              ),
+              leading: Icon(
+                Symbols.folder_open,
+                size: 20,
+                color: selected ? selectedForeground : secondaryForeground,
+              ),
+              title: Text(
+                displayName,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: selected ? selectedForeground : null,
+                  fontWeight: selected ? FontWeight.w700 : null,
                 ),
               ),
+              subtitle: subtitle == displayName
+                  ? null
+                  : Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: Text(
+                        subtitle,
+                        textAlign: TextAlign.left,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: secondaryForeground,
+                        ),
+                      ),
+                    ),
+              selected: selected,
+              onTap: () {
+                if (selected) {
+                  _toggleProjectGroupExpanded(
+                    projectId: project.id,
+                    selected: selected,
+                  );
+                  return;
+                }
+                unawaited(
+                  _switchProjectFromGroup(
+                    projectId: project.id,
+                    closeOnSelect: closeOnSelect,
+                  ),
+                );
+              },
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!selected && !hasSnapshot)
+                    Tooltip(
+                      message: context.l10n.sessionNoCachedConversations,
+                      child: Icon(
+                        Symbols.cloud_off,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${sessions.length}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: selected
+                            ? selectedForeground
+                            : secondaryForeground,
+                        fontWeight: selected ? FontWeight.w700 : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  IconButton(
+                    key: ValueKey<String>('project_group_expand_${project.id}'),
+                    icon: Icon(
+                      expanded ? Symbols.expand_less : Symbols.expand_more,
+                    ),
+                    tooltip: expanded
+                        ? context.l10n.chatCollapseGroup
+                        : context.l10n.chatExpandGroup,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 32,
+                      height: 32,
+                    ),
+                    onPressed: () => _toggleProjectGroupExpanded(
+                      projectId: project.id,
+                      selected: selected,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (expanded) ...[
+              if (selected)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                  child: Column(
+                    children: [
+                      ChatSessionList(
+                        sessions: sessions,
+                        currentSession: chatProvider.currentSession,
+                        pinnedSessionIds: chatProvider.pinnedSessionIds,
+                        isSessionActive:
+                            chatProvider.isSessionActivelyResponding,
+                        sessionAttentionFor: chatProvider.sessionAttentionFor,
+                        isMobileLayout: isMobileLayout,
+                        onSessionSelected: (session) async {
+                          if (closeOnSelect) {
+                            unawaited(
+                              Future.delayed(
+                                const Duration(milliseconds: 50),
+                                () {
+                                  _closeDrawerIfNeeded(
+                                    closeOnSelect: closeOnSelect,
+                                  );
+                                },
+                              ),
+                            );
+                            await _handleSessionSwitch(session);
+                            return;
+                          }
+                          await _handleSessionSwitch(session);
+                        },
+                        onSessionDeleted: (session) async {
+                          await chatProvider.deleteSession(session.id);
+                        },
+                        onSessionRenamed: (session, title) {
+                          return chatProvider.renameSession(session, title);
+                        },
+                        onSessionShareToggled: (session) {
+                          return chatProvider.toggleSessionShare(session);
+                        },
+                        onSessionArchiveToggled: (session, archived) {
+                          return chatProvider.setSessionArchived(
+                            session,
+                            archived,
+                          );
+                        },
+                        onSessionPinToggled: (session) {
+                          return chatProvider.toggleSessionPinned(session);
+                        },
+                        onSessionForked: (session) async {
+                          final created = await chatProvider.forkSession(
+                            session,
+                          );
+                          if (!context.mounted) {
+                            return;
+                          }
+                          if (created == null) {
+                            _showChatPageMessageSnackBar(
+                              context.l10n.sessionForkFailed,
+                              hideCurrent: false,
+                            );
+                            return;
+                          }
+                          _showChatPageMessageSnackBar(
+                            context.l10n.sessionForked,
+                            hideCurrent: false,
+                          );
+                          _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                        },
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          4,
+                          0,
+                          4,
+                          isMobileLayout ? 4 : 8,
+                        ),
+                        verticalTilePadding: isMobileLayout ? 3 : 1,
+                      ),
+                      if (chatProvider.canLoadMoreSessions)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                          child: OutlinedButton.icon(
+                            onPressed: chatProvider.loadMoreSessions,
+                            icon: const Icon(Symbols.expand_more),
+                            label: Text(context.l10n.chatLoadMore),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              else if (preview.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    isMobileLayout ? 12 : 20,
+                    0,
+                    8,
+                    8,
+                  ),
+                  child: Column(
+                    children: [
+                      for (final session in preview)
+                        ListTile(
+                          key: ValueKey<String>(
+                            'project_group_session_preview_${project.id}_${session.id}',
+                          ),
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          leading: const Icon(Symbols.chat_bubble, size: 16),
+                          title: Text(
+                            _sessionDisplayTitle(session),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          onTap: () => unawaited(
+                            _openSessionFromProjectGroup(
+                              projectId: project.id,
+                              sessionId: session.id,
+                              closeOnSelect: closeOnSelect,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    isMobileLayout ? 12 : 20,
+                    0,
+                    8,
+                    12,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      hasSnapshot
+                          ? context.l10n.sessionNoConversationsInProject
+                          : context.l10n.sessionOpenProjectToLoad,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -1088,7 +1155,7 @@ extension _ChatPageScaffold on _ChatPageState {
     }
 
     final chatProvider = context.read<ChatProvider>();
-    ChatSession? target = chatProvider.sessions
+    var target = chatProvider.sessions
         .where((item) => item.id == sessionId)
         .firstOrNull;
     for (var attempt = 0; target == null && attempt < 8; attempt += 1) {

@@ -72,9 +72,11 @@ import '../widgets/modal_primary_action_shortcuts.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/quota/quota_popup_section.dart';
+import '../widgets/session_context_menu.dart';
 import '../widgets/session_diff_viewer.dart';
 import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
+import '../widgets/sidebar_selection_indicator.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings_page.dart';
 
@@ -473,6 +475,7 @@ class _ChatPageState extends State<ChatPage>
   String? _terminalSessionSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
+
   /// Track the most recently targeted message for the forward keyboard
   /// shortcut (Ctrl/Cmd+Shift+F). Reset by the forward runtime; read by
   /// the shortcut resolver in `chat_page_shortcuts.dart`.

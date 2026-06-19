@@ -9,13 +9,15 @@ extension _ChatPageChrome on _ChatPageState {
       _CurrentSessionAction.shareToggle =>
         isShared ? context.l10n.sessionUnshare : context.l10n.sessionShare,
       _CurrentSessionAction.copyLink => context.l10n.sessionCopyLink,
-      _CurrentSessionAction.exportMarkdown => context.l10n.sessionExportMarkdown,
+      _CurrentSessionAction.exportMarkdown =>
+        context.l10n.sessionExportMarkdown,
       _CurrentSessionAction.exportJson => context.l10n.sessionExportDebugJson,
       _CurrentSessionAction.viewTasks => context.l10n.sessionViewTasks,
       _CurrentSessionAction.reviewChanges => context.l10n.chatReviewChanges,
       _CurrentSessionAction.undo => context.l10n.chatUndoLastTurn,
       _CurrentSessionAction.redo => context.l10n.chatRedoLastTurn,
-      _CurrentSessionAction.compactContext => context.l10n.sessionCompactContext,
+      _CurrentSessionAction.compactContext =>
+        context.l10n.sessionCompactContext,
     };
   }
 
@@ -342,8 +344,7 @@ extension _ChatPageChrome on _ChatPageState {
   List<Widget> _buildCurrentSessionReviewSection(ChatProvider chatProvider) {
     final hasLoaded = chatProvider.isCurrentSessionDiffLoaded;
     final hasError = chatProvider.currentSessionDiffError;
-    final isLoading =
-        chatProvider.isLoadingSessionInsights && !hasLoaded;
+    final isLoading = chatProvider.isLoadingSessionInsights && !hasLoaded;
     return <Widget>[
       Text(
         context.l10n.chatReviewChanges,
@@ -376,8 +377,8 @@ extension _ChatPageChrome on _ChatPageState {
           child: Text(
             hasError,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+              color: Theme.of(context).colorScheme.error,
+            ),
           ),
         )
       else
@@ -1670,10 +1671,6 @@ extension _ChatPageChrome on _ChatPageState {
     final density = _settingsProvider?.appDensity ?? AppDensity.normal;
     return Container(
       padding: AppDensitySpacing.headerChipPadding(density),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

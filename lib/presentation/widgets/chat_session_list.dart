@@ -1,15 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../domain/entities/chat_session.dart';
 import '../../core/i18n/l10n_context.dart';
+import '../../domain/entities/chat_session.dart';
 import '../providers/chat_provider.dart';
-import 'modal_primary_action_shortcuts.dart';
 import '../utils/session_title_formatter.dart';
-
+import 'session_context_menu.dart';
+import 'sidebar_selection_indicator.dart';
 
 /// Chat session list widget
 class ChatSessionList extends StatefulWidget {
@@ -312,7 +309,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final metaColor = isSelected
-        ? colorScheme.onSecondaryContainer.withValues(alpha: 0.7)
+        ? colorScheme.primary.withValues(alpha: 0.75)
         : colorScheme.onSurfaceVariant;
     final textStyle = Theme.of(
       context,
@@ -387,8 +384,11 @@ class _ChatSessionListState extends State<ChatSessionList> {
     final sessionAttention =
         widget.sessionAttentionFor?.call(session.id) ??
         SessionAttentionState(isActive: isSessionActive);
+    final isRootSession =
+        session.parentId == null || session.parentId!.trim().isEmpty;
     final floatingBadgeKind = _resolveFloatingBadgeKind(
       attention: sessionAttention,
+      allowUnreadCompletion: isRootSession,
     );
     final colorScheme = Theme.of(context).colorScheme;
     final isPinned = widget.pinnedSessionIds.contains(session.id);
@@ -396,20 +396,15 @@ class _ChatSessionListState extends State<ChatSessionList> {
         ? '1 sub-conversation'
         : '$childCount sub-conversations';
     final hasRecentUnreadHighlight =
-        sessionAttention.hasRecentUnreadCompletion &&
-        (session.parentId == null || session.parentId!.trim().isEmpty);
+        sessionAttention.hasRecentUnreadCompletion && isRootSession;
     final subtitleText = _sidebarSummary(session.summary);
-    final tileColor = isSelected
-        ? colorScheme.secondaryContainer
-        : (hasRecentUnreadHighlight
-              ? Color.alphaBlend(
-                  colorScheme.primary.withValues(alpha: 0.08),
-                  colorScheme.surfaceContainerLow,
-                )
-              : colorScheme.surfaceContainerLow);
-    final outlineColor = hasRecentUnreadHighlight && !isSelected
-        ? colorScheme.primary.withValues(alpha: 0.4)
-        : Colors.transparent;
+    final selectedForeground = colorScheme.primary;
+    final primaryTextColor = isSelected || hasRecentUnreadHighlight
+        ? selectedForeground
+        : null;
+    final secondaryTextColor = isSelected
+        ? selectedForeground.withValues(alpha: 0.8)
+        : colorScheme.onSurfaceVariant;
     final compactMeta = _buildCompactMetaRow(
       context,
       session: session,
@@ -418,6 +413,15 @@ class _ChatSessionListState extends State<ChatSessionList> {
       childLabel: childLabel,
       isPinned: isPinned,
     );
+    final menuActions = SessionContextMenuActions(
+      onSessionDeleted: widget.onSessionDeleted,
+      onSessionRenamed: widget.onSessionRenamed,
+      onSessionShareToggled: widget.onSessionShareToggled,
+      onSessionArchiveToggled: widget.onSessionArchiveToggled,
+      onSessionPinToggled: widget.onSessionPinToggled,
+      onSessionForked: widget.onSessionForked,
+      pinnedSessionIds: widget.pinnedSessionIds,
+    );
 
     return Padding(
       key: ValueKey<String>('chat_session_tile_${session.id}'),
@@ -425,253 +429,132 @@ class _ChatSessionListState extends State<ChatSessionList> {
       child: Semantics(
         label: context.l10n.chatSessionChatSessionSession(session.title ?? ''),
         selected: isSelected,
-        child: Material(
-          color: tileColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: outlineColor),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              ListTile(
-                mouseCursor: SystemMouseCursors.click,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                contentPadding: EdgeInsets.fromLTRB(
-                  10 + (depth * 16.0),
-                  0,
-                  4,
-                  0,
-                ),
-                dense: true,
-                visualDensity: const VisualDensity(vertical: -2),
-                minVerticalPadding: 0,
-                title: Row(
-                  children: [
-                    if (hasChildren)
-                      InkWell(
-                        key: ValueKey<String>(
-                          'chat_session_toggle_${session.id}',
-                        ),
-                        onTap: () {
-                          setState(() {
-                            if (expanded) {
-                              _expandedParentIds.remove(session.id);
-                            } else {
-                              _expandedParentIds.add(session.id);
-                            }
-                            _invalidateTreeCache();
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(10),
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Icon(
-                            expanded
-                                ? Symbols.expand_more
-                                : Symbols.chevron_right,
-                            size: 18,
-                            color: isSelected
-                                ? colorScheme.onSecondaryContainer.withValues(
-                                    alpha: 0.9,
-                                  )
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      )
-                    else if (depth > 0)
-                      const SizedBox(width: 22),
-                    Expanded(
-                      child: Text(
-                        SessionTitleFormatter.displayTitle(
-                          time: session.time,
-                          title: session.title,
-                        ),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: isSelected
-                              ? colorScheme.onSecondaryContainer
-                              : null,
-                          decoration: session.archived
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                subtitle: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (subtitleText != null) ...[
-                      Text(
-                        subtitleText,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isSelected
-                              ? colorScheme.onSecondaryContainer.withValues(
-                                  alpha: 0.8,
-                                )
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    compactMeta,
-                  ],
-                ),
-                trailing: PopupMenuButton<String>(
-                  icon: Icon(
-                    Symbols.more_vert,
-                    color: isSelected
-                        ? colorScheme.onSecondaryContainer
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'rename':
-                        _showRenameDialog(context, session);
-                        break;
-                      case 'share':
-                        _toggleShare(context, session);
-                        break;
-                      case 'copy-link':
-                        _copyShareLink(context, session);
-                        break;
-                      case 'archive':
-                        _toggleArchive(context, session);
-                        break;
-                      case 'pin':
-                        _togglePinned(context, session);
-                        break;
-                      case 'fork':
-                        _forkSession(context, session);
-                        break;
-                      case 'delete':
-                        _showDeleteDialog(context, session);
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'pin',
-                      child: Row(
-                        children: [
-                          const Icon(Symbols.push_pin),
-                          const SizedBox(width: 8),
-                          Text(
-                            isPinned
-                                ? context.l10n.sessionUnpin
-                                : context.l10n.sessionPin,
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'rename',
-                      child: Row(
-                        children: [
-                          const Icon(Symbols.edit),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.sessionRename),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'share',
-                      child: Row(
-                        children: [
-                          Icon(
-                            session.shared ? Symbols.link_off : Symbols.link,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            session.shared
-                                ? context.l10n.sessionUnshareAction
-                                : context.l10n.sessionShareAction,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (session.shareUrl != null &&
-                        session.shareUrl!.isNotEmpty)
-                      PopupMenuItem(
-                        value: 'copy-link',
-                        child: Row(
-                          children: [
-                            const Icon(Symbols.content_copy),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.sessionCopyLink),
-                          ],
-                        ),
-                      ),
-                    PopupMenuItem(
-                      value: 'archive',
-                      child: Row(
-                        children: [
-                          Icon(
-                            session.archived
-                                ? Symbols.unarchive
-                                : Symbols.archive,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            session.archived
-                                ? context.l10n.sessionUnarchive
-                                : context.l10n.sessionArchive,
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'fork',
-                      child: Row(
-                        children: [
-                          const Icon(Symbols.call_split),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.sessionFork),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          const Icon(Symbols.delete, color: Colors.red),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.l10n.sessionDelete,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                onTap: () async {
-                  await _handleSessionSelected(session);
-                },
+        child: SidebarSelectionIndicator(
+          selected: isSelected,
+          child: SessionContextMenuRegion(
+            session: session,
+            actions: menuActions,
+            surface: 'main',
+            child: Material(
+              color: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
-              if (floatingBadgeKind != SessionAttentionKind.none)
-                Positioned(
-                  top: 8,
-                  right: 46,
-                  child: _buildFloatingAttentionBadge(
-                    context,
-                    sessionId: session.id,
-                    kind: floatingBadgeKind,
-                    isSelected: isSelected,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ListTile(
+                    mouseCursor: SystemMouseCursors.click,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    contentPadding: EdgeInsets.fromLTRB(
+                      10 + (depth * 16.0),
+                      0,
+                      4,
+                      0,
+                    ),
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -2),
+                    minVerticalPadding: 0,
+                    title: Row(
+                      children: [
+                        if (hasChildren)
+                          InkWell(
+                            key: ValueKey<String>(
+                              'chat_session_toggle_${session.id}',
+                            ),
+                            onTap: () {
+                              setState(() {
+                                if (expanded) {
+                                  _expandedParentIds.remove(session.id);
+                                } else {
+                                  _expandedParentIds.add(session.id);
+                                }
+                                _invalidateTreeCache();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Icon(
+                                expanded
+                                    ? Symbols.expand_more
+                                    : Symbols.chevron_right,
+                                size: 18,
+                                color: isSelected
+                                    ? selectedForeground
+                                    : colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        else if (depth > 0)
+                          const SizedBox(width: 22),
+                        Expanded(
+                          child: Text(
+                            SessionTitleFormatter.displayTitle(
+                              time: session.time,
+                              title: session.title,
+                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: primaryTextColor,
+                                  decoration: session.archived
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (subtitleText != null) ...[
+                          Text(
+                            subtitleText,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: secondaryTextColor),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        compactMeta,
+                      ],
+                    ),
+                    trailing: SessionContextMenuButton(
+                      session: session,
+                      actions: menuActions,
+                      surface: 'main',
+                      iconColor: isSelected
+                          ? selectedForeground
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                    onTap: () async {
+                      await _handleSessionSelected(session);
+                    },
                   ),
-                ),
-            ],
+                  if (floatingBadgeKind != SessionAttentionKind.none)
+                    Positioned(
+                      top: 8,
+                      right: 46,
+                      child: _buildFloatingAttentionBadge(
+                        context,
+                        sessionId: session.id,
+                        kind: floatingBadgeKind,
+                        isSelected: isSelected,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -680,9 +563,14 @@ class _ChatSessionListState extends State<ChatSessionList> {
 
   SessionAttentionKind _resolveFloatingBadgeKind({
     required SessionAttentionState attention,
+    required bool allowUnreadCompletion,
   }) {
     final primaryKind = attention.primaryKind;
     if (primaryKind == SessionAttentionKind.none) {
+      return SessionAttentionKind.none;
+    }
+    if (primaryKind == SessionAttentionKind.unreadCompletion &&
+        !allowUnreadCompletion) {
       return SessionAttentionKind.none;
     }
     return primaryKind;
@@ -750,8 +638,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     return switch (kind) {
       SessionAttentionKind.error => colorScheme.error,
       SessionAttentionKind.pendingInteraction => colorScheme.tertiary,
-      SessionAttentionKind.unreadCompletion =>
-        isSelected ? colorScheme.onSecondaryContainer : colorScheme.primary,
+      SessionAttentionKind.unreadCompletion => colorScheme.primary,
       SessionAttentionKind.active => colorScheme.primary,
       SessionAttentionKind.none => colorScheme.onSurface,
     };
@@ -774,184 +661,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
     } else {
       return '${time.month}/${time.day}';
     }
-  }
-
-  void _showRenameDialog(BuildContext context, ChatSession session) {
-    final callback = widget.onSessionRenamed;
-    if (callback == null) {
-      return;
-    }
-
-    final controller = TextEditingController(text: session.title);
-
-    Future<void> submitRename(BuildContext dialogContext) async {
-      final newTitle = controller.text.trim();
-      if (newTitle.isEmpty) {
-        return;
-      }
-      Navigator.of(dialogContext).pop();
-      final ok = await callback(session, newTitle);
-      if (!ok && dialogContext.mounted) {
-        ScaffoldMessenger.of(dialogContext).showSnackBar(
-          SnackBar(content: Text(context.l10n.sessionFailedRename)),
-        );
-      }
-    }
-
-    showDialog<void>(
-      context: context,
-      builder: (context) => ModalPrimaryActionShortcuts(
-        onPrimaryAction: () {
-          unawaited(submitRename(context));
-        },
-        child: AlertDialog(
-          title: Text(context.l10n.sessionRenameTitle),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: context.l10n.sessionRenameHint,
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(context.l10n.commonCancel),
-            ),
-            TextButton(
-              onPressed: () {
-                unawaited(submitRename(context));
-              },
-              child: Text(context.l10n.commonSave),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _toggleShare(BuildContext context, ChatSession session) async {
-    final callback = widget.onSessionShareToggled;
-    if (callback == null) {
-      return;
-    }
-
-    final ok = await callback(session);
-    if (!context.mounted) {
-      return;
-    }
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.sessionFailedUpdateSharing)),
-      );
-      return;
-    }
-
-    final nextAction = session.shared ? 'unshared' : 'shared';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.chatSessionConversationNextAction(nextAction))));
-  }
-
-  Future<void> _copyShareLink(BuildContext context, ChatSession session) async {
-    final link = session.shareUrl;
-    if (link == null || link.isEmpty) {
-      return;
-    }
-    await Clipboard.setData(ClipboardData(text: link));
-    if (!context.mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.sessionShareLinkCopied)),
-    );
-  }
-
-  Future<void> _toggleArchive(BuildContext context, ChatSession session) async {
-    final callback = widget.onSessionArchiveToggled;
-    if (callback == null) {
-      return;
-    }
-
-    final archive = !session.archived;
-    final ok = await callback(session, archive);
-    if (!context.mounted) {
-      return;
-    }
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.sessionFailedUpdateArchive)),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          archive ? 'Conversation archived' : 'Conversation unarchived',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _togglePinned(BuildContext context, ChatSession session) async {
-    final callback = widget.onSessionPinToggled;
-    if (callback == null) {
-      return;
-    }
-
-    final wasPinned = widget.pinnedSessionIds.contains(session.id);
-    await callback(session);
-    if (!context.mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          wasPinned ? 'Conversation unpinned' : 'Conversation pinned',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _forkSession(BuildContext context, ChatSession session) async {
-    final callback = widget.onSessionForked;
-    if (callback == null) {
-      return;
-    }
-    await callback(session);
-  }
-
-  void _showDeleteDialog(BuildContext context, ChatSession session) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.sessionDeleteTitle),
-        content: Text(
-          'Are you sure you want to delete the conversation "${SessionTitleFormatter.displayTitle(time: session.time, title: session.title)}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              final callback = widget.onSessionDeleted;
-              if (callback != null) {
-                callback(session);
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: Text(context.l10n.sessionDelete),
-          ),
-        ],
-      ),
-    );
   }
 }
 

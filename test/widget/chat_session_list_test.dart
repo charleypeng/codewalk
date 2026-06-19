@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/widgets/chat_session_list.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,6 +105,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls, 1);
+  });
+
+  testWidgets('right-click opens the same session menu without selecting', (
+    tester,
+  ) async {
+    var selectionCalls = 0;
+
+    await tester.pumpWidget(
+      localizedMaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session(shared: true)],
+            onSessionSelected: (_) async {
+              selectionCalls += 1;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+
+    expect(selectionCalls, 0);
+    expect(find.text('Pin'), findsOneWidget);
+    expect(find.text('Rename'), findsOneWidget);
+    expect(find.text('Unshare'), findsOneWidget);
+    expect(find.text('Copy Link'), findsOneWidget);
+    expect(find.text('Archive'), findsOneWidget);
+    expect(find.text('Fork'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('long-press opens the same session menu', (tester) async {
+    await tester.pumpWidget(
+      localizedMaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(sessions: <ChatSession>[session()]),
+        ),
+      ),
+    );
+
+    await tester.longPress(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pin'), findsOneWidget);
+    expect(find.text('Rename'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget);
+    expect(find.text('Archive'), findsOneWidget);
+    expect(find.text('Fork'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
   });
 
   testWidgets('pin action calls callback and shows pinned indicator', (
@@ -521,30 +578,21 @@ void main() {
       ),
     );
 
-    final rootMaterial = tester.widget<Material>(
-      find
-          .descendant(
-            of: find.byKey(
-              const ValueKey<String>('chat_session_tile_ses_root'),
-            ),
-            matching: find.byType(Material),
-          )
-          .first,
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'chat_session_attention_badge_unreadCompletion_ses_root',
+        ),
+      ),
+      findsOneWidget,
     );
-    final childMaterial = tester.widget<Material>(
-      find
-          .descendant(
-            of: find.byKey(
-              const ValueKey<String>('chat_session_tile_ses_child'),
-            ),
-            matching: find.byType(Material),
-          )
-          .first,
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'chat_session_attention_badge_unreadCompletion_ses_child',
+        ),
+      ),
+      findsNothing,
     );
-
-    final rootShape = rootMaterial.shape! as RoundedRectangleBorder;
-    final childShape = childMaterial.shape! as RoundedRectangleBorder;
-    expect(rootShape.side.color, isNot(Colors.transparent));
-    expect(childShape.side.color, Colors.transparent);
   });
 }

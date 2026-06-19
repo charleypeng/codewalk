@@ -183,7 +183,9 @@ lib/presentation/widgets/mermaid_diagram_widget.dart # Renders ```mermaid fenced
 lib/presentation/widgets/math_expression_widget.dart # Renders `$...$` and `$$...$$` LaTeX math via flutter_math_fork with styled raw-source fallback on parse failure; inline and block display modes
 lib/presentation/widgets/session_diff_viewer.dart # Rich diff review surface: DiffViewMode enum (summary/unified/split), 3 view toggles, line number gutters, per-line syntax highlighting, lazy hunk collapse/expand, onFileTap jump action (wired at all 3 call sites)
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
-lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
+lib/presentation/widgets/session_context_menu.dart # Shared session popup/context menu entries, row gesture wrapper, and dispatch helpers for main sidebar sessions and Recent sessions tiles
+lib/presentation/widgets/sidebar_selection_indicator.dart # Thin primary accent indicator reused by selected sidebar rows without painting row-wide backgrounds
+lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; responsive vertical tile padding, shared session context menu, and transparent selected-row accent affordance
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
 lib/presentation/widgets/chat_tour_showcase.dart   # Shared showcase wrapper for the first-use chat tour; provides MD3-compliant tooltip styling with consistent surface, shape, and action hierarchy using `showcaseview` package
 lib/presentation/widgets/modal_primary_action_shortcuts.dart # Reusable keyboard shortcut wrapper for modal dialogs; maps Enter/NumpadEnter to a configurable primary action; used by model download dialogs, onboarding wizard, workspace controller, and session list
@@ -214,7 +216,7 @@ chat_page_workspace_controller.dart
 chat_page_shortcuts.dart
 chat_page_status_presenter.dart                    # Simplified active-server status presentation (`Online` / `Delayed` / `Offline`) and context-usage controls
 chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible to prevent overflow at medium breakpoint
-chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar includes project groups card with open-project controls and session previews; applies compact desktop spacing and passes responsive row spacing to ChatSessionList
+chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar renders transparent project/recent/session sections with shared selected-row accent affordance; Recent sessions tiles expose the shared session context menu; applies compact desktop spacing and passes responsive row spacing to ChatSessionList
 chat_page_file_explorer_controller.dart        # File explorer plus Quick Open; supports Names and Contents modes backed by `/find/file` and `/find?pattern=`
 chat_page_file_viewer.dart
 chat_page_composer_status.dart                    # Resolves the fixed composer live-progress surface for latest busy tool/patch/reasoning activity using composer-specific compact labels via toolResolveComposerDescriptionLabel

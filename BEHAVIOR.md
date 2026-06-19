@@ -276,11 +276,19 @@
 
 - **Given** the user has conversations from multiple project directories
 - **When** the Conversations sidebar is rendered
-- **Then** the sidebar shows a dedicated `Projects` card above the conversations list with one row per open project
+- **Then** the sidebar shows a dedicated `Projects` section above the conversations list with one row per open project
 - **Then** each project row shows a conversation count derived from that project's visible sessions (active scope or cached snapshot)
 - **Then** tapping a project row switches context directly from the sidebar (no modal required)
 - **Then** when snapshot data exists, the sidebar shows compact session previews for that project; when not available, it shows a "Open project to load conversations" hint
 - **Then** inactive project snapshots are patched by global `session.created`, `session.updated`, and `session.deleted` events so remote session renames and count changes can appear before the user returns to that project
+
+### Conversations sidebar uses one continuous surface
+
+- **Given** the Conversations sidebar is rendered
+- **When** server status, sidebar header controls, recent sessions, project groups, and session rows are shown
+- **Then** those blocks do not paint nested card or row-wide container backgrounds over the sidebar background
+- **Then** selected project, selected session, and current recent-session rows remain visible through a thin primary accent indicator plus foreground text/icon emphasis
+- **Then** unread and busy state indicators remain visible as compact foreground badges instead of row-wide fills or outlines
 
 ### Sidebar hides diff-stat pseudo summaries
 
@@ -338,7 +346,7 @@
 - **Given** a new installation or a context whose display toggles were never customized
 - **When** the Conversations sidebar is rendered and recent root sessions exist
 - **Then** the `Recent sessions` section is enabled by default and appears above the project groups
-- **Then** if there are no recent root sessions yet, the section stays hidden instead of rendering an empty card
+- **Then** if there are no recent root sessions yet, the section stays hidden instead of rendering an empty section
 
 - **Given** the user disables `Recent sessions` in `Display Toggles`
 - **When** the Conversations sidebar is rendered
@@ -347,9 +355,20 @@
 - **Given** the `Recent sessions` section is visible
 - **When** the Conversations sidebar is rendered
 - **Then** the sidebar shows a `Recent sessions` section above the project groups with up to 5 recent root sessions from currently open/cached project contexts
-- **Then** each recent row stays on one line and includes a project badge so the user can identify the source project quickly
+- **Then** each recent row stays on one line and includes a project label so the user can identify the source project quickly
 - **Then** any recent row whose session is still busy shows the same sweep-style running indicator used by the composer, including sessions from other open/cached project contexts
-- **Then** if the currently open session also appears in `Recent sessions`, that row uses the same selected-style background emphasis as the project session list below it
+- **Then** if the currently open session also appears in `Recent sessions`, that row uses the same selected accent indicator and foreground emphasis as the project session list below it
+
+### Sidebar session actions are available from row gestures
+
+- **Given** a session row is visible in the main Conversations list
+- **When** the user opens the trailing menu, right-clicks the row on desktop, or long-presses the row on mobile
+- **Then** the same session menu opens with pin/unpin, rename, share/unshare, copy link when available, archive/unarchive, fork, and delete actions
+- **Then** dismissing that menu does not select or open the session row
+
+- **Given** a row is visible in `Recent sessions`
+- **When** the user opens the trailing menu, right-clicks the row on desktop, or long-presses the row on mobile
+- **Then** the row exposes the same session actions and dispatch behavior as the main Conversations list
 
 ### Project paths preserve the trailing folders in the sidebar
 
