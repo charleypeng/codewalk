@@ -4663,11 +4663,23 @@ abstract class AppLocalizations {
   /// **'forked'**
   String get sessionActionForked;
 
+  /// CodeWalk UI string — sessionActionPinned
+  ///
+  /// In en, this message translates to:
+  /// **'pinned'**
+  String get sessionActionPinned;
+
   /// CodeWalk UI string — sessionActionUnarchived
   ///
   /// In en, this message translates to:
   /// **'unarchived'**
   String get sessionActionUnarchived;
+
+  /// CodeWalk UI string — sessionActionUnpinned
+  ///
+  /// In en, this message translates to:
+  /// **'unpinned'**
+  String get sessionActionUnpinned;
 
   /// CodeWalk UI string — sessionArchive
   ///
@@ -4704,6 +4716,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get sessionDelete;
+
+  /// CodeWalk UI string — sessionDeleteConfirm
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the conversation \"{title}\"? This action cannot be undone.'**
+  String sessionDeleteConfirm(String title);
 
   /// CodeWalk UI string — sessionDeleteTitle
   ///

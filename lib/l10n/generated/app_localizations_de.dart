@@ -2647,7 +2647,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sessionActionForked => 'geforkt';
 
   @override
+  String get sessionActionPinned => 'angeheftet';
+
+  @override
   String get sessionActionUnarchived => 'dearchiviert';
+
+  @override
+  String get sessionActionUnpinned => 'gelöst';
 
   @override
   String get sessionArchive => 'Archivieren';
@@ -2668,6 +2674,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sessionDelete => 'Löschen';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'Möchtest du die Konversation \"$title\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
+  }
 
   @override
   String get sessionDeleteTitle => 'Konversation löschen';

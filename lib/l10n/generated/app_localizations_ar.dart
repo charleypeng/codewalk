@@ -2575,7 +2575,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sessionActionForked => 'تم تفريعها';
 
   @override
+  String get sessionActionPinned => 'مثبتة';
+
+  @override
   String get sessionActionUnarchived => 'تم إلغاء أرشفتها';
+
+  @override
+  String get sessionActionUnpinned => 'غير مثبتة';
 
   @override
   String get sessionArchive => 'أرشفة';
@@ -2596,6 +2602,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sessionDelete => 'حذف';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'هل تريد بالتأكيد حذف المحادثة \"$title\"؟ لا يمكن التراجع عن هذا الإجراء.';
+  }
 
   @override
   String get sessionDeleteTitle => 'حذف المحادثة';

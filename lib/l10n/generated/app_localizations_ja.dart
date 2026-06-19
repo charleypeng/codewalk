@@ -2502,7 +2502,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sessionActionForked => 'フォーク済み';
 
   @override
+  String get sessionActionPinned => 'ピン留め済み';
+
+  @override
   String get sessionActionUnarchived => 'アーカイブ解除済み';
+
+  @override
+  String get sessionActionUnpinned => 'ピン留め解除済み';
 
   @override
   String get sessionArchive => 'アーカイブ';
@@ -2523,6 +2529,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sessionDelete => '削除';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return '会話「$title」を削除してもよろしいですか？この操作は元に戻せません。';
+  }
 
   @override
   String get sessionDeleteTitle => '会話を削除';

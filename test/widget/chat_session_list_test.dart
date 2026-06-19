@@ -142,10 +142,17 @@ void main() {
   });
 
   testWidgets('long-press opens the same session menu', (tester) async {
+    var selectionCalls = 0;
+
     await tester.pumpWidget(
       localizedMaterialApp(
         home: Scaffold(
-          body: ChatSessionList(sessions: <ChatSession>[session()]),
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            onSessionSelected: (_) async {
+              selectionCalls += 1;
+            },
+          ),
         ),
       ),
     );
@@ -155,6 +162,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(selectionCalls, 0);
     expect(find.text('Pin'), findsOneWidget);
     expect(find.text('Rename'), findsOneWidget);
     expect(find.text('Share'), findsOneWidget);

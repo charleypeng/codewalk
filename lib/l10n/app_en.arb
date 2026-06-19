@@ -2611,8 +2611,14 @@
   "@sessionActionForked": {
     "description": "CodeWalk UI string — sessionActionForked"
   },
+  "@sessionActionPinned": {
+    "description": "CodeWalk UI string — sessionActionPinned"
+  },
   "@sessionActionUnarchived": {
     "description": "CodeWalk UI string — sessionActionUnarchived"
+  },
+  "@sessionActionUnpinned": {
+    "description": "CodeWalk UI string — sessionActionUnpinned"
   },
   "@sessionArchive": {
     "description": "CodeWalk UI string — sessionArchive"
@@ -2639,6 +2645,14 @@
   },
   "@sessionDeleteTitle": {
     "description": "CodeWalk UI string — sessionDeleteTitle"
+  },
+  "@sessionDeleteConfirm": {
+    "description": "CodeWalk UI string — sessionDeleteConfirm",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "@sessionDiffChangedFile": {
     "description": "CodeWalk UI string — sessionDiffChangedFile"
@@ -5108,13 +5122,16 @@
   "sessionActionArchived": "archived",
   "sessionActionDeleted": "deleted",
   "sessionActionForked": "forked",
+  "sessionActionPinned": "pinned",
   "sessionActionUnarchived": "unarchived",
+  "sessionActionUnpinned": "unpinned",
   "sessionArchive": "Archive",
   "sessionCancelRename": "Cancel rename",
   "sessionChildrenCount": "Children: {count}",
   "sessionCompactContext": "Compact context",
   "sessionCopyLink": "Copy Link",
   "sessionDelete": "Delete",
+  "sessionDeleteConfirm": "Are you sure you want to delete the conversation \"{title}\"? This action cannot be undone.",
   "sessionDeleteTitle": "Delete Conversation",
   "sessionDiffChangedFile": "Changed file",
   "sessionDiffContentNotCaptured": "File content not captured by the server",

@@ -2610,7 +2610,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionActionForked => 'forked';
 
   @override
+  String get sessionActionPinned => 'pinned';
+
+  @override
   String get sessionActionUnarchived => 'unarchived';
+
+  @override
+  String get sessionActionUnpinned => 'unpinned';
 
   @override
   String get sessionArchive => 'Archive';
@@ -2631,6 +2637,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionDelete => 'Delete';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'Are you sure you want to delete the conversation \"$title\"? This action cannot be undone.';
+  }
 
   @override
   String get sessionDeleteTitle => 'Delete Conversation';

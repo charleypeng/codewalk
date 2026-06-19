@@ -2623,7 +2623,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get sessionActionForked => 'फ़ोर्क किया गया';
 
   @override
+  String get sessionActionPinned => 'पिन किया गया';
+
+  @override
   String get sessionActionUnarchived => 'असंग्रहीत (unarchived)';
+
+  @override
+  String get sessionActionUnpinned => 'अनपिन किया गया';
 
   @override
   String get sessionArchive => 'संग्रहीत करें';
@@ -2644,6 +2650,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get sessionDelete => 'हटाएं';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'क्या आप वाकई \"$title\" वार्तालाप को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।';
+  }
 
   @override
   String get sessionDeleteTitle => 'बातचीत हटाएं';

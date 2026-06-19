@@ -2610,7 +2610,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get sessionActionForked => 'کانٹے دار';
 
   @override
+  String get sessionActionPinned => 'پن شدہ';
+
+  @override
   String get sessionActionUnarchived => 'غیر محفوظ شدہ';
+
+  @override
+  String get sessionActionUnpinned => 'پن سے ہٹایا گیا';
 
   @override
   String get sessionArchive => 'آرکائیو کریں';
@@ -2631,6 +2637,11 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get sessionDelete => 'حذف کریں۔';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'کیا آپ واقعی گفتگو \"$title\" حذف کرنا چاہتے ہیں؟ یہ عمل واپس نہیں کیا جا سکتا۔';
+  }
 
   @override
   String get sessionDeleteTitle => 'گفتگو کو حذف کریں۔';

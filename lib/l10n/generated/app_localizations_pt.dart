@@ -2636,7 +2636,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sessionActionForked => 'bifurcada';
 
   @override
+  String get sessionActionPinned => 'fixada';
+
+  @override
   String get sessionActionUnarchived => 'desarquivada';
+
+  @override
+  String get sessionActionUnpinned => 'desafixada';
 
   @override
   String get sessionArchive => 'Arquivar';
@@ -2657,6 +2663,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sessionDelete => 'Excluir';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'Tem certeza de que deseja excluir a conversa \"$title\"? Esta ação não pode ser desfeita.';
+  }
 
   @override
   String get sessionDeleteTitle => 'Excluir Conversa';

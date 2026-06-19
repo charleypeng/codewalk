@@ -2642,7 +2642,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sessionActionForked => 'ответвлено';
 
   @override
+  String get sessionActionPinned => 'закреплено';
+
+  @override
   String get sessionActionUnarchived => 'разархивировано';
+
+  @override
+  String get sessionActionUnpinned => 'откреплено';
 
   @override
   String get sessionArchive => 'В архив';
@@ -2663,6 +2669,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sessionDelete => 'Удалить';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'Вы уверены, что хотите удалить беседу \"$title\"? Это действие нельзя отменить.';
+  }
 
   @override
   String get sessionDeleteTitle => 'Удалить беседу';

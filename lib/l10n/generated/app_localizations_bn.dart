@@ -2620,7 +2620,13 @@ class AppLocalizationsBn extends AppLocalizations {
   String get sessionActionForked => 'কাঁটাযুক্ত';
 
   @override
+  String get sessionActionPinned => 'পিন করা';
+
+  @override
   String get sessionActionUnarchived => 'অসংরক্ষিত';
+
+  @override
+  String get sessionActionUnpinned => 'আনপিন করা';
 
   @override
   String get sessionArchive => 'আর্কাইভ করুন';
@@ -2641,6 +2647,11 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get sessionDelete => 'মুছে দিন';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'আপনি কি নিশ্চিত যে \"$title\" কথোপকথনটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।';
+  }
 
   @override
   String get sessionDeleteTitle => 'কথোপকথন মুছুন';

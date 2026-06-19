@@ -20,26 +20,23 @@ class SidebarSelectionIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!selected) {
-      return child;
-    }
-
     final colorScheme = Theme.of(context).colorScheme;
     return Stack(
       children: [
         Padding(padding: padding, child: child),
-        PositionedDirectional(
-          start: 0,
-          top: top,
-          bottom: bottom,
-          child: Container(
-            width: width,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(999),
+        if (selected)
+          PositionedDirectional(
+            start: 0,
+            top: top,
+            bottom: bottom,
+            child: Container(
+              width: width,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
           ),
-        ),
       ],
     );
   }

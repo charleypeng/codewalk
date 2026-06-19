@@ -2740,6 +2740,21 @@ void main() {
         expect(find.text('Archive'), findsOneWidget);
         expect(find.text('Fork'), findsOneWidget);
         expect(find.text('Delete'), findsOneWidget);
+
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+
+        await tester.longPress(
+          find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Pin'), findsOneWidget);
+        expect(find.text('Rename'), findsOneWidget);
+        expect(find.text('Share'), findsOneWidget);
+        expect(find.text('Archive'), findsOneWidget);
+        expect(find.text('Fork'), findsOneWidget);
+        expect(find.text('Delete'), findsOneWidget);
       },
     );
 

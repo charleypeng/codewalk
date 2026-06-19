@@ -2676,7 +2676,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sessionActionForked => 'bifurquée (forked)';
 
   @override
+  String get sessionActionPinned => 'épinglée';
+
+  @override
   String get sessionActionUnarchived => 'désarchivée';
+
+  @override
+  String get sessionActionUnpinned => 'désépinglée';
 
   @override
   String get sessionArchive => 'Archiver';
@@ -2697,6 +2703,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get sessionDelete => 'Supprimer';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return 'Voulez-vous vraiment supprimer la conversation \"$title\" ? Cette action est irréversible.';
+  }
 
   @override
   String get sessionDeleteTitle => 'Supprimer la conversation';

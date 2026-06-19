@@ -11,32 +11,28 @@ extension _ChatPageScaffold on _ChatPageState {
 
   Widget _buildSidebarNavigation({required bool closeOnSelect}) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: _buildServerStatusControl(closeOnSelect: closeOnSelect),
-            ),
-            const SizedBox(width: 8),
-            Tooltip(
-              message: context.l10n.chatSettings,
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: FilledButton.tonal(
-                  key: const ValueKey<String>('sidebar_settings_icon_button'),
-                  style: FilledButton.styleFrom(padding: EdgeInsets.zero),
-                  onPressed: () => unawaited(
-                    _openSettingsPage(closeOnSelect: closeOnSelect),
-                  ),
-                  child: const Icon(Symbols.settings),
-                ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildServerStatusControl(closeOnSelect: closeOnSelect),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: context.l10n.chatSettings,
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: FilledButton.tonal(
+                key: const ValueKey<String>('sidebar_settings_icon_button'),
+                style: FilledButton.styleFrom(padding: EdgeInsets.zero),
+                onPressed: () =>
+                    unawaited(_openSettingsPage(closeOnSelect: closeOnSelect)),
+                child: const Icon(Symbols.settings),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -95,271 +91,260 @@ extension _ChatPageScaffold on _ChatPageState {
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AnimatedSwitcher(
-                            duration: AppAnimations.standard,
-                            switchInCurve: AppAnimations.emphasizedCurve,
-                            switchOutCurve: AppAnimations.accelerateCurve,
-                            child: isSessionSearchExpanded
-                                ? SizedBox(
-                                    key: const ValueKey<String>(
-                                      'session_search_field',
-                                    ),
-                                    height: 40,
-                                    child: Focus(
-                                      onKeyEvent: (node, event) {
-                                        if (event is KeyDownEvent &&
-                                            event.logicalKey ==
-                                                LogicalKeyboardKey.escape) {
-                                          collapseSessionSearch(
-                                            clearQuery: true,
-                                          );
-                                          return KeyEventResult.handled;
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
-                                      child: TextField(
-                                        controller: _sessionSearchController,
-                                        focusNode: _sessionSearchFocusNode,
-                                        onTap: expandSessionSearch,
-                                        onChanged: (query) {
-                                          if (!_isSessionSearchExpanded) {
-                                            _setState(
-                                              () => _isSessionSearchExpanded =
-                                                  true,
-                                            );
-                                          }
-                                          chatProvider.setSessionSearchQuery(
-                                            query,
-                                          );
-                                        },
-                                        onTapOutside: (event) {
-                                          if (_sessionSearchController.text
-                                              .trim()
-                                              .isEmpty) {
-                                            collapseSessionSearch(
-                                              clearQuery: false,
-                                            );
-                                          } else {
-                                            // Dismiss keyboard but keep field
-                                            // visible (query is still active).
-                                            _sessionSearchFocusNode.unfocus();
-                                          }
-                                        },
-                                        onSubmitted: (value) {
-                                          if (value.trim().isEmpty) {
-                                            collapseSessionSearch(
-                                              clearQuery: false,
-                                            );
-                                          } else {
-                                            // Dismiss keyboard but keep field
-                                            // visible (query is still active).
-                                            _sessionSearchFocusNode.unfocus();
-                                          }
-                                        },
-                                        decoration: InputDecoration(
-                                          hintText: context
-                                              .l10n
-                                              .chatSearchConversations,
-                                          prefixIcon: const Icon(
-                                            Symbols.search,
-                                          ),
-                                          suffixIcon: IconButton(
-                                            icon: const Icon(Symbols.close),
-                                            onPressed: () =>
-                                                collapseSessionSearch(
-                                                  clearQuery: true,
-                                                ),
-                                            tooltip:
-                                                context.l10n.onboardingClear,
-                                          ),
-                                          isDense: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                vertical: 10,
-                                              ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Align(
-                                    key: const ValueKey<String>(
-                                      'session_search_title',
-                                    ),
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: Text(
-                                      context.l10n.chatConversations,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        AnimatedSize(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedSwitcher(
                           duration: AppAnimations.standard,
-                          curve: AppAnimations.emphasizedCurve,
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: AnimatedSwitcher(
-                            duration: AppAnimations.standard,
-                            switchInCurve: AppAnimations.emphasizedCurve,
-                            switchOutCurve: AppAnimations.accelerateCurve,
-                            child: isSessionSearchExpanded
-                                ? const SizedBox.shrink(
-                                    key: ValueKey<String>(
-                                      'session_header_actions_hidden',
-                                    ),
-                                  )
-                                : Row(
-                                    key: const ValueKey<String>(
-                                      'session_header_actions',
-                                    ),
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Symbols.search),
-                                        onPressed: expandSessionSearch,
-                                        tooltip: context
+                          switchInCurve: AppAnimations.emphasizedCurve,
+                          switchOutCurve: AppAnimations.accelerateCurve,
+                          child: isSessionSearchExpanded
+                              ? SizedBox(
+                                  key: const ValueKey<String>(
+                                    'session_search_field',
+                                  ),
+                                  height: 40,
+                                  child: Focus(
+                                    onKeyEvent: (node, event) {
+                                      if (event is KeyDownEvent &&
+                                          event.logicalKey ==
+                                              LogicalKeyboardKey.escape) {
+                                        collapseSessionSearch(clearQuery: true);
+                                        return KeyEventResult.handled;
+                                      }
+                                      return KeyEventResult.ignored;
+                                    },
+                                    child: TextField(
+                                      controller: _sessionSearchController,
+                                      focusNode: _sessionSearchFocusNode,
+                                      onTap: expandSessionSearch,
+                                      onChanged: (query) {
+                                        if (!_isSessionSearchExpanded) {
+                                          _setState(
+                                            () =>
+                                                _isSessionSearchExpanded = true,
+                                          );
+                                        }
+                                        chatProvider.setSessionSearchQuery(
+                                          query,
+                                        );
+                                      },
+                                      onTapOutside: (event) {
+                                        if (_sessionSearchController.text
+                                            .trim()
+                                            .isEmpty) {
+                                          collapseSessionSearch(
+                                            clearQuery: false,
+                                          );
+                                        } else {
+                                          // Dismiss keyboard but keep field
+                                          // visible (query is still active).
+                                          _sessionSearchFocusNode.unfocus();
+                                        }
+                                      },
+                                      onSubmitted: (value) {
+                                        if (value.trim().isEmpty) {
+                                          collapseSessionSearch(
+                                            clearQuery: false,
+                                          );
+                                        } else {
+                                          // Dismiss keyboard but keep field
+                                          // visible (query is still active).
+                                          _sessionSearchFocusNode.unfocus();
+                                        }
+                                      },
+                                      decoration: InputDecoration(
+                                        hintText: context
                                             .l10n
                                             .chatSearchConversations,
-                                      ),
-                                      _buildTourTarget(
-                                        showcaseKey: _projectContextTourKey,
-                                        targetKey: _projectContextTourTargetKey,
-                                        title: postOnboardingSidebarTourCopy(
-                                          context: context,
-                                          isMobile: false,
-                                          showConversationPane: true,
-                                        ).title,
-                                        description:
-                                            postOnboardingSidebarTourCopy(
-                                              context: context,
-                                              isMobile: false,
-                                              showConversationPane: true,
-                                            ).description,
-                                        tooltipPosition: TooltipPosition.right,
-                                        child: IconButton(
-                                          key: const ValueKey<String>(
-                                            'conversations_project_context_button',
+                                        prefixIcon: const Icon(Symbols.search),
+                                        suffixIcon: IconButton(
+                                          icon: const Icon(Symbols.close),
+                                          onPressed: () =>
+                                              collapseSessionSearch(
+                                                clearQuery: true,
+                                              ),
+                                          tooltip: context.l10n.onboardingClear,
+                                        ),
+                                        isDense: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
                                           ),
-                                          icon: const Icon(Symbols.folder_open),
-                                          onPressed: () => unawaited(
-                                            _openProjectSelectorDialog(),
-                                          ),
-                                          tooltip:
-                                              context.l10n.chatProjectContext,
                                         ),
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Symbols.add),
-                                        onPressed: _createNewSession,
-                                        tooltip: context.l10n.chatNewChat,
-                                      ),
-                                      if (!FeatureFlags.refreshlessRealtime)
-                                        IconButton(
-                                          icon: const Icon(Symbols.refresh),
-                                          onPressed: _refreshData,
-                                          tooltip: context.l10n.chatRefresh,
-                                        ),
-                                      if (onCollapseRequested != null)
-                                        IconButton(
-                                          key: const ValueKey<String>(
-                                            'hide_conversations_sidebar_button',
-                                          ),
-                                          icon: const Icon(
-                                            Symbols.left_panel_close_rounded,
-                                          ),
-                                          onPressed: onCollapseRequested,
-                                          tooltip: context
-                                              .l10n
-                                              .chatHideConversationsSidebar,
-                                        ),
-                                    ],
+                                    ),
                                   ),
-                          ),
+                                )
+                              : Align(
+                                  key: const ValueKey<String>(
+                                    'session_search_title',
+                                  ),
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(
+                                    context.l10n.chatConversations,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                ),
                         ),
-                      ],
-                    ),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        PopupMenuButton<SessionListFilter>(
-                          tooltip: context.l10n.chatFilterSessions,
-                          onSelected: chatProvider.setSessionListFilter,
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: SessionListFilter.active,
-                              child: Text(context.l10n.chatFilterActive),
-                            ),
-                            PopupMenuItem(
-                              value: SessionListFilter.archived,
-                              child: Text(context.l10n.chatFilterArchived),
-                            ),
-                            PopupMenuItem(
-                              value: SessionListFilter.all,
-                              child: Text(context.l10n.chatFilterAll),
-                            ),
-                          ],
-                          child: _headerChip(
-                            context,
-                            icon: Symbols.filter_list,
-                            label: switch (chatProvider.sessionListFilter) {
-                              SessionListFilter.active =>
-                                context.l10n.chatFilterActive,
-                              SessionListFilter.archived =>
-                                context.l10n.chatFilterArchived,
-                              SessionListFilter.all =>
-                                context.l10n.chatFilterAll,
-                            },
-                          ),
+                      ),
+                      AnimatedSize(
+                        duration: AppAnimations.standard,
+                        curve: AppAnimations.emphasizedCurve,
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: AnimatedSwitcher(
+                          duration: AppAnimations.standard,
+                          switchInCurve: AppAnimations.emphasizedCurve,
+                          switchOutCurve: AppAnimations.accelerateCurve,
+                          child: isSessionSearchExpanded
+                              ? const SizedBox.shrink(
+                                  key: ValueKey<String>(
+                                    'session_header_actions_hidden',
+                                  ),
+                                )
+                              : Row(
+                                  key: const ValueKey<String>(
+                                    'session_header_actions',
+                                  ),
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Symbols.search),
+                                      onPressed: expandSessionSearch,
+                                      tooltip:
+                                          context.l10n.chatSearchConversations,
+                                    ),
+                                    _buildTourTarget(
+                                      showcaseKey: _projectContextTourKey,
+                                      targetKey: _projectContextTourTargetKey,
+                                      title: postOnboardingSidebarTourCopy(
+                                        context: context,
+                                        isMobile: false,
+                                        showConversationPane: true,
+                                      ).title,
+                                      description:
+                                          postOnboardingSidebarTourCopy(
+                                            context: context,
+                                            isMobile: false,
+                                            showConversationPane: true,
+                                          ).description,
+                                      tooltipPosition: TooltipPosition.right,
+                                      child: IconButton(
+                                        key: const ValueKey<String>(
+                                          'conversations_project_context_button',
+                                        ),
+                                        icon: const Icon(Symbols.folder_open),
+                                        onPressed: () => unawaited(
+                                          _openProjectSelectorDialog(),
+                                        ),
+                                        tooltip:
+                                            context.l10n.chatProjectContext,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Symbols.add),
+                                      onPressed: _createNewSession,
+                                      tooltip: context.l10n.chatNewChat,
+                                    ),
+                                    if (!FeatureFlags.refreshlessRealtime)
+                                      IconButton(
+                                        icon: const Icon(Symbols.refresh),
+                                        onPressed: _refreshData,
+                                        tooltip: context.l10n.chatRefresh,
+                                      ),
+                                    if (onCollapseRequested != null)
+                                      IconButton(
+                                        key: const ValueKey<String>(
+                                          'hide_conversations_sidebar_button',
+                                        ),
+                                        icon: const Icon(
+                                          Symbols.left_panel_close_rounded,
+                                        ),
+                                        onPressed: onCollapseRequested,
+                                        tooltip: context
+                                            .l10n
+                                            .chatHideConversationsSidebar,
+                                      ),
+                                  ],
+                                ),
                         ),
-                        PopupMenuButton<SessionListSort>(
-                          tooltip: context.l10n.chatSortSessions,
-                          onSelected: chatProvider.setSessionListSort,
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: SessionListSort.recent,
-                              child: Text(context.l10n.chatSortMostRecent),
-                            ),
-                            PopupMenuItem(
-                              value: SessionListSort.oldest,
-                              child: Text(context.l10n.chatSortOldest),
-                            ),
-                            PopupMenuItem(
-                              value: SessionListSort.title,
-                              child: Text(context.l10n.chatSortTitle),
-                            ),
-                          ],
-                          child: _headerChip(
-                            context,
-                            icon: Symbols.sort,
-                            label: switch (chatProvider.sessionListSort) {
-                              SessionListSort.recent =>
-                                context.l10n.chatSortRecent,
-                              SessionListSort.oldest =>
-                                context.l10n.chatSortOldest,
-                              SessionListSort.title =>
-                                context.l10n.chatSortTitle,
-                            },
+                      ),
+                    ],
+                  ),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      PopupMenuButton<SessionListFilter>(
+                        tooltip: context.l10n.chatFilterSessions,
+                        onSelected: chatProvider.setSessionListFilter,
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: SessionListFilter.active,
+                            child: Text(context.l10n.chatFilterActive),
                           ),
+                          PopupMenuItem(
+                            value: SessionListFilter.archived,
+                            child: Text(context.l10n.chatFilterArchived),
+                          ),
+                          PopupMenuItem(
+                            value: SessionListFilter.all,
+                            child: Text(context.l10n.chatFilterAll),
+                          ),
+                        ],
+                        child: _headerChip(
+                          context,
+                          icon: Symbols.filter_list,
+                          label: switch (chatProvider.sessionListFilter) {
+                            SessionListFilter.active =>
+                              context.l10n.chatFilterActive,
+                            SessionListFilter.archived =>
+                              context.l10n.chatFilterArchived,
+                            SessionListFilter.all => context.l10n.chatFilterAll,
+                          },
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      PopupMenuButton<SessionListSort>(
+                        tooltip: context.l10n.chatSortSessions,
+                        onSelected: chatProvider.setSessionListSort,
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: SessionListSort.recent,
+                            child: Text(context.l10n.chatSortMostRecent),
+                          ),
+                          PopupMenuItem(
+                            value: SessionListSort.oldest,
+                            child: Text(context.l10n.chatSortOldest),
+                          ),
+                          PopupMenuItem(
+                            value: SessionListSort.title,
+                            child: Text(context.l10n.chatSortTitle),
+                          ),
+                        ],
+                        child: _headerChip(
+                          context,
+                          icon: Symbols.sort,
+                          label: switch (chatProvider.sessionListSort) {
+                            SessionListSort.recent =>
+                              context.l10n.chatSortRecent,
+                            SessionListSort.oldest =>
+                              context.l10n.chatSortOldest,
+                            SessionListSort.title => context.l10n.chatSortTitle,
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -863,14 +848,14 @@ extension _ChatPageScaffold on _ChatPageState {
     final selectedForeground = colorScheme.primary;
     final secondaryForeground = colorScheme.onSurfaceVariant;
 
-    return SidebarSelectionIndicator(
-      selected: selected,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: [
-            ListTile(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        children: [
+          SidebarSelectionIndicator(
+            selected: selected,
+            child: ListTile(
               key: ValueKey<String>('project_group_tile_${project.id}'),
               dense: _useDenseListTiles(context),
               visualDensity: isMobileLayout ? VisualDensity.compact : null,
@@ -967,158 +952,150 @@ extension _ChatPageScaffold on _ChatPageState {
                 ],
               ),
             ),
-            if (expanded) ...[
-              if (selected)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                  child: Column(
-                    children: [
-                      ChatSessionList(
-                        sessions: sessions,
-                        currentSession: chatProvider.currentSession,
-                        pinnedSessionIds: chatProvider.pinnedSessionIds,
-                        isSessionActive:
-                            chatProvider.isSessionActivelyResponding,
-                        sessionAttentionFor: chatProvider.sessionAttentionFor,
-                        isMobileLayout: isMobileLayout,
-                        onSessionSelected: (session) async {
-                          if (closeOnSelect) {
-                            unawaited(
-                              Future.delayed(
-                                const Duration(milliseconds: 50),
-                                () {
-                                  _closeDrawerIfNeeded(
-                                    closeOnSelect: closeOnSelect,
-                                  );
-                                },
-                              ),
-                            );
-                            await _handleSessionSwitch(session);
-                            return;
-                          }
+          ),
+          if (expanded) ...[
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                child: Column(
+                  children: [
+                    ChatSessionList(
+                      sessions: sessions,
+                      currentSession: chatProvider.currentSession,
+                      pinnedSessionIds: chatProvider.pinnedSessionIds,
+                      isSessionActive: chatProvider.isSessionActivelyResponding,
+                      sessionAttentionFor: chatProvider.sessionAttentionFor,
+                      isMobileLayout: isMobileLayout,
+                      onSessionSelected: (session) async {
+                        if (closeOnSelect) {
+                          unawaited(
+                            Future.delayed(
+                              const Duration(milliseconds: 50),
+                              () {
+                                _closeDrawerIfNeeded(
+                                  closeOnSelect: closeOnSelect,
+                                );
+                              },
+                            ),
+                          );
                           await _handleSessionSwitch(session);
-                        },
-                        onSessionDeleted: (session) async {
-                          await chatProvider.deleteSession(session.id);
-                        },
-                        onSessionRenamed: (session, title) {
-                          return chatProvider.renameSession(session, title);
-                        },
-                        onSessionShareToggled: (session) {
-                          return chatProvider.toggleSessionShare(session);
-                        },
-                        onSessionArchiveToggled: (session, archived) {
-                          return chatProvider.setSessionArchived(
-                            session,
-                            archived,
-                          );
-                        },
-                        onSessionPinToggled: (session) {
-                          return chatProvider.toggleSessionPinned(session);
-                        },
-                        onSessionForked: (session) async {
-                          final created = await chatProvider.forkSession(
-                            session,
-                          );
-                          if (!context.mounted) {
-                            return;
-                          }
-                          if (created == null) {
-                            _showChatPageMessageSnackBar(
-                              context.l10n.sessionForkFailed,
-                              hideCurrent: false,
-                            );
-                            return;
-                          }
+                          return;
+                        }
+                        await _handleSessionSwitch(session);
+                      },
+                      onSessionDeleted: (session) async {
+                        await chatProvider.deleteSession(session.id);
+                      },
+                      onSessionRenamed: (session, title) {
+                        return chatProvider.renameSession(session, title);
+                      },
+                      onSessionShareToggled: (session) {
+                        return chatProvider.toggleSessionShare(session);
+                      },
+                      onSessionArchiveToggled: (session, archived) {
+                        return chatProvider.setSessionArchived(
+                          session,
+                          archived,
+                        );
+                      },
+                      onSessionPinToggled: (session) {
+                        return chatProvider.toggleSessionPinned(session);
+                      },
+                      onSessionForked: (session) async {
+                        final created = await chatProvider.forkSession(session);
+                        if (!context.mounted) {
+                          return;
+                        }
+                        if (created == null) {
                           _showChatPageMessageSnackBar(
-                            context.l10n.sessionForked,
+                            context.l10n.sessionForkFailed,
                             hideCurrent: false,
                           );
-                          _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
-                        },
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(
-                          4,
-                          0,
-                          4,
-                          isMobileLayout ? 4 : 8,
-                        ),
-                        verticalTilePadding: isMobileLayout ? 3 : 1,
+                          return;
+                        }
+                        _showChatPageMessageSnackBar(
+                          context.l10n.sessionForked,
+                          hideCurrent: false,
+                        );
+                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                      },
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        4,
+                        0,
+                        4,
+                        isMobileLayout ? 4 : 8,
                       ),
-                      if (chatProvider.canLoadMoreSessions)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                          child: OutlinedButton.icon(
-                            onPressed: chatProvider.loadMoreSessions,
-                            icon: const Icon(Symbols.expand_more),
-                            label: Text(context.l10n.chatLoadMore),
-                          ),
+                      verticalTilePadding: isMobileLayout ? 3 : 1,
+                    ),
+                    if (chatProvider.canLoadMoreSessions)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        child: OutlinedButton.icon(
+                          onPressed: chatProvider.loadMoreSessions,
+                          icon: const Icon(Symbols.expand_more),
+                          label: Text(context.l10n.chatLoadMore),
                         ),
-                    ],
-                  ),
-                )
-              else if (preview.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    isMobileLayout ? 12 : 20,
-                    0,
-                    8,
-                    8,
-                  ),
-                  child: Column(
-                    children: [
-                      for (final session in preview)
-                        ListTile(
-                          key: ValueKey<String>(
-                            'project_group_session_preview_${project.id}_${session.id}',
-                          ),
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                          leading: const Icon(Symbols.chat_bubble, size: 16),
-                          title: Text(
-                            _sessionDisplayTitle(session),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          onTap: () => unawaited(
-                            _openSessionFromProjectGroup(
-                              projectId: project.id,
-                              sessionId: session.id,
-                              closeOnSelect: closeOnSelect,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                )
-              else
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    isMobileLayout ? 12 : 20,
-                    0,
-                    8,
-                    12,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      hasSnapshot
-                          ? context.l10n.sessionNoConversationsInProject
-                          : context.l10n.sessionOpenProjectToLoad,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                  ],
+                ),
+              )
+            else if (preview.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(isMobileLayout ? 12 : 20, 0, 8, 8),
+                child: Column(
+                  children: [
+                    for (final session in preview)
+                      ListTile(
+                        key: ValueKey<String>(
+                          'project_group_session_preview_${project.id}_${session.id}',
+                        ),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        leading: const Icon(Symbols.chat_bubble, size: 16),
+                        title: Text(
+                          _sessionDisplayTitle(session),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        onTap: () => unawaited(
+                          _openSessionFromProjectGroup(
+                            projectId: project.id,
+                            sessionId: session.id,
+                            closeOnSelect: closeOnSelect,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isMobileLayout ? 12 : 20,
+                  0,
+                  8,
+                  12,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    hasSnapshot
+                        ? context.l10n.sessionNoConversationsInProject
+                        : context.l10n.sessionOpenProjectToLoad,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-            ],
+              ),
           ],
-        ),
+        ],
       ),
     );
   }

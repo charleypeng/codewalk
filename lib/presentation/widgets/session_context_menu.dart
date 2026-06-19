@@ -59,6 +59,7 @@ class SessionContextMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
+      tooltip: context.l10n.chatSessionActions,
       icon: Icon(Symbols.more_vert, color: iconColor),
       onOpened: () =>
           logSessionContextMenuOpen(surface: surface, sessionId: session.id),
@@ -126,6 +127,7 @@ List<PopupMenuEntry<String>> buildSessionContextMenuEntries(
   required ChatSession session,
   required bool isPinned,
 }) {
+  final errorColor = Theme.of(context).colorScheme.error;
   return [
     PopupMenuItem(
       value: sessionMenuPin,
@@ -200,12 +202,9 @@ List<PopupMenuEntry<String>> buildSessionContextMenuEntries(
       value: sessionMenuDelete,
       child: Row(
         children: [
-          const Icon(Symbols.delete, color: Colors.red),
+          Icon(Symbols.delete, color: errorColor),
           const SizedBox(width: 8),
-          Text(
-            context.l10n.sessionDelete,
-            style: const TextStyle(color: Colors.red),
-          ),
+          Text(context.l10n.sessionDelete, style: TextStyle(color: errorColor)),
         ],
       ),
     ),
@@ -300,35 +299,74 @@ void _showRenameDialog(
     return;
   }
 
-  final controller = TextEditingController(text: session.title);
+  unawaited(
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _SessionRenameDialog(
+        initialTitle: session.title ?? '',
+        onSubmitted: (newTitle) async {
+          Navigator.of(dialogContext).pop();
+          final ok = await callback(session, newTitle);
+          if (!context.mounted) {
+            return;
+          }
+          if (!ok) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.l10n.sessionFailedRename)),
+            );
+          }
+        },
+      ),
+    ),
+  );
+}
 
-  Future<void> submitRename(BuildContext dialogContext) async {
-    final newTitle = controller.text.trim();
-    if (newTitle.isEmpty) {
-      return;
-    }
-    Navigator.of(dialogContext).pop();
-    final ok = await callback(session, newTitle);
-    if (!context.mounted) {
-      return;
-    }
-    if (!ok) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.sessionFailedRename)));
-    }
+class _SessionRenameDialog extends StatefulWidget {
+  const _SessionRenameDialog({
+    required this.initialTitle,
+    required this.onSubmitted,
+  });
+
+  final String initialTitle;
+  final Future<void> Function(String title) onSubmitted;
+
+  @override
+  State<_SessionRenameDialog> createState() => _SessionRenameDialogState();
+}
+
+class _SessionRenameDialogState extends State<_SessionRenameDialog> {
+  late final TextEditingController _controller;
+  var _submitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialTitle);
   }
 
-  showDialog<void>(
-    context: context,
-    builder: (dialogContext) => ModalPrimaryActionShortcuts(
-      onPrimaryAction: () {
-        unawaited(submitRename(dialogContext));
-      },
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitRename() async {
+    final newTitle = _controller.text.trim();
+    if (_submitted || newTitle.isEmpty) {
+      return;
+    }
+    _submitted = true;
+    await widget.onSubmitted(newTitle);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ModalPrimaryActionShortcuts(
+      onPrimaryAction: () => unawaited(_submitRename()),
       child: AlertDialog(
         title: Text(context.l10n.sessionRenameTitle),
         content: TextField(
-          controller: controller,
+          controller: _controller,
           autofocus: true,
           decoration: InputDecoration(
             hintText: context.l10n.sessionRenameHint,
@@ -337,19 +375,36 @@ void _showRenameDialog(
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Navigator.of(context).pop(),
             child: Text(context.l10n.commonCancel),
           ),
           TextButton(
-            onPressed: () {
-              unawaited(submitRename(dialogContext));
-            },
+            onPressed: () => unawaited(_submitRename()),
             child: Text(context.l10n.commonSave),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+}
+
+String _sessionActionSnackBarText(
+  BuildContext context, {
+  required String action,
+}) {
+  return context.l10n.chatSessionConversationNextAction(action);
+}
+
+String _sessionActionPinned(BuildContext context, {required bool pinned}) {
+  return pinned
+      ? context.l10n.sessionActionPinned
+      : context.l10n.sessionActionUnpinned;
+}
+
+String _sessionActionArchived(BuildContext context, {required bool archived}) {
+  return archived
+      ? context.l10n.sessionActionArchived
+      : context.l10n.sessionActionUnarchived;
 }
 
 Future<void> _toggleShare(
@@ -373,10 +428,13 @@ Future<void> _toggleShare(
     return;
   }
 
-  final nextAction = session.shared ? 'unshared' : 'shared';
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(context.l10n.chatSessionConversationNextAction(nextAction)),
+      content: Text(
+        session.shared
+            ? context.l10n.sessionUnshared
+            : context.l10n.sessionShared,
+      ),
     ),
   );
 }
@@ -420,7 +478,10 @@ Future<void> _toggleArchive(
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
-        archive ? 'Conversation archived' : 'Conversation unarchived',
+        _sessionActionSnackBarText(
+          context,
+          action: _sessionActionArchived(context, archived: archive),
+        ),
       ),
     ),
   );
@@ -444,7 +505,10 @@ Future<void> _togglePinned(
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
-        wasPinned ? 'Conversation unpinned' : 'Conversation pinned',
+        _sessionActionSnackBarText(
+          context,
+          action: _sessionActionPinned(context, pinned: !wasPinned),
+        ),
       ),
     ),
   );
@@ -471,7 +535,12 @@ void _showDeleteDialog(
     builder: (dialogContext) => AlertDialog(
       title: Text(context.l10n.sessionDeleteTitle),
       content: Text(
-        'Are you sure you want to delete the conversation "${SessionTitleFormatter.displayTitle(time: session.time, title: session.title)}"? This action cannot be undone.',
+        context.l10n.sessionDeleteConfirm(
+          SessionTitleFormatter.displayTitle(
+            time: session.time,
+            title: session.title,
+          ),
+        ),
       ),
       actions: [
         TextButton(

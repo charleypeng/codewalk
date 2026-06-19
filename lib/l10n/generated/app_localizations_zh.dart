@@ -2454,7 +2454,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionActionForked => '已派生';
 
   @override
+  String get sessionActionPinned => '已置顶';
+
+  @override
   String get sessionActionUnarchived => '已取消归档';
+
+  @override
+  String get sessionActionUnpinned => '已取消置顶';
 
   @override
   String get sessionArchive => '归档';
@@ -2475,6 +2481,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sessionDelete => '删除';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return '确定要删除对话“$title”吗？此操作无法撤消。';
+  }
 
   @override
   String get sessionDeleteTitle => '删除对话';

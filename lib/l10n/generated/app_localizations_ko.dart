@@ -2505,7 +2505,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionActionForked => '포크됨';
 
   @override
+  String get sessionActionPinned => '고정됨';
+
+  @override
   String get sessionActionUnarchived => '보관 취소됨';
+
+  @override
+  String get sessionActionUnpinned => '고정 해제됨';
 
   @override
   String get sessionArchive => '보관';
@@ -2526,6 +2532,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sessionDelete => '삭제';
+
+  @override
+  String sessionDeleteConfirm(String title) {
+    return '대화 \"$title\"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
+  }
 
   @override
   String get sessionDeleteTitle => '대화 삭제';
