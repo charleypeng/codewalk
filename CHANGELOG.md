@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.130.0 - 2026-06-19
+
+- fix(review): address sidebar menu findings
+- feat(sidebar): add row menus and flatten session surfaces
+- docs(sidebar): decide project icon discovery plan
+
 ## v1.129.0 - 2026-06-18
 
 - fix(review): restore data saver realtime transitions
