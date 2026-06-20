@@ -670,8 +670,11 @@ extension _ChatPageScaffold on _ChatPageState {
     );
     final selectedForeground = colorScheme.primary;
     final projectLabelColor = isCurrentSession
-        ? selectedForeground
+        ? colorScheme.onSecondaryContainer
         : colorScheme.onSurfaceVariant;
+    final projectChipColor = isCurrentSession
+        ? colorScheme.secondaryContainer
+        : colorScheme.surfaceContainerHighest;
     final titleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontWeight: (highlighted || isCurrentSession)
           ? FontWeight.w700
@@ -685,89 +688,132 @@ extension _ChatPageScaffold on _ChatPageState {
         session: session,
         actions: menuActions,
         surface: 'recent',
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            key: ValueKey<String>('recent_session_tile_${session.id}'),
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => unawaited(
-              _openSessionFromProjectGroup(
-                projectId: project.id,
-                sessionId: session.id,
-                closeOnSelect: closeOnSelect,
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                10,
-                isMobileLayout ? 8 : 2,
-                4,
-                isMobileLayout ? 6 : 2,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: KeyedSubtree(
-                      key: ValueKey<String>(
-                        'recent_session_title_${session.id}',
+        child: Builder(
+          builder: (tileContext) {
+            void openRecentContextMenu() {
+              final renderObject = tileContext.findRenderObject();
+              if (renderObject is! RenderBox) {
+                return;
+              }
+              unawaited(
+                showSessionContextMenu(
+                  tileContext,
+                  session: session,
+                  actions: menuActions,
+                  surface: 'recent',
+                  globalPosition: renderObject.localToGlobal(
+                    renderObject.size.center(Offset.zero),
+                  ),
+                  haptic: true,
+                ),
+              );
+            }
+
+            return CallbackShortcuts(
+              bindings: <ShortcutActivator, VoidCallback>{
+                const SingleActivator(LogicalKeyboardKey.contextMenu):
+                    openRecentContextMenu,
+                const SingleActivator(LogicalKeyboardKey.f10, shift: true):
+                    openRecentContextMenu,
+              },
+              child: Semantics(
+                label: context.l10n.chatSessionChatSessionSession(
+                  _sessionDisplayTitle(session),
+                ),
+                selected: isCurrentSession,
+                onLongPress: openRecentContextMenu,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    key: ValueKey<String>('recent_session_tile_${session.id}'),
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => unawaited(
+                      _openSessionFromProjectGroup(
+                        projectId: project.id,
+                        sessionId: session.id,
+                        closeOnSelect: closeOnSelect,
                       ),
-                      child: showBusySweep
-                          ? _ComposerStatusLanternText(
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        10,
+                        isMobileLayout ? 4 : 1,
+                        8,
+                        isMobileLayout ? 4 : 1,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: KeyedSubtree(
                               key: ValueKey<String>(
-                                'recent_session_busy_title_${session.id}',
+                                'recent_session_title_${session.id}',
                               ),
-                              text: _sessionDisplayTitle(session),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: titleStyle,
-                            )
-                          : Text(
-                              _sessionDisplayTitle(session),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: titleStyle,
+                              child: showBusySweep
+                                  ? _ComposerStatusLanternText(
+                                      key: ValueKey<String>(
+                                        'recent_session_busy_title_${session.id}',
+                                      ),
+                                      text: _sessionDisplayTitle(session),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: titleStyle,
+                                    )
+                                  : Text(
+                                      _sessionDisplayTitle(session),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: titleStyle,
+                                    ),
                             ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 96),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Symbols.folder_open,
-                          size: 13,
-                          color: projectLabelColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            _projectDisplayLabel(project),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: projectLabelColor),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 96),
+                            child: Ink(
+                              key: ValueKey<String>(
+                                'recent_session_project_${session.id}',
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: projectChipColor,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Symbols.folder_open,
+                                    size: 13,
+                                    color: projectLabelColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      _projectDisplayLabel(project),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(color: projectLabelColor),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 2),
-                  SessionContextMenuButton(
-                    session: session,
-                    actions: menuActions,
-                    surface: 'recent',
-                    compact: !isMobileLayout,
-                    iconColor: isCurrentSession
-                        ? selectedForeground
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

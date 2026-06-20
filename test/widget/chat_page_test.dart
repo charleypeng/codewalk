@@ -2734,13 +2734,10 @@ void main() {
               ),
             )
             .height;
-        final recentMenuButton = find.descendant(
-          of: find.byKey(
-            const ValueKey<String>('recent_session_tile_ses_recent'),
-          ),
-          matching: find.byType(SessionContextMenuButton),
+        final recentProjectChip = find.byKey(
+          const ValueKey<String>('recent_session_project_ses_recent'),
         );
-        final recentMenuRight = tester.getTopRight(recentMenuButton).dx;
+        final recentProjectRight = tester.getTopRight(recentProjectChip).dx;
         final sidebarRight = tester
             .getTopRight(
               find.byKey(
@@ -2751,23 +2748,19 @@ void main() {
 
         expect(recentTitleLeft - recentHeaderLeft, greaterThanOrEqualTo(0));
         expect(recentTitleLeft - recentHeaderLeft, lessThanOrEqualTo(6));
-        expect(sidebarRight - recentMenuRight, lessThanOrEqualTo(30));
-        expect(recentTileHeight, lessThanOrEqualTo(36));
-        expect(recentMenuButton, findsOneWidget);
+        expect(sidebarRight - recentProjectRight, lessThanOrEqualTo(18));
+        expect(recentTileHeight, lessThanOrEqualTo(30));
+        expect(recentProjectChip, findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(
+              const ValueKey<String>('recent_session_tile_ses_recent'),
+            ),
+            matching: find.byType(SessionContextMenuButton),
+          ),
+          findsNothing,
+        );
         expect(find.text('Project A'), findsWidgets);
-
-        await tester.tap(recentMenuButton);
-        await tester.pumpAndSettle();
-
-        expect(find.text('Pin'), findsOneWidget);
-        expect(find.text('Rename'), findsOneWidget);
-        expect(find.text('Share'), findsOneWidget);
-        expect(find.text('Archive'), findsOneWidget);
-        expect(find.text('Fork'), findsOneWidget);
-        expect(find.text('Delete'), findsOneWidget);
-
-        await tester.tapAt(const Offset(10, 10));
-        await tester.pumpAndSettle();
 
         await tester.tap(
           find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),

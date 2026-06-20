@@ -355,7 +355,7 @@
 - **Given** the `Recent sessions` section is visible
 - **When** the Conversations sidebar is rendered
 - **Then** the sidebar shows a `Recent sessions` section above the project groups with up to 5 recent root sessions from currently open/cached project contexts
-- **Then** each recent row stays on one line and includes a project label so the user can identify the source project quickly
+- **Then** each recent row stays on one compact line with only the session title and a right-aligned project chip so the user can identify the source project quickly
 - **Then** any recent row whose session is still busy shows the same sweep-style running indicator used by the composer, including sessions from other open/cached project contexts
 - **Then** if the currently open session also appears in `Recent sessions`, that row uses the same selected accent indicator and foreground emphasis as the project session list below it
 
@@ -367,8 +367,9 @@
 - **Then** dismissing that menu does not select or open the session row
 
 - **Given** a row is visible in `Recent sessions`
-- **When** the user opens the trailing menu, right-clicks the row on desktop, or long-presses the row on mobile
+- **When** the user right-clicks the row on desktop, uses the keyboard context-menu action, or long-presses/touch-holds the row
 - **Then** the row exposes the same session actions and dispatch behavior as the main Conversations list
+- **Then** recent rows do not show a visible trailing three-dot menu
 
 ### Project paths preserve the trailing folders in the sidebar
 
