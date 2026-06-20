@@ -187,9 +187,9 @@ class AppTheme {
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        shape: const RoundedRectangleBorder(
-          borderRadius: const BorderRadius.vertical(
-            top: const Radius.circular(AppShapes.extraLarge),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppShapes.extraLarge),
           ),
         ),
         showDragHandle: true,
@@ -457,6 +457,77 @@ class AppDensitySpacing {
         horizontal: 20,
         vertical: 14,
       ),
+    };
+  }
+
+  /// Padding for the composer row that hosts permission, agent, model, and
+  /// variant controls. The normal tier matches the pre-density layout.
+  static EdgeInsets composerModelControlsPadding(AppDensity density) {
+    return switch (density) {
+      AppDensity.extraDense => const EdgeInsets.fromLTRB(6, 0, 6, 1),
+      AppDensity.dense => const EdgeInsets.fromLTRB(8, 0, 8, 2),
+      AppDensity.normal => const EdgeInsets.fromLTRB(8, 0, 8, 2),
+      AppDensity.spacious => const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      AppDensity.extraSpacious => const EdgeInsets.fromLTRB(16, 0, 16, 6),
+    };
+  }
+
+  /// Horizontal gap between controls in the composer model-controls row.
+  static double composerModelControlGap(AppDensity density) {
+    return switch (density) {
+      AppDensity.extraDense => 4,
+      AppDensity.dense => 6,
+      AppDensity.normal => 8,
+      AppDensity.spacious => 10,
+      AppDensity.extraSpacious => 12,
+    };
+  }
+
+  /// Inner padding for compact chips in the composer model-controls row.
+  static EdgeInsets composerModelControlChipPadding(AppDensity density) {
+    return switch (density) {
+      AppDensity.extraDense => const EdgeInsets.symmetric(
+        horizontal: 4,
+        vertical: 0,
+      ),
+      AppDensity.dense => const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 0,
+      ),
+      AppDensity.normal => const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 0,
+      ),
+      AppDensity.spacious => const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 2,
+      ),
+      AppDensity.extraSpacious => const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 4,
+      ),
+    };
+  }
+
+  /// IconButton padding for the composer permission control.
+  static EdgeInsets composerModelControlButtonPadding(AppDensity density) {
+    return switch (density) {
+      AppDensity.extraDense => const EdgeInsets.all(4),
+      AppDensity.dense => const EdgeInsets.all(6),
+      AppDensity.normal => const EdgeInsets.all(8),
+      AppDensity.spacious => const EdgeInsets.all(10),
+      AppDensity.extraSpacious => const EdgeInsets.all(12),
+    };
+  }
+
+  /// IconButton minimum size for the composer permission control.
+  static Size composerModelControlButtonSize(AppDensity density) {
+    return switch (density) {
+      AppDensity.extraDense => const Size.square(32),
+      AppDensity.dense => const Size.square(36),
+      AppDensity.normal => const Size.square(40),
+      AppDensity.spacious => const Size.square(44),
+      AppDensity.extraSpacious => const Size.square(48),
     };
   }
 
