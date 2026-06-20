@@ -67,25 +67,33 @@ void main() {
       greaterThan(AppDensitySpacing.composerModelControlGap(AppDensity.normal)),
     );
     expect(
-      AppDensitySpacing.composerModelControlButtonSize(
-        AppDensity.extraDense,
-      ).width,
-      lessThan(
-        AppDensitySpacing.composerModelControlButtonSize(
-          AppDensity.normal,
-        ).width,
-      ),
+      AppDensitySpacing.composerModelControlButtonSize(AppDensity.extraDense),
+      const Size.square(40),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlButtonSize(AppDensity.dense),
+      const Size.square(40),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlButtonSize(AppDensity.spacious),
+      const Size.square(44),
     );
     expect(
       AppDensitySpacing.composerModelControlButtonSize(
         AppDensity.extraSpacious,
-      ).width,
-      greaterThan(
-        AppDensitySpacing.composerModelControlButtonSize(
-          AppDensity.normal,
-        ).width,
       ),
+      const Size.square(48),
     );
+    for (final density in AppDensity.values) {
+      expect(
+        AppDensitySpacing.composerModelControlButtonSize(density).width,
+        greaterThanOrEqualTo(40),
+      );
+      expect(
+        AppDensitySpacing.composerModelControlButtonSize(density).height,
+        greaterThanOrEqualTo(40),
+      );
+    }
   });
 
   test(

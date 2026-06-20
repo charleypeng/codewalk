@@ -521,10 +521,12 @@ class AppDensitySpacing {
   }
 
   /// IconButton minimum size for the composer permission control.
+  /// Compact tiers keep the previous 40dp floor because this safety-sensitive
+  /// control uses shrinkWrap to avoid composer overflow.
   static Size composerModelControlButtonSize(AppDensity density) {
     return switch (density) {
-      AppDensity.extraDense => const Size.square(32),
-      AppDensity.dense => const Size.square(36),
+      AppDensity.extraDense => const Size.square(40),
+      AppDensity.dense => const Size.square(40),
       AppDensity.normal => const Size.square(40),
       AppDensity.spacious => const Size.square(44),
       AppDensity.extraSpacious => const Size.square(48),
