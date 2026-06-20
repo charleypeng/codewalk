@@ -620,7 +620,7 @@ extension _ChatPageScaffold on _ChatPageState {
     return Padding(
       padding: EdgeInsets.fromLTRB(8, 8, 8, isMobileLayout ? 8 : 6),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
@@ -699,7 +699,12 @@ extension _ChatPageScaffold on _ChatPageState {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(10, isMobileLayout ? 8 : 6, 4, 6),
+              padding: EdgeInsets.fromLTRB(
+                10,
+                isMobileLayout ? 8 : 2,
+                4,
+                isMobileLayout ? 6 : 2,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -726,7 +731,8 @@ extension _ChatPageScaffold on _ChatPageState {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Flexible(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 96),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1029,7 +1035,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         4,
                         isMobileLayout ? 4 : 8,
                       ),
-                      verticalTilePadding: isMobileLayout ? 3 : 1,
+                      verticalTilePadding: isMobileLayout ? 3 : 0,
                     ),
                     if (chatProvider.canLoadMoreSessions)
                       Padding(

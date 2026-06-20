@@ -533,6 +533,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       session: session,
                       actions: menuActions,
                       surface: 'main',
+                      compact: !widget.isMobileLayout,
                       iconColor: isSelected
                           ? selectedForeground
                           : colorScheme.onSurfaceVariant,

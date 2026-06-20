@@ -70,7 +70,7 @@ class SessionContextMenuButton extends StatelessWidget {
               label: context.l10n.chatSessionActions,
               child: SizedBox.square(
                 dimension: 32,
-                child: Icon(Symbols.more_vert, size: 20, color: iconColor),
+                child: Icon(Symbols.more_vert, size: 18, color: iconColor),
               ),
             )
           : null,

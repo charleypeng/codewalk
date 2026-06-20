@@ -2740,10 +2740,19 @@ void main() {
           ),
           matching: find.byType(SessionContextMenuButton),
         );
+        final recentMenuRight = tester.getTopRight(recentMenuButton).dx;
+        final sidebarRight = tester
+            .getTopRight(
+              find.byKey(
+                const ValueKey<String>('sidebar_settings_icon_button'),
+              ),
+            )
+            .dx;
 
         expect(recentTitleLeft - recentHeaderLeft, greaterThanOrEqualTo(0));
         expect(recentTitleLeft - recentHeaderLeft, lessThanOrEqualTo(6));
-        expect(recentTileHeight, lessThanOrEqualTo(50));
+        expect(sidebarRight - recentMenuRight, lessThanOrEqualTo(30));
+        expect(recentTileHeight, lessThanOrEqualTo(36));
         expect(recentMenuButton, findsOneWidget);
         expect(find.text('Project A'), findsWidgets);
 
