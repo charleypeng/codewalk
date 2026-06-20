@@ -680,6 +680,7 @@ extension _ChatPageScaffold on _ChatPageState {
     );
     return SidebarSelectionIndicator(
       selected: isCurrentSession,
+      padding: const EdgeInsetsDirectional.only(start: 3),
       child: SessionContextMenuRegion(
         session: session,
         actions: menuActions,
@@ -752,6 +753,7 @@ extension _ChatPageScaffold on _ChatPageState {
                     session: session,
                     actions: menuActions,
                     surface: 'recent',
+                    compact: !isMobileLayout,
                     iconColor: isCurrentSession
                         ? selectedForeground
                         : colorScheme.onSurfaceVariant,

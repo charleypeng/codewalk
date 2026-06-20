@@ -2717,16 +2717,48 @@ void main() {
           find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),
           findsOneWidget,
         );
-        expect(
-          find.descendant(
-            of: find.byKey(
-              const ValueKey<String>('recent_session_tile_ses_recent'),
-            ),
-            matching: find.byType(SessionContextMenuButton),
+        final recentHeaderLeft = tester
+            .getTopLeft(find.text('Recent sessions'))
+            .dx;
+        final recentTitleLeft = tester
+            .getTopLeft(
+              find.byKey(
+                const ValueKey<String>('recent_session_title_ses_recent'),
+              ),
+            )
+            .dx;
+        final recentTileHeight = tester
+            .getSize(
+              find.byKey(
+                const ValueKey<String>('recent_session_tile_ses_recent'),
+              ),
+            )
+            .height;
+        final recentMenuButton = find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('recent_session_tile_ses_recent'),
           ),
-          findsOneWidget,
+          matching: find.byType(SessionContextMenuButton),
         );
+
+        expect(recentTitleLeft - recentHeaderLeft, greaterThanOrEqualTo(0));
+        expect(recentTitleLeft - recentHeaderLeft, lessThanOrEqualTo(6));
+        expect(recentTileHeight, lessThanOrEqualTo(50));
+        expect(recentMenuButton, findsOneWidget);
         expect(find.text('Project A'), findsWidgets);
+
+        await tester.tap(recentMenuButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Pin'), findsOneWidget);
+        expect(find.text('Rename'), findsOneWidget);
+        expect(find.text('Share'), findsOneWidget);
+        expect(find.text('Archive'), findsOneWidget);
+        expect(find.text('Fork'), findsOneWidget);
+        expect(find.text('Delete'), findsOneWidget);
+
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
 
         await tester.tap(
           find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),

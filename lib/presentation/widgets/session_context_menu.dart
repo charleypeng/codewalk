@@ -49,18 +49,31 @@ class SessionContextMenuButton extends StatelessWidget {
     required this.actions,
     required this.surface,
     this.iconColor,
+    this.compact = false,
   });
 
   final ChatSession session;
   final SessionContextMenuActions actions;
   final String surface;
   final Color? iconColor;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       tooltip: context.l10n.chatSessionActions,
-      icon: Icon(Symbols.more_vert, color: iconColor),
+      padding: compact ? EdgeInsets.zero : const EdgeInsets.all(8),
+      icon: compact ? null : Icon(Symbols.more_vert, color: iconColor),
+      child: compact
+          ? Semantics(
+              button: true,
+              label: context.l10n.chatSessionActions,
+              child: SizedBox.square(
+                dimension: 32,
+                child: Icon(Symbols.more_vert, size: 20, color: iconColor),
+              ),
+            )
+          : null,
       onOpened: () =>
           logSessionContextMenuOpen(surface: surface, sessionId: session.id),
       onSelected: (value) => unawaited(
