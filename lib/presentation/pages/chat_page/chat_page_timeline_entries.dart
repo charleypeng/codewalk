@@ -324,15 +324,31 @@ extension _ChatPageTimelineEntries on _ChatPageState {
     while (index < endExclusive) {
       final current = messages[index];
       if (current is! UserMessage) {
-        if (_shouldHideAssistantForBlockRenderMode(
-          current,
-          isSessionActivelyResponding: isSessionActivelyResponding,
-          chatRenderMode: chatRenderMode,
-        )) {
+        var assistantRunEnd = index;
+        if (current is AssistantMessage) {
+          assistantRunEnd += 1;
+          while (assistantRunEnd < endExclusive &&
+              messages[assistantRunEnd] is AssistantMessage) {
+            assistantRunEnd += 1;
+          }
+        }
+        if (current is AssistantMessage &&
+            _shouldBlockAssistantRunForBlockRenderMode(
+              messages: messages,
+              startIndex: index,
+              endExclusive: assistantRunEnd,
+              isSessionActivelyResponding: isSessionActivelyResponding,
+              chatRenderMode: chatRenderMode,
+            )) {
           entries.add(
             _TimelinePendingAssistantEntry(anchorMessageId: current.id),
           );
-          index += 1;
+          _traceFinalUi(
+            'timeline-block-render-active-orphan-assistant-run',
+            details:
+                'anchorMessageId=${current.id} assistantRunStart=$index assistantRunEnd=$assistantRunEnd',
+          );
+          index = assistantRunEnd;
           continue;
         }
         if (!isActivelyResponding &&
@@ -360,6 +376,22 @@ extension _ChatPageTimelineEntries on _ChatPageState {
       }
 
       if (assistantRunEnd == assistantRunStart) {
+        if (_shouldBlockAssistantRunForBlockRenderMode(
+          messages: messages,
+          startIndex: assistantRunStart,
+          endExclusive: assistantRunEnd,
+          isSessionActivelyResponding: isSessionActivelyResponding,
+          chatRenderMode: chatRenderMode,
+        )) {
+          entries.add(
+            _TimelinePendingAssistantEntry(anchorMessageId: current.id),
+          );
+          _traceFinalUi(
+            'timeline-block-render-awaiting-first-assistant-delta',
+            details:
+                'userMessageId=${current.id} assistantRunStart=$assistantRunStart',
+          );
+        }
         index += 1;
         continue;
       }
@@ -370,13 +402,12 @@ extension _ChatPageTimelineEntries on _ChatPageState {
           assistantRunEnd == endExclusive &&
           assistantWorkCompactionDecision.shouldDeferLatestCollapse;
       final shouldBlockActiveAssistantRun =
-          chatRenderMode == ChatRenderMode.block &&
-          assistantRunEnd == endExclusive &&
-          isSessionActivelyResponding &&
-          _assistantRunHasHiddenBlockRenderMessages(
+          _shouldBlockAssistantRunForBlockRenderMode(
             messages: messages,
             startIndex: assistantRunStart,
             endExclusive: assistantRunEnd,
+            isSessionActivelyResponding: isSessionActivelyResponding,
+            chatRenderMode: chatRenderMode,
           );
       if (shouldBlockActiveAssistantRun) {
         entries.add(
@@ -478,32 +509,26 @@ extension _ChatPageTimelineEntries on _ChatPageState {
     }
   }
 
-  bool _assistantRunHasHiddenBlockRenderMessages({
+  bool _shouldBlockAssistantRunForBlockRenderMode({
     required List<ChatMessage> messages,
     required int startIndex,
     required int endExclusive,
-  }) {
-    for (var index = startIndex; index < endExclusive; index += 1) {
-      final message = messages[index];
-      if (message is AssistantMessage &&
-          !message.isCompleted &&
-          message.error == null) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _shouldHideAssistantForBlockRenderMode(
-    ChatMessage message, {
     required bool isSessionActivelyResponding,
     required ChatRenderMode chatRenderMode,
   }) {
-    return chatRenderMode == ChatRenderMode.block &&
-        isSessionActivelyResponding &&
-        message is AssistantMessage &&
-        !message.isCompleted &&
-        message.error == null;
+    if (chatRenderMode != ChatRenderMode.block ||
+        !isSessionActivelyResponding ||
+        endExclusive != messages.length) {
+      return false;
+    }
+    if (startIndex == endExclusive) {
+      return true;
+    }
+    final finalMessage = messages[endExclusive - 1];
+    if (finalMessage is! AssistantMessage || finalMessage.error != null) {
+      return false;
+    }
+    return !_isSuccessfulFinalAssistantMessage(finalMessage);
   }
 
   void _appendRangeWithAssistantToolMerging({

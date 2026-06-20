@@ -13472,6 +13472,167 @@ void main() {
   });
 
   testWidgets(
+    'block render mode hides active first-token and tool-only response',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_block_render_tool_only';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Block Render Tool Session',
+          ),
+        ],
+      );
+      final userMessage = UserMessage(
+        id: 'msg_block_tool_user',
+        sessionId: sessionId,
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_block_tool_user',
+            messageId: 'msg_block_tool_user',
+            sessionId: sessionId,
+            text: 'run tools first',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = <ChatMessage>[userMessage];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        sessionId: SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      _disableAutomaticUpdateChecksForTest(localDataSource);
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      await settingsProvider.setChatRenderMode(ChatRenderMode.block);
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, settingsProvider: settingsProvider),
+      );
+      await _pumpUiFrames(tester);
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      expect(provider.isCurrentSessionActivelyResponding, isTrue);
+      expect(find.text('Generating response'), findsOneWidget);
+      expect(find.text('run tools first'), findsOneWidget);
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        userMessage,
+        AssistantMessage(
+          id: 'msg_block_tool_1',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_block_tool_1',
+              messageId: 'msg_block_tool_1',
+              sessionId: sessionId,
+              callId: 'call_block_tool_1',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/tmp/block-tool',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1200),
+                  end: DateTime.fromMillisecondsSinceEpoch(1205),
+                ),
+              ),
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_block_tool_2',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1250),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_block_tool_2',
+              messageId: 'msg_block_tool_2',
+              sessionId: sessionId,
+              callId: 'call_block_tool_2',
+              tool: 'read',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'filePath': 'README.md'},
+                output: 'hidden tool output',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1250),
+                  end: DateTime.fromMillisecondsSinceEpoch(1255),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ];
+
+      await provider.refreshActiveSessionView(
+        reason: 'widget-block-render-tool-only',
+        includeStatus: true,
+        preferDelta: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      expect(find.text('Generating response'), findsOneWidget);
+      expect(find.text('Details'), findsNothing);
+      expect(find.text('hidden tool output'), findsNothing);
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ...repository.messagesBySession[sessionId]!,
+        AssistantMessage(
+          id: 'msg_block_tool_final',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1500),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1510),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_block_tool_final',
+              messageId: 'msg_block_tool_final',
+              sessionId: sessionId,
+              text: 'final answer after tools',
+            ),
+          ],
+        ),
+      ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        sessionId: SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      await provider.refreshActiveSessionView(
+        reason: 'widget-block-render-tool-final',
+        includeStatus: true,
+        preferDelta: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      expect(find.text('Generating response'), findsNothing);
+      expect(find.text('final answer after tools'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'delta refresh promotes latest server tail until fallback full fetch resolves',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

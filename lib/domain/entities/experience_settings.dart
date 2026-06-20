@@ -573,6 +573,7 @@ ChatRenderMode chatRenderModeFromKey(String value) {
   final key = value.trim().toLowerCase();
   return switch (key) {
     'block' => ChatRenderMode.block,
+    // Historical aliases from early drafts of the setting key.
     'blocks' => ChatRenderMode.block,
     'sorted' => ChatRenderMode.block,
     _ => ChatRenderMode.live,
