@@ -2,6 +2,13 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.131.0 - 2026-06-20
+
+- fix: constrain composer chip avatars
+- fix: preserve composer permission hit target
+- merge: integrate composer density controls
+- fix: respect density in composer model controls
+
 ## v1.130.3 - 2026-06-20
 
 - fix(sidebar): simplify recent session rows
