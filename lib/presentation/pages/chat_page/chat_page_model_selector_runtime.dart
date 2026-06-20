@@ -220,6 +220,10 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 ),
                 side: BorderSide.none,
                 backgroundColor: colorScheme.surfaceContainerHighest,
+                avatarBoxConstraints: const BoxConstraints.tightFor(
+                  width: 16,
+                  height: 16,
+                ),
                 padding: chipPadding,
                 visualDensity: controlVisualDensity,
               ),
@@ -234,6 +238,10 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   avatar: const Icon(Symbols.refresh_rounded, size: 16),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
+                  avatarBoxConstraints: const BoxConstraints.tightFor(
+                    width: 16,
+                    height: 16,
+                  ),
                   padding: chipPadding,
                   visualDensity: controlVisualDensity,
                   label: Text(
