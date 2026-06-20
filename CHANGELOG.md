@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.132.0 - 2026-06-20
+
+- fix(chat): hide active block-render work runs
+- feat(chat): add block response render mode (#72)
+
 ## v1.131.0 - 2026-06-20
 
 - fix: constrain composer chip avatars
