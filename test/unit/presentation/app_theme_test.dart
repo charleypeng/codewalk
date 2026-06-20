@@ -39,6 +39,55 @@ void main() {
     );
   });
 
+  test('scales composer model controls by density', () {
+    expect(
+      AppDensitySpacing.composerModelControlsPadding(AppDensity.normal),
+      const EdgeInsets.fromLTRB(8, 0, 8, 2),
+    );
+    expect(AppDensitySpacing.composerModelControlGap(AppDensity.normal), 8);
+    expect(
+      AppDensitySpacing.composerModelControlChipPadding(AppDensity.normal),
+      const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlButtonPadding(AppDensity.normal),
+      const EdgeInsets.all(8),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlButtonSize(AppDensity.normal),
+      const Size.square(40),
+    );
+
+    expect(
+      AppDensitySpacing.composerModelControlGap(AppDensity.extraDense),
+      lessThan(AppDensitySpacing.composerModelControlGap(AppDensity.normal)),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlGap(AppDensity.extraSpacious),
+      greaterThan(AppDensitySpacing.composerModelControlGap(AppDensity.normal)),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlButtonSize(
+        AppDensity.extraDense,
+      ).width,
+      lessThan(
+        AppDensitySpacing.composerModelControlButtonSize(
+          AppDensity.normal,
+        ).width,
+      ),
+    );
+    expect(
+      AppDensitySpacing.composerModelControlButtonSize(
+        AppDensity.extraSpacious,
+      ).width,
+      greaterThan(
+        AppDensitySpacing.composerModelControlButtonSize(
+          AppDensity.normal,
+        ).width,
+      ),
+    );
+  });
+
   test(
     'resolves OpenCode theme presets without affecting classic fallback',
     () {

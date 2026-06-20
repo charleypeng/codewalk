@@ -32,12 +32,21 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     final showProvidersRetryHint =
         chatProvider.providersRefreshState == ChatProvidersRefreshState.failed;
     final isCompact = context.windowSizeClass.isCompact;
+    final density = settingsProvider?.appDensity ?? AppDensity.normal;
+    final modelControlsPadding = AppDensitySpacing.composerModelControlsPadding(
+      density,
+    );
+    final controlGap = AppDensitySpacing.composerModelControlGap(density);
+    final chipPadding = AppDensitySpacing.composerModelControlChipPadding(
+      density,
+    );
+    final controlVisualDensity = AppTheme.visualDensityFor(density);
     const double modelChipMaxWidth = 240;
     const double agentChipMaxWidth = 200;
     const double variantChipMaxWidth = 180;
-    final double compactChipMaxWidth = 160;
+    const double compactChipMaxWidth = 160;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
+      padding: modelControlsPadding,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -69,11 +78,15 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       shape: const WidgetStatePropertyAll<OutlinedBorder>(
                         CircleBorder(),
                       ),
-                      padding: const WidgetStatePropertyAll<EdgeInsetsGeometry>(
-                        EdgeInsets.all(8),
+                      padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(
+                        AppDensitySpacing.composerModelControlButtonPadding(
+                          density,
+                        ),
                       ),
-                      minimumSize: const WidgetStatePropertyAll<Size>(
-                        Size(40, 40),
+                      minimumSize: WidgetStatePropertyAll<Size>(
+                        AppDensitySpacing.composerModelControlButtonSize(
+                          density,
+                        ),
                       ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       foregroundColor: WidgetStateProperty.resolveWith<Color?>((
@@ -113,7 +126,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: controlGap),
             ],
             if (!isSubConversation) ...[
               Tooltip(
@@ -133,6 +146,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       backgroundColor: selectedAgentColor?.withValues(
                         alpha: 0.16,
                       ),
+                      padding: chipPadding,
+                      visualDensity: controlVisualDensity,
                       label: Text(
                         selectedAgent == null
                             ? context.l10n.chatChooseAgent
@@ -156,7 +171,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: controlGap),
             ],
             Tooltip(
               message: isSubConversation
@@ -172,6 +187,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       : const ValueKey<String>('model_selector_button'),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
+                  padding: chipPadding,
+                  visualDensity: controlVisualDensity,
                   label: Text(
                     selectedModelLabel,
                     overflow: TextOverflow.ellipsis,
@@ -185,7 +202,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
               ),
             ),
             if (showProvidersLoadingHint) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: controlGap),
               Chip(
                 avatar: SizedBox(
                   width: 14,
@@ -203,9 +220,11 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 ),
                 side: BorderSide.none,
                 backgroundColor: colorScheme.surfaceContainerHighest,
+                padding: chipPadding,
+                visualDensity: controlVisualDensity,
               ),
             ] else if (showProvidersRetryHint) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: controlGap),
               Tooltip(
                 message:
                     chatProvider.providersRefreshErrorMessage ??
@@ -215,6 +234,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   avatar: const Icon(Symbols.refresh_rounded, size: 16),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
+                  padding: chipPadding,
+                  visualDensity: controlVisualDensity,
                   label: Text(
                     context.l10n.modelRetryModels,
                     overflow: TextOverflow.ellipsis,
@@ -229,7 +250,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             if (isSubConversation
                 ? selectedVariantLabel != null
                 : variants.isNotEmpty) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: controlGap),
               Tooltip(
                 message: isSubConversation
                     ? context.l10n.chatEffortLockedSubConversation
@@ -249,6 +270,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                           : const ValueKey<String>('variant_selector_button'),
                       side: BorderSide.none,
                       shape: const StadiumBorder(),
+                      padding: chipPadding,
+                      visualDensity: controlVisualDensity,
                       label: Text(
                         selectedVariantLabel ??
                             chatProvider.selectedVariantLabel,
