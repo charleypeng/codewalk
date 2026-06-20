@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.130.1 - 2026-06-20
+
+- fix(sidebar): tighten recent session rows
+
 ## v1.130.0 - 2026-06-19
 
 - fix(review): address sidebar menu findings
