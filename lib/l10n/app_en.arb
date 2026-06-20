@@ -463,6 +463,12 @@
   "@chatAddServerToStart": {
     "description": "CodeWalk UI string — chatAddServerToStart"
   },
+  "@chatBlockResponsePendingDescription": {
+    "description": "CodeWalk UI string — chatBlockResponsePendingDescription"
+  },
+  "@chatBlockResponsePendingTitle": {
+    "description": "CodeWalk UI string — chatBlockResponsePendingTitle"
+  },
   "@chatAppBarMoreActions": {
     "description": "CodeWalk UI string — chatAppBarMoreActions"
   },
@@ -3147,6 +3153,24 @@
   "@settingsBehaviorCellularDataSaver": {
     "description": "CodeWalk UI string — settingsBehaviorCellularDataSaver"
   },
+  "@settingsBehaviorChatRenderMode": {
+    "description": "CodeWalk UI string — settingsBehaviorChatRenderMode"
+  },
+  "@settingsBehaviorChatRenderModeBlock": {
+    "description": "CodeWalk UI string — settingsBehaviorChatRenderModeBlock"
+  },
+  "@settingsBehaviorChatRenderModeBlockDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorChatRenderModeBlockDescription"
+  },
+  "@settingsBehaviorChatRenderModeDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorChatRenderModeDescription"
+  },
+  "@settingsBehaviorChatRenderModeLive": {
+    "description": "CodeWalk UI string — settingsBehaviorChatRenderModeLive"
+  },
+  "@settingsBehaviorChatRenderModeLiveDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorChatRenderModeLiveDescription"
+  },
   "@settingsBehaviorConfigDeferred": {
     "description": "CodeWalk UI string — settingsBehaviorConfigDeferred"
   },
@@ -4497,6 +4521,8 @@
   "chatActiveServerUnhealthy": "Active server is unhealthy. Sends will try once and fail fast until recovery.",
   "chatActiveServerUnhealthyLabel": "Active server is unhealthy",
   "chatAddServerToStart": "Add a server to start chatting.",
+  "chatBlockResponsePendingDescription": "The answer will appear as a single block when this turn finishes.",
+  "chatBlockResponsePendingTitle": "Generating response",
   "chatAppBarMoreActions": "More actions",
   "chatAppBarPinAction": "Pin to app bar",
   "chatAppBarPinDescription": "This action will stay visible outside the menu.",
@@ -5277,6 +5303,12 @@
   "settingsBehaviorAutoupdateCaveat": "Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.",
   "settingsBehaviorAutoupdateHelp": "Controls upstream OpenCode runtime updates, not CodeWalk app update checks.",
   "settingsBehaviorCellularDataSaver": "Cellular data saver",
+  "settingsBehaviorChatRenderMode": "Chat render mode",
+  "settingsBehaviorChatRenderModeBlock": "Block",
+  "settingsBehaviorChatRenderModeBlockDescription": "Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.",
+  "settingsBehaviorChatRenderModeDescription": "Choose whether assistant responses appear as they stream or reveal after the current turn settles.",
+  "settingsBehaviorChatRenderModeLive": "Live",
+  "settingsBehaviorChatRenderModeLiveDescription": "Show assistant text, reasoning, and tool activity as OpenCode streams events.",
   "settingsBehaviorConfigDeferred": "CodeWalk will apply this OpenCode setting after the current response finishes.",
   "settingsBehaviorConfigUpdateFailed": "Could not update the OpenCode {field}.",
   "settingsBehaviorConversationUsername": "Conversation username",

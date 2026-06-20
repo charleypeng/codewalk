@@ -908,6 +908,18 @@ abstract class AppLocalizations {
   /// **'Add a server to start chatting.'**
   String get chatAddServerToStart;
 
+  /// CodeWalk UI string — chatBlockResponsePendingDescription
+  ///
+  /// In en, this message translates to:
+  /// **'The answer will appear as a single block when this turn finishes.'**
+  String get chatBlockResponsePendingDescription;
+
+  /// CodeWalk UI string — chatBlockResponsePendingTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Generating response'**
+  String get chatBlockResponsePendingTitle;
+
   /// CodeWalk UI string — chatAppBarMoreActions
   ///
   /// In en, this message translates to:
@@ -5592,6 +5604,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cellular data saver'**
   String get settingsBehaviorCellularDataSaver;
+
+  /// CodeWalk UI string — settingsBehaviorChatRenderMode
+  ///
+  /// In en, this message translates to:
+  /// **'Chat render mode'**
+  String get settingsBehaviorChatRenderMode;
+
+  /// CodeWalk UI string — settingsBehaviorChatRenderModeBlock
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get settingsBehaviorChatRenderModeBlock;
+
+  /// CodeWalk UI string — settingsBehaviorChatRenderModeBlockDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.'**
+  String get settingsBehaviorChatRenderModeBlockDescription;
+
+  /// CodeWalk UI string — settingsBehaviorChatRenderModeDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Choose whether assistant responses appear as they stream or reveal after the current turn settles.'**
+  String get settingsBehaviorChatRenderModeDescription;
+
+  /// CodeWalk UI string — settingsBehaviorChatRenderModeLive
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get settingsBehaviorChatRenderModeLive;
+
+  /// CodeWalk UI string — settingsBehaviorChatRenderModeLiveDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Show assistant text, reasoning, and tool activity as OpenCode streams events.'**
+  String get settingsBehaviorChatRenderModeLiveDescription;
 
   /// CodeWalk UI string — settingsBehaviorConfigDeferred
   ///

@@ -75,6 +75,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             const SizedBox(height: 16),
             _buildDataSaverCard(context, settingsProvider),
             const SizedBox(height: 16),
+            _buildChatRenderModeCard(context, settingsProvider),
+            const SizedBox(height: 16),
             Card(
               child: Column(
                 children: [
@@ -599,6 +601,82 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               DataSaverLevel.aggressive =>
                 context.l10n.behaviorDataSaverAggressiveDescription,
             }, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatRenderModeCard(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    final selectedMode = settingsProvider.chatRenderMode;
+    final description = switch (selectedMode) {
+      ChatRenderMode.live =>
+        context.l10n.settingsBehaviorChatRenderModeLiveDescription,
+      ChatRenderMode.block =>
+        context.l10n.settingsBehaviorChatRenderModeBlockDescription,
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SettingsProvenanceChip(
+              provenance: SettingsProvenance.codewalkLocal,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.settingsBehaviorChatRenderMode,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.settingsBehaviorChatRenderModeDescription,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SegmentedButton<ChatRenderMode>(
+                    key: const ValueKey<String>('settings_chat_render_mode'),
+                    segments: [
+                      ButtonSegment<ChatRenderMode>(
+                        value: ChatRenderMode.live,
+                        icon: const Icon(Symbols.stream_rounded),
+                        label: Text(
+                          context.l10n.settingsBehaviorChatRenderModeLive,
+                        ),
+                      ),
+                      ButtonSegment<ChatRenderMode>(
+                        value: ChatRenderMode.block,
+                        icon: const Icon(Symbols.article_rounded),
+                        label: Text(
+                          context.l10n.settingsBehaviorChatRenderModeBlock,
+                        ),
+                      ),
+                    ],
+                    selected: <ChatRenderMode>{selectedMode},
+                    onSelectionChanged: (selection) {
+                      if (selection.isEmpty) {
+                        return;
+                      }
+                      unawaited(
+                        settingsProvider.setChatRenderMode(selection.first),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(description, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),

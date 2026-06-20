@@ -498,6 +498,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ajoutez un serveur pour commencer à discuter.';
 
   @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
+
+  @override
   String get chatAppBarMoreActions => 'Plus d\'actions';
 
   @override
@@ -3221,6 +3228,27 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsBehaviorCellularDataSaver =>
       'Économiseur de données mobiles';
+
+  @override
+  String get settingsBehaviorChatRenderMode => 'Chat render mode';
+
+  @override
+  String get settingsBehaviorChatRenderModeBlock => 'Block';
+
+  @override
+  String get settingsBehaviorChatRenderModeBlockDescription =>
+      'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.';
+
+  @override
+  String get settingsBehaviorChatRenderModeDescription =>
+      'Choose whether assistant responses appear as they stream or reveal after the current turn settles.';
+
+  @override
+  String get settingsBehaviorChatRenderModeLive => 'Live';
+
+  @override
+  String get settingsBehaviorChatRenderModeLiveDescription =>
+      'Show assistant text, reasoning, and tool activity as OpenCode streams events.';
 
   @override
   String get settingsBehaviorConfigDeferred =>

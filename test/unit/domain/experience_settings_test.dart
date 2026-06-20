@@ -39,6 +39,40 @@ void main() {
     });
   });
 
+  group('chat render mode serialization', () {
+    test('defaults to live rendering', () {
+      expect(ExperienceSettings.defaults().chatRenderMode, ChatRenderMode.live);
+    });
+
+    test('serializes and deserializes block rendering', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        chatRenderMode: ChatRenderMode.block,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['chatRenderMode'], 'block');
+      expect(restored.chatRenderMode, ChatRenderMode.block);
+    });
+
+    test('keeps legacy sorted key mapped to block rendering', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'chatRenderMode': 'sorted',
+      });
+
+      expect(restored.chatRenderMode, ChatRenderMode.block);
+    });
+
+    test('falls back to live rendering for unknown keys', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'chatRenderMode': 'unknown',
+      });
+
+      expect(restored.chatRenderMode, ChatRenderMode.live);
+    });
+  });
+
   group('locale serialization', () {
     test('defaults to system locale', () {
       expect(ExperienceSettings.defaults().localeCode, isNull);

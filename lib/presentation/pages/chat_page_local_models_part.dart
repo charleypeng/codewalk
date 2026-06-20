@@ -79,6 +79,15 @@ class _TimelinePermissionPromptEntry extends _TimelineEntry {
   String get key => 'timeline_permission_prompt_${request.id}';
 }
 
+class _TimelinePendingAssistantEntry extends _TimelineEntry {
+  const _TimelinePendingAssistantEntry({required this.anchorMessageId});
+
+  final String anchorMessageId;
+
+  @override
+  String get key => 'timeline_pending_assistant_$anchorMessageId';
+}
+
 class _TimelineCollapsedHistoryEntry extends _TimelineEntry {
   const _TimelineCollapsedHistoryEntry({
     required this.group,

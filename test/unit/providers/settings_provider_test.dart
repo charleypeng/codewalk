@@ -343,6 +343,32 @@ void main() {
       expect(third.appDensity, AppDensity.extraDense);
     });
 
+    test('persists chat render mode preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.chatRenderMode, ChatRenderMode.live);
+      await first.setChatRenderMode(ChatRenderMode.block);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.chatRenderMode, ChatRenderMode.block);
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(settingsJson['chatRenderMode'], 'block');
+    });
+
     test('persists task list visibility and collapsed state', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(
@@ -495,7 +521,8 @@ void main() {
         // plugin can hard-crash the app (issue #43). On Linux/macOS the
         // selection persists as-is. On Android, iOS, and web it falls back to
         // Native for the slim-build engines.
-        final expectedEngine = defaultTargetPlatform == TargetPlatform.linux ||
+        final expectedEngine =
+            defaultTargetPlatform == TargetPlatform.linux ||
                 defaultTargetPlatform == TargetPlatform.macOS
             ? SpeechToTextEngine.moonshine
             : SpeechToTextEngine.native;
@@ -546,17 +573,20 @@ void main() {
             TargetPlatform.linux => engine,
             TargetPlatform.macOS => engine,
             // iOS: sherpa stays, others migrate; web: sherpa stays, others migrate.
-            TargetPlatform.iOS => engine == SpeechToTextEngine.sherpa
-                ? SpeechToTextEngine.sherpa
-                : SpeechToTextEngine.native,
-            _ => engine == SpeechToTextEngine.sherpa
-                ? SpeechToTextEngine.sherpa
-                : SpeechToTextEngine.native,
+            TargetPlatform.iOS =>
+              engine == SpeechToTextEngine.sherpa
+                  ? SpeechToTextEngine.sherpa
+                  : SpeechToTextEngine.native,
+            _ =>
+              engine == SpeechToTextEngine.sherpa
+                  ? SpeechToTextEngine.sherpa
+                  : SpeechToTextEngine.native,
           };
           expect(
             provider.speechToTextEngine,
             expectedEngine,
-            reason: 'platform=${defaultTargetPlatform.name} engine=${engine.name}',
+            reason:
+                'platform=${defaultTargetPlatform.name} engine=${engine.name}',
           );
         }
       },
@@ -1370,7 +1400,6 @@ DioClient _buildDioClient(_MockDioAdapter adapter) {
   dioClient.dio.httpClientAdapter = adapter;
   return dioClient;
 }
-
 
 dynamic _decodeRequestData(dynamic data) {
   if (data is String) {

@@ -456,11 +456,15 @@
 
 ## Chat
 
-### Messages are streamed in real time
+### Assistant responses can render live or as a block
 
 - **Given** a connected server and an active session
 - **When** the user sends a message
-- **Then** the message is sent to the OpenCode server and the assistant's response streams back via SSE, rendering in real time as text arrives
+- **Then** the message is sent to the OpenCode server and the assistant's response streams back via SSE
+- **Then** `Settings > Behavior > Chat render mode` defaults to `Live`, rendering assistant text, reasoning, and tool activity in real time as events arrive
+- **Then** when chat render mode is `Block`, the OpenCode stream remains active but incomplete assistant text, reasoning, and tool cards for the current turn stay hidden behind a compact generation placeholder
+- **Then** block mode reveals the assistant turn after that turn settles, including the final text and any completed tool or reasoning entries
+- **Then** if a response is cancelled or finishes with an error, partial or error content is revealed instead of remaining hidden
 
 ### First send from draft bootstraps a session automatically
 

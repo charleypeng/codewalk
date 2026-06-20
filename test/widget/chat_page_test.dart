@@ -12,6 +12,7 @@ import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
@@ -13355,6 +13356,120 @@ void main() {
       expect(find.text('draft answer'), findsNothing);
     },
   );
+
+  testWidgets('block render mode hides active partial response until final', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const sessionId = 'ses_block_render';
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: sessionId,
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Block Render Session',
+        ),
+      ],
+    );
+    repository.messagesBySession[sessionId] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_block_user',
+        sessionId: sessionId,
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_block_user',
+            messageId: 'msg_block_user',
+            sessionId: sessionId,
+            text: 'explain slowly',
+          ),
+        ],
+      ),
+      AssistantMessage(
+        id: 'msg_block_assistant',
+        sessionId: sessionId,
+        time: DateTime.fromMillisecondsSinceEpoch(1200),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_block_assistant_partial',
+            messageId: 'msg_block_assistant',
+            sessionId: sessionId,
+            text: 'partial stream text',
+          ),
+        ],
+      ),
+    ];
+    repository.sessionStatusById = const <String, SessionStatusInfo>{
+      sessionId: SessionStatusInfo(type: SessionStatusType.busy),
+    };
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    _disableAutomaticUpdateChecksForTest(localDataSource);
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    await settingsProvider.setChatRenderMode(ChatRenderMode.block);
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, settingsProvider: settingsProvider),
+    );
+    await _pumpUiFrames(tester);
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(provider.isCurrentSessionActivelyResponding, isTrue);
+    expect(find.text('Generating response'), findsOneWidget);
+    expect(find.text('partial stream text'), findsNothing);
+
+    repository.messagesBySession[sessionId] = <ChatMessage>[
+      repository.messagesBySession[sessionId]!.first,
+      AssistantMessage(
+        id: 'msg_block_assistant',
+        sessionId: sessionId,
+        time: DateTime.fromMillisecondsSinceEpoch(1200),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1500),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_block_assistant_final',
+            messageId: 'msg_block_assistant',
+            sessionId: sessionId,
+            text: 'final block answer',
+          ),
+        ],
+      ),
+    ];
+    repository.sessionStatusById = const <String, SessionStatusInfo>{
+      sessionId: SessionStatusInfo(type: SessionStatusType.idle),
+    };
+
+    await provider.refreshActiveSessionView(
+      reason: 'widget-block-render-final',
+      includeStatus: true,
+      preferDelta: false,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(find.text('Generating response'), findsNothing);
+    expect(find.text('final block answer'), findsOneWidget);
+    expect(find.text('partial stream text'), findsNothing);
+  });
 
   testWidgets(
     'delta refresh promotes latest server tail until fallback full fetch resolves',

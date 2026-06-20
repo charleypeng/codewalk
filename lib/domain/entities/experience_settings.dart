@@ -28,6 +28,8 @@ enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
 
 enum DataSaverLevel { off, standard, aggressive }
 
+enum ChatRenderMode { live, block }
+
 enum ThemeModeOption { system, light, dark }
 
 enum OpenCodeThemePreset {
@@ -560,6 +562,23 @@ DataSaverLevel dataSaverLevelFromKey(String value) {
   };
 }
 
+String chatRenderModeKey(ChatRenderMode mode) {
+  return switch (mode) {
+    ChatRenderMode.live => 'live',
+    ChatRenderMode.block => 'block',
+  };
+}
+
+ChatRenderMode chatRenderModeFromKey(String value) {
+  final key = value.trim().toLowerCase();
+  return switch (key) {
+    'block' => ChatRenderMode.block,
+    'blocks' => ChatRenderMode.block,
+    'sorted' => ChatRenderMode.block,
+    _ => ChatRenderMode.live,
+  };
+}
+
 Duration clampSyncResumeGracePeriod(Duration value) {
   if (value.isNegative) {
     return Duration.zero;
@@ -624,6 +643,7 @@ class ExperienceSettings {
       terminalPanelHeight: 240,
       terminalPanelMaximized: false,
       appDensity: AppDensity.normal,
+      chatRenderMode: ChatRenderMode.live,
       showThinkingBubbles: true,
       showToolCallBubbles: true,
       showTaskList: true,
@@ -680,6 +700,7 @@ class ExperienceSettings {
     this.terminalPanelHeight = 240,
     this.terminalPanelMaximized = false,
     required this.appDensity,
+    required this.chatRenderMode,
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
     required this.showTaskList,
@@ -736,6 +757,7 @@ class ExperienceSettings {
   final double terminalPanelHeight;
   final bool terminalPanelMaximized;
   final AppDensity appDensity;
+  final ChatRenderMode chatRenderMode;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool showTaskList;
@@ -792,6 +814,7 @@ class ExperienceSettings {
     double? terminalPanelHeight,
     bool? terminalPanelMaximized,
     AppDensity? appDensity,
+    ChatRenderMode? chatRenderMode,
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
     bool? showTaskList,
@@ -860,6 +883,7 @@ class ExperienceSettings {
       terminalPanelMaximized:
           terminalPanelMaximized ?? this.terminalPanelMaximized,
       appDensity: appDensity ?? this.appDensity,
+      chatRenderMode: chatRenderMode ?? this.chatRenderMode,
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
       showTaskList: showTaskList ?? this.showTaskList,
@@ -967,6 +991,7 @@ class ExperienceSettings {
       'terminalPanelHeight': terminalPanelHeight,
       'terminalPanelMaximized': terminalPanelMaximized,
       'appDensity': appDensityKey(appDensity),
+      'chatRenderMode': chatRenderModeKey(chatRenderMode),
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
       'showTaskList': showTaskList,
@@ -1040,6 +1065,7 @@ class ExperienceSettings {
     var terminalPanelHeight = defaults.terminalPanelHeight;
     var terminalPanelMaximized = defaults.terminalPanelMaximized;
     var appDensity = defaults.appDensity;
+    var chatRenderMode = defaults.chatRenderMode;
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
     var showTaskList = defaults.showTaskList;
@@ -1205,6 +1231,11 @@ class ExperienceSettings {
     final appDensityJson = json['appDensity'];
     if (appDensityJson is String && appDensityJson.trim().isNotEmpty) {
       appDensity = appDensityFromKey(appDensityJson.trim().toLowerCase());
+    }
+
+    final chatRenderModeJson = json['chatRenderMode'];
+    if (chatRenderModeJson is String && chatRenderModeJson.trim().isNotEmpty) {
+      chatRenderMode = chatRenderModeFromKey(chatRenderModeJson);
     }
 
     final showThinkingBubblesJson = json['showThinkingBubbles'];
@@ -1461,6 +1492,7 @@ class ExperienceSettings {
       terminalPanelHeight: terminalPanelHeight,
       terminalPanelMaximized: terminalPanelMaximized,
       appDensity: appDensity,
+      chatRenderMode: chatRenderMode,
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,
       showTaskList: showTaskList,

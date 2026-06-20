@@ -88,6 +88,7 @@ class _SessionTimelineEntriesCacheEntry {
     required this.frozenCompactionBoundaryId,
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
+    required this.chatRenderMode,
   });
 
   final List<ChatMessage> sourceMessages;
@@ -104,6 +105,7 @@ class _SessionTimelineEntriesCacheEntry {
   final String? frozenCompactionBoundaryId;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
+  final ChatRenderMode chatRenderMode;
 }
 
 class _AssistantWorkCompactionDecision {

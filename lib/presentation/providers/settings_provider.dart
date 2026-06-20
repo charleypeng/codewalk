@@ -150,6 +150,7 @@ class SettingsProvider extends ChangeNotifier {
   int? get customColorSeed => _settings.customColorSeed;
   double get contrastLevel => _settings.contrastLevel;
   AppDensity get appDensity => _settings.appDensity;
+  ChatRenderMode get chatRenderMode => _settings.chatRenderMode;
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
   bool get showTaskList => _settings.showTaskList;
@@ -552,6 +553,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(appDensity: density);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setChatRenderMode(ChatRenderMode mode) async {
+    if (_settings.chatRenderMode == mode) {
+      return;
+    }
+    _settings = _settings.copyWith(chatRenderMode: mode);
     notifyListeners();
     await _persist();
   }
