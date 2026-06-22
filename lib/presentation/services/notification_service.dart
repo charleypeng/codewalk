@@ -294,6 +294,10 @@ class NotificationService {
       }
     }
 
+    if (_isWindowsRuntime && !hadKnownSessionNotifications) {
+      return;
+    }
+
     var activeHistoryUnavailable = false;
     try {
       final active = await _getActiveNotifications();

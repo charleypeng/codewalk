@@ -147,7 +147,7 @@ const List<ShortcutDefinition> kShortcutDefinitions = <ShortcutDefinition>[
     group: 'Prompt',
     label: 'Toggle voice input',
     description: 'Start or stop speech-to-text in the composer',
-    defaultBinding: 'alt+s',
+    defaultBinding: 'alt+shift+s',
   ),
   ShortcutDefinition(
     action: ShortcutAction.quickOpen,

@@ -1150,7 +1150,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 | `mod+n` | New conversation | |
 | `mod+r` | Refresh data | |
 | `mod+l` | Focus composer input | |
-| `alt+s` / `option+s` | Start or stop voice input | `Option` label on macOS |
+| `alt+shift+s` / `option+shift+s` | Start or stop voice input | Requires Shift to avoid accidental STT activation on desktop |
 | `mod+p` | Quick-open project file | |
 | `mod+,` | Open Settings | |
 | `mod+m` | Cycle recent/favorite models | |

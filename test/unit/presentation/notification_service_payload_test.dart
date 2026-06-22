@@ -146,6 +146,37 @@ void main() {
     },
   );
 
+  test(
+    'clearNotificationsForSession skips Windows native history when no toast is tracked',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+      });
+      var activeReads = 0;
+      final calls = <String>[];
+      final service = NotificationService(
+        activeNotificationsReader: () async {
+          activeReads += 1;
+          return const <ActiveNotification>[];
+        },
+        notificationCanceller: ({required id, tag}) async {
+          calls.add('cancel:$id');
+        },
+        allNotificationsCanceller: () async {
+          calls.add('cancelAll');
+        },
+        assumeInitialized: true,
+      );
+      addTearDown(service.dispose);
+
+      await service.clearNotificationsForSession('ses_without_toasts');
+
+      expect(activeReads, 0);
+      expect(calls, isEmpty);
+    },
+  );
+
   test('supports payload without directory metadata', () {
     const payload = NotificationTapPayload(
       category: 'agent',

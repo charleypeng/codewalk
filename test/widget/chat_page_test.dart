@@ -2005,7 +2005,7 @@ void main() {
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
       expect(find.textContaining('Ctrl/Cmd'), findsNothing);
       expect(find.text('Ctrl+N'), findsOneWidget);
-      expect(find.text('Alt+S'), findsOneWidget);
+      expect(find.text('Alt+Shift+S'), findsOneWidget);
       expect(find.text('Ctrl+P'), findsOneWidget);
       expect(find.text('Ctrl+,'), findsOneWidget);
       expect(find.text('Ctrl+M'), findsOneWidget);
