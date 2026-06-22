@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.134.0 - 2026-06-22
+
+- fix: harden message image sharing
+- fix: share message images as PNG files on Windows (#55)
+
 ## v1.133.0 - 2026-06-22
 
 - fix(notifications): focus app on notification taps
