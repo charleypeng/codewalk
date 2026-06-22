@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.135.0 - 2026-06-22
+
+- fix: reduce Windows notification cleanup and STT shortcut risk
+
 ## v1.134.0 - 2026-06-22
 
 - fix: harden message image sharing
