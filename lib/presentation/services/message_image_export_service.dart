@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,6 +15,9 @@ const _maxCaptureHeight = 4096.0;
 
 /// Pixel ratio for the captured image — balances sharpness and memory.
 const _capturePixelRatio = 2.5;
+
+const _shareImageFilePrefix = 'codewalk_message_share_';
+const _shareImageCacheMaxAge = Duration(days: 1);
 
 /// Result of a share-image export attempt.
 enum MessageImageExportResult {
@@ -72,22 +76,121 @@ class MessageImageExportService {
       }
 
       final buffer = byteData.buffer;
-      final tempDir = await getTemporaryDirectory();
-      // Static filename overwrites previous export, preventing unbounded
-      // cache growth from timestamped files accumulating in the temp dir.
-      final file = File('${tempDir.path}/codewalk_message_share.png');
-      await file.writeAsBytes(
+      return await _writeAndSharePngBytes(
         buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+        subject: subject,
       );
-
-      await Share.shareXFiles([XFile(file.path)], subject: subject);
-
-      return MessageImageExportResult.shared;
     } catch (e) {
       AppLogger.error('MessageImageExport: share failed', error: e);
       return MessageImageExportResult.failed;
     } finally {
       image.dispose();
+    }
+  }
+
+  @visibleForTesting
+  static Future<MessageImageExportResult> sharePngBytesForTesting({
+    required Uint8List pngBytes,
+    String? subject,
+    Directory? shareDirectory,
+    DateTime? now,
+  }) {
+    return _writeAndSharePngBytes(
+      pngBytes,
+      subject: subject,
+      shareDirectory: shareDirectory,
+      now: now,
+    );
+  }
+
+  static Future<MessageImageExportResult> _writeAndSharePngBytes(
+    Uint8List pngBytes, {
+    String? subject,
+    Directory? shareDirectory,
+    DateTime? now,
+  }) async {
+    final targetPlatform = defaultTargetPlatform;
+    final isWindows = !kIsWeb && targetPlatform == TargetPlatform.windows;
+    final timestamp = now ?? DateTime.now().toUtc();
+    final directory =
+        shareDirectory ?? await _resolveShareDirectory(isWindows: isWindows);
+
+    await directory.create(recursive: true);
+    await _pruneExpiredShareImages(directory, now: timestamp);
+
+    final fileName = _shareImageFileName(timestamp);
+    final file = File('${directory.path}${Platform.pathSeparator}$fileName');
+    file.writeAsBytesSync(pngBytes, flush: true);
+
+    final exists = file.existsSync();
+    final byteCount = exists ? file.lengthSync() : 0;
+    AppLogger.info(
+      'MessageImageExport: wrote PNG share file '
+      'path=${file.path} exists=$exists bytes=$byteCount',
+    );
+
+    final shareFile = XFile(file.path, mimeType: 'image/png', name: fileName);
+
+    if (isWindows) {
+      // share_plus maps subject to Windows DataPackage text for file shares.
+      // Suppress it so image-capable targets do not receive a text-only
+      // fallback when they fail to consume the StorageItems payload.
+      await Share.shareXFiles([shareFile]);
+    } else {
+      await Share.shareXFiles([shareFile], subject: subject);
+    }
+
+    return MessageImageExportResult.shared;
+  }
+
+  static Future<Directory> _resolveShareDirectory({
+    required bool isWindows,
+  }) async {
+    final baseDirectory = isWindows
+        ? await getApplicationSupportDirectory()
+        : await getTemporaryDirectory();
+    return Directory(
+      '${baseDirectory.path}${Platform.pathSeparator}codewalk_message_shares',
+    );
+  }
+
+  static String _shareImageFileName(DateTime timestamp) {
+    return '$_shareImageFilePrefix'
+        '${timestamp.toUtc().microsecondsSinceEpoch}.png';
+  }
+
+  static Future<void> _pruneExpiredShareImages(
+    Directory directory, {
+    required DateTime now,
+  }) async {
+    if (!directory.existsSync()) {
+      return;
+    }
+
+    final cutoff = now.subtract(_shareImageCacheMaxAge);
+    for (final entity in directory.listSync(followLinks: false)) {
+      if (entity is! File) {
+        continue;
+      }
+      final fileName = entity.uri.pathSegments.isEmpty
+          ? ''
+          : entity.uri.pathSegments.last;
+      if (!fileName.startsWith(_shareImageFilePrefix) ||
+          !fileName.endsWith('.png')) {
+        continue;
+      }
+
+      try {
+        final lastModified = entity.lastModifiedSync();
+        if (lastModified.isBefore(cutoff)) {
+          entity.deleteSync();
+        }
+      } catch (e) {
+        AppLogger.debug(
+          'MessageImageExport: failed to prune old share file',
+          error: e,
+        );
+      }
     }
   }
 }
