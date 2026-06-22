@@ -70,6 +70,7 @@ extension ChatProviderHistoryOps on ChatProvider {
     if (revertChanged) {
       final updatedSession = currentSession!.copyWith(revert: null);
       _currentSession = updatedSession;
+      _dismissNotificationsForSession(updatedSession.id);
       final sessionIndex = _sessions.indexWhere((item) => item.id == sessionId);
       if (sessionIndex != -1) {
         _sessions[sessionIndex] = updatedSession;
@@ -161,6 +162,7 @@ extension ChatProviderHistoryOps on ChatProvider {
     }
     final updatedSession = session.copyWith(revert: revert);
     _currentSession = updatedSession;
+    _dismissNotificationsForSession(updatedSession.id);
     final sessionIndex = _sessions.indexWhere((item) => item.id == session.id);
     if (sessionIndex != -1) {
       _sessions[sessionIndex] = updatedSession;

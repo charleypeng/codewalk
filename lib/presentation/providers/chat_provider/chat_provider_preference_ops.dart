@@ -85,6 +85,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessions = _filterSessionsForCurrentContext(snapshot.sessions);
     _hasLoadedSessionsAuthoritatively = false;
     _currentSession = snapshot.currentSession;
+    _dismissNotificationsForSession(_currentSession?.id);
     _messages = List<ChatMessage>.from(snapshot.messages);
     final restoredSessionId = _currentSession?.id;
     if (restoredSessionId != null && restoredSessionId.trim().isNotEmpty) {

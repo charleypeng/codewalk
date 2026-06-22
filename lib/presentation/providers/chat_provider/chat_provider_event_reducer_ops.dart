@@ -278,6 +278,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           if (_currentSession?.id == nextSession.id) {
             final previousRevert = _currentSession?.revert;
             _currentSession = nextSession;
+            _dismissNotificationsForSession(nextSession.id);
             _threadPermissionsVersion++;
             if (previousRevert != nextSession.revert) {
               _messagesVersion++;

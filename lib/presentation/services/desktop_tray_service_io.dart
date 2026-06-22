@@ -8,6 +8,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/i18n/l10n_bridge.dart';
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
+import 'app_activation_service.dart';
 import 'desktop_tray_service_types.dart';
 
 DesktopTrayService createDesktopTrayService() {
@@ -219,8 +220,7 @@ class _DesktopTrayServiceIo
   }
 
   Future<void> _showWindow() async {
-    await windowManager.show();
-    await windowManager.focus();
+    await bringCodeWalkToFront();
   }
 
   Future<void> _quitApplication() async {

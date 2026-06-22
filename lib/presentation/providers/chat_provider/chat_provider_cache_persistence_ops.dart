@@ -452,6 +452,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       }
 
       _currentSession = selectedSession;
+      _dismissNotificationsForSession(selectedSession.id);
       _threadPermissionsVersion++;
       _messages = List<ChatMessage>.from(cachedMessages);
       _cacheSessionMessages(selectedSession.id, cachedMessages);

@@ -296,6 +296,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
 
     if (wasCurrent) {
       _currentSession = _sessions.firstOrNull;
+      _dismissNotificationsForSession(_currentSession?.id);
       _threadPermissionsVersion++;
       _messages = <ChatMessage>[];
       _isLoadingOlderMessages = false;
@@ -316,6 +317,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
       (failure) {
         _sessions = previousSessions;
         _currentSession = previousCurrent;
+        _dismissNotificationsForSession(_currentSession?.id);
         _threadPermissionsVersion++;
         _messages = List<ChatMessage>.from(previousMessages);
         if (previousCurrent != null) {

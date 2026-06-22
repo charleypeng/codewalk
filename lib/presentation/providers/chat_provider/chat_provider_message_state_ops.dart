@@ -522,7 +522,8 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         if (_selectedProviderId != providerId || _selectedModelId != modelId) {
           _selectedProviderId = providerId;
           _selectedModelId = modelId;
-          _selectedVariantId = (messageVariant != null && messageVariant.isNotEmpty)
+          _selectedVariantId =
+              (messageVariant != null && messageVariant.isNotEmpty)
               ? messageVariant
               : _resolveStoredVariantForSelection();
           _lastSyncedRemoteVariantKey = null;
@@ -532,7 +533,9 @@ extension _ChatProviderMessageStateOps on ChatProvider {
 
         // If provider and model are already correct but the message declares
         // a different variant, adopt it.
-        if (!changed && messageVariant != null && messageVariant.isNotEmpty &&
+        if (!changed &&
+            messageVariant != null &&
+            messageVariant.isNotEmpty &&
             _selectedVariantId != messageVariant) {
           _selectedVariantId = messageVariant;
           _lastSyncedRemoteVariantKey = null;
@@ -907,6 +910,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     _upsertSession(session);
     if (_currentSession?.id == session.id) {
       _currentSession = session;
+      _dismissNotificationsForSession(session.id);
     }
   }
 }

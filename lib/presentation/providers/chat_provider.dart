@@ -216,6 +216,14 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
+  void _dismissNotificationsForSession(String? sessionId) {
+    final normalizedSessionId = sessionId?.trim();
+    if (normalizedSessionId == null || normalizedSessionId.isEmpty) {
+      return;
+    }
+    unawaited(eventFeedbackDispatcher?.dismissForSession(normalizedSessionId));
+  }
+
   // Scroll callback
   void Function({required String reason})? _scrollToBottomCallback;
 
@@ -2897,6 +2905,7 @@ class ChatProvider extends ChangeNotifier {
     _sessions.add(session);
     _sortSessionsInPlace();
     _currentSession = session;
+    _dismissNotificationsForSession(session.id);
     _threadPermissionsVersion++;
     _messages = <ChatMessage>[];
     _isLoadingOlderMessages = false;
@@ -2937,6 +2946,7 @@ class ChatProvider extends ChangeNotifier {
     );
     _isNewChatDraftActive = false;
     if (_currentSession?.id == session.id) {
+      _dismissNotificationsForSession(session.id);
       unawaited(
         loadSessionInsights(session.id, silent: true, userInitiated: true),
       );
@@ -2966,6 +2976,7 @@ class ChatProvider extends ChangeNotifier {
     _currentSession = session;
     _isLoadingOlderMessages = false;
     _hasMoreOldMessages = false;
+    _dismissNotificationsForSession(session.id);
     _clearSessionAttentionForSession(session.id);
     _threadPermissionsVersion++;
     _applySelectionPriorityForCurrentSession();
@@ -4013,6 +4024,7 @@ class ChatProvider extends ChangeNotifier {
         _currentSession = _buildVisibleSessionsFrom(
           _sessions,
         ).where((item) => item.id != currentSessionId).firstOrNull;
+        _dismissNotificationsForSession(_currentSession?.id);
         _threadPermissionsVersion++;
       }
     }
@@ -4035,6 +4047,7 @@ class ChatProvider extends ChangeNotifier {
         if (previousCurrentSession != null) {
           _currentSession =
               _sessionById(previousCurrentSession.id) ?? previousCurrentSession;
+          _dismissNotificationsForSession(_currentSession?.id);
           _threadPermissionsVersion++;
         }
         _handleFailure(failure);
@@ -4045,6 +4058,7 @@ class ChatProvider extends ChangeNotifier {
         _applySessionLocally(updated);
         if (_currentSession?.id == updated.id) {
           _currentSession = updated;
+          _dismissNotificationsForSession(updated.id);
         }
         unawaited(_persistSessionCacheBestEffort());
         notifyListeners();

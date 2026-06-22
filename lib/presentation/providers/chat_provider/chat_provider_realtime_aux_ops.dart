@@ -480,6 +480,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   }
 
   void _removeSessionById(String sessionId) {
+    _dismissNotificationsForSession(sessionId);
     _sessions.removeWhere((item) => item.id == sessionId);
     final wasPinned =
         _hasLoadedSessionsAuthoritatively &&
@@ -502,6 +503,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _autoTitleQueuedSessionIds.remove(sessionId);
     if (_currentSession?.id == sessionId) {
       _currentSession = _sessions.firstOrNull;
+      _dismissNotificationsForSession(_currentSession?.id);
       _messages = <ChatMessage>[];
       _isLoadingOlderMessages = false;
       _hasMoreOldMessages = false;

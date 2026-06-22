@@ -6,24 +6,34 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
+import 'app_activation_service.dart';
 import 'web_notification_bridge.dart';
+
+typedef AppActivationCallback = Future<void> Function();
+typedef ActiveNotificationsReader = Future<List<ActiveNotification>> Function();
+typedef NotificationCanceller =
+    Future<void> Function({required int id, String? tag});
+typedef AllNotificationsCanceller = Future<void> Function();
 
 class NotificationTapPayload {
   const NotificationTapPayload({
     required this.category,
     this.sessionId,
     this.directory,
+    this.notificationId,
   });
 
   final String category;
   final String? sessionId;
   final String? directory;
+  final int? notificationId;
 
   String toRaw() {
     return jsonEncode(<String, dynamic>{
       'category': category,
       'sessionId': sessionId,
       'directory': directory,
+      'notificationId': notificationId,
     });
   }
 
@@ -42,28 +52,59 @@ class NotificationTapPayload {
       }
       final sessionId = decoded['sessionId']?.toString().trim();
       final directory = decoded['directory']?.toString().trim();
+      final notificationId = _parseNotificationId(decoded['notificationId']);
       return NotificationTapPayload(
         category: category,
         sessionId: (sessionId?.isEmpty ?? true) ? null : sessionId,
         directory: (directory?.isEmpty ?? true) ? null : directory,
+        notificationId: notificationId,
       );
     } catch (_) {
       return null;
     }
   }
+
+  static int? _parseNotificationId(Object? value) {
+    return switch (value) {
+      int id when id >= 0 => id,
+      num id when id >= 0 => id.toInt(),
+      String raw => _parseNotificationIdString(raw),
+      _ => null,
+    };
+  }
+
+  static int? _parseNotificationIdString(String raw) {
+    final id = int.tryParse(raw.trim());
+    return id == null || id < 0 ? null : id;
+  }
 }
 
 class NotificationService {
-  NotificationService({FlutterLocalNotificationsPlugin? plugin})
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  NotificationService({
+    FlutterLocalNotificationsPlugin? plugin,
+    AppActivationCallback? activateApp,
+    ActiveNotificationsReader? activeNotificationsReader,
+    NotificationCanceller? notificationCanceller,
+    AllNotificationsCanceller? allNotificationsCanceller,
+    @visibleForTesting bool assumeInitialized = false,
+  }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
+       _activateApp = activateApp ?? bringCodeWalkToFront,
+       _activeNotificationsReader = activeNotificationsReader,
+       _notificationCanceller = notificationCanceller,
+       _allNotificationsCanceller = allNotificationsCanceller,
+       _initialized = assumeInitialized;
 
   static const String _androidSmallIcon = '@drawable/ic_stat_codewalk';
 
   final FlutterLocalNotificationsPlugin _plugin;
+  final AppActivationCallback _activateApp;
+  final ActiveNotificationsReader? _activeNotificationsReader;
+  final NotificationCanceller? _notificationCanceller;
+  final AllNotificationsCanceller? _allNotificationsCanceller;
   final StreamController<NotificationTapPayload> _tapController =
       StreamController<NotificationTapPayload>.broadcast();
   final Map<String, Set<int>> _notificationIdsBySession = <String, Set<int>>{};
-  bool _initialized = false;
+  bool _initialized;
   NotificationTapPayload? _pendingTap;
   StreamSubscription<String>? _webTapSubscription;
 
@@ -89,7 +130,9 @@ class NotificationService {
 
     try {
       if (kIsWeb) {
-        _webTapSubscription ??= webNotificationTapStream.listen(_handleRawTap);
+        _webTapSubscription ??= webNotificationTapStream.listen(
+          (rawPayload) => unawaited(_handleRawTap(rawPayload)),
+        );
         _initialized = true;
         return;
       }
@@ -112,7 +155,7 @@ class NotificationService {
       await _plugin.initialize(
         settings: settings,
         onDidReceiveNotificationResponse: (response) {
-          _handleRawTap(response.payload);
+          unawaited(_handleRawTap(response.payload));
         },
       );
 
@@ -132,12 +175,14 @@ class NotificationService {
         sound: true,
       );
 
+      // Mark ready before reading launch details so notification-tap cleanup can
+      // safely run if the launch-details callback is delivered asynchronously.
+      _initialized = true;
+
       final launchDetails = await _plugin.getNotificationAppLaunchDetails();
       if (launchDetails?.didNotificationLaunchApp == true) {
-        _handleRawTap(launchDetails?.notificationResponse?.payload);
+        unawaited(_handleRawTap(launchDetails?.notificationResponse?.payload));
       }
-
-      _initialized = true;
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Notification initialization unavailable on this platform',
@@ -159,10 +204,12 @@ class NotificationService {
   }) async {
     final normalizedSessionId = _normalizeSessionId(sessionId);
     final normalizedDirectory = _normalizeDirectory(directory);
+    final notificationId = _nextNotificationId();
     final payload = NotificationTapPayload(
       category: category,
       sessionId: normalizedSessionId,
       directory: normalizedDirectory,
+      notificationId: notificationId,
     ).toRaw();
 
     if (kIsWeb) {
@@ -182,7 +229,6 @@ class NotificationService {
     }
 
     try {
-      final notificationId = _nextNotificationId();
       final details = _buildDetails(
         category: category,
         sessionId: normalizedSessionId,
@@ -227,6 +273,11 @@ class NotificationService {
       return;
     }
 
+    if (kIsWeb) {
+      _notificationIdsBySession.remove(normalizedSessionId);
+      return;
+    }
+
     await initialize();
     if (!_initialized) {
       return;
@@ -234,6 +285,7 @@ class NotificationService {
 
     final targets = <_CancelTarget>[];
     final knownIds = _notificationIdsBySession.remove(normalizedSessionId);
+    final hadKnownSessionNotifications = knownIds?.isNotEmpty ?? false;
     if (knownIds != null) {
       for (final id in knownIds) {
         targets.add(
@@ -242,8 +294,10 @@ class NotificationService {
       }
     }
 
+    var activeHistoryUnavailable = false;
     try {
-      final active = await _plugin.getActiveNotifications();
+      final active = await _getActiveNotifications();
+      activeHistoryUnavailable = active.isEmpty;
       final expectedGroupKey = _sessionGroupKey(normalizedSessionId);
       final expectedTag = _sessionTag(normalizedSessionId);
       final expectedSummaryTag = _sessionSummaryTag(normalizedSessionId);
@@ -283,10 +337,16 @@ class NotificationService {
         continue;
       }
       try {
-        await _plugin.cancel(id: target.id, tag: target.tag);
+        await _cancelNotification(id: target.id, tag: target.tag);
       } catch (_) {
         // Best effort cleanup.
       }
+    }
+
+    if (_isWindowsRuntime &&
+        hadKnownSessionNotifications &&
+        activeHistoryUnavailable) {
+      await _clearAllWindowsNotificationsBestEffort();
     }
   }
 
@@ -516,15 +576,110 @@ class NotificationService {
     return defaultTargetPlatform == TargetPlatform.android;
   }
 
-  void _handleRawTap(String? rawPayload) {
+  @visibleForTesting
+  Future<void> debugHandleRawTap(String? rawPayload) {
+    return _handleRawTap(rawPayload);
+  }
+
+  @visibleForTesting
+  void debugTrackNotificationForSession(String sessionId, int notificationId) {
+    final normalizedSessionId = _normalizeSessionId(sessionId);
+    if (normalizedSessionId == null) {
+      return;
+    }
+    _notificationIdsBySession
+        .putIfAbsent(normalizedSessionId, () => <int>{})
+        .add(notificationId);
+  }
+
+  Future<List<ActiveNotification>> _getActiveNotifications() {
+    final reader = _activeNotificationsReader;
+    if (reader != null) {
+      return reader();
+    }
+    return _plugin.getActiveNotifications();
+  }
+
+  Future<void> _cancelNotification({required int id, String? tag}) {
+    final canceller = _notificationCanceller;
+    if (canceller != null) {
+      return canceller(id: id, tag: tag);
+    }
+    return _plugin.cancel(id: id, tag: tag);
+  }
+
+  Future<void> _cancelAllNotifications() {
+    final canceller = _allNotificationsCanceller;
+    if (canceller != null) {
+      return canceller();
+    }
+    return _plugin.cancelAll();
+  }
+
+  Future<void> _handleRawTap(String? rawPayload) async {
     final payload = NotificationTapPayload.fromRaw(rawPayload);
     if (payload == null) {
       return;
+    }
+    try {
+      await _activateApp();
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Notification tap could not bring the app to front',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
     _pendingTap = payload;
     if (!_tapController.isClosed) {
       _tapController.add(payload);
     }
+    await _dismissTappedNotification(payload);
+  }
+
+  Future<void> _dismissTappedNotification(
+    NotificationTapPayload payload,
+  ) async {
+    final sessionId = _normalizeSessionId(payload.sessionId);
+    final notificationId = payload.notificationId;
+    if (notificationId != null) {
+      await _cancelNotificationTarget(
+        _CancelTarget(
+          id: notificationId,
+          tag: sessionId == null ? null : _sessionTag(sessionId),
+        ),
+      );
+    }
+    if (sessionId != null) {
+      await clearNotificationsForSession(sessionId);
+    }
+  }
+
+  Future<void> _clearAllWindowsNotificationsBestEffort() async {
+    try {
+      // Unpackaged Win32 builds cannot target individual toasts, but the
+      // Windows plugin can clear the app's AUMID history. This may remove
+      // notifications from other sessions; only use it after targeted cleanup
+      // cannot observe active history.
+      await _cancelAllNotifications();
+    } catch (_) {
+      // Best effort cleanup for Windows builds without package identity.
+    }
+  }
+
+  Future<void> _cancelNotificationTarget(_CancelTarget target) async {
+    try {
+      await _cancelNotification(id: target.id, tag: target.tag);
+    } catch (_) {
+      // Best effort cleanup.
+    }
+  }
+
+  bool get _isWindowsRuntime {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.windows;
   }
 }
 

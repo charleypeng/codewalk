@@ -1372,6 +1372,14 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** background alerts would be relevant
 - **Then** the system tray icon serves as the always-present indicator; local notifications may be shown through the OS notification system
 
+### Notification taps open the target session
+
+- **Given** a local notification contains a session payload
+- **When** the user clicks or taps that notification
+- **Then** CodeWalk brings the app window to the front when the platform supports app activation
+- **Then** the app selects the payload session, switching project directory first when the payload includes a different directory
+- **Then** the consumed notification is dismissed, and selecting that same session also clears other tracked notifications for the session
+
 ### Server offline does NOT notify
 
 - **Given** the active server goes offline
