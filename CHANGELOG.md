@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.133.0 - 2026-06-22
+
+- fix(notifications): focus app on notification taps
+
 ## v1.132.0 - 2026-06-20
 
 - fix(chat): hide active block-render work runs
