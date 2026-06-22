@@ -571,6 +571,16 @@
 - **Then** the app opens the file viewer for that path and scrolls to the referenced line instead of copying the text
 - **Then** ordinary inline code snippets and fenced code blocks remain copyable
 
+### Message image sharing exports PNG files
+
+- **Given** a chat message is visible
+- **When** the user chooses `Share as image`
+- **Then** the app captures the message bubble as a PNG file and opens the platform share sheet
+- **Then** share controls are hidden during capture so they do not appear in the exported image
+- **Then** oversized messages show the message-too-long failure instead of attempting an unsafe capture
+- **Then** Windows shares only the PNG file payload, without subject/text fallback, so image-capable share targets receive an image file instead of text
+- **Then** non-Windows platforms preserve the localized share subject
+
 ### Mermaid fenced blocks render as diagrams
 
 - **Given** an assistant message contains a fenced code block with language `mermaid`

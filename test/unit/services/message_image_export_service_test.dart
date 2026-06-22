@@ -82,6 +82,12 @@ void main() {
     expect(arguments['subject'], 'CodeWalk message');
     expect(arguments.containsKey('text'), isFalse);
     expect(arguments['mimeTypes'], <String>['image/png']);
+
+    final paths = arguments['paths'] as List<dynamic>;
+    expect(paths, hasLength(1));
+    final sharedFile = File(paths.single as String);
+    expect(sharedFile.existsSync(), isTrue);
+    expect(sharedFile.readAsBytesSync(), <int>[4, 5, 6]);
   });
 
   test('old CodeWalk share images are pruned lazily', () async {

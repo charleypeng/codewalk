@@ -39,8 +39,9 @@ enum MessageImageExportResult {
 /// export from the chat view.
 class MessageImageExportService {
   /// Captures the widget tree under [boundaryKey] as a PNG, writes it to a
-  /// temporary file, and opens the native share sheet with [subject] as the
-  /// share title.
+  /// PNG share file, and opens the native share sheet with [subject] as the
+  /// share title when the platform supports that without interfering with
+  /// file-only image shares.
   ///
   /// Returns [MessageImageExportResult.shared] on success, or a specific
   /// failure code so the caller can show an appropriate user-facing message.
@@ -120,13 +121,15 @@ class MessageImageExportService {
 
     final fileName = _shareImageFileName(timestamp);
     final file = File('${directory.path}${Platform.pathSeparator}$fileName');
-    file.writeAsBytesSync(pngBytes, flush: true);
+    if (isWindows) {
+      file.writeAsBytesSync(pngBytes, flush: true);
+    } else {
+      await file.writeAsBytes(pngBytes);
+    }
 
-    final exists = file.existsSync();
-    final byteCount = exists ? file.lengthSync() : 0;
     AppLogger.info(
       'MessageImageExport: wrote PNG share file '
-      'path=${file.path} exists=$exists bytes=$byteCount',
+      'path=${file.path} bytes=${pngBytes.length}',
     );
 
     final shareFile = XFile(file.path, mimeType: 'image/png', name: fileName);
@@ -163,34 +166,41 @@ class MessageImageExportService {
     Directory directory, {
     required DateTime now,
   }) async {
-    if (!directory.existsSync()) {
+    if (!await directory.exists()) {
       return;
     }
 
     final cutoff = now.subtract(_shareImageCacheMaxAge);
-    for (final entity in directory.listSync(followLinks: false)) {
-      if (entity is! File) {
-        continue;
-      }
-      final fileName = entity.uri.pathSegments.isEmpty
-          ? ''
-          : entity.uri.pathSegments.last;
-      if (!fileName.startsWith(_shareImageFilePrefix) ||
-          !fileName.endsWith('.png')) {
-        continue;
-      }
-
-      try {
-        final lastModified = entity.lastModifiedSync();
-        if (lastModified.isBefore(cutoff)) {
-          entity.deleteSync();
+    try {
+      await for (final entity in directory.list(followLinks: false)) {
+        if (entity is! File) {
+          continue;
         }
-      } catch (e) {
-        AppLogger.debug(
-          'MessageImageExport: failed to prune old share file',
-          error: e,
-        );
+        final fileName = entity.uri.pathSegments.isEmpty
+            ? ''
+            : entity.uri.pathSegments.last;
+        if (!fileName.startsWith(_shareImageFilePrefix) ||
+            !fileName.endsWith('.png')) {
+          continue;
+        }
+
+        try {
+          final lastModified = await entity.lastModified();
+          if (lastModified.isBefore(cutoff)) {
+            await entity.delete();
+          }
+        } catch (e) {
+          AppLogger.debug(
+            'MessageImageExport: failed to prune old share file',
+            error: e,
+          );
+        }
       }
+    } catch (e) {
+      AppLogger.debug(
+        'MessageImageExport: failed to list old share files',
+        error: e,
+      );
     }
   }
 }
