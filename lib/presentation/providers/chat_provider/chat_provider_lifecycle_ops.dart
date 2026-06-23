@@ -14,7 +14,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
     if (isActive && _hasPendingRenderFlush) {
       // Flush accumulated state changes suppressed while in background.
       _hasPendingRenderFlush = false;
-      _notifyListeners();
+      _notifyListeners(reason: 'foreground_flush');
     }
 
     if (!_refreshlessRealtimeEnabled) {

@@ -490,22 +490,68 @@ class ChatProvider extends ChangeNotifier {
   // result in a single notifyListeners() invocation, reducing rebuild storms
   // during streaming (where 5+ event types fire per tick).
   bool _notifyScheduled = false;
+  final Set<String> _pendingNotifyReasons = <String>{};
 
   // Render gate: suppress UI rebuilds while app is in background.
   // SSE data keeps accumulating in internal fields, but widgets won't rebuild
   // until the app returns to foreground and flushes the pending notification.
   bool _hasPendingRenderFlush = false;
 
-  void _notifyListeners() {
+  void _notifyListeners({String reason = 'chat_provider'}) {
     if (!_isForegroundActive) {
+      if (AppLogger.performanceLoggingEnabled) {
+        _pendingNotifyReasons.add(reason);
+      }
       _hasPendingRenderFlush = true;
       return;
+    }
+    if (AppLogger.performanceLoggingEnabled) {
+      _pendingNotifyReasons.add(reason);
     }
     if (_notifyScheduled) return;
     _notifyScheduled = true;
     scheduleMicrotask(() {
       _notifyScheduled = false;
-      notifyListeners();
+      if (!AppLogger.performanceLoggingEnabled) {
+        _pendingNotifyReasons.clear();
+        notifyListeners();
+        return;
+      }
+      final notifyReasons = _pendingNotifyReasons.toList(growable: false)
+        ..sort();
+      _pendingNotifyReasons.clear();
+      final stopwatch = Stopwatch()..start();
+      try {
+        notifyListeners();
+        stopwatch.stop();
+        AppLogger.recordPerformanceTask(
+          operation: 'chat_notify_listeners',
+          elapsed: stopwatch.elapsed,
+          status: 'ok',
+          tags: const <String>{'chat:notify', 'ui:rebuild'},
+          context: <String, Object?>{
+            'reasons': notifyReasons,
+            'sessionCount': _sessions.length,
+            'messageCount': _messages.length,
+          },
+        );
+      } catch (error, stackTrace) {
+        stopwatch.stop();
+        AppLogger.recordPerformanceTask(
+          operation: 'chat_notify_listeners',
+          elapsed: stopwatch.elapsed,
+          status: 'error',
+          tags: const <String>{'chat:notify', 'ui:rebuild'},
+          context: <String, Object?>{
+            'reasons': notifyReasons,
+            'sessionCount': _sessions.length,
+            'messageCount': _messages.length,
+          },
+          error: error,
+          stackTrace: stackTrace,
+        );
+        Error.throwWithStackTrace(error, stackTrace);
+      }
     });
   }
 
@@ -1461,10 +1507,51 @@ class ChatProvider extends ChangeNotifier {
   }
 
   List<ChatMessage> _messagesForSettledStatusGuard(String sessionId) {
-    if (_currentSession?.id == sessionId) {
-      return _messages;
+    if (!AppLogger.performanceLoggingEnabled) {
+      if (_currentSession?.id == sessionId) {
+        return _messages;
+      }
+      return _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
     }
-    return _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
+
+    final stopwatch = Stopwatch()..start();
+    var source = 'memory';
+    try {
+      final messages = _currentSession?.id == sessionId
+          ? _messages
+          : () {
+              source = 'lru_cache';
+              return _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
+            }();
+      stopwatch.stop();
+      AppLogger.recordPerformanceTask(
+        operation: 'settlement_status_guard_messages',
+        elapsed: stopwatch.elapsed,
+        status: 'ok',
+        tags: const <String>{'chat:settlement', 'chat:messages'},
+        context: <String, Object?>{
+          'sessionHash': AppLogger.safeContextId(sessionId),
+          'source': source,
+          'messageCount': messages.length,
+        },
+      );
+      return messages;
+    } catch (error, stackTrace) {
+      stopwatch.stop();
+      AppLogger.recordPerformanceTask(
+        operation: 'settlement_status_guard_messages',
+        elapsed: stopwatch.elapsed,
+        status: 'error',
+        tags: const <String>{'chat:settlement', 'chat:messages'},
+        context: <String, Object?>{
+          'sessionHash': AppLogger.safeContextId(sessionId),
+          'source': source,
+        },
+        error: error,
+        stackTrace: stackTrace,
+      );
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   /// Returns true if [event] belongs to an ephemeral title-generation session.
@@ -2164,53 +2251,105 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
+  Future<void> _persistSelectionStep(
+    String field,
+    Future<void> Function() action, {
+    Object? value,
+    int? sizeBytes,
+  }) {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_persist_$field',
+      action,
+      tags: const <String>{'chat:selection', 'persistence'},
+      context: AppLogger.performanceLoggingEnabled
+          ? <String, Object?>{
+              'field': field,
+              if (value != null) 'valueHash': AppLogger.safeContextId(value),
+              if (sizeBytes != null) 'sizeBytes': sizeBytes,
+            }
+          : null,
+    );
+  }
+
   Future<void> _persistSelectionSnapshot(
     _SelectionPersistenceSnapshot snapshot, {
     required bool syncRemote,
   }) async {
     if (snapshot.selectedProviderId != null) {
-      await localDataSource.saveSelectedProvider(
-        snapshot.selectedProviderId!,
-        serverId: snapshot.serverId,
-        scopeId: snapshot.scopeId,
+      await _persistSelectionStep(
+        'selected_provider',
+        () => localDataSource.saveSelectedProvider(
+          snapshot.selectedProviderId!,
+          serverId: snapshot.serverId,
+          scopeId: snapshot.scopeId,
+        ),
+        value: snapshot.selectedProviderId,
       );
     }
     if (snapshot.selectedModelId != null) {
-      await localDataSource.saveSelectedModel(
-        snapshot.selectedModelId!,
-        serverId: snapshot.serverId,
-        scopeId: snapshot.scopeId,
+      await _persistSelectionStep(
+        'selected_model',
+        () => localDataSource.saveSelectedModel(
+          snapshot.selectedModelId!,
+          serverId: snapshot.serverId,
+          scopeId: snapshot.scopeId,
+        ),
+        value: snapshot.selectedModelId,
       );
     }
-    await localDataSource.saveSelectedAgent(
-      snapshot.selectedAgentName,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
+    await _persistSelectionStep(
+      'selected_agent',
+      () => localDataSource.saveSelectedAgent(
+        snapshot.selectedAgentName,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
+      ),
+      value: snapshot.selectedAgentName,
     );
-    await localDataSource.saveRecentModelsJson(
-      snapshot.recentModelsJson,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
+    await _persistSelectionStep(
+      'recent_models',
+      () => localDataSource.saveRecentModelsJson(
+        snapshot.recentModelsJson,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
+      ),
+      sizeBytes: snapshot.recentModelsJson.length,
     );
-    await localDataSource.saveModelUsageCountsJson(
-      snapshot.modelUsageCountsJson,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
+    await _persistSelectionStep(
+      'model_usage_counts',
+      () => localDataSource.saveModelUsageCountsJson(
+        snapshot.modelUsageCountsJson,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
+      ),
+      sizeBytes: snapshot.modelUsageCountsJson.length,
     );
-    await localDataSource.saveSelectedVariantMap(
-      snapshot.selectedVariantMapJson,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
+    await _persistSelectionStep(
+      'selected_variant_map',
+      () => localDataSource.saveSelectedVariantMap(
+        snapshot.selectedVariantMapJson,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
+      ),
+      sizeBytes: snapshot.selectedVariantMapJson.length,
     );
-    await localDataSource.saveAgentSelectionMemoryJson(
-      snapshot.agentSelectionMemoryJson,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
+    await _persistSelectionStep(
+      'agent_selection_memory',
+      () => localDataSource.saveAgentSelectionMemoryJson(
+        snapshot.agentSelectionMemoryJson,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
+      ),
+      sizeBytes: snapshot.agentSelectionMemoryJson.length,
     );
-    await localDataSource.saveSessionSelectionOverridesJson(
-      snapshot.sessionSelectionOverridesJson,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
+    await _persistSelectionStep(
+      'session_selection_overrides',
+      () => localDataSource.saveSessionSelectionOverridesJson(
+        snapshot.sessionSelectionOverridesJson,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
+      ),
+      sizeBytes: snapshot.sessionSelectionOverridesJson.length,
     );
     if (syncRemote) {
       if (!_isExperimentalMultiDeviceSyncEnabled) {
@@ -2249,7 +2388,16 @@ class ChatProvider extends ChangeNotifier {
     unawaited(task);
   }
 
-  Future<void> _flushScheduledSelectionPersistence() async {
+  Future<void> _flushScheduledSelectionPersistence() {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_persistence_flush',
+      _flushScheduledSelectionPersistenceBody,
+      tags: const <String>{'chat:selection', 'persistence'},
+      context: <String, Object?>{'syncRemote': _selectionPersistenceSyncRemote},
+    );
+  }
+
+  Future<void> _flushScheduledSelectionPersistenceBody() async {
     try {
       while (true) {
         if (!_selectionPersistenceDirty) {
@@ -2300,7 +2448,20 @@ class ChatProvider extends ChangeNotifier {
     await _persistSelectionSnapshot(snapshot, syncRemote: syncRemote);
   }
 
-  Future<void> setSelectedProvider(String providerId) async {
+  Future<void> setSelectedProvider(String providerId) {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_set_provider',
+      () => _setSelectedProvider(providerId),
+      tags: const <String>{'chat:selection', 'desktop:menu'},
+      context: AppLogger.performanceLoggingEnabled
+          ? <String, Object?>{
+              'providerHash': AppLogger.safeContextId(providerId),
+            }
+          : null,
+    );
+  }
+
+  Future<void> _setSelectedProvider(String providerId) async {
     final provider = _providers.where((p) => p.id == providerId).firstOrNull;
     if (provider == null) {
       return;
@@ -2342,11 +2503,29 @@ class ChatProvider extends ChangeNotifier {
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride(isExplicit: true);
-    _notifyListeners();
+    _notifyListeners(reason: 'selection_set_provider');
     _scheduleSelectionPersistence();
   }
 
   Future<void> setSelectedModelByProvider({
+    required String providerId,
+    required String modelId,
+  }) {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_set_model',
+      () =>
+          _setSelectedModelByProvider(providerId: providerId, modelId: modelId),
+      tags: const <String>{'chat:selection', 'desktop:menu'},
+      context: AppLogger.performanceLoggingEnabled
+          ? <String, Object?>{
+              'providerHash': AppLogger.safeContextId(providerId),
+              'modelHash': AppLogger.safeContextId(modelId),
+            }
+          : null,
+    );
+  }
+
+  Future<void> _setSelectedModelByProvider({
     required String providerId,
     required String modelId,
   }) async {
@@ -2362,7 +2541,7 @@ class ChatProvider extends ChangeNotifier {
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride(isExplicit: true);
-    _notifyListeners();
+    _notifyListeners(reason: 'selection_set_model');
     _scheduleSelectionPersistence();
   }
 
@@ -2374,7 +2553,16 @@ class ChatProvider extends ChangeNotifier {
     await setSelectedModelByProvider(providerId: provider.id, modelId: modelId);
   }
 
-  Future<void> cycleRecentModelShortcut() async {
+  Future<void> cycleRecentModelShortcut() {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_cycle_model_shortcut',
+      _cycleRecentModelShortcut,
+      tags: const <String>{'chat:selection', 'keyboard:shortcut'},
+      context: const <String, Object?>{'source': 'shortcut'},
+    );
+  }
+
+  Future<void> _cycleRecentModelShortcut() async {
     final candidates = _availableModelCycleKeys();
     if (candidates.isEmpty) {
       return;
@@ -2400,7 +2588,18 @@ class ChatProvider extends ChangeNotifier {
     await setSelectedModelByProvider(providerId: providerId, modelId: modelId);
   }
 
-  Future<void> setSelectedAgent(String agentName) async {
+  Future<void> setSelectedAgent(String agentName) {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_set_agent',
+      () => _setSelectedAgent(agentName),
+      tags: const <String>{'chat:selection', 'desktop:menu'},
+      context: AppLogger.performanceLoggingEnabled
+          ? <String, Object?>{'agentHash': AppLogger.safeContextId(agentName)}
+          : null,
+    );
+  }
+
+  Future<void> _setSelectedAgent(String agentName) async {
     final candidate = agentName.trim();
     if (candidate.isEmpty) {
       return;
@@ -2418,11 +2617,22 @@ class ChatProvider extends ChangeNotifier {
     _restoreSelectionForAgent(next);
     _recordAgentSelectionRecency(previousAgentName: previousAgentName);
     _storeCurrentSessionSelectionOverride(isExplicit: true);
-    _notifyListeners();
+    _notifyListeners(reason: 'selection_set_agent');
     _scheduleSelectionPersistence();
   }
 
-  Future<void> setSelectedVariant(String? variantId) async {
+  Future<void> setSelectedVariant(String? variantId) {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_set_variant',
+      () => _setSelectedVariant(variantId),
+      tags: const <String>{'chat:selection', 'desktop:menu'},
+      context: AppLogger.performanceLoggingEnabled
+          ? <String, Object?>{'variantHash': AppLogger.safeContextId(variantId)}
+          : null,
+    );
+  }
+
+  Future<void> _setSelectedVariant(String? variantId) async {
     final providerId = _selectedProviderId;
     final modelId = _selectedModelId;
     final model = selectedModel;
@@ -2449,11 +2659,20 @@ class ChatProvider extends ChangeNotifier {
     _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
 
     _storeCurrentSessionSelectionOverride(isExplicit: true);
-    _notifyListeners();
+    _notifyListeners(reason: 'selection_set_variant');
     _scheduleSelectionPersistence();
   }
 
-  Future<void> cycleVariant() async {
+  Future<void> cycleVariant() {
+    return AppLogger.runPerformanceTask<void>(
+      'selection_cycle_variant_shortcut',
+      _cycleVariant,
+      tags: const <String>{'chat:selection', 'keyboard:shortcut'},
+      context: const <String, Object?>{'source': 'shortcut'},
+    );
+  }
+
+  Future<void> _cycleVariant() async {
     final model = selectedModel;
     if (model == null || model.variants.isEmpty) {
       return;
@@ -2482,7 +2701,16 @@ class ChatProvider extends ChangeNotifier {
   /// Cycle to the next (or previous) selectable agent.
   /// Returns the name of the newly selected agent, or null when the list
   /// is empty and no cycling was performed.
-  Future<String?> cycleAgent({bool reverse = false}) async {
+  Future<String?> cycleAgent({bool reverse = false}) {
+    return AppLogger.runPerformanceTask<String?>(
+      'selection_cycle_agent_shortcut',
+      () => _cycleAgent(reverse: reverse),
+      tags: const <String>{'chat:selection', 'keyboard:shortcut'},
+      context: <String, Object?>{'reverse': reverse},
+    );
+  }
+
+  Future<String?> _cycleAgent({bool reverse = false}) async {
     final candidates = selectableAgents
         .map((agent) => agent.name.trim())
         .where((name) => name.isNotEmpty)

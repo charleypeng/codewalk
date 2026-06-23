@@ -128,31 +128,44 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
     String? scopeId,
   }) async {
     try {
-      final resolvedServerId = serverId ?? await _resolveServerIdForStorage();
-      final resolvedScopeId = scopeId ?? _resolveContextScopeId();
-      final payload = <String, dynamic>{
-        'sessionId': normalizedSessionId,
-        'messages': filteredMessages
-            .map((message) => ChatMessageModel.fromDomain(message).toJson())
-            .toList(growable: false),
-      };
-      await localDataSource.saveSessionMessagesSnapshot(
-        json.encode(payload),
-        sessionId: normalizedSessionId,
-        serverId: resolvedServerId,
-        scopeId: resolvedScopeId,
-      );
-      await localDataSource.saveSessionMessagesSnapshotUpdatedAt(
-        DateTime.now().millisecondsSinceEpoch,
-        sessionId: normalizedSessionId,
-        serverId: resolvedServerId,
-        scopeId: resolvedScopeId,
-      );
+      await AppLogger.runPerformanceTask<void>(
+        'session_snapshot_write',
+        () async {
+          final resolvedServerId =
+              serverId ?? await _resolveServerIdForStorage();
+          final resolvedScopeId = scopeId ?? _resolveContextScopeId();
+          final payload = <String, dynamic>{
+            'sessionId': normalizedSessionId,
+            'messages': filteredMessages
+                .map((message) => ChatMessageModel.fromDomain(message).toJson())
+                .toList(growable: false),
+          };
+          await localDataSource.saveSessionMessagesSnapshot(
+            json.encode(payload),
+            sessionId: normalizedSessionId,
+            serverId: resolvedServerId,
+            scopeId: resolvedScopeId,
+          );
+          await localDataSource.saveSessionMessagesSnapshotUpdatedAt(
+            DateTime.now().millisecondsSinceEpoch,
+            sessionId: normalizedSessionId,
+            serverId: resolvedServerId,
+            scopeId: resolvedScopeId,
+          );
 
-      await _touchPersistedSessionMessagesSnapshotId(
-        normalizedSessionId,
-        serverId: resolvedServerId,
-        scopeId: resolvedScopeId,
+          await _touchPersistedSessionMessagesSnapshotId(
+            normalizedSessionId,
+            serverId: resolvedServerId,
+            scopeId: resolvedScopeId,
+          );
+        },
+        tags: const <String>{'chat:snapshot', 'cache:write'},
+        context: AppLogger.performanceLoggingEnabled
+            ? <String, Object?>{
+                'sessionHash': AppLogger.safeContextId(normalizedSessionId),
+                'messageCount': filteredMessages.length,
+              }
+            : null,
       );
     } catch (e, stackTrace) {
       AppLogger.warn(
@@ -218,53 +231,64 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
     }
 
     try {
-      final snapshotJson = await localDataSource.getSessionMessagesSnapshot(
-        sessionId: normalizedSessionId,
-        serverId: serverId,
-        scopeId: scopeId,
-      );
-      if (snapshotJson == null || snapshotJson.trim().isEmpty) {
-        return null;
-      }
-
-      final updatedAtMs = await localDataSource
-          .getSessionMessagesSnapshotUpdatedAt(
+      return await AppLogger.runPerformanceTask<List<ChatMessage>?>(
+        'session_snapshot_restore',
+        () async {
+          final snapshotJson = await localDataSource.getSessionMessagesSnapshot(
             sessionId: normalizedSessionId,
             serverId: serverId,
             scopeId: scopeId,
           );
-      final isFresh =
-          updatedAtMs != null &&
-          DateTime.now().difference(
-                DateTime.fromMillisecondsSinceEpoch(updatedAtMs),
-              ) <=
-              ChatProvider._sessionMessagesSnapshotTtl;
+          if (snapshotJson == null || snapshotJson.trim().isEmpty) {
+            return null;
+          }
 
-      final decoded = json.decode(snapshotJson);
-      if (decoded is! Map<String, dynamic>) {
-        return null;
-      }
-      final messagesJson = decoded['messages'];
-      if (messagesJson is! List) {
-        return null;
-      }
-      final messages = _restoreableCachedMessages(
-        messagesJson
-            .whereType<Map<String, dynamic>>()
-            .map((item) => ChatMessageModel.fromJson(item).toDomain())
-            .where((message) => message.sessionId == normalizedSessionId)
-            .toList(growable: false),
+          final updatedAtMs = await localDataSource
+              .getSessionMessagesSnapshotUpdatedAt(
+                sessionId: normalizedSessionId,
+                serverId: serverId,
+                scopeId: scopeId,
+              );
+          final isFresh =
+              updatedAtMs != null &&
+              DateTime.now().difference(
+                    DateTime.fromMillisecondsSinceEpoch(updatedAtMs),
+                  ) <=
+                  ChatProvider._sessionMessagesSnapshotTtl;
+
+          final decoded = json.decode(snapshotJson);
+          if (decoded is! Map<String, dynamic>) {
+            return null;
+          }
+          final messagesJson = decoded['messages'];
+          if (messagesJson is! List) {
+            return null;
+          }
+          final messages = _restoreableCachedMessages(
+            messagesJson
+                .whereType<Map<String, dynamic>>()
+                .map((item) => ChatMessageModel.fromJson(item).toDomain())
+                .where((message) => message.sessionId == normalizedSessionId)
+                .toList(growable: false),
+          );
+          if (messages.isEmpty) {
+            return null;
+          }
+
+          if (!isFresh) {
+            AppLogger.info(
+              'Per-session message snapshot is stale (> ${ChatProvider._sessionMessagesSnapshotTtl.inDays} days) session=$normalizedSessionId',
+            );
+          }
+          return messages;
+        },
+        tags: const <String>{'chat:snapshot', 'cache:read'},
+        context: AppLogger.performanceLoggingEnabled
+            ? <String, Object?>{
+                'sessionHash': AppLogger.safeContextId(normalizedSessionId),
+              }
+            : null,
       );
-      if (messages.isEmpty) {
-        return null;
-      }
-
-      if (!isFresh) {
-        AppLogger.info(
-          'Per-session message snapshot is stale (> ${ChatProvider._sessionMessagesSnapshotTtl.inDays} days) session=$normalizedSessionId',
-        );
-      }
-      return messages;
     } catch (e, stackTrace) {
       AppLogger.warn(
         'Failed to restore per-session message snapshot session=$normalizedSessionId',

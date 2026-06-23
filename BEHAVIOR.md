@@ -1540,6 +1540,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the user enables `Measure performance` on the logs screen
 - **Then** CodeWalk persists that choice and starts recording timing entries for selected expensive operations
 - **Then** disabling the same option stops new performance timing entries while preserving existing captured logs until the log buffer is cleared or rotated
+- **Then** captured timing entries include chat/session load, message load, large cache reads/writes, legacy cache migration, session snapshot restore/write, HTTP requests, project/directory switch, chat selection changes, selection persistence, ChatProvider listener dispatch, and chat settlement/viewport scans
 
 ### Performance logs are filterable
 

@@ -235,6 +235,22 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   bool _isReadingLatestSettledAssistantResponse() {
+    if (AppLogger.performanceLoggingEnabled) {
+      return AppLogger.measurePerformance<bool>(
+        'reading_latest_settled_response_guard',
+        _isReadingLatestSettledAssistantResponseBody,
+        tags: const <String>{'chat:settlement', 'ui:viewport'},
+        context: <String, Object?>{
+          'messageCount': _chatProvider?.messages.length ?? 0,
+          'scrollMode': _scrollFollowMode.name,
+          'hasUnreadBelow': _hasUnreadMessagesBelow,
+        },
+      );
+    }
+    return _isReadingLatestSettledAssistantResponseBody();
+  }
+
+  bool _isReadingLatestSettledAssistantResponseBody() {
     final chatProvider = _chatProvider;
     if (chatProvider == null ||
         _scrollFollowMode != _ScrollFollowMode.reading ||
@@ -514,6 +530,25 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _syncResponseViewportPolicy(ChatProvider chatProvider) {
+    if (AppLogger.performanceLoggingEnabled) {
+      AppLogger.measurePerformance<void>(
+        'response_viewport_policy',
+        () => _syncResponseViewportPolicyBody(chatProvider),
+        tags: const <String>{'chat:settlement', 'ui:viewport'},
+        context: <String, Object?>{
+          'messageCount': chatProvider.messages.length,
+          'sessionHash': AppLogger.safeContextId(
+            chatProvider.currentSession?.id,
+          ),
+          'isResponding': chatProvider.isCurrentSessionActivelyResponding,
+        },
+      );
+      return;
+    }
+    _syncResponseViewportPolicyBody(chatProvider);
+  }
+
+  void _syncResponseViewportPolicyBody(ChatProvider chatProvider) {
     final sessionId = chatProvider.currentSession?.id;
     if (sessionId == null) {
       return;

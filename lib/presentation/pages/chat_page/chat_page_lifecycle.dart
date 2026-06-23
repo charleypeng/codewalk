@@ -40,6 +40,24 @@ extension _ChatPageLifecycle on _ChatPageState {
   }
 
   void _handleChatProviderChanged() {
+    if (AppLogger.performanceLoggingEnabled) {
+      AppLogger.measurePerformance<void>(
+        'chat_provider_changed',
+        _handleChatProviderChangedBody,
+        tags: const <String>{'chat:settlement', 'ui:provider'},
+        context: <String, Object?>{
+          'messageCount': _chatProvider?.messages.length ?? 0,
+          'sessionHash': AppLogger.safeContextId(
+            _chatProvider?.currentSession?.id,
+          ),
+        },
+      );
+      return;
+    }
+    _handleChatProviderChangedBody();
+  }
+
+  void _handleChatProviderChangedBody() {
     final provider = _chatProvider;
     if (provider != null) {
       _syncSessionScrollState(provider);
@@ -523,7 +541,8 @@ extension _ChatPageLifecycle on _ChatPageState {
     _flushPendingPostOnboardingTourAutoStart();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
-    if (_scrollFollowMode != _ScrollFollowMode.following || chatProvider.currentSession == null) {
+    if (_scrollFollowMode != _ScrollFollowMode.following ||
+        chatProvider.currentSession == null) {
       return;
     }
     if (_resumeRefreshViewportRestorePending &&

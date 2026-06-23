@@ -141,8 +141,18 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
         }
 
         try {
-          await store.write(key, legacy);
-          await sharedPreferences.remove(key);
+          await AppLogger.runPerformanceTask<void>(
+            'cache_migrate_legacy_payload',
+            () async {
+              await store.write(key, legacy);
+              await sharedPreferences.remove(key);
+            },
+            tags: const <String>{'cache:migrate'},
+            context: <String, Object?>{
+              'keyHash': AppLogger.safeContextId(key),
+              'sizeBytes': legacy.length,
+            },
+          );
           _migratedLargeCacheKeys.add(key);
         } catch (_) {
           return legacy;
