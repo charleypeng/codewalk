@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.136.0 - 2026-06-23
+
+- feat(logging): add opt-in performance tracing
+
 ## v1.135.0 - 2026-06-22
 
 - fix: reduce Windows notification cleanup and STT shortcut risk
