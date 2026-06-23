@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -399,6 +400,8 @@ abstract class AppLocalDataSource {
 
   /// Technical comment translated to English.
   Future<void> clearAll();
+
+  Future<void> migrateLegacyLargeCachePayloads();
 }
 
 /// Technical comment translated to English.
@@ -415,6 +418,9 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   final FlutterSecureStorage _secureStorage;
   final ChatCachePayloadStore? _chatCachePayloadStore;
   final Set<String> _migratedLargeCacheKeys = <String>{};
+  final Set<String> _pendingLargeCacheMigrationKeys = <String>{};
+  final Map<String, Future<void>> _largeCacheMutations =
+      <String, Future<void>>{};
 
   @override
   Future<String?> getServerHost() async {
@@ -1731,5 +1737,10 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     } catch (_) {
       // Ignore secure storage cleanup failures and keep app functional.
     }
+  }
+
+  @override
+  Future<void> migrateLegacyLargeCachePayloads() async {
+    await _migrateLegacyLargeCachePayloads();
   }
 }

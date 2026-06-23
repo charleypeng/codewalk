@@ -652,35 +652,52 @@ Enforce runtime usage through platform services: Android notifications use `@dra
 
 ---
 
-## ADR-016: SharedPreferences-Backed Chat Snapshot Cache (2026-02-20, updated 2026-06-15)
+## ADR-016: Hybrid File-Backed Cache for Large Chat Payloads (2026-02-20, updated 2026-06-23)
 
 **Status**: Accepted
 
+**Related**: ADR-020 (Session-Level SWR Cache with Persisted LRU Snapshots), ADR-018 (Dedicated SSE Dio Instance)
+
 ### Context
 
-CodeWalk caches session lists, last-session snapshots, and per-session message snapshots so project/session switching can restore a useful chat view before remote revalidation finishes. The implementation must keep those payloads scoped by server and project context, and it must remain simple enough to preserve reliably across mobile and desktop targets.
+CodeWalk caches session lists, last-session snapshots, and per-session message snapshots so project/session switching can restore a useful chat view before remote revalidation finishes. Payloads must stay scoped by server and project context, and the implementation must remain simple enough to preserve reliably across mobile and desktop targets.
+
+The 2026-06-15 revision replaced the file-backed store with a SharedPreferences-only path. While that removed a stale abstraction, native IO targets (Windows, macOS, Linux, Android) hit the platform preference-store payload limits and suffered a measurable Windows/desktop performance regression when storing large chat payloads. Legacy snapshots from before that revision may also still be sitting in the preference store, acting as a latent compatibility risk that needs to be drained on first access.
 
 ### Decision
 
-Store cached chat payloads directly in `SharedPreferences` under the same server/context-scoped key scheme used by the rest of `AppLocalDataSource`. Snapshot timestamps and LRU metadata remain separate preference keys. The earlier file-backed cache-store layer has been removed from the active implementation; `_readLargeCachePayload`, `_writeLargeCachePayload`, and related helpers are now compatibility-shaped private wrappers around `SharedPreferences`.
+Adopt a **hybrid file-backed cache** for chat payloads on native IO platforms, with SharedPreferences reserved for cache metadata, the existing SharedPreferences fallback when no file store exists, and proactive migration of any legacy large payload out of SharedPreferences into the file-backed store.
+
+1. **File-backed store on all native IO platforms** — re-enable `ChatCachePayloadStore` (and the `_readLargeCachePayload` / `_writeLargeCachePayload` helpers) for **every** native IO target — Windows, macOS, Linux, and Android. The store writes payload bytes to app support storage under the same server/context-scoped key scheme used by `AppLocalDataSource`. The fix is intentionally not Android-only: scoping file-backed storage to a single platform would re-introduce the same regression on the others.
+2. **SharedPreferences metadata only** — keep snapshot timestamps, LRU lists, and other small cache metadata in `SharedPreferences`. These values are small, rarely change, and ride the existing preference-store infrastructure.
+3. **No-file-store fallback** — on targets without a `ChatCachePayloadStore` implementation, the helpers keep the existing SharedPreferences read/write fallback. This preserves current web/test behavior while the Windows/desktop fix moves native IO payloads out of the preference store.
+4. **Best-effort migration of known large-payload preference keys** — at the start of `loadSessions()`, schedule a background sweep of `SharedPreferences` entries matching the known large-payload key families (`cached_sessions*`, `last_session_snapshot*`, `session_messages_snapshot::*`, defined by `AppConstants.cachedSessionsKey`, `lastSessionSnapshotKey`, and `sessionMessagesSnapshotKey`). The read path returns a legacy preference payload immediately, treats it as the newest source when a file-backed copy also exists, and queues the file write/preference removal in the background. Per-key mutation queues prevent background migration from overwriting newer cache writes; a per-process in-memory set (`_migratedLargeCacheKeys`) tracks keys cleared during the current run. There is no versioned persisted migration marker.
+5. **Conditional export boundary** — the file-backed store is exposed via the existing conditional export pattern (`chat_cache_payload_store_io.dart` / `chat_cache_payload_store_stub.dart`) so web builds stay green without runtime platform checks.
 
 ### Rationale
 
-- Keeping the cache in the existing local datasource reduces platform-conditional storage paths and removes an inactive cache abstraction.
-- Context-scoped keys are the load-bearing part of the cache contract; the storage backend is an implementation detail.
-- The private helper names preserve local call-site clarity without keeping the removed file-store API alive.
+- Large chat payloads exceed the practical limit of every native platform's preference store and were the root cause of the Windows/desktop regression; restoring the file-backed store resolves this without changing the cache contract.
+- Re-enabling file-backed storage on **all** native IO platforms — not Android only — matches the original architecture and ensures the fix is portable; isolating it to a single platform would have left the regression live on the others.
+- Keeping small metadata in `SharedPreferences` preserves the contract that cache state is durable across app restarts and avoids file I/O on every read for the hot path.
+- The no-file-store fallback keeps the code path uniform without breaking web builds or tests that inject no store; the Windows regression is addressed by ensuring all native IO targets have a real file-backed store.
+- Best-effort background migration of the known large-payload key families out of `SharedPreferences` prevents the preference store from staying bloated by oversized entries written before the fix without blocking the first cache restore on Windows; the read path treats any residual `SharedPreferences` copy as newer than file-backed data and queues it for draining.
 
 ### Consequences
 
-- ✅ Eliminates a stale dedicated cache-store dependency and keeps local persistence behavior uniform across platforms.
-- ✅ Cached sessions and snapshots continue to survive app restart through the existing preference store.
-- ✅ Tests assert the active SharedPreferences-backed behavior instead of the removed cache-store injection path.
-- ⚠ Large payloads still depend on platform preference-store limits; if oversized snapshot writes become a measured problem again, reintroduce a file-backed store behind a new ADR update and regression tests.
+- ✅ Windows/desktop performance regression is resolved by moving large payloads off the preference store on all native IO platforms.
+- ✅ The cache contract (server/context-scoped keys, metadata layout) is unchanged; only the payload backend becomes hybrid.
+- ✅ Legacy chat payloads under the known large-payload keys (`cached_sessions*`, `last_session_snapshot*`, `session_messages_snapshot::*`) are drained from `SharedPreferences` in the background after `loadSessions()` starts, preventing silent loss and preference-store bloat without blocking the first restore; residual `SharedPreferences` copies win over file-backed copies and are migrated forward.
+- ✅ Web/test configurations without a file store keep the existing SharedPreferences fallback semantics.
+- ⚠ Requires the conditional import boundary (`ChatCachePayloadStore` IO vs. stub) to keep web builds green — same pattern already used by the Tailscale adapter (ADR-036) and the SSE adapter (ADR-018).
+- ⚠ The migration key list is explicit; adding a new large-payload key family requires updating `_isLargeCachePayloadPreferenceKey` so the sweep stays complete.
+- ❌ Web can still persist large chat snapshots through its preference fallback; a true web no-store or IndexedDB-backed cache is a separate decision.
 
 ### Key Files
 
 - `lib/data/datasources/app_local_datasource.dart`
 - `lib/data/datasources/app_local_datasource_storage_helpers.dart`
+- `lib/data/cache/chat_cache_payload_store_io.dart` — file-backed store implementation for native IO targets
+- `lib/data/cache/chat_cache_payload_store_stub.dart` — no-file-store fallback for web/tests
 - `test/unit/datasources/app_local_datasource_impl_test.dart`
 
 ---

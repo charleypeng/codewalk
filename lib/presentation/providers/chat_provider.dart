@@ -2816,6 +2816,15 @@ class ChatProvider extends ChangeNotifier {
 
         final serverId = await _resolveServerScopeId();
         final scopeId = _resolveContextScopeId();
+        unawaited(
+          Future<void>(() async {
+            try {
+              await localDataSource.migrateLegacyLargeCachePayloads();
+            } catch (_) {
+              // Cache migration must never block the server-authoritative path.
+            }
+          }),
+        );
         final storedSessionId = await localDataSource.getCurrentSessionId(
           serverId: serverId,
           scopeId: scopeId,

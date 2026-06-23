@@ -268,6 +268,9 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   }
 
   @override
+  Future<void> migrateLegacyLargeCachePayloads() async {}
+
+  @override
   Future<String?> getActiveServerId() async => activeServerId;
 
   @override

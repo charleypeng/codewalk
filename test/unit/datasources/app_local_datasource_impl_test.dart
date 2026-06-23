@@ -52,17 +52,11 @@ class _ThrowingChatCachePayloadStore implements ChatCachePayloadStore {
   }
 }
 
-class _ReadFailsOnceChatCachePayloadStore
+class _WriteAlwaysFailsChatCachePayloadStore
     extends _InMemoryChatCachePayloadStore {
-  bool _failed = false;
-
   @override
-  Future<String?> read(String key) async {
-    if (!_failed) {
-      _failed = true;
-      throw StateError('cache read failed once');
-    }
-    return super.read(key);
+  Future<void> write(String key, String value) async {
+    throw StateError('cache write failed');
   }
 }
 
@@ -117,12 +111,16 @@ void main() {
         .setMockMethodCallHandler(secureStorageChannel, null);
   });
 
-  test('does not create file cache store on non-Android IO platforms', () {
-    if (Platform.isAndroid) {
+  test('creates file cache store on native IO platforms', () {
+    if (!Platform.isAndroid &&
+        !Platform.isIOS &&
+        !Platform.isLinux &&
+        !Platform.isMacOS &&
+        !Platform.isWindows) {
       return;
     }
 
-    expect(createChatCachePayloadStore(), isNull);
+    expect(createChatCachePayloadStore(), isA<ChatCachePayloadStore>());
   });
 
   test(
@@ -230,6 +228,7 @@ void main() {
       final payload = await dataSource.getCachedSessions();
 
       expect(payload, '[{"id":"legacy"}]');
+      await dataSource.migrateLegacyLargeCachePayloads();
       expect(
         cacheStore.values[AppConstants.cachedSessionsKey],
         '[{"id":"legacy"}]',
@@ -239,13 +238,82 @@ void main() {
   );
 
   test(
-    'does not mark legacy payload migrated when cache store read fails',
+    'prefers legacy preference when payload already exists in cache store',
     () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         AppConstants.cachedSessionsKey: '[{"id":"legacy"}]',
       });
       final prefs = await SharedPreferences.getInstance();
-      final cacheStore = _ReadFailsOnceChatCachePayloadStore();
+      final cacheStore = _InMemoryChatCachePayloadStore()
+        ..values[AppConstants.cachedSessionsKey] = '[{"id":"cached"}]';
+      final dataSource = AppLocalDataSourceImpl(
+        sharedPreferences: prefs,
+        chatCachePayloadStore: cacheStore,
+      );
+
+      final payload = await dataSource.getCachedSessions();
+
+      expect(payload, '[{"id":"legacy"}]');
+      await dataSource.migrateLegacyLargeCachePayloads();
+      expect(
+        cacheStore.values[AppConstants.cachedSessionsKey],
+        '[{"id":"legacy"}]',
+      );
+      expect(prefs.getString(AppConstants.cachedSessionsKey), isNull);
+    },
+  );
+
+  test('proactively migrates all legacy large cache payloads', () async {
+    const serverId = 'srv-1';
+    const scopeId = '/repo/demo';
+    const sessionId = 'ses_123';
+    final encodedServer = Uri.encodeComponent(serverId);
+    final encodedScope = Uri.encodeComponent(scopeId);
+    final encodedSession = Uri.encodeComponent(sessionId);
+    final cachedSessionsKey =
+        '${AppConstants.cachedSessionsKey}::$encodedServer::$encodedScope';
+    final lastSessionKey = AppConstants.lastSessionSnapshotKey;
+    final sessionSnapshotKey =
+        '${AppConstants.sessionMessagesSnapshotKey}::$encodedSession::$encodedServer::$encodedScope';
+    final sessionSnapshotUpdatedAtKey =
+        '${AppConstants.sessionMessagesSnapshotUpdatedAtKey}::$encodedSession::$encodedServer::$encodedScope';
+    final sessionSnapshotIdsKey =
+        '${AppConstants.sessionMessagesSnapshotIdsKey}::$encodedServer::$encodedScope';
+
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      cachedSessionsKey: '[{"id":"s1"}]',
+      lastSessionKey: '{"session":"s1"}',
+      sessionSnapshotKey: '{"messages":[]}',
+      sessionSnapshotUpdatedAtKey: 123,
+      sessionSnapshotIdsKey: '["$sessionId"]',
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final cacheStore = _InMemoryChatCachePayloadStore();
+    final dataSource = AppLocalDataSourceImpl(
+      sharedPreferences: prefs,
+      chatCachePayloadStore: cacheStore,
+    );
+
+    await dataSource.migrateLegacyLargeCachePayloads();
+
+    expect(cacheStore.values[cachedSessionsKey], '[{"id":"s1"}]');
+    expect(cacheStore.values[lastSessionKey], '{"session":"s1"}');
+    expect(cacheStore.values[sessionSnapshotKey], '{"messages":[]}');
+    expect(prefs.getString(cachedSessionsKey), isNull);
+    expect(prefs.getString(lastSessionKey), isNull);
+    expect(prefs.getString(sessionSnapshotKey), isNull);
+    expect(prefs.getInt(sessionSnapshotUpdatedAtKey), 123);
+    expect(prefs.getString(sessionSnapshotIdsKey), '["$sessionId"]');
+  });
+
+  test(
+    'does not mark legacy payload migrated when cache store write fails',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        AppConstants.cachedSessionsKey: '[{"id":"legacy"}]',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final cacheStore = _WriteAlwaysFailsChatCachePayloadStore();
       final dataSource = AppLocalDataSourceImpl(
         sharedPreferences: prefs,
         chatCachePayloadStore: cacheStore,
@@ -254,6 +322,7 @@ void main() {
       final firstPayload = await dataSource.getCachedSessions();
 
       expect(firstPayload, '[{"id":"legacy"}]');
+      await dataSource.migrateLegacyLargeCachePayloads();
       expect(cacheStore.values, isEmpty);
       expect(
         prefs.getString(AppConstants.cachedSessionsKey),
@@ -263,11 +332,12 @@ void main() {
       final secondPayload = await dataSource.getCachedSessions();
 
       expect(secondPayload, '[{"id":"legacy"}]');
+      await dataSource.migrateLegacyLargeCachePayloads();
+      expect(cacheStore.values, isEmpty);
       expect(
-        cacheStore.values[AppConstants.cachedSessionsKey],
+        prefs.getString(AppConstants.cachedSessionsKey),
         '[{"id":"legacy"}]',
       );
-      expect(prefs.getString(AppConstants.cachedSessionsKey), isNull);
     },
   );
 
