@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.137.0 - 2026-06-23
+
+- fix(cache): use file-backed chat cache on native platforms
+
 ## v1.136.1 - 2026-06-23
 
 - fix(logging): trace desktop performance bottlenecks
