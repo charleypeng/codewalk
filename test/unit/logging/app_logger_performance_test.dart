@@ -1,0 +1,76 @@
+import 'package:codewalk/core/logging/app_logger.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  setUp(() {
+    AppLogger.clearEntries();
+    AppLogger.setPerformanceLoggingEnabled(false);
+  });
+
+  tearDown(() {
+    AppLogger.clearEntries();
+    AppLogger.setPerformanceLoggingEnabled(false);
+  });
+
+  test('does not record performance tasks while disabled', () async {
+    await AppLogger.runPerformanceTask('load_messages', () async {});
+
+    expect(AppLogger.entries.value, isEmpty);
+  });
+
+  test('records tags and metrics while enabled', () async {
+    AppLogger.setPerformanceLoggingEnabled(true);
+
+    await AppLogger.runPerformanceTask(
+      'load_messages',
+      () async {},
+      tags: const <String>{'chat:messages'},
+      context: const <String, Object?>{'sessionId': 'ses_123'},
+    );
+
+    final entry = AppLogger.entries.value.single;
+    expect(entry.isPerformance, isTrue);
+    expect(
+      entry.tags,
+      containsAll(<String>['performance', 'task:load_messages']),
+    );
+    expect(entry.tags, contains('chat:messages'));
+    expect(entry.elapsedMs, isNotNull);
+    expect(entry.performanceOperation, 'load_messages');
+    expect(entry.performanceStatus, 'ok');
+    expect(
+      AppLogger.filteredEntries(tags: const <String>{AppLogger.performanceTag}),
+      contains(entry),
+    );
+  });
+
+  test('redacts sensitive metric keys', () async {
+    AppLogger.setPerformanceLoggingEnabled(true);
+
+    await AppLogger.runPerformanceTask(
+      'network_request',
+      () async {},
+      context: const <String, Object?>{
+        'token': 'secret-token',
+        'path': '/session',
+      },
+    );
+
+    final context = AppLogger.entries.value.single.metrics?['context'];
+    expect(context, isA<Map>());
+    expect((context as Map)['token'], '***');
+    expect(context['path'], '/session');
+  });
+
+  test('round-trips performance entries through json', () async {
+    AppLogger.setPerformanceLoggingEnabled(true);
+
+    await AppLogger.runPerformanceTask('cache_read', () async {});
+
+    final restored = LogEntry.fromJson(AppLogger.entries.value.single.toJson());
+
+    expect(restored.isPerformance, isTrue);
+    expect(restored.performanceOperation, 'cache_read');
+    expect(restored.elapsedMs, isNotNull);
+  });
+}

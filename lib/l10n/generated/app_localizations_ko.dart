@@ -1673,10 +1673,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsCopyFiltered => '필터링된 로그 복사';
 
   @override
+  String get logsEntryContext => '컨텍스트';
+
+  @override
+  String get logsEntryTags => '태그';
+
+  @override
   String get logsFilterAll => '전체';
 
   @override
   String get logsLevel => '로그 레벨';
+
+  @override
+  String get logsMeasurePerformance => '성능 측정';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      '앱의 비용이 큰 작업 시간을 기록합니다. 지연을 진단할 때만 켜세요.';
 
   @override
   String get logsNoLogsYet => '아직 캡처된 로그가 없습니다.';
@@ -1685,12 +1698,35 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsNoMatchingLogs => '현재 필터와 일치하는 로그가 없습니다.';
 
   @override
+  String get logsNoPerformanceData => '현재 필터와 일치하는 성능 로그가 없습니다.';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => '성능';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return '성능 $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => '로그 검색';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return '항목 $length2개 중 $length개 표시';
   }
+
+  @override
+  String get logsSlowestPerformance => '가장 느린 성능 로그';
 
   @override
   String get logsTimeRange => '시간 범위';

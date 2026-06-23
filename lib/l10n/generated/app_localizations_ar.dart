@@ -1727,10 +1727,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logsCopyFiltered => 'نسخ السجلات المصفاة';
 
   @override
+  String get logsEntryContext => 'السياق';
+
+  @override
+  String get logsEntryTags => 'الوسوم';
+
+  @override
   String get logsFilterAll => 'الكل';
 
   @override
   String get logsLevel => 'المستوى';
+
+  @override
+  String get logsMeasurePerformance => 'قياس الأداء';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'يسجل زمن العمليات المكلفة في التطبيق. اتركه معطلاً إلا عند تشخيص البطء.';
 
   @override
   String get logsNoLogsYet => 'لم يتم التقاط أي سجلات بعد.';
@@ -1739,12 +1752,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logsNoMatchingLogs => 'لا توجد سجلات تطابق الفلاتر الحالية.';
 
   @override
+  String get logsNoPerformanceData =>
+      'لا توجد سجلات أداء تطابق عوامل التصفية الحالية.';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'الأداء';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'الأداء $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'البحث في السجلات';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return 'عرض $length من $length2 إدخالات';
   }
+
+  @override
+  String get logsSlowestPerformance => 'أبطأ سجلات الأداء';
 
   @override
   String get logsTimeRange => 'النطاق الزمني';

@@ -49,6 +49,7 @@ class DioClient {
   String? _stickySessionId;
 
   static const String _stickySessionIdHeader = 'X-Session-Id';
+  static const String _performanceRequestStartMsKey = 'cw_performance_start_ms';
 
   Dio get dio => _dio;
 
@@ -162,9 +163,12 @@ class DioClient {
 
           _applyStickySessionHeader(options);
 
-          if (!kReleaseMode) {
-            options.extra['request_start_ms'] =
+          if (AppLogger.performanceLoggingEnabled || !kReleaseMode) {
+            options.extra[_performanceRequestStartMsKey] =
                 DateTime.now().millisecondsSinceEpoch;
+          }
+
+          if (!kReleaseMode) {
             final uri = options.uri.toString();
             AppLogger.debug('[Dio] --> ${options.method.toUpperCase()} $uri');
           }
@@ -177,7 +181,8 @@ class DioClient {
           );
           if (!kReleaseMode) {
             final startMs =
-                response.requestOptions.extra['request_start_ms'] as int?;
+                response.requestOptions.extra[_performanceRequestStartMsKey]
+                    as int?;
             final elapsedMs = startMs == null
                 ? -1
                 : DateTime.now().millisecondsSinceEpoch - startMs;
@@ -188,6 +193,11 @@ class DioClient {
               '[Dio] <-- $status ${response.requestOptions.method.toUpperCase()} $uri$durationLabel',
             );
           }
+          _recordHttpPerformance(
+            response.requestOptions,
+            status: 'ok',
+            statusCode: response.statusCode,
+          );
           handler.next(response);
         },
         onError: (error, handler) {
@@ -204,11 +214,49 @@ class DioClient {
               stackTrace: error.stackTrace,
             );
           }
+          _recordHttpPerformance(
+            error.requestOptions,
+            status: 'error',
+            statusCode: error.response?.statusCode,
+            error: error,
+            stackTrace: error.stackTrace,
+          );
           // Centralized error handling
           _handleError(error);
           handler.next(error);
         },
       ),
+    );
+  }
+
+  void _recordHttpPerformance(
+    RequestOptions options, {
+    required String status,
+    int? statusCode,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    if (!AppLogger.performanceLoggingEnabled) {
+      return;
+    }
+    final startMs = options.extra[_performanceRequestStartMsKey] as int?;
+    if (startMs == null) {
+      return;
+    }
+    final elapsedMs = DateTime.now().millisecondsSinceEpoch - startMs;
+    AppLogger.recordPerformanceTask(
+      operation: 'network_request',
+      elapsed: Duration(milliseconds: elapsedMs),
+      status: status,
+      tags: const <String>{'network:http'},
+      context: <String, Object?>{
+        'method': options.method.toUpperCase(),
+        'hostHash': AppLogger.safeContextId(options.uri.host),
+        'route': AppLogger.safePathShape(options.uri),
+        'statusCode': statusCode,
+      },
+      error: error,
+      stackTrace: stackTrace,
     );
   }
 

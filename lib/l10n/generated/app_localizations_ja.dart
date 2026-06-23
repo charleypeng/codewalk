@@ -1670,10 +1670,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsCopyFiltered => 'コピーフィルター済みログ';
 
   @override
+  String get logsEntryContext => 'コンテキスト';
+
+  @override
+  String get logsEntryTags => 'タグ';
+
+  @override
   String get logsFilterAll => 'すべて';
 
   @override
   String get logsLevel => 'レベル';
+
+  @override
+  String get logsMeasurePerformance => 'パフォーマンスを測定';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      '重いアプリ操作の所要時間を記録します。遅延診断時以外はオフにしてください。';
 
   @override
   String get logsNoLogsYet => 'ログはまだ記録されていません。';
@@ -1682,12 +1695,35 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsNoMatchingLogs => '現在のフィルタに一致するログはありません。';
 
   @override
+  String get logsNoPerformanceData => '現在のフィルターに一致するパフォーマンスログはありません。';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'パフォーマンス';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'パフォーマンス $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'ログを検索';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return '$length2件中$length件のエントリを表示';
   }
+
+  @override
+  String get logsSlowestPerformance => '最も遅いパフォーマンスログ';
 
   @override
   String get logsTimeRange => '時間範囲';

@@ -1751,10 +1751,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsCopyFiltered => 'Copy filtered logs';
 
   @override
+  String get logsEntryContext => 'Context';
+
+  @override
+  String get logsEntryTags => 'Tags';
+
+  @override
   String get logsFilterAll => 'All';
 
   @override
   String get logsLevel => 'Level';
+
+  @override
+  String get logsMeasurePerformance => 'Measure performance';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'Capture timing logs for expensive app operations. Leave off unless you are diagnosing lag.';
 
   @override
   String get logsNoLogsYet => 'No logs captured yet.';
@@ -1763,12 +1776,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsNoMatchingLogs => 'No logs match the current filters.';
 
   @override
+  String get logsNoPerformanceData =>
+      'No performance logs match the current filters.';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'Performance';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'PERFORMANCE $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'Search logs';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return 'Showing $length of $length2 entries';
   }
+
+  @override
+  String get logsSlowestPerformance => 'Slowest performance logs';
 
   @override
   String get logsTimeRange => 'Time range';

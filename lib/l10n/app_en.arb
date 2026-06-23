@@ -1757,17 +1757,57 @@
   "@logsCopyFiltered": {
     "description": "CodeWalk UI string — logsCopyFiltered"
   },
+  "@logsEntryContext": {
+    "description": "CodeWalk UI string — logsEntryContext"
+  },
+  "@logsEntryTags": {
+    "description": "CodeWalk UI string — logsEntryTags"
+  },
   "@logsFilterAll": {
     "description": "CodeWalk UI string — logsFilterAll"
   },
   "@logsLevel": {
     "description": "CodeWalk UI string — logsLevel"
   },
+  "@logsMeasurePerformance": {
+    "description": "CodeWalk UI string — logsMeasurePerformance"
+  },
+  "@logsMeasurePerformanceDescription": {
+    "description": "CodeWalk UI string — logsMeasurePerformanceDescription"
+  },
+  "@logsNoPerformanceData": {
+    "description": "CodeWalk UI string — logsNoPerformanceData"
+  },
   "@logsNoLogsYet": {
     "description": "CodeWalk UI string — logsNoLogsYet"
   },
   "@logsNoMatchingLogs": {
     "description": "CodeWalk UI string — logsNoMatchingLogs"
+  },
+  "@logsPerformanceDuration": {
+    "description": "CodeWalk UI string — logsPerformanceDuration",
+    "placeholders": {
+      "elapsedMs": {
+        "type": "int"
+      }
+    }
+  },
+  "@logsPerformanceFilter": {
+    "description": "CodeWalk UI string — logsPerformanceFilter"
+  },
+  "@logsPerformanceTileTitle": {
+    "description": "CodeWalk UI string — logsPerformanceTileTitle",
+    "placeholders": {
+      "operation": {
+        "type": "String"
+      },
+      "elapsedMs": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
   },
   "@logsSearch": {
     "description": "CodeWalk UI string — logsSearch"
@@ -1785,6 +1825,9 @@
   },
   "@logsTimeRange": {
     "description": "CodeWalk UI string — logsTimeRange"
+  },
+  "@logsSlowestPerformance": {
+    "description": "CodeWalk UI string — logsSlowestPerformance"
   },
   "@mathExpressionLabel": {
     "description": "CodeWalk UI string — mathExpressionLabel"
@@ -4896,12 +4939,21 @@
   "logsClear": "Clear logs",
   "logsCloseSearch": "Close search",
   "logsCopyFiltered": "Copy filtered logs",
+  "logsEntryContext": "Context",
+  "logsEntryTags": "Tags",
   "logsFilterAll": "All",
   "logsLevel": "Level",
+  "logsMeasurePerformance": "Measure performance",
+  "logsMeasurePerformanceDescription": "Capture timing logs for expensive app operations. Leave off unless you are diagnosing lag.",
   "logsNoLogsYet": "No logs captured yet.",
   "logsNoMatchingLogs": "No logs match the current filters.",
+  "logsNoPerformanceData": "No performance logs match the current filters.",
+  "logsPerformanceDuration": "{elapsedMs} ms",
+  "logsPerformanceFilter": "Performance",
+  "logsPerformanceTileTitle": "PERFORMANCE {operation} | {elapsedMs} ms | {status}",
   "logsSearch": "Search logs",
   "logsShowingOrderedLength": "Showing {length} of {length2} entries",
+  "logsSlowestPerformance": "Slowest performance logs",
   "logsTimeRange": "Time range",
   "mathExpressionLabel": "Math",
   "mermaidCopySourceTooltip": "Copy source",

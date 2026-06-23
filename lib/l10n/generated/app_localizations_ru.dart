@@ -1772,10 +1772,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logsCopyFiltered => 'Копировать отфильтрованные логи';
 
   @override
+  String get logsEntryContext => 'Контекст';
+
+  @override
+  String get logsEntryTags => 'Теги';
+
+  @override
   String get logsFilterAll => 'Все';
 
   @override
   String get logsLevel => 'Уровень';
+
+  @override
+  String get logsMeasurePerformance => 'Измерять производительность';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'Записывает время дорогих операций приложения. Включайте только для диагностики задержек.';
 
   @override
   String get logsNoLogsYet => 'Логи пока не записаны.';
@@ -1785,12 +1798,37 @@ class AppLocalizationsRu extends AppLocalizations {
       'Нет логов, соответствующих текущим фильтрам.';
 
   @override
+  String get logsNoPerformanceData =>
+      'Нет журналов производительности для текущих фильтров.';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs мс';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'Производительность';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'ПРОИЗВОДИТЕЛЬНОСТЬ $operation | $elapsedMs мс | $status';
+  }
+
+  @override
   String get logsSearch => 'Закрыть поиск';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return 'Показано $length из $length2 записей';
   }
+
+  @override
+  String get logsSlowestPerformance =>
+      'Самые медленные журналы производительности';
 
   @override
   String get logsTimeRange => 'Временной диапазон';

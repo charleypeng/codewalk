@@ -112,54 +112,75 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
   }
 
   Future<String?> _readLargeCachePayload(String key) async {
-    final store = _chatCachePayloadStore;
-    if (store == null) {
-      return sharedPreferences.getString(key);
-    }
+    return AppLogger.runPerformanceTask<String?>(
+      'cache_read',
+      () async {
+        final store = _chatCachePayloadStore;
+        if (store == null) {
+          return sharedPreferences.getString(key);
+        }
 
-    try {
-      final stored = await store.read(key);
-      if (stored != null) {
-        return stored;
-      }
-    } catch (_) {
-      // Keep the app functional if the file-backed store is unavailable.
-      return sharedPreferences.getString(key);
-    }
+        try {
+          final stored = await store.read(key);
+          if (stored != null) {
+            return stored;
+          }
+        } catch (_) {
+          // Keep the app functional if the file-backed store is unavailable.
+          return sharedPreferences.getString(key);
+        }
 
-    if (_migratedLargeCacheKeys.contains(key)) {
-      return null;
-    }
+        if (_migratedLargeCacheKeys.contains(key)) {
+          return null;
+        }
 
-    final legacy = sharedPreferences.getString(key);
-    if (legacy == null || legacy.trim().isEmpty) {
-      _migratedLargeCacheKeys.add(key);
-      return null;
-    }
+        final legacy = sharedPreferences.getString(key);
+        if (legacy == null || legacy.trim().isEmpty) {
+          _migratedLargeCacheKeys.add(key);
+          return null;
+        }
 
-    try {
-      await store.write(key, legacy);
-      await sharedPreferences.remove(key);
-      _migratedLargeCacheKeys.add(key);
-    } catch (_) {
-      return legacy;
-    }
-    return legacy;
+        try {
+          await store.write(key, legacy);
+          await sharedPreferences.remove(key);
+          _migratedLargeCacheKeys.add(key);
+        } catch (_) {
+          return legacy;
+        }
+        return legacy;
+      },
+      tags: const <String>{'cache:read'},
+      context: <String, Object?>{
+        'keyHash': AppLogger.safeContextId(key),
+        'fileStore': _chatCachePayloadStore != null,
+      },
+    );
   }
 
   Future<void> _writeLargeCachePayload(String key, String value) async {
-    final store = _chatCachePayloadStore;
-    if (store == null) {
-      await sharedPreferences.setString(key, value);
-      return;
-    }
-    try {
-      await store.write(key, value);
-      await sharedPreferences.remove(key);
-      _migratedLargeCacheKeys.add(key);
-    } catch (_) {
-      await sharedPreferences.setString(key, value);
-    }
+    return AppLogger.runPerformanceTask<void>(
+      'cache_write',
+      () async {
+        final store = _chatCachePayloadStore;
+        if (store == null) {
+          await sharedPreferences.setString(key, value);
+          return;
+        }
+        try {
+          await store.write(key, value);
+          await sharedPreferences.remove(key);
+          _migratedLargeCacheKeys.add(key);
+        } catch (_) {
+          await sharedPreferences.setString(key, value);
+        }
+      },
+      tags: const <String>{'cache:write'},
+      context: <String, Object?>{
+        'keyHash': AppLogger.safeContextId(key),
+        'sizeBytes': value.length,
+        'fileStore': _chatCachePayloadStore != null,
+      },
+    );
   }
 
   Future<void> _removeLargeCachePayload(String key) async {

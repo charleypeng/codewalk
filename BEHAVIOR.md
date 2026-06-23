@@ -1530,6 +1530,32 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ---
 
+## Debug Logging
+
+### Performance logging is opt-in and persisted
+
+- **Given** CodeWalk is installed for the first time
+- **When** the user opens `App Logs`
+- **Then** performance measurement is disabled by default
+- **When** the user enables `Measure performance` on the logs screen
+- **Then** CodeWalk persists that choice and starts recording timing entries for selected expensive operations
+- **Then** disabling the same option stops new performance timing entries while preserving existing captured logs until the log buffer is cleared or rotated
+
+### Performance logs are filterable
+
+- **Given** performance measurement has captured entries
+- **When** the user enables the `Performance` filter on the logs screen
+- **Then** the list shows only performance-tagged log entries that also match the active time, level, and search filters
+- **Then** each performance entry shows the operation name, elapsed time, status, tags, and safe context fields
+
+### Slowest performance logs summarize bottlenecks
+
+- **Given** performance measurement has captured entries with durations
+- **When** the user opens `Slowest performance logs`
+- **Then** CodeWalk shows matching performance entries ordered from slowest to fastest using the active log filters
+
+---
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.

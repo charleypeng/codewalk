@@ -1756,10 +1756,23 @@ class AppLocalizationsBn extends AppLocalizations {
   String get logsCopyFiltered => 'ফিল্টার করা লগ কপি করুন';
 
   @override
+  String get logsEntryContext => 'প্রসঙ্গ';
+
+  @override
+  String get logsEntryTags => 'ট্যাগ';
+
+  @override
   String get logsFilterAll => 'সব';
 
   @override
   String get logsLevel => 'স্তর';
+
+  @override
+  String get logsMeasurePerformance => 'পারফরম্যান্স মাপুন';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'অ্যাপের ব্যয়বহুল অপারেশনের সময় ধরে। ধীরগতি নির্ণয় ছাড়া বন্ধ রাখুন।';
 
   @override
   String get logsNoLogsYet => 'এখনও কোনো লগ ক্যাপচার করা হয়নি।';
@@ -1769,12 +1782,36 @@ class AppLocalizationsBn extends AppLocalizations {
       'বর্তমান ফিল্টারগুলির সাথে কোনো লগ মিলছে না।';
 
   @override
+  String get logsNoPerformanceData =>
+      'বর্তমান ফিল্টারের সাথে কোনো পারফরম্যান্স লগ মেলে না।';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'পারফরম্যান্স';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'পারফরম্যান্স $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'লগ অনুসন্ধান করুন';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return '$length2 টি এন্ট্রির মধ্যে $length টি দেখাচ্ছে';
   }
+
+  @override
+  String get logsSlowestPerformance => 'সবচেয়ে ধীর পারফরম্যান্স লগ';
 
   @override
   String get logsTimeRange => 'সময় পরিসীমা';

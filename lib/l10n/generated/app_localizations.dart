@@ -3161,6 +3161,18 @@ abstract class AppLocalizations {
   /// **'Copy filtered logs'**
   String get logsCopyFiltered;
 
+  /// CodeWalk UI string — logsEntryContext
+  ///
+  /// In en, this message translates to:
+  /// **'Context'**
+  String get logsEntryContext;
+
+  /// CodeWalk UI string — logsEntryTags
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get logsEntryTags;
+
   /// CodeWalk UI string — logsFilterAll
   ///
   /// In en, this message translates to:
@@ -3172,6 +3184,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Level'**
   String get logsLevel;
+
+  /// CodeWalk UI string — logsMeasurePerformance
+  ///
+  /// In en, this message translates to:
+  /// **'Measure performance'**
+  String get logsMeasurePerformance;
+
+  /// CodeWalk UI string — logsMeasurePerformanceDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Capture timing logs for expensive app operations. Leave off unless you are diagnosing lag.'**
+  String get logsMeasurePerformanceDescription;
 
   /// CodeWalk UI string — logsNoLogsYet
   ///
@@ -3185,6 +3209,34 @@ abstract class AppLocalizations {
   /// **'No logs match the current filters.'**
   String get logsNoMatchingLogs;
 
+  /// CodeWalk UI string — logsNoPerformanceData
+  ///
+  /// In en, this message translates to:
+  /// **'No performance logs match the current filters.'**
+  String get logsNoPerformanceData;
+
+  /// CodeWalk UI string — logsPerformanceDuration
+  ///
+  /// In en, this message translates to:
+  /// **'{elapsedMs} ms'**
+  String logsPerformanceDuration(int elapsedMs);
+
+  /// CodeWalk UI string — logsPerformanceFilter
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get logsPerformanceFilter;
+
+  /// CodeWalk UI string — logsPerformanceTileTitle
+  ///
+  /// In en, this message translates to:
+  /// **'PERFORMANCE {operation} | {elapsedMs} ms | {status}'**
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  );
+
   /// CodeWalk UI string — logsSearch
   ///
   /// In en, this message translates to:
@@ -3196,6 +3248,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing {length} of {length2} entries'**
   String logsShowingOrderedLength(int length, int length2);
+
+  /// CodeWalk UI string — logsSlowestPerformance
+  ///
+  /// In en, this message translates to:
+  /// **'Slowest performance logs'**
+  String get logsSlowestPerformance;
 
   /// CodeWalk UI string — logsTimeRange
   ///

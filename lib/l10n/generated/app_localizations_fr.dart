@@ -1796,10 +1796,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get logsCopyFiltered => 'Copier les journaux filtrés';
 
   @override
+  String get logsEntryContext => 'Contexte';
+
+  @override
+  String get logsEntryTags => 'Tags';
+
+  @override
   String get logsFilterAll => 'Tous';
 
   @override
   String get logsLevel => 'Niveau';
+
+  @override
+  String get logsMeasurePerformance => 'Mesurer les performances';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'Capture la durée des opérations coûteuses. Laissez désactivé sauf pour diagnostiquer une lenteur.';
 
   @override
   String get logsNoLogsYet => 'Aucun log capturé pour le moment.';
@@ -1809,12 +1822,36 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun log ne correspond aux filtres actuels.';
 
   @override
+  String get logsNoPerformanceData =>
+      'Aucun journal de performance ne correspond aux filtres actuels.';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'Performance';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'PERFORMANCE $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'Rechercher dans les journaux';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return 'Affichage de $length sur $length2 entrées';
   }
+
+  @override
+  String get logsSlowestPerformance => 'Journaux de performance les plus lents';
 
   @override
   String get logsTimeRange => 'Intervalle de temps';

@@ -39,6 +39,24 @@ void main() {
     });
   });
 
+  group('performance logging serialization', () {
+    test('defaults performance logging to disabled', () {
+      expect(ExperienceSettings.defaults().performanceLoggingEnabled, isFalse);
+    });
+
+    test('serializes and deserializes performance logging', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        performanceLoggingEnabled: true,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['performanceLoggingEnabled'], isTrue);
+      expect(restored.performanceLoggingEnabled, isTrue);
+    });
+  });
+
   group('chat render mode serialization', () {
     test('defaults to live rendering', () {
       expect(ExperienceSettings.defaults().chatRenderMode, ChatRenderMode.live);

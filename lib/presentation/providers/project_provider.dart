@@ -153,99 +153,130 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<bool> switchProject(String projectId) async {
-    final target = _projects.where((item) => item.id == projectId).firstOrNull;
-    if (target == null) {
-      _setError('Failed to switch project: project not found');
-      return false;
-    }
-    if (_currentProject?.id == projectId) {
-      return false;
-    }
+    final previousProjectId = _currentProject?.id;
+    return AppLogger.runPerformanceTask<bool>(
+      'project_switch',
+      () async {
+        final target = _projects
+            .where((item) => item.id == projectId)
+            .firstOrNull;
+        if (target == null) {
+          _setError('Failed to switch project: project not found');
+          return false;
+        }
+        if (_currentProject?.id == projectId) {
+          return false;
+        }
 
-    _currentProject = target;
-    _ensureOpenProject(projectId);
-    await _persistProjectState();
-    notifyListeners();
-    _refreshWorktreesForCurrentContext();
-    return true;
+        _currentProject = target;
+        _ensureOpenProject(projectId);
+        await _persistProjectState();
+        notifyListeners();
+        _refreshWorktreesForCurrentContext();
+        return true;
+      },
+      tags: const <String>{'project:switch'},
+      context: <String, Object?>{
+        'fromProjectHash': AppLogger.safeContextId(previousProjectId),
+        'toProjectHash': AppLogger.safeContextId(projectId),
+      },
+    );
   }
 
   Future<bool> switchToDirectoryContext(String directory) async {
-    final normalized = normalizeOptionalFilePath(directory);
-    if (normalized == null) {
-      _setError('Failed to switch project: directory is empty');
-      return false;
-    }
-    if (areEquivalentFilePaths(_currentProject?.path, normalized)) {
-      return false;
-    }
+    final previousPath = _currentProject?.path;
+    return AppLogger.runPerformanceTask<bool>(
+      'directory_switch',
+      () async {
+        final normalized = normalizeOptionalFilePath(directory);
+        if (normalized == null) {
+          _setError('Failed to switch project: directory is empty');
+          return false;
+        }
+        if (areEquivalentFilePaths(_currentProject?.path, normalized)) {
+          return false;
+        }
 
-    var project = _projects
-        .where((item) => areEquivalentFilePaths(item.path, normalized))
-        .firstOrNull;
-    if (project == null) {
-      await _loadProjects(silent: true);
-      project = _projects
-          .where((item) => areEquivalentFilePaths(item.path, normalized))
-          .firstOrNull;
-    }
+        var project = _projects
+            .where((item) => areEquivalentFilePaths(item.path, normalized))
+            .firstOrNull;
+        if (project == null) {
+          await _loadProjects(silent: true);
+          project = _projects
+              .where((item) => areEquivalentFilePaths(item.path, normalized))
+              .firstOrNull;
+        }
 
-    if (project == null) {
-      final fetched = await _projectRepository.getCurrentProject(
-        directory: normalized,
-      );
-      fetched.fold(
-        (failure) {
-          AppLogger.warn(
-            'Failed to fetch project for directory=$normalized',
-            error: failure,
+        if (project == null) {
+          final fetched = await _projectRepository.getCurrentProject(
+            directory: normalized,
           );
-        },
-        (item) {
-          final fetchedPath = item.path;
-          if (areEquivalentFilePaths(fetchedPath, normalized)) {
-            project = item;
-            final existingIndex = _projects.indexWhere((p) => p.id == item.id);
-            if (existingIndex >= 0) {
-              _projects[existingIndex] = item;
-            } else {
-              _projects = <Project>[item, ..._projects];
-            }
-            return;
+          fetched.fold(
+            (failure) {
+              AppLogger.warn(
+                'Failed to fetch project for directory=$normalized',
+                error: failure,
+              );
+            },
+            (item) {
+              final fetchedPath = item.path;
+              if (areEquivalentFilePaths(fetchedPath, normalized)) {
+                project = item;
+                final existingIndex = _projects.indexWhere(
+                  (p) => p.id == item.id,
+                );
+                if (existingIndex >= 0) {
+                  _projects[existingIndex] = item;
+                } else {
+                  _projects = <Project>[item, ..._projects];
+                }
+                return;
+              }
+              AppLogger.info(
+                'Ignoring current project response during directory switch: requested=$normalized fetched=$fetchedPath id=${item.id}',
+              );
+            },
+          );
+        }
+
+        if (project == null) {
+          final synthetic = _buildSyntheticDirectoryProject(normalized);
+          final existingSyntheticIndex = _projects.indexWhere(
+            (item) => item.id == synthetic.id,
+          );
+          if (existingSyntheticIndex >= 0) {
+            _projects[existingSyntheticIndex] = synthetic;
+          } else {
+            _projects = <Project>[synthetic, ..._projects];
           }
+          project = synthetic;
           AppLogger.info(
-            'Ignoring current project response during directory switch: requested=$normalized fetched=$fetchedPath id=${item.id}',
+            'Created local directory context fallback: $normalized',
           );
-        },
-      );
-    }
+        }
 
-    if (project == null) {
-      final synthetic = _buildSyntheticDirectoryProject(normalized);
-      final existingSyntheticIndex = _projects.indexWhere(
-        (item) => item.id == synthetic.id,
-      );
-      if (existingSyntheticIndex >= 0) {
-        _projects[existingSyntheticIndex] = synthetic;
-      } else {
-        _projects = <Project>[synthetic, ..._projects];
-      }
-      project = synthetic;
-      AppLogger.info('Created local directory context fallback: $normalized');
-    }
+        final selectedProject = project!;
+        if (_currentProject?.id == selectedProject.id &&
+            areEquivalentFilePaths(
+              _currentProject?.path,
+              selectedProject.path,
+            )) {
+          return false;
+        }
 
-    final selectedProject = project!;
-    if (_currentProject?.id == selectedProject.id &&
-        areEquivalentFilePaths(_currentProject?.path, selectedProject.path)) {
-      return false;
-    }
-
-    _currentProject = selectedProject;
-    _ensureOpenProject(selectedProject.id);
-    await _persistProjectState();
-    notifyListeners();
-    _refreshWorktreesForCurrentContext();
-    return true;
+        _currentProject = selectedProject;
+        _ensureOpenProject(selectedProject.id);
+        await _persistProjectState();
+        notifyListeners();
+        _refreshWorktreesForCurrentContext();
+        return true;
+      },
+      tags: const <String>{'project:directory'},
+      context: <String, Object?>{
+        'fromPathHash': AppLogger.safeContextId(previousPath),
+        'toPathHash': AppLogger.safeContextId(directory),
+      },
+    );
   }
 
   Future<bool> closeProject(String projectId) async {

@@ -1643,10 +1643,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsCopyFiltered => '复制已过滤的日志';
 
   @override
+  String get logsEntryContext => '上下文';
+
+  @override
+  String get logsEntryTags => '标签';
+
+  @override
   String get logsFilterAll => '全部';
 
   @override
   String get logsLevel => '级别';
+
+  @override
+  String get logsMeasurePerformance => '测量性能';
+
+  @override
+  String get logsMeasurePerformanceDescription => '捕获应用高开销操作的耗时。除非诊断卡顿，否则保持关闭。';
 
   @override
   String get logsNoLogsYet => '尚未捕获日志。';
@@ -1655,12 +1667,35 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsNoMatchingLogs => '没有符合当前过滤条件的日志。';
 
   @override
+  String get logsNoPerformanceData => '没有符合当前筛选条件的性能日志。';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs 毫秒';
+  }
+
+  @override
+  String get logsPerformanceFilter => '性能';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return '性能 $operation | $elapsedMs 毫秒 | $status';
+  }
+
+  @override
   String get logsSearch => '搜索日志';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return '显示$length2条中的$length条';
   }
+
+  @override
+  String get logsSlowestPerformance => '最慢的性能日志';
 
   @override
   String get logsTimeRange => '时间范围';

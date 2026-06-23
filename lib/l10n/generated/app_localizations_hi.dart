@@ -1758,10 +1758,23 @@ class AppLocalizationsHi extends AppLocalizations {
   String get logsCopyFiltered => 'copy filtered logs';
 
   @override
+  String get logsEntryContext => 'संदर्भ';
+
+  @override
+  String get logsEntryTags => 'टैग';
+
+  @override
   String get logsFilterAll => 'सभी';
 
   @override
   String get logsLevel => 'स्तर (Level)';
+
+  @override
+  String get logsMeasurePerformance => 'प्रदर्शन मापें';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'ऐप के महंगे ऑपरेशन का समय कैप्चर करता है। धीमापन जांचते समय ही चालू रखें।';
 
   @override
   String get logsNoLogsYet => 'अभी तक कोई लॉग कैप्चर नहीं किया गया है।';
@@ -1771,12 +1784,36 @@ class AppLocalizationsHi extends AppLocalizations {
       'कोई भी लॉग वर्तमान फ़िल्टर से मेल नहीं खाता है।';
 
   @override
+  String get logsNoPerformanceData =>
+      'मौजूदा फ़िल्टर से कोई प्रदर्शन लॉग मेल नहीं खाता।';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'प्रदर्शन';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'प्रदर्शन $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'लॉग खोजें';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return '$length2 में से $length प्रविष्टियाँ दिखाई गईं';
   }
+
+  @override
+  String get logsSlowestPerformance => 'सबसे धीमे प्रदर्शन लॉग';
 
   @override
   String get logsTimeRange => 'समय सीमा (Time range)';

@@ -2564,142 +2564,163 @@ class ChatProvider extends ChangeNotifier {
     bool preserveVisibleState = false,
     bool userInitiated = false,
   }) async {
-    if (_state == ChatState.loading) return;
-    if (userInitiated) {
-      _cellularDataSaverService.noteExplicitUserAction(reason: 'load-sessions');
-      await _syncCellularDataSaverRealtimePolicy(
-        reason: 'load-sessions-user',
-        forceBurst: true,
-      );
-    }
-    final fetchId = ++_sessionsFetchId;
-
-    final canKeepVisibleState = preserveVisibleState && _sessions.isNotEmpty;
-    if (!canKeepVisibleState) {
-      _setState(ChatState.loading);
-    }
-    clearError();
-
-    final serverId = await _resolveServerScopeId();
-    final scopeId = _resolveContextScopeId();
-    final storedSessionId = await localDataSource.getCurrentSessionId(
-      serverId: serverId,
-      scopeId: scopeId,
-    );
-
-    try {
-      // First try loading from cache
-      await _loadCachedSessions(serverId: serverId, scopeId: scopeId);
-      await _restoreLastSessionSnapshotFromCache(
-        serverId: serverId,
-        scopeId: scopeId,
-        preferredSessionId: storedSessionId,
-      );
-
-      Future<void> revalidateFromServer({
-        required bool preserveVisibleDataOnFailure,
-      }) async {
-        final result = await getChatSessions(
-          GetChatSessionsParams(directory: projectProvider.currentDirectory),
-        );
-
-        if (fetchId != _sessionsFetchId) {
-          return;
+    return AppLogger.runPerformanceTask<void>(
+      'load_sessions',
+      () async {
+        if (_state == ChatState.loading) return;
+        if (userInitiated) {
+          _cellularDataSaverService.noteExplicitUserAction(
+            reason: 'load-sessions',
+          );
+          await _syncCellularDataSaverRealtimePolicy(
+            reason: 'load-sessions-user',
+            forceBurst: true,
+          );
         }
+        final fetchId = ++_sessionsFetchId;
 
-        if (result.isLeft()) {
-          if (fetchId != _sessionsFetchId) {
-            return;
-          }
-          final failure = result.fold((f) => f, (_) => null);
-          if (failure != null) {
-            if (preserveVisibleDataOnFailure) {
-              AppLogger.warn(
-                'Background session revalidation failed for scope=$scopeId',
-                error: failure,
-              );
-              _setState(ChatState.loaded);
-            } else {
-              _handleFailure(failure);
-            }
-          }
-          return;
+        final canKeepVisibleState =
+            preserveVisibleState && _sessions.isNotEmpty;
+        if (!canKeepVisibleState) {
+          _setState(ChatState.loading);
         }
+        clearError();
 
-        final sessions = result.fold((_) => <ChatSession>[], (value) => value);
-        final filteredSessions = _filterSessionsForCurrentContext(sessions);
-        if (fetchId != _sessionsFetchId) {
-          return;
-        }
-        _sessions = filteredSessions;
-        _hasLoadedSessionsAuthoritatively = true;
-        _threadPermissionsVersion++;
-        _sessionVisibleLimit = 40;
-        _prunePinnedSessionIdsToKnownSessions();
-        _sortSessionsInPlace();
-        _pruneSessionAttentionStateToKnownSessions();
-        _setState(ChatState.loaded);
-
-        await _saveCachedSessions(
-          filteredSessions,
+        final serverId = await _resolveServerScopeId();
+        final scopeId = _resolveContextScopeId();
+        final storedSessionId = await localDataSource.getCurrentSessionId(
           serverId: serverId,
           scopeId: scopeId,
         );
 
-        if (fetchId != _sessionsFetchId) {
-          return;
-        }
+        try {
+          // First try loading from cache
+          await _loadCachedSessions(serverId: serverId, scopeId: scopeId);
+          await _restoreLastSessionSnapshotFromCache(
+            serverId: serverId,
+            scopeId: scopeId,
+            preferredSessionId: storedSessionId,
+          );
 
-        await loadLastSession(
-          serverId: serverId,
-          scopeId: scopeId,
-          storedSessionId: storedSessionId,
-        );
-        await refreshSessionStatusSnapshot();
-      }
+          Future<void> revalidateFromServer({
+            required bool preserveVisibleDataOnFailure,
+          }) async {
+            final result = await getChatSessions(
+              GetChatSessionsParams(
+                directory: projectProvider.currentDirectory,
+              ),
+            );
 
-      final canRevalidateInBackground =
-          preserveVisibleState && _sessions.isNotEmpty;
-      if (canRevalidateInBackground) {
-        unawaited(
-          revalidateFromServer(preserveVisibleDataOnFailure: true).catchError((
-            Object error,
-            StackTrace stackTrace,
-          ) {
             if (fetchId != _sessionsFetchId) {
               return;
             }
+
+            if (result.isLeft()) {
+              if (fetchId != _sessionsFetchId) {
+                return;
+              }
+              final failure = result.fold((f) => f, (_) => null);
+              if (failure != null) {
+                if (preserveVisibleDataOnFailure) {
+                  AppLogger.warn(
+                    'Background session revalidation failed for scope=$scopeId',
+                    error: failure,
+                  );
+                  _setState(ChatState.loaded);
+                } else {
+                  _handleFailure(failure);
+                }
+              }
+              return;
+            }
+
+            final sessions = result.fold(
+              (_) => <ChatSession>[],
+              (value) => value,
+            );
+            final filteredSessions = _filterSessionsForCurrentContext(sessions);
+            if (fetchId != _sessionsFetchId) {
+              return;
+            }
+            _sessions = filteredSessions;
+            _hasLoadedSessionsAuthoritatively = true;
+            _threadPermissionsVersion++;
+            _sessionVisibleLimit = 40;
+            _prunePinnedSessionIdsToKnownSessions();
+            _sortSessionsInPlace();
+            _pruneSessionAttentionStateToKnownSessions();
+            _setState(ChatState.loaded);
+
+            await _saveCachedSessions(
+              filteredSessions,
+              serverId: serverId,
+              scopeId: scopeId,
+            );
+
+            if (fetchId != _sessionsFetchId) {
+              return;
+            }
+
+            await loadLastSession(
+              serverId: serverId,
+              scopeId: scopeId,
+              storedSessionId: storedSessionId,
+            );
+            await refreshSessionStatusSnapshot();
+          }
+
+          final canRevalidateInBackground =
+              preserveVisibleState && _sessions.isNotEmpty;
+          if (canRevalidateInBackground) {
+            unawaited(
+              revalidateFromServer(
+                preserveVisibleDataOnFailure: true,
+              ).catchError((Object error, StackTrace stackTrace) {
+                if (fetchId != _sessionsFetchId) {
+                  return;
+                }
+                AppLogger.warn(
+                  'Background session revalidation threw unexpectedly',
+                  error: error,
+                  stackTrace: stackTrace,
+                );
+              }),
+            );
+            return;
+          }
+
+          await revalidateFromServer(preserveVisibleDataOnFailure: false);
+        } catch (e, stackTrace) {
+          if (fetchId != _sessionsFetchId) {
+            return;
+          }
+          if (preserveVisibleState && _sessions.isNotEmpty) {
             AppLogger.warn(
-              'Background session revalidation threw unexpectedly',
-              error: error,
+              'Failed to load session list during background refresh',
+              error: e,
               stackTrace: stackTrace,
             );
-          }),
-        );
-        return;
-      }
-
-      await revalidateFromServer(preserveVisibleDataOnFailure: false);
-    } catch (e, stackTrace) {
-      if (fetchId != _sessionsFetchId) {
-        return;
-      }
-      if (preserveVisibleState && _sessions.isNotEmpty) {
-        AppLogger.warn(
-          'Failed to load session list during background refresh',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        _setState(ChatState.loaded);
-        return;
-      }
-      AppLogger.error(
-        'Failed to load session list',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      _setError('Failed to load session list: ${e.toString()}');
-    }
+            _setState(ChatState.loaded);
+            return;
+          }
+          AppLogger.error(
+            'Failed to load session list',
+            error: e,
+            stackTrace: stackTrace,
+          );
+          _setError('Failed to load session list: ${e.toString()}');
+        }
+      },
+      tags: const <String>{'chat:sessions'},
+      context: <String, Object?>{
+        'preserveVisibleState': preserveVisibleState,
+        'userInitiated': userInitiated,
+        'projectHash': AppLogger.safeContextId(
+          projectProvider.currentProjectId,
+        ),
+        'scopeHash': AppLogger.safeContextId(_resolveContextScopeId()),
+      },
+    );
   }
 
   /// Load sessions from cache
@@ -2939,137 +2960,158 @@ class ChatProvider extends ChangeNotifier {
 
   /// Select session
   Future<void> selectSession(ChatSession session) async {
-    _cellularDataSaverService.noteExplicitUserAction(reason: 'select-session');
-    await _syncCellularDataSaverRealtimePolicy(
-      reason: 'select-session-user',
-      forceBurst: true,
-    );
-    _isNewChatDraftActive = false;
-    if (_currentSession?.id == session.id) {
-      _dismissNotificationsForSession(session.id);
-      unawaited(
-        loadSessionInsights(session.id, silent: true, userInitiated: true),
-      );
-      return;
-    }
-
-    final outgoingSessionId = _currentSession?.id;
-    if (outgoingSessionId != null && _messages.isNotEmpty) {
-      _cacheSessionMessages(outgoingSessionId, _messages);
-      unawaited(
-        _persistSessionMessagesSnapshotBestEffort(outgoingSessionId, _messages),
-      );
-    }
-
-    // Invalidate any concurrent loadSessions() that captured a stale
-    // persisted session ID before this switch updated memory/disk.
-    _sessionsFetchId += 1;
-
-    _pendingLocalUserMessageIds.clear();
-    _clearPendingReplacementBranch();
-    _clearRejectedDraft();
-
-    // Move selection ownership to the tapped session before awaiting stream
-    // teardown so the UI can render session-scoped hydration feedback
-    // immediately during cacheless switches.
-    _messageStreamGeneration += 1;
-    _currentSession = session;
-    _isLoadingOlderMessages = false;
-    _hasMoreOldMessages = false;
-    _dismissNotificationsForSession(session.id);
-    _clearSessionAttentionForSession(session.id);
-    _threadPermissionsVersion++;
-    _applySelectionPriorityForCurrentSession();
-
-    final warmCachedMessages = _cachedSessionMessages(session.id);
-    final hasWarmCachedMessages =
-        warmCachedMessages != null && warmCachedMessages.isNotEmpty;
-
-    // Show the session-scoped hydration state immediately while cache lookup
-    // and network hydration run, so cacheless switches never fall back to the
-    // generic empty placeholder for a frame.
-    if (hasWarmCachedMessages) {
-      _pendingCurrentSessionHydrationId = null;
-      _messages = List<ChatMessage>.from(warmCachedMessages);
-      _cacheSessionMessages(session.id, _messages);
-      _hasMoreOldMessages = _messages.length >= _defaultOlderMessagesChunkSize;
-      _messagesVersion++;
-      _setState(ChatState.loaded);
-    } else {
-      _pendingCurrentSessionHydrationId = session.id;
-      _messages = <ChatMessage>[];
-      _messagesVersion++;
-      _setState(ChatState.loading);
-    }
-
-    await _cancelActiveMessageSubscription(
-      reason: 'session-switch',
-      invalidateGeneration: false,
-    );
-    AppLogger.info(
-      'selectSession generation=$_messageStreamGeneration target=${session.id}',
-    );
-
-    // Save current session ID and try cache-first restore (SWR).
-    final serverId = await _resolveServerScopeId();
-    final scopeId = _resolveContextScopeId();
-    final restoredComposerDraft = await _loadPersistedComposerDraft(
-      session.id,
-      serverId: serverId,
-      scopeId: scopeId,
-    );
-    _queueHistoryComposerSync(
-      sessionId: session.id,
-      draft: restoredComposerDraft,
-      clear: true,
-    );
-
-    final restoredCachedMessages = hasWarmCachedMessages
-        ? warmCachedMessages
-        : await _restoreSessionMessagesFromCache(
-            session.id,
-            serverId: serverId,
-            scopeId: scopeId,
+    final previousSessionId = _currentSession?.id;
+    return AppLogger.runPerformanceTask<void>(
+      'select_session',
+      () async {
+        _cellularDataSaverService.noteExplicitUserAction(
+          reason: 'select-session',
+        );
+        await _syncCellularDataSaverRealtimePolicy(
+          reason: 'select-session-user',
+          forceBurst: true,
+        );
+        _isNewChatDraftActive = false;
+        if (_currentSession?.id == session.id) {
+          _dismissNotificationsForSession(session.id);
+          unawaited(
+            loadSessionInsights(session.id, silent: true, userInitiated: true),
           );
+          return;
+        }
 
-    if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
-      _pendingCurrentSessionHydrationId = null;
-      final restoredMessages = List<ChatMessage>.from(restoredCachedMessages);
-      _hasMoreOldMessages =
-          restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
-      if (!_areMessageListsSemanticallyEqual(_messages, restoredMessages)) {
-        _messages = restoredMessages;
-        _cacheSessionMessages(session.id, _messages);
-        _messagesVersion++;
-        _setState(ChatState.loaded);
-      }
-      // Re-apply selection priority now that messages are available — the
-      // initial call at the top of selectSession() may not have found cached
-      // messages for the message-derived fallback (Feature 7).
-      final selectionChanged = _applySelectionPriorityForCurrentSession();
-      if (selectionChanged) {
-        _notifyListeners();
-      }
-    } else {
-      _pendingCurrentSessionHydrationId = session.id;
-    }
+        final outgoingSessionId = _currentSession?.id;
+        if (outgoingSessionId != null && _messages.isNotEmpty) {
+          _cacheSessionMessages(outgoingSessionId, _messages);
+          unawaited(
+            _persistSessionMessagesSnapshotBestEffort(
+              outgoingSessionId,
+              _messages,
+            ),
+          );
+        }
 
-    await _saveCurrentSessionId(
-      session.id,
-      serverId: serverId,
-      scopeId: scopeId,
-    );
+        // Invalidate any concurrent loadSessions() that captured a stale
+        // persisted session ID before this switch updated memory/disk.
+        _sessionsFetchId += 1;
 
-    // SWR behavior: if cache exists, keep visible data and revalidate silently.
-    if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
-      unawaited(loadMessages(session.id, preserveVisibleState: true));
-    } else {
-      await loadMessages(session.id);
-    }
+        _pendingLocalUserMessageIds.clear();
+        _clearPendingReplacementBranch();
+        _clearRejectedDraft();
 
-    // Insights are non-critical and run fire-and-forget.
-    unawaited(
-      loadSessionInsights(session.id, silent: true, userInitiated: true),
+        // Move selection ownership to the tapped session before awaiting stream
+        // teardown so the UI can render session-scoped hydration feedback
+        // immediately during cacheless switches.
+        _messageStreamGeneration += 1;
+        _currentSession = session;
+        _isLoadingOlderMessages = false;
+        _hasMoreOldMessages = false;
+        _dismissNotificationsForSession(session.id);
+        _clearSessionAttentionForSession(session.id);
+        _threadPermissionsVersion++;
+        _applySelectionPriorityForCurrentSession();
+
+        final warmCachedMessages = _cachedSessionMessages(session.id);
+        final hasWarmCachedMessages =
+            warmCachedMessages != null && warmCachedMessages.isNotEmpty;
+
+        // Show the session-scoped hydration state immediately while cache lookup
+        // and network hydration run, so cacheless switches never fall back to the
+        // generic empty placeholder for a frame.
+        if (hasWarmCachedMessages) {
+          _pendingCurrentSessionHydrationId = null;
+          _messages = List<ChatMessage>.from(warmCachedMessages);
+          _cacheSessionMessages(session.id, _messages);
+          _hasMoreOldMessages =
+              _messages.length >= _defaultOlderMessagesChunkSize;
+          _messagesVersion++;
+          _setState(ChatState.loaded);
+        } else {
+          _pendingCurrentSessionHydrationId = session.id;
+          _messages = <ChatMessage>[];
+          _messagesVersion++;
+          _setState(ChatState.loading);
+        }
+
+        await _cancelActiveMessageSubscription(
+          reason: 'session-switch',
+          invalidateGeneration: false,
+        );
+        AppLogger.info(
+          'selectSession generation=$_messageStreamGeneration target=${session.id}',
+        );
+
+        // Save current session ID and try cache-first restore (SWR).
+        final serverId = await _resolveServerScopeId();
+        final scopeId = _resolveContextScopeId();
+        final restoredComposerDraft = await _loadPersistedComposerDraft(
+          session.id,
+          serverId: serverId,
+          scopeId: scopeId,
+        );
+        _queueHistoryComposerSync(
+          sessionId: session.id,
+          draft: restoredComposerDraft,
+          clear: true,
+        );
+
+        final restoredCachedMessages = hasWarmCachedMessages
+            ? warmCachedMessages
+            : await _restoreSessionMessagesFromCache(
+                session.id,
+                serverId: serverId,
+                scopeId: scopeId,
+              );
+
+        if (restoredCachedMessages != null &&
+            restoredCachedMessages.isNotEmpty) {
+          _pendingCurrentSessionHydrationId = null;
+          final restoredMessages = List<ChatMessage>.from(
+            restoredCachedMessages,
+          );
+          _hasMoreOldMessages =
+              restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
+          if (!_areMessageListsSemanticallyEqual(_messages, restoredMessages)) {
+            _messages = restoredMessages;
+            _cacheSessionMessages(session.id, _messages);
+            _messagesVersion++;
+            _setState(ChatState.loaded);
+          }
+          // Re-apply selection priority now that messages are available — the
+          // initial call at the top of selectSession() may not have found cached
+          // messages for the message-derived fallback (Feature 7).
+          final selectionChanged = _applySelectionPriorityForCurrentSession();
+          if (selectionChanged) {
+            _notifyListeners();
+          }
+        } else {
+          _pendingCurrentSessionHydrationId = session.id;
+        }
+
+        await _saveCurrentSessionId(
+          session.id,
+          serverId: serverId,
+          scopeId: scopeId,
+        );
+
+        // SWR behavior: if cache exists, keep visible data and revalidate silently.
+        if (restoredCachedMessages != null &&
+            restoredCachedMessages.isNotEmpty) {
+          unawaited(loadMessages(session.id, preserveVisibleState: true));
+        } else {
+          await loadMessages(session.id);
+        }
+
+        // Insights are non-critical and run fire-and-forget.
+        unawaited(
+          loadSessionInsights(session.id, silent: true, userInitiated: true),
+        );
+      },
+      tags: const <String>{'chat:session'},
+      context: <String, Object?>{
+        'sessionHash': AppLogger.safeContextId(session.id),
+        'previousSessionHash': AppLogger.safeContextId(previousSessionId),
+      },
     );
   }
 
@@ -3079,151 +3121,165 @@ class ChatProvider extends ChangeNotifier {
     bool preserveVisibleState = false,
     bool preferDelta = true,
   }) async {
-    final fetchId = ++_messagesFetchId;
-    // Sync project ID from ProjectProvider; projectId is optional for the new API
-    _currentProjectId = projectProvider.currentProjectId;
+    return AppLogger.runPerformanceTask<void>(
+      'load_messages',
+      () async {
+        final fetchId = ++_messagesFetchId;
+        // Sync project ID from ProjectProvider; projectId is optional for the new API
+        _currentProjectId = projectProvider.currentProjectId;
 
-    final canKeepVisibleState =
-        preserveVisibleState &&
-        _currentSession?.id == sessionId &&
-        _messages.isNotEmpty;
-    final cachedMessages = canKeepVisibleState
-        ? List<ChatMessage>.from(
-            _messages.where((message) => message.sessionId == sessionId),
-          )
-        : const <ChatMessage>[];
-    if (!canKeepVisibleState) {
-      _setState(ChatState.loading);
-    }
+        final canKeepVisibleState =
+            preserveVisibleState &&
+            _currentSession?.id == sessionId &&
+            _messages.isNotEmpty;
+        final cachedMessages = canKeepVisibleState
+            ? List<ChatMessage>.from(
+                _messages.where((message) => message.sessionId == sessionId),
+              )
+            : const <ChatMessage>[];
+        if (!canKeepVisibleState) {
+          _setState(ChatState.loading);
+        }
 
-    final result = await getChatMessages(
-      GetChatMessagesParams(
-        projectId: projectProvider.currentProjectId,
-        sessionId: sessionId,
-        directory: projectProvider.currentDirectory,
-        limit: canKeepVisibleState && preferDelta
-            ? _defaultOlderMessagesChunkSize
-            : null,
-      ),
-    );
+        final result = await getChatMessages(
+          GetChatMessagesParams(
+            projectId: projectProvider.currentProjectId,
+            sessionId: sessionId,
+            directory: projectProvider.currentDirectory,
+            limit: canKeepVisibleState && preferDelta
+                ? _defaultOlderMessagesChunkSize
+                : null,
+          ),
+        );
 
-    if (fetchId != _messagesFetchId) {
-      return;
-    }
-
-    result.fold(
-      (failure) {
         if (fetchId != _messagesFetchId) {
           return;
         }
-        if (_currentSession?.id == sessionId) {
-          _pendingCurrentSessionHydrationId = null;
-        }
-        if (canKeepVisibleState) {
-          AppLogger.warn(
-            'Background session revalidation failed session=$sessionId',
-            error: failure,
-          );
-          _setState(ChatState.loaded);
-          return;
-        }
-        _handleFailure(failure);
-      },
-      (messages) {
-        if (fetchId != _messagesFetchId || _currentSession?.id != sessionId) {
-          return;
-        }
-        _pendingCurrentSessionHydrationId = null;
-        final previousVisibleMessages = List<ChatMessage>.from(
-          _messages.where((message) => message.sessionId == sessionId),
-          growable: false,
-        );
-        var serverMessagesForMerge = messages;
-        var requiresFullFetch = false;
-        var usedGapRecovery = false;
-        if (canKeepVisibleState && preferDelta && cachedMessages.isNotEmpty) {
-          final deltaResult = _mergeServerTailWithCachedMessages(
-            serverMessages: messages,
-            cachedMessages: cachedMessages,
-            sessionId: sessionId,
-          );
-          serverMessagesForMerge = deltaResult.messages;
-          requiresFullFetch = deltaResult.requiresFullFetch;
-          usedGapRecovery = deltaResult.usedGapRecovery;
-        }
-        serverMessagesForMerge = _filterMessagesForPendingReplacementBranch(
-          serverMessagesForMerge,
-          sessionId: sessionId,
-        );
-        final mergedMessages = _mergeServerMessagesWithActiveLocalTail(
-          serverMessagesForMerge,
-          sessionId: sessionId,
-        );
-        final nextHasMoreOldMessages =
-            usedGapRecovery ||
-            serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
-        final messagesChanged = !_areMessageListsSemanticallyEqual(
-          previousVisibleMessages,
-          mergedMessages,
-        );
-        final hasMoreOldMessagesChanged =
-            _hasMoreOldMessages != nextHasMoreOldMessages;
-        if (!messagesChanged) {
-          if (!hasMoreOldMessagesChanged) {
-            if (_state != ChatState.loaded) {
+
+        result.fold(
+          (failure) {
+            if (fetchId != _messagesFetchId) {
+              return;
+            }
+            if (_currentSession?.id == sessionId) {
+              _pendingCurrentSessionHydrationId = null;
+            }
+            if (canKeepVisibleState) {
+              AppLogger.warn(
+                'Background session revalidation failed session=$sessionId',
+                error: failure,
+              );
+              _setState(ChatState.loaded);
+              return;
+            }
+            _handleFailure(failure);
+          },
+          (messages) {
+            if (fetchId != _messagesFetchId ||
+                _currentSession?.id != sessionId) {
+              return;
+            }
+            _pendingCurrentSessionHydrationId = null;
+            final previousVisibleMessages = List<ChatMessage>.from(
+              _messages.where((message) => message.sessionId == sessionId),
+              growable: false,
+            );
+            var serverMessagesForMerge = messages;
+            var requiresFullFetch = false;
+            var usedGapRecovery = false;
+            if (canKeepVisibleState &&
+                preferDelta &&
+                cachedMessages.isNotEmpty) {
+              final deltaResult = _mergeServerTailWithCachedMessages(
+                serverMessages: messages,
+                cachedMessages: cachedMessages,
+                sessionId: sessionId,
+              );
+              serverMessagesForMerge = deltaResult.messages;
+              requiresFullFetch = deltaResult.requiresFullFetch;
+              usedGapRecovery = deltaResult.usedGapRecovery;
+            }
+            serverMessagesForMerge = _filterMessagesForPendingReplacementBranch(
+              serverMessagesForMerge,
+              sessionId: sessionId,
+            );
+            final mergedMessages = _mergeServerMessagesWithActiveLocalTail(
+              serverMessagesForMerge,
+              sessionId: sessionId,
+            );
+            final nextHasMoreOldMessages =
+                usedGapRecovery ||
+                serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
+            final messagesChanged = !_areMessageListsSemanticallyEqual(
+              previousVisibleMessages,
+              mergedMessages,
+            );
+            final hasMoreOldMessagesChanged =
+                _hasMoreOldMessages != nextHasMoreOldMessages;
+            if (!messagesChanged) {
+              if (!hasMoreOldMessagesChanged) {
+                if (_state != ChatState.loaded) {
+                  _setState(ChatState.loaded);
+                }
+                return;
+              }
+              _hasMoreOldMessages = nextHasMoreOldMessages;
+              if (_state != ChatState.loaded) {
+                _setState(ChatState.loaded);
+              } else {
+                _notifyListeners();
+              }
+              return;
+            }
+
+            _messages = List<ChatMessage>.from(mergedMessages);
+            _cacheSessionMessages(sessionId, _messages);
+            if (messagesChanged) {
+              _messagesVersion++;
+            }
+            _hasMoreOldMessages = nextHasMoreOldMessages;
+            _prunePendingLocalUserMessageIdsToVisibleUsers();
+            _scheduleAutoTitleRefresh(sessionId);
+            // Re-apply selection priority now that messages are available — the
+            // initial call in selectSession() may not have found cached messages
+            // for the message-derived fallback (Feature 7). This also covers the
+            // case where loadMessages() is called directly (e.g. from
+            // loadLastSession()).
+            if (_currentSession?.id == sessionId) {
+              final lateSelectionChanged =
+                  _applySelectionPriorityForCurrentSession();
+              if (lateSelectionChanged) {
+                _notifyListeners();
+              }
+            }
+            if (_state != ChatState.loaded ||
+                messagesChanged ||
+                hasMoreOldMessagesChanged) {
               _setState(ChatState.loaded);
             }
-            return;
-          }
-          _hasMoreOldMessages = nextHasMoreOldMessages;
-          if (_state != ChatState.loaded) {
-            _setState(ChatState.loaded);
-          } else {
-            _notifyListeners();
-          }
-          return;
-        }
-
-        _messages = List<ChatMessage>.from(mergedMessages);
-        _cacheSessionMessages(sessionId, _messages);
-        if (messagesChanged) {
-          _messagesVersion++;
-        }
-        _hasMoreOldMessages = nextHasMoreOldMessages;
-        _prunePendingLocalUserMessageIdsToVisibleUsers();
-        _scheduleAutoTitleRefresh(sessionId);
-        // Re-apply selection priority now that messages are available — the
-        // initial call in selectSession() may not have found cached messages
-        // for the message-derived fallback (Feature 7). This also covers the
-        // case where loadMessages() is called directly (e.g. from
-        // loadLastSession()).
-        if (_currentSession?.id == sessionId) {
-          final lateSelectionChanged =
-              _applySelectionPriorityForCurrentSession();
-          if (lateSelectionChanged) {
-            _notifyListeners();
-          }
-        }
-        if (_state != ChatState.loaded ||
-            messagesChanged ||
-            hasMoreOldMessagesChanged) {
-          _setState(ChatState.loaded);
-        }
-        if (!usedGapRecovery) {
-          unawaited(_persistLastSessionSnapshotBestEffort());
-          unawaited(
-            _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
-          );
-        }
-        if (requiresFullFetch && _currentSession?.id == sessionId) {
-          unawaited(
-            loadMessages(
-              sessionId,
-              preserveVisibleState: true,
-              preferDelta: false,
-            ),
-          );
-        }
+            if (!usedGapRecovery) {
+              unawaited(_persistLastSessionSnapshotBestEffort());
+              unawaited(
+                _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
+              );
+            }
+            if (requiresFullFetch && _currentSession?.id == sessionId) {
+              unawaited(
+                loadMessages(
+                  sessionId,
+                  preserveVisibleState: true,
+                  preferDelta: false,
+                ),
+              );
+            }
+          },
+        );
+      },
+      tags: const <String>{'chat:messages'},
+      context: <String, Object?>{
+        'sessionHash': AppLogger.safeContextId(sessionId),
+        'preserveVisibleState': preserveVisibleState,
+        'preferDelta': preferDelta,
       },
     );
   }

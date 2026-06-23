@@ -1751,10 +1751,23 @@ class AppLocalizationsUr extends AppLocalizations {
   String get logsCopyFiltered => 'فلٹر شدہ لاگز کو کاپی کریں۔';
 
   @override
+  String get logsEntryContext => 'سیاق';
+
+  @override
+  String get logsEntryTags => 'ٹیگز';
+
+  @override
   String get logsFilterAll => 'تمام';
 
   @override
   String get logsLevel => 'سطح';
+
+  @override
+  String get logsMeasurePerformance => 'کارکردگی ناپیں';
+
+  @override
+  String get logsMeasurePerformanceDescription =>
+      'ایپ کے مہنگے آپریشنز کا وقت محفوظ کرتا ہے۔ سستی کی تشخیص کے علاوہ بند رکھیں۔';
 
   @override
   String get logsNoLogsYet => 'ابھی تک کوئی لاگز جمع نہیں ہوئے۔';
@@ -1764,12 +1777,36 @@ class AppLocalizationsUr extends AppLocalizations {
       'موجودہ فلٹرز سے کوئی لاگز مطابقت نہیں رکھتے۔';
 
   @override
+  String get logsNoPerformanceData =>
+      'موجودہ فلٹرز سے کوئی کارکردگی لاگ نہیں ملتا۔';
+
+  @override
+  String logsPerformanceDuration(int elapsedMs) {
+    return '$elapsedMs ms';
+  }
+
+  @override
+  String get logsPerformanceFilter => 'کارکردگی';
+
+  @override
+  String logsPerformanceTileTitle(
+    String operation,
+    int elapsedMs,
+    String status,
+  ) {
+    return 'کارکردگی $operation | $elapsedMs ms | $status';
+  }
+
+  @override
   String get logsSearch => 'لاگز تلاش کریں۔';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
     return '$length2 اندراجات میں سے $length دکھائے گئے';
   }
+
+  @override
+  String get logsSlowestPerformance => 'سب سے سست کارکردگی لاگز';
 
   @override
   String get logsTimeRange => 'وقت کی حد';
