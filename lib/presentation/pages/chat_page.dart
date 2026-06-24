@@ -128,7 +128,7 @@ class _ChatPageState extends State<ChatPage>
   static const double _olderMessagesTopLoadArmThreshold = 220;
   static const double _jumpToFirstFabThreshold = 360;
   static const double _scrollToBottomEpsilon = 1;
-  static const int _maxScrollToBottomPasses = 6;
+  static const int _maxScrollToBottomPasses = 3;
   static const Duration _scrollToBottomFirstPassDuration = Duration.zero;
   static const Duration _scrollToBottomNextPassDuration = Duration.zero;
   static const String _rootTreeCacheKey = '__root__';
@@ -162,7 +162,9 @@ class _ChatPageState extends State<ChatPage>
   );
   static const int _postOnboardingTourMaxAttempts = 20;
   static const double _composerStatusReservedHeight = 26;
-  static const Duration _finalAssistantRevealDuration = Duration.zero;
+  static const Duration _finalAssistantRevealDuration = Duration(
+    milliseconds: 220,
+  );
   static const double _finalAssistantRevealAlignment = 0.4;
   static const int _maxFinalAssistantRevealAttempts = 8;
   static const double _returnLatestRevealAlignment = 0.0;
@@ -263,8 +265,10 @@ class _ChatPageState extends State<ChatPage>
   String? _pendingInitialScrollSessionId;
   _ScrollFollowMode _scrollFollowMode = _ScrollFollowMode.following;
   bool get _showScrollToLatestFab =>
-      _hasUnreadMessagesBelow ||
-      _scrollFollowMode == _ScrollFollowMode.pausedByUser;
+      (_hasUnreadMessagesBelow ||
+          _scrollFollowMode == _ScrollFollowMode.pausedByUser) &&
+      (_scrollFollowMode == _ScrollFollowMode.pausedByUser ||
+          !_isLatestAssistantMessageVisibleInViewport());
   String? _lastRevealedAssistantMessageId;
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;

@@ -49,12 +49,17 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   bool _handleScrollMetricsChanged(ScrollMetricsNotification notification) {
-    if (!_scrollController.hasClients ||
-        _isProgrammaticScrollInFlight ||
-        _currentScrollOwner == _ScrollOwner.userDrag) {
+    if (!_scrollController.hasClients) {
       return false;
     }
     final currentMax = _scrollController.position.maxScrollExtent;
+    if (_isProgrammaticScrollInFlight ||
+        _currentScrollOwner == _ScrollOwner.userDrag ||
+        _responseSettleFramesRemaining > 0 ||
+        _scrollFollowMode == _ScrollFollowMode.reading) {
+      _lastKnownMaxScrollExtent = currentMax;
+      return false;
+    }
     final contentChanged = currentMax != _lastKnownMaxScrollExtent;
     final isResponding =
         _chatProvider?.isCurrentSessionActivelyResponding == true;
@@ -70,6 +75,65 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
     _lastKnownMaxScrollExtent = currentMax;
     return false;
+  }
+
+  bool _isLatestAssistantMessageVisibleInViewport() {
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final chatProvider = _chatProvider;
+    if (chatProvider == null || chatProvider.messages.isEmpty) {
+      return false;
+    }
+    final latestMessageId = _resolveLatestRevealableAssistantMessageId(
+      chatProvider.messages,
+    );
+    if (latestMessageId == null || latestMessageId.isEmpty) {
+      return false;
+    }
+    AssistantMessage? latestAssistant;
+    for (final message in chatProvider.messages.reversed) {
+      if (message is AssistantMessage && message.id == latestMessageId) {
+        latestAssistant = message;
+        break;
+      }
+    }
+    if (latestAssistant != null &&
+        !latestAssistant.isCompleted &&
+        chatProvider.isCurrentSessionActivelyResponding) {
+      return false;
+    }
+    final measurementContext =
+        _messageRevealMeasurementKeysByMessageId[latestMessageId]
+            ?.currentContext;
+    final anchorContext =
+        _messageRevealAnchorKeysByMessageId[latestMessageId]?.currentContext;
+    final targetContext = measurementContext ?? anchorContext;
+    if (targetContext == null || !targetContext.mounted) {
+      return false;
+    }
+    final renderObject = targetContext.findRenderObject();
+    final viewportRenderObject = _scrollController
+        .position
+        .context
+        .storageContext
+        .findRenderObject();
+    if (renderObject is! RenderBox || viewportRenderObject is! RenderBox) {
+      return false;
+    }
+    if (!renderObject.attached ||
+        !viewportRenderObject.attached ||
+        !renderObject.hasSize ||
+        !viewportRenderObject.hasSize) {
+      return false;
+    }
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final top =
+        renderObject.localToGlobal(Offset.zero).dy -
+        viewportRenderObject.localToGlobal(Offset.zero).dy;
+    final bottom = top + renderObject.size.height;
+    return bottom > -_ChatPageState._scrollToBottomEpsilon &&
+        top <= viewportHeight * 0.75;
   }
 
   void _beginResponseSettleWindow() {
@@ -1099,13 +1163,19 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return false;
     }
     final viewportHeight = _scrollController.position.viewportDimension;
-    final top = anchorRenderObject
-        .localToGlobal(Offset.zero, ancestor: viewportRenderObject)
-        .dy;
+    final top =
+        anchorRenderObject.localToGlobal(Offset.zero).dy -
+        viewportRenderObject.localToGlobal(Offset.zero).dy;
     final bottom = top + anchorRenderObject.size.height;
+    final tolerance = max(
+      _ChatPageState._scrollToBottomEpsilon,
+      viewportHeight * 0.05,
+    );
+    final startsInComfortableReadingArea = top <= viewportHeight * 0.6;
     return anchorRenderObject.size.height <= viewportHeight &&
-        top >= -_ChatPageState._scrollToBottomEpsilon &&
-        bottom <= viewportHeight + _ChatPageState._scrollToBottomEpsilon;
+        startsInComfortableReadingArea &&
+        top >= -tolerance &&
+        bottom <= viewportHeight + tolerance;
   }
 
   void _prepareForOutgoingUserMessage() {
@@ -1143,6 +1213,19 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _markUnreadMessagesBelow() {
+    if (_isLatestAssistantMessageVisibleInViewport()) {
+      if (_scrollFollowMode == _ScrollFollowMode.reading &&
+          !_hasUnreadMessagesBelow &&
+          _showScrollToFirstFab == _shouldShowJumpToFirstFab()) {
+        return;
+      }
+      _setState(() {
+        _scrollFollowMode = _ScrollFollowMode.reading;
+        _hasUnreadMessagesBelow = false;
+        _showScrollToFirstFab = _shouldShowJumpToFirstFab();
+      });
+      return;
+    }
     if (_scrollFollowMode == _ScrollFollowMode.pausedByUser &&
         _hasUnreadMessagesBelow &&
         _showScrollToFirstFab == _shouldShowJumpToFirstFab()) {

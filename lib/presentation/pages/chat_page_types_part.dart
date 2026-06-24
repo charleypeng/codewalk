@@ -123,6 +123,24 @@ class _AssistantWorkCompactionDecision {
       settledLatestAssistantWorkGroupId != null &&
       latestRevealableAssistantMessageId != null &&
       latestRevealableAssistantMessageId!.isNotEmpty;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _AssistantWorkCompactionDecision) return false;
+    return other.shouldDeferLatestCollapse == shouldDeferLatestCollapse &&
+        other.latestRevealableAssistantMessageId ==
+            latestRevealableAssistantMessageId &&
+        other.settledLatestAssistantWorkGroupId ==
+            settledLatestAssistantWorkGroupId;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    shouldDeferLatestCollapse,
+    latestRevealableAssistantMessageId,
+    settledLatestAssistantWorkGroupId,
+  );
 }
 
 enum _HamburgerBadgeReasonKind {

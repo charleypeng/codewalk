@@ -136,6 +136,13 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
         return;
       }
 
+      // Some sliver/layout updates settle one microtask after endOfFrame.
+      // Use the final extent immediately before restoring the anchor so older
+      // message prepends do not under-correct and create a second visible jump.
+      await Future<void>.microtask(() {});
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
       final maxAfter = _scrollController.position.maxScrollExtent;
       final delta = maxAfter - maxExtentBefore;
       if (delta <= 0) {
