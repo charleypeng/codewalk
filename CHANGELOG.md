@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.138.1 - 2026-06-24
+
+- Release maintenance.
+
 ## v1.138.0 - 2026-06-23
 
 - fix(shortcuts): move agent cycling off Ctrl+J
