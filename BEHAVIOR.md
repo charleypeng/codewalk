@@ -1341,6 +1341,17 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Then** a silent update check runs at startup and repeats every 1 hour while the app process is alive
 - **Then** the automatic check never shows a manual spinner/up-to-date confirmation; it only surfaces UI when a newer, non-dismissed version is found
 
+### Settings landing update notice
+
+- **Given** a newer, non-dismissed CodeWalk version was found by an update check
+- **When** the user opens the main `Settings` screen
+- **Then** CodeWalk shows a visible but non-blocking update notice at the top of the Settings landing list, before setup, tour replay, and section rows
+- **Then** the notice shows the installed version/build and the available version when package metadata is available
+- **Then** Android and desktop users get the same install/progress/retry/dismiss controls used by `Settings` > `About`
+- **Then** web or unsupported direct-install cases open the release page when a release URL is available
+- **Then** the notice is not shown when no newer version is known or when the user dismissed that version
+- **Then** temporary update-check failures remain silent and do not block Settings
+
 ### Desktop update install snackbars
 
 - **Given** an update install is started on desktop (Linux, macOS, Windows)

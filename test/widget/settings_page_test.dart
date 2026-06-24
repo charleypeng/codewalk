@@ -6,17 +6,21 @@ import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/update_check_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../support/fakes.dart';
 
 void main() {
+  setUp(_setPackageInfoVersion);
+
   testWidgets('hides shortcuts on mobile and opens notifications section', (
     WidgetTester tester,
   ) async {
@@ -324,6 +328,84 @@ void main() {
     );
   });
 
+  testWidgets('settings landing shows update banner above normal actions', (
+    WidgetTester tester,
+  ) async {
+    _setPackageInfoVersion(version: '1.2.3', buildNumber: '45');
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+    final settingsProvider = SettingsProvider(
+      localDataSource: local,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+      updateCheckService: _FakeUpdateCheckService(
+        const UpdateCheckResult(
+          latestVersion: '1.3.0',
+          releaseUrl:
+              'https://github.com/verseles/codewalk/releases/tag/v1.3.0',
+          apkUrl:
+              'https://github.com/verseles/codewalk/releases/download/v1.3.0/codewalk.apk',
+          isNewer: true,
+        ),
+      ),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+    await settingsProvider.checkForUpdate();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: _localizedMaterialApp(home: const SettingsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final bannerFinder = find.byKey(
+      const ValueKey<String>('settings_update_available_banner'),
+    );
+    expect(bannerFinder, findsOneWidget);
+    expect(find.text('Update available: v1.3.0'), findsOneWidget);
+    expect(find.text('Version: 1.2.3 (build 45) -> v1.3.0'), findsOneWidget);
+    expect(find.text('Install update'), findsOneWidget);
+    expect(
+      tester.getTopLeft(bannerFinder).dy,
+      lessThan(tester.getTopLeft(find.text('Setup Wizard')).dy),
+    );
+  });
+
+  testWidgets('settings landing hides update banner when current is latest', (
+    WidgetTester tester,
+  ) async {
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+    final settingsProvider = SettingsProvider(
+      localDataSource: local,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+      updateCheckService: _FakeUpdateCheckService(
+        const UpdateCheckResult(latestVersion: '1.138.1', isNewer: false),
+      ),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+    await settingsProvider.checkForUpdate();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: _localizedMaterialApp(home: const SettingsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('settings_update_available_banner')),
+      findsNothing,
+    );
+    expect(find.text('Setup Wizard'), findsOneWidget);
+  });
+
   testWidgets('mobile back follows detail then list then app flow', (
     WidgetTester tester,
   ) async {
@@ -603,6 +685,19 @@ void main() {
   });
 }
 
+void _setPackageInfoVersion({
+  String version = '1.138.1',
+  String buildNumber = '1782268765',
+}) {
+  PackageInfo.setMockInitialValues(
+    appName: 'CodeWalk',
+    packageName: 'com.verseles.codewalk',
+    version: version,
+    buildNumber: buildNumber,
+    buildSignature: '',
+  );
+}
+
 class _MockResponse {
   _MockResponse(this.statusCode, this.data);
 
@@ -668,6 +763,18 @@ class _MockDioAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
+}
+
+class _FakeUpdateCheckService extends UpdateCheckService {
+  _FakeUpdateCheckService(this.result);
+
+  final UpdateCheckResult? result;
+
+  @override
+  Future<UpdateCheckResult?> check(String currentVersion) async => result;
+
+  @override
+  void clearCache() {}
 }
 
 DioClient _buildDioClient(_MockDioAdapter adapter) {

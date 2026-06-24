@@ -77,6 +77,7 @@ codewalk/
 lib/main.dart                                # Runtime entry; DI, providers, DynamicColorBuilder with user theme prefs; syncs dynamic color availability to SettingsProvider via postFrameCallback
 lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior; triggers startup/hourly update toast via `addPostFrameCallback` + `UpdateCheckResult` when `checkUpdatesOnOpen` is enabled; reacts to `UpdateInstallState` transitions with platform-aware snackbars (Android downloading progress, desktop installing spinner, done/retry states) and triggers `startInstall()`
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
+lib/presentation/pages/settings_page.dart     # Settings landing and responsive split/detail shell; shows the shared update notice at the top when `SettingsProvider.updateCheckResult` contains a newer non-dismissed CodeWalk version
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 .github/workflows/ci.yml                      # CI workflow entry
@@ -126,6 +127,7 @@ lib/presentation/providers/settings_provider.dart # Experience settings, theme m
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch; Codex single-window label preserved using provider name instead of raw API label (guarded by `result.providerId != 'codex'`)
 lib/presentation/utils/quota_pace_utils.dart # Pure Dart pace helpers: `predictedFinalPercent`, `PaceStatus` enum, window/label inference, and formatted `Pace xx%` / time-left strings
 lib/presentation/widgets/settings_provenance_chip.dart # Shared provenance badge widget for `OpenCode-backed`, `CodeWalk-local`, and `CodeWalk exception` labels used by Behavior, Notifications, and Shortcuts settings surfaces
+lib/presentation/widgets/settings_update_available_card.dart # Shared CodeWalk update card for Settings landing and About; renders installed/latest version info, release notes when requested, install/progress/retry controls, release-link fallback, and dismiss action
 lib/presentation/widgets/searchable_dropdown_form_field.dart # Reusable FormField<T> searchable dropdown with modal bottom sheet picker; used by servers, speech, notifications, appearance, and behavior settings sections
 lib/presentation/theme/opencode_web_theme_registry.dart # Generated local mirror of the official OpenCode Web built-in theme registry with 37 theme definitions (light/dark palette + overrides); regenerate via `tool/theme/generate_opencode_web_themes.py`
 lib/presentation/theme/opencode_theme_presets.dart     # Theme registry bridge from OpenCode Web ids to Flutter `ColorScheme` plus `OpenCodeThemeTokens` ThemeExtension for markdown and syntax-aware surfaces
@@ -553,7 +555,7 @@ tool/release/changelog.py              # Changelog update/extract helper used by
 - **`SettingsProvider.startInstall()`**: Android downloads the APK to a temp file via Dio `saveFile`, then calls `OpenFilex.open()` to trigger the system installer; desktop runs the install script and marks `done|failed`. Guards against re-entry when already downloading/installing.
 - **`SettingsProvider.restartDesktopApp()`**: Desktop-only relaunch helper used by snackbar action; attempts detached relaunch and then exits current process.
 - **`AppShellPage` reactions**: Observes `installState` transitions; shows Android downloading progress snackbar, desktop installing indefinite snackbar, done snackbar with desktop `Restart` action, and failed retry snackbar; the update toast "Install" action calls `startInstall()`.
-- **`AboutSettingsSection` controls**: Renders inline progress indicators and retry/install buttons reflecting `installState`; delegates to `settings.startInstall()`.
+- **`SettingsUpdateAvailableCard` controls**: Shared by the Settings landing page and `AboutSettingsSection`; renders inline progress indicators and retry/install buttons reflecting `installState`, falls back to the release URL when direct install is unsupported, and delegates direct installs to `settings.startInstall()`.
 
 ### Performance & Animations
 

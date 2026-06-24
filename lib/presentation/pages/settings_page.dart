@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -12,6 +13,7 @@ import '../providers/settings_provider.dart';
 import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
 import '../utils/window_size_class.dart';
+import '../widgets/settings_update_available_card.dart';
 import 'logs_page.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings/sections/about_settings_section.dart';
@@ -55,6 +57,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   DateTime? _lastEscapeAt;
   bool _hasPhysicalKeyboard = false;
+  String _version = '';
+  String _buildNumber = '';
 
   _SettingsSection _section({
     required String id,
@@ -159,12 +163,15 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
+    unawaited(_loadVersion());
     final initialSectionId = widget.initialSectionId == 'logs'
         ? ''
         : widget.initialSectionId;
     // Section labels depend on Localizations, so the localized section list is
     // resolved during build instead of during initState.
-    _selectedSectionId = initialSectionId.isEmpty ? 'servers' : initialSectionId;
+    _selectedSectionId = initialSectionId.isEmpty
+        ? 'servers'
+        : initialSectionId;
     _showMobileDetail = initialSectionId.isNotEmpty;
     if (widget.initialSectionId == 'logs') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -174,6 +181,17 @@ class _SettingsPageState extends State<SettingsPage> {
         _openLogsPage();
       });
     }
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _version = info.version;
+      _buildNumber = info.buildNumber;
+    });
   }
 
   @override
@@ -368,46 +386,60 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSectionList({required bool isSplit}) {
-    return ListView(
-      padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      children: [
-        FilledButton.icon(
-          onPressed: _openSetupWizard,
-          icon: const Icon(Symbols.auto_fix_high_rounded),
-          label: Text(context.l10n.settingsSetupWizard),
-        ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          key: const ValueKey<String>('settings_replay_chat_tour_button'),
-          onPressed: () => unawaited(_replayChatTour()),
-          icon: const Icon(Symbols.play_circle_rounded),
-          label: Text(context.l10n.settingsAboutReplayChatTour),
-        ),
-        const SizedBox(height: 12),
-        ..._visibleSections.map((section) {
-          final selected = section.id == _selectedSectionId;
-          return Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              selected: selected,
-              leading: Icon(section.icon),
-              title: Text(section.title),
-              subtitle: Text(section.description),
-              trailing: const Icon(Symbols.chevron_right),
-              onTap: () {
-                if (section.id == 'logs') {
-                  _openLogsPage();
-                  return;
-                }
-                setState(() {
-                  _selectedSectionId = section.id;
-                  _showMobileDetail = true;
-                });
-              },
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, _) {
+        final updateResult = settings.updateCheckResult;
+        return ListView(
+          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+          children: [
+            if (updateResult != null && updateResult.isNewer) ...[
+              SettingsUpdateAvailableCard(
+                settings: settings,
+                result: updateResult,
+                currentVersion: _version,
+                currentBuildNumber: _buildNumber,
+              ),
+              const SizedBox(height: 10),
+            ],
+            FilledButton.icon(
+              onPressed: _openSetupWizard,
+              icon: const Icon(Symbols.auto_fix_high_rounded),
+              label: Text(context.l10n.settingsSetupWizard),
             ),
-          );
-        }),
-      ],
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              key: const ValueKey<String>('settings_replay_chat_tour_button'),
+              onPressed: () => unawaited(_replayChatTour()),
+              icon: const Icon(Symbols.play_circle_rounded),
+              label: Text(context.l10n.settingsAboutReplayChatTour),
+            ),
+            const SizedBox(height: 12),
+            ..._visibleSections.map((section) {
+              final selected = section.id == _selectedSectionId;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  selected: selected,
+                  leading: Icon(section.icon),
+                  title: Text(section.title),
+                  subtitle: Text(section.description),
+                  trailing: const Icon(Symbols.chevron_right),
+                  onTap: () {
+                    if (section.id == 'logs') {
+                      _openLogsPage();
+                      return;
+                    }
+                    setState(() {
+                      _selectedSectionId = section.id;
+                      _showMobileDetail = true;
+                    });
+                  },
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 }

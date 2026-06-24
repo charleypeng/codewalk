@@ -11,9 +11,8 @@ import '../../../../core/i18n/l10n_context.dart';
 import '../../../../data/datasources/app_local_datasource.dart';
 import '../../../providers/app_provider.dart';
 import '../../../providers/settings_provider.dart';
-import '../../../services/update_check_service.dart';
+import '../../../widgets/settings_update_available_card.dart';
 import '../../app_shell_page.dart';
-
 
 class AboutSettingsSection extends StatefulWidget {
   const AboutSettingsSection({super.key});
@@ -54,7 +53,13 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
           children: [
             _buildVersionTile(context),
             if (updateResult != null && updateResult.isNewer)
-              _buildUpdateAvailableTile(context, settings, updateResult),
+              SettingsUpdateAvailableCard(
+                settings: settings,
+                result: updateResult,
+                currentVersion: _version,
+                currentBuildNumber: _buildNumber,
+                showReleaseNotes: true,
+              ),
             if (upToDate && updateResult == null) _buildUpToDateTile(context),
             _buildCheckUpdatesOnOpenTile(context, settings),
             _buildCheckForUpdatesTile(context, settings, checking),
@@ -77,142 +82,8 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
       subtitle: Text(
         _version.isEmpty
             ? l10n.settingsAboutLoading
-            : l10n.settingsAboutVersionBuild(_version, _buildNumber),
+            : l10n.settingsAboutVersionBuild(_buildNumber, _version),
       ),
-    );
-  }
-
-  Widget _buildUpdateAvailableTile(
-    BuildContext context,
-    SettingsProvider settings,
-    UpdateCheckResult result,
-  ) {
-    final l10n = context.l10n;
-    final installState = settings.installState;
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Symbols.system_update,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.settingsAboutUpdateAvailable(result.latestVersion),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (result.releaseNotes != null &&
-                result.releaseNotes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                result.releaseNotes!.length > 400
-                    ? '${result.releaseNotes!.substring(0, 400)}...'
-                    : result.releaseNotes!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            // Install progress/state widget
-            _buildInstallControl(context, settings, result, installState),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInstallControl(
-    BuildContext context,
-    SettingsProvider settings,
-    UpdateCheckResult result,
-    UpdateInstallState installState,
-  ) {
-    if (installState == UpdateInstallState.downloading) {
-      final l10n = context.l10n;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LinearProgressIndicator(
-            value: settings.installProgress > 0
-                ? settings.installProgress
-                : null,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.settingsAboutDownloading(
-              (settings.installProgress * 100).toStringAsFixed(0),
-            ),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ],
-      );
-    }
-
-    if (installState == UpdateInstallState.installing) {
-      final l10n = context.l10n;
-      return Row(
-        children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            l10n.settingsAboutInstalling,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ],
-      );
-    }
-
-    if (installState == UpdateInstallState.done) {
-      return Text(
-        context.l10n.settingsAboutUpdateInstalled,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onPrimaryContainer,
-        ),
-      );
-    }
-
-    // idle or failed: show action buttons
-    return Wrap(
-      spacing: 8,
-      children: [
-        if (installState == UpdateInstallState.failed)
-          FilledButton.icon(
-            onPressed: () => unawaited(settings.startInstall()),
-            icon: const Icon(Symbols.refresh, size: 16),
-            label: Text(context.l10n.settingsAboutRetryInstall),
-          )
-        else
-          FilledButton.icon(
-            onPressed: () => unawaited(settings.startInstall()),
-            icon: const Icon(Symbols.download, size: 16),
-            label: Text(context.l10n.settingsAboutInstallUpdate),
-          ),
-        OutlinedButton(
-          onPressed: () => settings.dismissUpdate(result.latestVersion),
-          child: Text(context.l10n.settingsAboutDismiss),
-        ),
-      ],
     );
   }
 
