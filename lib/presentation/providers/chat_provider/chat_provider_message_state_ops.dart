@@ -1,6 +1,25 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderMessageStateOps on ChatProvider {
+  int _messageLocalDeltaVersion(String messageId) {
+    return _messageLocalDeltaVersionById[messageId] ?? 0;
+  }
+
+  void _markLocalMessageDeltaAdvanced(String messageId) {
+    final normalizedMessageId = messageId.trim();
+    if (normalizedMessageId.isEmpty) {
+      return;
+    }
+    _messageLocalDeltaVersionById[normalizedMessageId] =
+        (_messageLocalDeltaVersionById[normalizedMessageId] ?? 0) + 1;
+    while (_messageLocalDeltaVersionById.length >
+        ChatProvider._maxMessageLocalDeltaVersions) {
+      _messageLocalDeltaVersionById.remove(
+        _messageLocalDeltaVersionById.keys.first,
+      );
+    }
+  }
+
   String? _deltaDedupeFieldKey(MessagePart part) {
     if (part is TextPart || part is ReasoningPart) {
       return '${part.messageId}::${part.id}';
@@ -118,6 +137,114 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return incomingPart;
   }
 
+  bool _isSamePartSlot(MessagePart existingPart, MessagePart incomingPart) {
+    if (existingPart.id == incomingPart.id) {
+      return true;
+    }
+    if (existingPart is TextPart && incomingPart is TextPart) {
+      return true;
+    }
+    if (existingPart is ReasoningPart && incomingPart is ReasoningPart) {
+      return true;
+    }
+    if (existingPart is ToolPart && incomingPart is ToolPart) {
+      return existingPart.callId.isNotEmpty &&
+          existingPart.callId == incomingPart.callId;
+    }
+    return false;
+  }
+
+  MessagePart _preserveNonRegressiveSlotUpdate({
+    required MessagePart existingPart,
+    required MessagePart incomingPart,
+  }) {
+    if (existingPart.id == incomingPart.id) {
+      return _preserveNonRegressivePartUpdate(
+        existingPart: existingPart,
+        incomingPart: incomingPart,
+      );
+    }
+    if (existingPart is TextPart && incomingPart is TextPart) {
+      if (incomingPart.text.isEmpty ||
+          existingPart.text.startsWith(incomingPart.text)) {
+        return TextPart(
+          id: incomingPart.id,
+          messageId: incomingPart.messageId,
+          sessionId: incomingPart.sessionId,
+          text: existingPart.text,
+          time: incomingPart.time,
+        );
+      }
+      return incomingPart;
+    }
+    if (existingPart is ReasoningPart && incomingPart is ReasoningPart) {
+      if (incomingPart.text.isEmpty ||
+          existingPart.text.startsWith(incomingPart.text)) {
+        return ReasoningPart(
+          id: incomingPart.id,
+          messageId: incomingPart.messageId,
+          sessionId: incomingPart.sessionId,
+          text: existingPart.text,
+          time: incomingPart.time,
+        );
+      }
+      return incomingPart;
+    }
+    if (existingPart is ToolPart &&
+        incomingPart is ToolPart &&
+        _isTerminalToolState(existingPart.state) &&
+        !_isTerminalToolState(incomingPart.state)) {
+      return existingPart;
+    }
+    return incomingPart;
+  }
+
+  bool _partContentAlreadyRepresented(
+    MessagePart existingPart,
+    List<MessagePart> mergedParts,
+  ) {
+    if (existingPart is TextPart && existingPart.text.length >= 8) {
+      return mergedParts.whereType<TextPart>().any(
+        (part) => part.text.contains(existingPart.text),
+      );
+    }
+    if (existingPart is ReasoningPart && existingPart.text.length >= 8) {
+      return mergedParts.whereType<ReasoningPart>().any(
+        (part) => part.text.contains(existingPart.text),
+      );
+    }
+    return false;
+  }
+
+  AssistantMessage? _mergeAssistantCompletionMetadataOnly({
+    required AssistantMessage existing,
+    required AssistantMessage incoming,
+  }) {
+    if (!incoming.isCompleted) {
+      return null;
+    }
+    final merged = AssistantMessage(
+      id: existing.id,
+      sessionId: existing.sessionId,
+      time: existing.time,
+      parts: existing.parts,
+      completedTime:
+          incoming.completedTime ?? existing.completedTime ?? DateTime.now(),
+      providerId: incoming.providerId ?? existing.providerId,
+      modelId: incoming.modelId ?? existing.modelId,
+      variant: incoming.variant ?? existing.variant,
+      cost: incoming.cost ?? existing.cost,
+      tokens: incoming.tokens ?? existing.tokens,
+      error: incoming.error ?? existing.error,
+      mode: incoming.mode ?? existing.mode,
+      summary: incoming.summary ?? existing.summary,
+    );
+    if (merged == existing) {
+      return null;
+    }
+    return merged;
+  }
+
   AssistantMessage _mergeCompletedAssistantUpdate(
     AssistantMessage existing,
     AssistantMessage incoming,
@@ -126,25 +253,105 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       for (final part in existing.parts) part.id: part,
     };
     final mergedParts = <MessagePart>[];
-    for (final incomingPart in incoming.parts) {
+    for (var index = 0; index < incoming.parts.length; index += 1) {
+      final incomingPart = incoming.parts[index];
       final existingPart = unmatchedExistingById.remove(incomingPart.id);
-      if (existingPart == null) {
-        mergedParts.add(incomingPart);
+      if (existingPart != null) {
+        mergedParts.add(
+          _preserveNonRegressivePartUpdate(
+            existingPart: existingPart,
+            incomingPart: incomingPart,
+          ),
+        );
         continue;
       }
-      mergedParts.add(
-        _preserveNonRegressivePartUpdate(
-          existingPart: existingPart,
-          incomingPart: incomingPart,
-        ),
-      );
+
+      final existingSlotPart = index < existing.parts.length
+          ? existing.parts[index]
+          : null;
+      if (existingSlotPart != null &&
+          unmatchedExistingById.containsKey(existingSlotPart.id) &&
+          _isSamePartSlot(existingSlotPart, incomingPart)) {
+        unmatchedExistingById.remove(existingSlotPart.id);
+        mergedParts.add(
+          _preserveNonRegressiveSlotUpdate(
+            existingPart: existingSlotPart,
+            incomingPart: incomingPart,
+          ),
+        );
+        continue;
+      }
+
+      mergedParts.add(incomingPart);
     }
     for (final existingPart in existing.parts) {
       if (unmatchedExistingById.containsKey(existingPart.id)) {
+        if (_partContentAlreadyRepresented(existingPart, mergedParts)) {
+          continue;
+        }
         mergedParts.add(existingPart);
       }
     }
     return _copyMessageWithParts(incoming, mergedParts) as AssistantMessage;
+  }
+
+  AssistantMessage _mergeAssistantMessageUpdate(
+    AssistantMessage existing,
+    AssistantMessage incoming,
+  ) {
+    if (existing.isCompleted && !incoming.isCompleted) {
+      return existing;
+    }
+
+    final incomingPartIds = incoming.parts.map((part) => part.id).toSet();
+    final incomingDropsVisiblePart = existing.parts.any(
+      (part) => !incomingPartIds.contains(part.id),
+    );
+    final localDeltaVersion = _messageLocalDeltaVersion(existing.id);
+    final shouldMergeNonRegressively =
+        existing.isCompleted ||
+        incoming.isCompleted ||
+        localDeltaVersion > 0 ||
+        incoming.parts.length < existing.parts.length ||
+        incomingDropsVisiblePart;
+
+    if (!shouldMergeNonRegressively) {
+      return incoming;
+    }
+    return _mergeCompletedAssistantUpdate(existing, incoming);
+  }
+
+  bool _mergeCompletionStatusOnly(ChatMessage incoming, int existingIndex) {
+    final existing = _messages[existingIndex];
+    if (existing is! AssistantMessage || incoming is! AssistantMessage) {
+      return false;
+    }
+    final merged = _mergeAssistantCompletionMetadataOnly(
+      existing: existing,
+      incoming: incoming,
+    );
+    if (merged == null) {
+      return false;
+    }
+    _messages[existingIndex] = merged;
+    _messagesVersion++;
+    _notifyListeners(reason: 'message-fallback-completion-only');
+    _persistOptimisticReconciliation(incoming.sessionId);
+    return true;
+  }
+
+  bool _hasSameOrderedParts(ChatMessage a, ChatMessage b) {
+    if (a.parts.length != b.parts.length) {
+      return false;
+    }
+    for (var index = 0; index < a.parts.length; index += 1) {
+      final left = a.parts[index];
+      final right = b.parts[index];
+      if (left.id != right.id || left != right) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void _persistOptimisticReconciliation(String sessionId) {
@@ -430,13 +637,16 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       }
       // Update existing message without allowing completed snapshots or terminal
       // tool states to lose content already visible to the user.
-      _messages[index] =
-          existing is AssistantMessage &&
-              existing.isCompleted &&
-              message is AssistantMessage &&
-              message.isCompleted
-          ? _mergeCompletedAssistantUpdate(existing, message)
+      final replacement =
+          existing is AssistantMessage && message is AssistantMessage
+          ? _mergeAssistantMessageUpdate(existing, message)
           : message;
+      if (replacement == existing &&
+          _hasSameOrderedParts(existing, replacement)) {
+        AppLogger.debug('Skipped unchanged message update: ${message.id}');
+        return;
+      }
+      _messages[index] = replacement;
       _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);

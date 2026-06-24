@@ -399,6 +399,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       case 'session.idle':
         final sessionId = properties['sessionID'] as String?;
         if (sessionId != null) {
+          _flushDeltaNotification(reason: 'event-session.idle');
           final isCurrentSession = sessionId == _currentSession?.id;
           final hasActiveCurrentSendTurn = _hasInFlightSendTurnForSession(
             sessionId,
@@ -559,6 +560,22 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final messageId = info?['id'] as String?;
         if (sessionId != null && messageId != null) {
           final isCurrentSession = _currentSession?.id == sessionId;
+          if (isCurrentSession) {
+            final existingIndex = _messages.indexWhere(
+              (message) => message.id == messageId,
+            );
+            if (event.type == 'message.created' && existingIndex != -1) {
+              final existing = _messages[existingIndex];
+              if (existing is AssistantMessage && existing.isCompleted) {
+                _traceFinal(
+                  'event-${event.type}-fallback-skip-completed-local',
+                  sessionId: sessionId,
+                  details: 'messageId=$messageId',
+                );
+                break;
+              }
+            }
+          }
           _traceFinal(
             'event-${event.type}-fallback-fetch',
             sessionId: sessionId,
@@ -646,14 +663,25 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           nextParts[existingPartIndex] = resolvedPart;
         }
         _messages[partIndex] = _copyMessageWithParts(message, nextParts);
+        _markLocalMessageDeltaAdvanced(messageId);
         _messagesVersion++;
-        _notifyListeners();
+        if (event.type == 'message.part.delta' &&
+            delta != null &&
+            delta.isNotEmpty) {
+          _scheduleDeltaNotification(reason: 'event-message-part-delta');
+        } else {
+          _notifyListeners(reason: 'event-message-part-updated');
+        }
         final shouldAutoScroll =
             existingPartIndex == -1 ||
             resolvedPart is TextPart ||
             resolvedPart is ReasoningPart;
         if (delta != null && delta.isNotEmpty && message is AssistantMessage) {
-          _scheduleDebouncedMessageFallback(sessionId, messageId);
+          _scheduleDebouncedMessageFallback(
+            sessionId,
+            messageId,
+            expectedLocalDeltaVersion: _messageLocalDeltaVersion(messageId),
+          );
         }
         final updatedMessage = _messages[partIndex];
         if (shouldAutoScroll &&

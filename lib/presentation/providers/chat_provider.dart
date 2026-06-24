@@ -455,8 +455,10 @@ class ChatProvider extends ChangeNotifier {
   // Circular buffer of recent event dedup keys to prevent the global stream
   // from re-processing events already handled by the session stream.
   final Queue<String> _recentEventIds = Queue<String>();
-  static const int _maxRecentEventIds = 64;
+  static const int _maxRecentEventIds = 256;
   final Set<String> _dedupeNextDeltaFieldKeys = <String>{};
+  final Map<String, int> _messageLocalDeltaVersionById = <String, int>{};
+  static const int _maxMessageLocalDeltaVersions = 200;
 
   static const Duration _sessionsCacheTtl = Duration(days: 3);
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
@@ -491,6 +493,8 @@ class ChatProvider extends ChangeNotifier {
   // during streaming (where 5+ event types fire per tick).
   bool _notifyScheduled = false;
   final Set<String> _pendingNotifyReasons = <String>{};
+  Timer? _deltaNotifyDebounce;
+  bool _deltaNotifyPending = false;
 
   // Render gate: suppress UI rebuilds while app is in background.
   // SSE data keeps accumulating in internal fields, but widgets won't rebuild
@@ -553,6 +557,38 @@ class ChatProvider extends ChangeNotifier {
         Error.throwWithStackTrace(error, stackTrace);
       }
     });
+  }
+
+  void _scheduleDeltaNotification({String reason = 'message.part.delta'}) {
+    if (!_isForegroundActive) {
+      _notifyListeners(reason: reason);
+      return;
+    }
+    if (AppLogger.performanceLoggingEnabled) {
+      _pendingNotifyReasons.add(reason);
+    }
+    _deltaNotifyPending = true;
+    if (_deltaNotifyDebounce?.isActive == true) {
+      return;
+    }
+    _deltaNotifyDebounce = Timer(const Duration(milliseconds: 16), () {
+      _deltaNotifyDebounce = null;
+      if (!_deltaNotifyPending) {
+        return;
+      }
+      _deltaNotifyPending = false;
+      _notifyListeners(reason: 'message.part.delta.batch');
+    });
+  }
+
+  void _flushDeltaNotification({String reason = 'message.part.delta.flush'}) {
+    final hadPending = _deltaNotifyPending;
+    _deltaNotifyDebounce?.cancel();
+    _deltaNotifyDebounce = null;
+    _deltaNotifyPending = false;
+    if (hadPending) {
+      _notifyListeners(reason: reason);
+    }
   }
 
   bool get _hasPendingThreadInteractions {
@@ -4418,6 +4454,7 @@ class ChatProvider extends ChangeNotifier {
     _eventSubscription?.cancel();
     _globalEventSubscription?.cancel();
     _globalRefreshDebounce?.cancel();
+    _deltaNotifyDebounce?.cancel();
     for (final timer in _messageFallbackDebounceById.values) {
       timer.cancel();
     }

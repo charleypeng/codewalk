@@ -27,8 +27,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     String messageId, {
     bool applyToCurrentSession = true,
     Duration delay = const Duration(milliseconds: 120),
+    int? expectedLocalDeltaVersion,
   }) {
     _messageFallbackDebounceById.remove(messageId)?.cancel();
+    final scheduledLocalDeltaVersion =
+        expectedLocalDeltaVersion ?? _messageLocalDeltaVersion(messageId);
     _messageFallbackDebounceById[messageId] = Timer(delay, () {
       _messageFallbackDebounceById.remove(messageId);
       unawaited(
@@ -36,6 +39,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           sessionId,
           messageId,
           applyToCurrentSession: applyToCurrentSession,
+          expectedLocalDeltaVersion: scheduledLocalDeltaVersion,
         ),
       );
     });
@@ -45,8 +49,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     String sessionId,
     String messageId, {
     bool applyToCurrentSession = true,
+    int? expectedLocalDeltaVersion,
   }) async {
     _messageFallbackDebounceById.remove(messageId)?.cancel();
+    final scheduledLocalDeltaVersion =
+        expectedLocalDeltaVersion ?? _messageLocalDeltaVersion(messageId);
     _traceFinal(
       'fetch-message-fallback-start',
       sessionId: sessionId,
@@ -84,6 +91,28 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
               'messageId=${message.id} role=${message.role.name} assistantCompleted=$isCompleted applyToCurrentSession=$applyToCurrentSession',
         );
         if (applyToCurrentSession && _currentSession?.id == sessionId) {
+          final existingIndex = _messages.indexWhere(
+            (item) => item.id == message.id,
+          );
+          final currentLocalDeltaVersion = _messageLocalDeltaVersion(
+            message.id,
+          );
+          if (existingIndex != -1 &&
+              currentLocalDeltaVersion > scheduledLocalDeltaVersion) {
+            final completionMerged = _mergeCompletionStatusOnly(
+              message,
+              existingIndex,
+            );
+            _traceFinal(
+              completionMerged
+                  ? 'fetch-message-fallback-merged-completion-only'
+                  : 'fetch-message-fallback-skipped-stale-content',
+              sessionId: sessionId,
+              details:
+                  'messageId=${message.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
+            );
+            return;
+          }
           _updateOrAddMessage(message);
           _traceFinal(
             'fetch-message-fallback-applied-current',
@@ -97,6 +126,40 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           final existingIndex = next.indexWhere(
             (item) => item.id == message.id,
           );
+          final currentLocalDeltaVersion = _messageLocalDeltaVersion(
+            message.id,
+          );
+          if (existingIndex != -1 &&
+              currentLocalDeltaVersion > scheduledLocalDeltaVersion) {
+            final existing = next[existingIndex];
+            if (existing is AssistantMessage && message is AssistantMessage) {
+              final merged = _mergeAssistantCompletionMetadataOnly(
+                existing: existing,
+                incoming: message,
+              );
+              if (merged != null) {
+                next[existingIndex] = merged;
+                _cacheSessionMessages(sessionId, next);
+                unawaited(
+                  _persistSessionMessagesSnapshotBestEffort(sessionId, next),
+                );
+                _traceFinal(
+                  'fetch-message-fallback-merged-cache-completion-only',
+                  sessionId: sessionId,
+                  details:
+                      'messageId=${message.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
+                );
+                return;
+              }
+            }
+            _traceFinal(
+              'fetch-message-fallback-skipped-stale-cache-content',
+              sessionId: sessionId,
+              details:
+                  'messageId=${message.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
+            );
+            return;
+          }
           if (existingIndex == -1) {
             next.add(message);
           } else {

@@ -3,6 +3,8 @@ library;
 
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/data/models/chat_message_model.dart';
+import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
@@ -677,6 +679,47 @@ void main() {
         );
       });
 
+      test(
+        'skips duplicate created fetch when local assistant is completed',
+        () async {
+          final completedMessage = AssistantMessage(
+            id: 'msg_completed_local',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_completed_local',
+                messageId: 'msg_completed_local',
+                sessionId: 'ses_1',
+                text: 'Already final',
+              ),
+            ],
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            completedMessage,
+          ];
+          await initAndSelectSession();
+
+          final callsBefore = chatRepository.getMessageCallCount;
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'message.created',
+              properties: <String, dynamic>{
+                'info': <String, dynamic>{
+                  'sessionID': 'ses_1',
+                  'id': 'msg_completed_local',
+                },
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 60));
+
+          expect(chatRepository.getMessageCallCount, callsBefore);
+          expect(provider.messages.single, completedMessage);
+        },
+      );
+
       test('skips event with missing sessionID or messageId', () async {
         await initAndSelectSession();
         chatRepository.emitEvent(
@@ -744,6 +787,74 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 30));
           await Future<void>.delayed(const Duration(milliseconds: 30));
           expect(chatRepository.getMessageCallCount, greaterThan(callsBefore));
+        },
+      );
+
+      test(
+        'stale fallback after delta only merges completion status',
+        () async {
+          const initialPart = TextPart(
+            id: 'part_stale_delta',
+            messageId: 'msg_stale_delta',
+            sessionId: 'ses_1',
+            text: 'hello',
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            AssistantMessage(
+              id: 'msg_stale_delta',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[initialPart],
+            ),
+          ];
+          await initAndSelectSession();
+
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            AssistantMessage(
+              id: 'msg_stale_delta',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+              parts: const <MessagePart>[initialPart],
+            ),
+          ];
+
+          const updatedPart = TextPart(
+            id: 'part_stale_delta',
+            messageId: 'msg_stale_delta',
+            sessionId: 'ses_1',
+            text: 'hello world',
+          );
+          chatRepository.emitEvent(
+            ChatEvent(
+              type: 'message.part.delta',
+              properties: <String, dynamic>{
+                'part': MessagePartModel.fromDomain(updatedPart).toJson(),
+                'delta': ' world',
+              },
+            ),
+          );
+
+          await settleUntil(
+            () {
+              final message = provider.messages.single as AssistantMessage;
+              final text = message.parts.whereType<TextPart>().single.text;
+              return text == 'hello world';
+            },
+            reason: 'Expected SSE delta to update local text before fallback.',
+          );
+          await settleUntil(
+            () => chatRepository.getMessageCallCount > 0,
+            maxTicks: 40,
+            reason: 'Expected fallback fetch to run after debounce.',
+          );
+
+          final message = provider.messages.single as AssistantMessage;
+          expect(
+            message.parts.whereType<TextPart>().single.text,
+            'hello world',
+          );
+          expect(message.isCompleted, isTrue);
         },
       );
     });
