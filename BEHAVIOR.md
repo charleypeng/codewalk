@@ -1144,7 +1144,7 @@ Transient connectivity blips that do not escalate are surfaced via loading/sync 
 - **When** the user presses a keyboard shortcut
 - **Then** the corresponding action is executed (shortcuts work on desktop and on mobile with an external keyboard)
 
-All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-configurable in Settings:
+Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-sensitive actions using explicit modifiers. Shortcuts are user-configurable in Settings:
 
 | Shortcut | Action | Notes |
 |----------|--------|-------|
@@ -1156,8 +1156,8 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 | `mod+,` | Open Settings | |
 | `mod+m` | Cycle recent/favorite models | |
 | `mod+t` | Cycle model variants | |
-| `mod+j` | Next agent | |
-| `mod+shift+j` | Previous agent | |
+| `alt+shift+j` / `option+shift+j` | Next agent | Avoids intercepting `Ctrl+J` line-feed input used by terminals and CLIs |
+| `alt+shift+k` / `option+shift+k` | Previous agent | Avoids intercepting `Ctrl+J` line-feed input used by terminals and CLIs |
 | `mod+w` | Close app | On desktop, follows close-to-tray/minimize/close settings; on Android and iOS it exits the app surface |
 | `Escape` | Close drawer / focus input | Double-press stops active response |
 | `mod+q` | Force-exit app | On desktop, bypasses close-to-tray/minimize; on Android and iOS it exits the app surface |
@@ -1222,7 +1222,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ### Alt+Tab-style shortcut cycling (model, agent, variant)
 
-- **Given** the user is using keyboard cycling shortcuts (`mod+m`, `mod+j`, `mod+shift+j`, `mod+t`)
+- **Given** the user is using keyboard cycling shortcuts (`mod+m`, `alt+shift+j`, `alt+shift+k`, `mod+t`)
 - **When** the user triggers one of these shortcuts
 - **Then** the first trigger behaves like Alt+Tab and switches to the previously used item in that domain (model, agent, or variant)
 - **Then** if the user triggers again within 3 seconds, cycling continues through a burst snapshot in recency order
@@ -1235,7 +1235,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the connected server provides agents (specialized AI configurations)
 - **When** the user opens the agent selector or types `/agent`
 - **Then** all available agents are listed and one can be selected
-- **When** the user presses `mod+j` / `mod+shift+j`
+- **When** the user presses `alt+shift+j` / `alt+shift+k`
 - **Then** the app cycles forward/backward through the available agents
 
 ### Agent changes restore the last compatible local model choice

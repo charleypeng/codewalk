@@ -287,5 +287,35 @@ void main() {
         }
       },
     );
+
+    test('agent defaults avoid Ctrl+J line-feed interception', () {
+      final defaults = {
+        for (final definition in kShortcutDefinitions)
+          definition.action: definition.defaultBinding,
+      };
+
+      expect(defaults[ShortcutAction.cycleAgentForward], 'alt+shift+j');
+      expect(defaults[ShortcutAction.cycleAgentBackward], 'alt+shift+k');
+      expect(defaults.values, isNot(contains('mod+j')));
+      expect(defaults.values, isNot(contains('mod+shift+j')));
+    });
+
+    test('fromJson migrates old Ctrl+J agent bindings', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'shortcuts': <String, String>{
+          'cycle_agent_forward': 'mod+j',
+          'cycle_agent_backward': 'ctrl+shift+j',
+        },
+      });
+
+      expect(
+        restored.shortcuts[ShortcutAction.cycleAgentForward],
+        'alt+shift+j',
+      );
+      expect(
+        restored.shortcuts[ShortcutAction.cycleAgentBackward],
+        'alt+shift+k',
+      );
+    });
   });
 }

@@ -189,14 +189,14 @@ const List<ShortcutDefinition> kShortcutDefinitions = <ShortcutDefinition>[
     group: 'Model and agent',
     label: 'Next agent',
     description: 'Cycle to next available agent',
-    defaultBinding: 'mod+j',
+    defaultBinding: 'alt+shift+j',
   ),
   ShortcutDefinition(
     action: ShortcutAction.cycleAgentBackward,
     group: 'Model and agent',
     label: 'Previous agent',
     description: 'Cycle to previous available agent',
-    defaultBinding: 'mod+shift+j',
+    defaultBinding: 'alt+shift+k',
   ),
   ShortcutDefinition(
     action: ShortcutAction.closeApp,
@@ -577,6 +577,30 @@ ChatRenderMode chatRenderModeFromKey(String value) {
     'blocks' => ChatRenderMode.block,
     'sorted' => ChatRenderMode.block,
     _ => ChatRenderMode.live,
+  };
+}
+
+String _normalizeShortcutBinding(String value) {
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll(' ', '')
+      .replaceAll('command', 'meta')
+      .replaceAll('cmd', 'meta')
+      .replaceAll('control', 'ctrl')
+      .replaceAll('option', 'alt');
+}
+
+String _migrateShortcutBinding(ShortcutAction action, String value) {
+  final normalized = _normalizeShortcutBinding(value);
+  return switch (action) {
+    ShortcutAction.cycleAgentForward
+        when normalized == 'mod+j' || normalized == 'ctrl+j' =>
+      'alt+shift+j',
+    ShortcutAction.cycleAgentBackward
+        when normalized == 'mod+shift+j' || normalized == 'ctrl+shift+j' =>
+      'alt+shift+k',
+    _ => normalized,
   };
 }
 
@@ -1187,7 +1211,7 @@ class ExperienceSettings {
         if (action == null) {
           continue;
         }
-        final value = entry.value.toString().trim().toLowerCase();
+        final value = _migrateShortcutBinding(action, entry.value.toString());
         if (value.isNotEmpty) {
           shortcuts[action] = value;
         }
