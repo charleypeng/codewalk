@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.139.0 - 2026-06-24
+
+- feat(settings): surface CodeWalk update notice
+
 ## v1.138.1 - 2026-06-24
 
 - Release maintenance.
