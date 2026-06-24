@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.140.0 - 2026-06-24
+
+- feat(settings): add update release fallback
+- docs(chat): document stability invariants
+- fix(chat): stabilize final reveal scrolling
+- fix(chat): guard assistant fallback reconciliation
+- plan: issue 76 chat stability
+
 ## v1.139.0 - 2026-06-24
 
 - feat(settings): surface CodeWalk update notice
