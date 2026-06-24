@@ -2578,6 +2578,22 @@ void main() {
         );
 
         await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_panel_maximize_button')),
+        );
+        await tester.pumpAndSettle();
+
+        final panelFinder = find.byKey(
+          const ValueKey<String>('terminal_panel'),
+        );
+        expect(tester.getTopLeft(panelFinder), Offset.zero);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(panelFinder, findsOneWidget);
+        expect(tester.getTopLeft(panelFinder).dy, greaterThan(0));
+
+        await tester.tap(
           find.byKey(const ValueKey<String>('terminal_panel_hide_button')),
         );
         await tester.pumpAndSettle();
@@ -2596,7 +2612,7 @@ void main() {
       }),
     );
 
-    testWidgets('terminal maximize button expands panel height', (
+    testWidgets('terminal maximize button opens full-screen overlay', (
       WidgetTester tester,
     ) async {
       await tester.binding.setSurfaceSize(const Size(1300, 900));
@@ -2606,8 +2622,18 @@ void main() {
         ..activeServerId = 'srv_test';
       final provider = _buildChatProvider(localDataSource: localDataSource);
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      _disableAutomaticUpdateChecksForTest(localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      addTearDown(settingsProvider.dispose);
+      await settingsProvider.initialize();
 
-      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, settingsProvider: settingsProvider),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -2617,14 +2643,29 @@ void main() {
 
       final panelFinder = find.byKey(const ValueKey<String>('terminal_panel'));
       final initialHeight = tester.getSize(panelFinder).height;
+      expect(settingsProvider.terminalPanelMaximized, isFalse);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('terminal_panel_maximize_button')),
       );
       await tester.pumpAndSettle();
 
-      final maximizedHeight = tester.getSize(panelFinder).height;
-      expect(maximizedHeight, greaterThan(initialHeight));
+      expect(panelFinder, findsOneWidget);
+      expect(settingsProvider.terminalPanelMaximized, isTrue);
+      expect(tester.getTopLeft(panelFinder), Offset.zero);
+      expect(tester.getSize(panelFinder), const Size(1300, 900));
+      expect(
+        find.byKey(const ValueKey<String>('terminal_panel_resize_handle')),
+        findsOneWidget,
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(panelFinder, findsOneWidget);
+      expect(settingsProvider.terminalPanelMaximized, isFalse);
+      expect(tester.getSize(panelFinder).height, initialHeight);
+      expect(tester.getTopLeft(panelFinder).dy, greaterThan(0));
     });
 
     testWidgets('applies compact app bar toolbar heights', (

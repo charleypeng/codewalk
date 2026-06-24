@@ -317,8 +317,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final settingsProvider = context.watch<SettingsProvider>();
     final isCompactLayout =
         context.windowSizeClass.isCompact || _isMobileRuntime;
-    final showTerminalPanel = settingsProvider.terminalPanelVisible;
-    final hideComposerForTerminal = isCompactLayout && showTerminalPanel;
+    final terminalPanelVisible = settingsProvider.terminalPanelVisible;
+    final showTerminalPanel =
+        terminalPanelVisible && !settingsProvider.terminalPanelMaximized;
+    final hideComposerForTerminal = isCompactLayout && terminalPanelVisible;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;

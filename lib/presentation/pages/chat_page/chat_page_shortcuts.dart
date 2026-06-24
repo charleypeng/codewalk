@@ -131,6 +131,11 @@ extension _ChatPageShortcuts on _ChatPageState {
   }
 
   void _handleEscape() {
+    if (_restoreMaximizedTerminalIfNeeded()) {
+      _lastGlobalEscapeAt = null;
+      return;
+    }
+
     final scaffoldState = Scaffold.maybeOf(context);
     if (scaffoldState?.isDrawerOpen ?? false) {
       _lastGlobalEscapeAt = null;

@@ -48,6 +48,9 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final panelRadius = widget.isMaximized
+        ? BorderRadius.zero
+        : BorderRadius.circular(20);
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
@@ -56,8 +59,10 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
           key: const ValueKey<String>('terminal_panel'),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: panelRadius,
+            border: widget.isMaximized
+                ? null
+                : Border.all(color: colorScheme.outlineVariant),
           ),
           child: Column(
             children: [
@@ -152,7 +157,9 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
         (settings) => settings.terminalFontSize,
       );
       return ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+        borderRadius: widget.isMaximized
+            ? BorderRadius.zero
+            : const BorderRadius.vertical(bottom: Radius.circular(20)),
         child: KeyedSubtree(
           key: ValueKey<int>(widget.controller.terminalGeneration),
           child: TerminalView(

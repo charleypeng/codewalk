@@ -83,52 +83,100 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
     );
   }
 
+  bool _restoreMaximizedTerminalIfNeeded({SettingsProvider? settingsProvider}) {
+    final effectiveSettingsProvider =
+        settingsProvider ??
+        _settingsProvider ??
+        context.read<SettingsProvider>();
+    if (!effectiveSettingsProvider.terminalPanelVisible ||
+        !effectiveSettingsProvider.terminalPanelMaximized) {
+      return false;
+    }
+    unawaited(effectiveSettingsProvider.setTerminalPanelMaximized(false));
+    return true;
+  }
+
   Widget _buildTerminalPanel(SettingsProvider settingsProvider) {
     final mediaHeight = MediaQuery.sizeOf(context).height;
     final isCompact = context.windowSizeClass.isCompact;
     final normalMaxPanelHeight = isCompact
         ? max(320.0, mediaHeight * 0.72)
         : min(480.0, mediaHeight * 0.55);
-    final maximizedHeight = mediaHeight * (isCompact ? 0.88 : 0.8);
-    final panelHeight = settingsProvider.terminalPanelMaximized
-        ? maximizedHeight
-        : settingsProvider.terminalPanelHeight.clamp(
-            180.0,
-            normalMaxPanelHeight,
-          );
+    final panelHeight = settingsProvider.terminalPanelHeight.clamp(
+      180.0,
+      normalMaxPanelHeight,
+    );
     return SizedBox(
       height: panelHeight,
-      child: CodewalkTerminalPanel(
-        controller: _terminalController,
-        isMaximized: settingsProvider.terminalPanelMaximized,
-        onHide: () {
-          unawaited(settingsProvider.setTerminalPanelVisible(false));
-        },
-        onReconnect: () {
-          unawaited(_startTerminalForCurrentProject(force: true));
-        },
-        onStop: () {
-          _terminalSessionSignature = null;
-          unawaited(_terminalController.stop());
-          unawaited(settingsProvider.setTerminalPanelVisible(false));
-        },
-        onToggleMaximize: () {
-          unawaited(
-            settingsProvider.setTerminalPanelMaximized(
-              !settingsProvider.terminalPanelMaximized,
-            ),
-          );
-        },
+      child: _buildTerminalPanelSurface(
+        settingsProvider: settingsProvider,
         onHeightDelta: (delta) {
-          if (settingsProvider.terminalPanelMaximized) {
-            return;
-          }
           settingsProvider.updateTerminalPanelHeightInMemory(
             (panelHeight + delta).clamp(180.0, normalMaxPanelHeight),
           );
           unawaited(settingsProvider.persistTerminalPanelHeight());
         },
       ),
+    );
+  }
+
+  Widget _buildFullscreenTerminalOverlay(SettingsProvider settingsProvider) {
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        child: Focus(
+          autofocus: true,
+          onKeyEvent: (_, event) {
+            if (event is! KeyDownEvent ||
+                event.logicalKey != LogicalKeyboardKey.escape) {
+              return KeyEventResult.ignored;
+            }
+            return _restoreMaximizedTerminalIfNeeded(
+                  settingsProvider: settingsProvider,
+                )
+                ? KeyEventResult.handled
+                : KeyEventResult.ignored;
+          },
+          child: _buildTerminalPanelSurface(
+            settingsProvider: settingsProvider,
+            onHeightDelta: (_) {},
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTerminalPanelSurface({
+    required SettingsProvider settingsProvider,
+    required ValueChanged<double> onHeightDelta,
+  }) {
+    return CodewalkTerminalPanel(
+      controller: _terminalController,
+      isMaximized: settingsProvider.terminalPanelMaximized,
+      onHide: () {
+        unawaited(settingsProvider.setTerminalPanelVisible(false));
+      },
+      onReconnect: () {
+        unawaited(_startTerminalForCurrentProject(force: true));
+      },
+      onStop: () {
+        _terminalSessionSignature = null;
+        unawaited(_terminalController.stop());
+        unawaited(settingsProvider.setTerminalPanelVisible(false));
+      },
+      onToggleMaximize: () {
+        unawaited(
+          settingsProvider.setTerminalPanelMaximized(
+            !settingsProvider.terminalPanelMaximized,
+          ),
+        );
+      },
+      onHeightDelta: (delta) {
+        if (settingsProvider.terminalPanelMaximized) {
+          return;
+        }
+        onHeightDelta(delta);
+      },
     );
   }
 }
