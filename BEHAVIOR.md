@@ -783,6 +783,80 @@
 - **Then** auto-follow resumes only after explicit user intent (e.g., sending a new message or tapping `Go to latest`)
 - **Then** once the final response settles, shrink-correction may clean up empty space below the last message, but only after the active-turn viewport owner has been released
 
+### Assistant message reconciliation is non-regressive
+
+- **Given** an assistant message has already been applied locally (live stream or earlier fallback)
+- **When** a duplicate, stale, or out-of-order event for the same assistant message arrives
+- **Then** the client never regresses visible text, completion flags, or metadata — newer authoritative events only add missing completion/order data, never rewrite earlier committed content
+- **Then** if the incoming payload is identical to the local copy or older than the local delta version, the client ignores it without disturbing the visible message
+
+### Fallback healing uses local delta versions
+
+- **Given** the realtime stream misses events and the client falls back to polling/fetch healing
+- **When** the fallback path emits a candidate replacement for an existing assistant message
+- **Then** the client compares the fallback against the local monotonic delta version captured when the fallback was scheduled
+- **Then** a fallback may replace content only if no newer local delta has advanced the same message since scheduling
+- **Then** out-of-order or stale fallback payloads cannot regress the visible message
+
+### Completed `message.created` duplicate fallback is skipped
+
+- **Given** a fallback or replay path emits a `message.created` event for an assistant message
+- **When** that assistant message already exists locally with completion metadata
+- **Then** the client skips the duplicate `message.created` and does not insert a second copy
+- **Then** a subsequent `message.updated` for the same authoritative message can still apply authoritative completed order and metadata on top of the existing entry
+
+### Stale fallbacks merge completion and metadata only
+
+- **Given** a fallback payload arrives with an older revision or stale order
+- **When** the client reconciles that fallback against the local copy
+- **Then** only completion flags and authoritative metadata such as completion timestamp, model/provider, cost, tokens, mode, summary, or error are merged
+- **Then** earlier text or tool content is not overwritten by the stale fallback
+
+### Streaming deltas are batched around one frame
+
+- **Given** the assistant is streaming text, reasoning, or tool deltas
+- **When** multiple delta notifications arrive within the same frame window
+- **Then** the client coalesces them so only one rebuild per frame is performed
+- **Then** the batching window is approximately one frame (~16 ms) so the UI stays smooth without per-delta rebuild churn
+
+### Session idle flushes pending deltas and ends active composer state
+
+- **Given** the server emits `session.idle` for the active session
+- **When** the client processes that signal
+- **Then** any pending streaming delta notifications are flushed and applied
+- **Then** the active composer state (streaming/processing indicator) ends and the composer returns to its idle appearance
+- **Then** the flush happens even if fallback delivery streams are still draining internally
+
+### Final assistant reveal animation is bounded
+
+- **Given** the final assistant message becomes available after a tool/work phase
+- **When** the chat reveals that final message
+- **Then** the reveal animation lasts approximately 220 ms
+- **Then** the reveal uses at most three scroll-to-bottom passes to land at the reveal position
+- **Then** if the whole final message already fits in the viewport, no extra reposition is performed
+
+### Jump-to-latest FAB hides while the latest reply is being read
+
+- **Given** the user is reading the chat timeline
+- **When** the latest completed/settled assistant message is visibly being read
+- **Then** the `Go to latest` FAB stays hidden
+- **Then** if the user manually scrolls away during an active turn, the FAB remains available so the user can return to the bottom
+
+### Older-message prepends preserve the viewport with a microtask heal
+
+- **Given** the user scrolls to the top threshold of the chat timeline
+- **When** older message batches are prepended
+- **Then** the viewport anchor is restored using a microtask plus a double-extent adjustment
+- **Then** the reading position stays stable with no visible jump into old history or snap-back churn
+
+### Compaction decisions are value-equal
+
+- **Given** the client evaluates whether to apply a fallback compaction decision
+- **When** the decision is compared to the local state
+- **Then** the comparison is value-equal on `shouldDeferLatestCollapse`, `latestRevealableAssistantMessageId`, and `settledLatestAssistantWorkGroupId`
+- **Then** reapplying the same logical compaction does not change visible state
+- **Then** only decisions with different relevant fields invalidate the local timeline cache
+
 ---
 
 ## Composer

@@ -44,6 +44,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-038: Disable On-Device STT Engines on Windows Desktop
 - ADR-039: Real Windows STT Fix — Actionable Settings Links and Typed Microphone Preflight
 - ADR-040: Client-Owned Per-Project Icon Discovery
+- ADR-041: Chat Stability Invariants for Delta Reconciliation and Final Reveal
 
 ---
 
@@ -2250,3 +2251,78 @@ Implement project icons as local CodeWalk metadata, not as OpenCode project stat
 - `lib/presentation/pages/chat_page/chat_page_chrome.dart` and `chat_page_workspace_controller.dart` — project selector/workspace controls.
 - `CODEBASE.md` — map the local project icon subsystem after implementation.
 - Ref: issue #68, follow-up issue #73, OpenChamber `project-icon-routes.js`, OpenChamber `fs/search.js`, OpenChamber `projectMeta.ts`.
+
+---
+
+## ADR-041: Chat Stability Invariants for Delta Reconciliation and Final Reveal (2026-06-24)
+
+**Status**: Accepted
+
+**Related**: ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-028 (Unified Scroll Ownership Model for Chat Timeline), ADR-037 (Chat Viewport and Scroll/Follow Synchronization Revamp), ADR-002 (Context Isolation), ADR-020 (Session-Level SWR Cache). Ref: issue #76.
+
+### Context
+
+Issue #76 surfaced residual jitter in the chat timeline under high-frequency delta events and viewport-bound reveal. Specifically: (a) assistant-message fallback reconciliation could regress against newer server snapshots because the merge had no monotonic tiebreaker; (b) stale fallback completions and metadata-only updates were sometimes allowed to overwrite authoritative completed state; (c) per-event rebuild notifications produced unnecessary layout churn under streaming load; (d) server-authoritative completed snapshots could be discarded when they arrived out-of-order with respect to local part updates; (e) the final-reveal scroll/FAB policy was sensitive to active incomplete assistant states and could either over-hide or over-reveal; (f) older-message prepend occasionally caused scroll extent flicker; (g) compaction decision equality used reference identity where value equality was required.
+
+### Decision
+
+Adopt the following client-side invariants for chat stability. All rules operate on existing OpenCode event shapes; no server contract changes are introduced.
+
+1. **Monotonic local delta version for assistant fallback reconciliation.** Every assistant message with locally-applied `message.part.delta` updates gets a strictly increasing in-memory `deltaVersion` integer. Debounced fallback fetches capture the version at scheduling time; if another local delta advances the same message before the fallback returns, the fallback is stale and may not replace text/tool parts. The counter is bounded in memory per message id and is not a persisted protocol field.
+
+2. **Stale fallback completion / metadata-only merge.** A stale fallback may still merge completion and metadata from a completed assistant snapshot, but it must preserve the currently-visible text/tool parts. The monotonic completion guard from ADR-023 Pitfall P-002 is preserved and extended: late incomplete events from draining fallback streams may never demote an already-completed message, and metadata-only merges may only add fields (never replace text or tool parts).
+
+3. **16ms delta notification batching.** The chat provider applies each `message.part.delta` to in-memory state immediately, but coalesces listener notification with a 16ms timer. `session.idle` flushes any pending delta notification before terminal turn handling so the final state is visible before the composer leaves active-send state.
+
+4. **Server-authoritative completed snapshots may reorder parts non-regressively.** When a non-stale server-authoritative completed snapshot arrives, the provider adopts the server's part order while preserving locally-visible non-regressive content: completed text is not shortened, completed/error tool calls are not reopened by late running snapshots, and already-represented text/reasoning parts are not appended as duplicates.
+
+5. **Scroll/FAB final reveal policy.** Final-reveal scroll uses a 220ms animation and caps scroll-to-bottom passes at 3. The FAB (`Go to latest`) is hidden only when the **completed and settled** latest assistant message is visibly being read in the viewport. An **active incomplete** assistant message does not count as "read" and does not suppress the FAB while the user is not pinned to its tail. The viewport measurement is read fresh from render boxes; stale cached measurements are not used to hide the FAB.
+
+6. **Older-message prepend microtask / double extent restore.** When older messages are prepended (top-scroll pagination or historical load), the chat page schedules the scroll-anchor restore in a microtask after the prepend is committed, then re-checks `maxScrollExtent` once the next frame lays out. If the second measurement differs from the first (e.g. late image decode), the restore offset is adjusted by the delta and the anchor message remains stable in the viewport. The restore runs at most twice per prepend to bound work; subsequent measurements are ignored until the next prepend.
+
+7. **Compaction decision value equality.** Assistant-work compaction decisions are compared by value rather than by object identity. The `==`/`hashCode` overrides cover `shouldDeferLatestCollapse`, `latestRevealableAssistantMessageId`, and `settledLatestAssistantWorkGroupId`, preventing duplicate cache invalidation when independent rebuilds compute the same logical decision.
+
+8. **Server-owned IDs and optimistic `local_user_*` contract preserved.** The invariants above never modify the server's ownership of message ids (`msg_*`) and never promote or rewrite an optimistic `local_user_*` id. Fallback reconciliation against the server uses the server id only; local optimistic ids remain client-only and continue to be excluded from any server-targeted payload (per ADR-023 Pitfall P-001).
+
+### Rationale
+
+- A monotonic local delta version is the simplest correct tiebreaker that survives concurrent streams, fallbacks, and reorderings without inventing a new protocol.
+- The completion/metadata-only guard is a direct continuation of the ADR-023 Pitfall P-002 guard, extended to fallback paths where late completes were the regression source.
+- 16ms is one frame at 60Hz and is the smallest batching window that meaningfully amortizes notify churn without becoming user-perceptible; bounded in-flight batches prevent starvation.
+- Sticky terminal part state is necessary because users perceive "the tool result reverted" as a correctness bug even when the server is authoritative for a newer snapshot; preserving terminal state non-regressively is the lowest-risk compatibility policy.
+- The 220ms / 3-pass final reveal keeps the animation responsive while preventing runaway reveal loops that have been a recurring source of viewport jitter (ADR-028, ADR-037). Separating completed/settled from active incomplete in the FAB policy removes the false-positive suppression that pinned the FAB unnecessarily during streaming.
+- Double extent restore handles the recurring cause of scroll-anchor drift under older-message prepend: the first measurement happens before async image decode and the second corrects the offset without re-running pagination restore.
+- Value equality for compaction decisions is the standard Dart fix for accidental identity-based comparisons and removes a class of duplicate-scheduling bugs that are otherwise hard to reproduce.
+- Every rule is expressible inside the existing OpenCode event contract; no new endpoints, fields, or lifecycle semantics are introduced.
+
+### Consequences
+
+- ✅ Assistant message reconciliation is monotonic across fallback, streaming, and authoritative snapshot paths.
+- ✅ Completed/settled assistant messages no longer flicker when stale fallback completions or metadata-only merges arrive late.
+- ✅ Delta notifications produce ≤1 listener notify per message id per 16ms window, reducing streaming-frame churn.
+- ✅ Server-authoritative completed snapshots may reorder parts while preserving the user's terminal text/tool state.
+- ✅ Final reveal animates within 220ms, capped at 3 scroll passes, with no runaway reveal loops.
+- ✅ FAB hides only when the latest completed/settled assistant message is fully visible; an active incomplete assistant does not falsely suppress the FAB.
+- ✅ Older-message prepend keeps the anchor message stable through microtask + double extent restore.
+- ✅ Compaction scheduler collapses duplicate value-equal decisions into a single decision.
+- ⚠ The 16ms batch window is a tuned constant; platforms with very different frame cadences (120Hz, low-power mode) may need the batch window revisited.
+- ⚠ Non-regressive part reorder is conservative: if a server snapshot is genuinely a downgrade of a tool result (e.g. retraction), the local sticky terminal state wins and the user must refresh to reconcile. This is the intentional safety choice.
+- ⚠ Double extent restore is bounded at 2 measurements; pathological decode pipelines that settle later than one frame may still cause minor anchor drift.
+- ❌ Late fallback completions that contradict a newer authoritative snapshot are intentionally rejected; refresh is the reconciliation path.
+
+### ADR-023 Compatibility
+
+This ADR is fully compliant with ADR-023. No OpenCode server contract is changed: the rules operate entirely on existing event shapes, message ids, and lifecycle semantics. Server-owned message ids (`msg_*`) remain authoritative; the optimistic `local_user_*` contract (ADR-023 Pitfall P-001) is preserved unchanged. No new endpoints, no new fields, no divergence from official OpenCode lifecycle semantics. All invariants are client-side reconstruction from existing event structure and are additive to the current merge / scroll / compaction layer.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart` — monotonic delta-version tiebreaker, completion guard, non-regressive part reorder
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart` — 16ms delta batching window, in-flight batch bound
+- `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` — sticky terminal part state, local delta-version counters
+- `lib/presentation/providers/chat_provider/chat_provider_compaction_ops.dart` — value-equality compaction decision `==`/`hashCode`
+- `lib/presentation/pages/chat_page/chat_page_runtime_support.dart` — 220ms final reveal, 3-pass cap, viewport-measured FAB hiding
+- `lib/presentation/pages/chat_page/chat_page_scroll_coordinator.dart` — older-message prepend microtask + double extent restore
+- `lib/presentation/pages/chat_page/chat_page_fab_presenter.dart` — completed/settled visibility check; active incomplete is not "read"
+- `test/unit/providers/chat_provider_realtime_test.dart` — regression coverage for monotonic merge and completion guard
+- `test/widget/chat_page_test.dart` — regression coverage for final reveal, FAB visibility, and older-message prepend
+- Ref: issue #76
