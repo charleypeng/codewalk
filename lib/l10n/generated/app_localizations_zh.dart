@@ -2802,6 +2802,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAboutUpdateInstalled => '更新已安装。重启应用以应用更改。';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return '当前: $installedVersion; 可用: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => '版本';
 
   @override

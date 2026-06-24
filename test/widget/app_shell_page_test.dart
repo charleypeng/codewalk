@@ -39,12 +39,15 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/services/update_check_service.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart' hide Provider;
 
 import '../support/fakes.dart';
@@ -244,6 +247,77 @@ void main() {
   });
 
   testWidgets(
+    'startup update toast uses release fallback when install unsupported',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      ChatProvider? chatProvider;
+      AppProvider? appProvider;
+      SettingsProvider? settingsProvider;
+      try {
+        PackageInfo.setMockInitialValues(
+          appName: 'CodeWalk',
+          packageName: 'com.verseles.codewalk',
+          version: '1.2.3',
+          buildNumber: '45',
+          buildSignature: '',
+        );
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+            'checkUpdatesOnOpen': true,
+            'skipOnboardingWizard': true,
+          });
+        settingsProvider = SettingsProvider(
+          localDataSource: localDataSource,
+          dioClient: _NoopDioClient(),
+          soundService: SoundService(),
+          updateCheckService: _FakeUpdateCheckService(
+            const UpdateCheckResult(
+              latestVersion: '1.3.0',
+              releaseUrl:
+                  'https://github.com/verseles/codewalk/releases/tag/v1.3.0',
+              isNewer: true,
+            ),
+          ),
+        );
+        await settingsProvider.initialize();
+        chatProvider = _buildChatProvider(localDataSource: localDataSource);
+        appProvider = _buildAppProvider(
+          localDataSource: localDataSource,
+          dioClient: _NoopDioClient(),
+        );
+
+        await tester.pumpWidget(
+          _testAppWithSettings(chatProvider, appProvider, settingsProvider),
+        );
+        await tester.pump();
+        for (
+          var i = 0;
+          i < 10 && find.text('Update available: v1.3.0').evaluate().isEmpty;
+          i += 1
+        ) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+
+        expect(find.text('Update available: v1.3.0'), findsOneWidget);
+        expect(find.text('Install'), findsNothing);
+        expect(find.text('GitHub'), findsOneWidget);
+      } finally {
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        chatProvider?.dispose();
+        appProvider?.dispose();
+        settingsProvider?.dispose();
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  testWidgets(
     'keeps onboarding mounted after server add until the wizard is explicitly completed',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 900));
@@ -278,6 +352,32 @@ void main() {
       expect(find.text('Conversations'), findsNothing);
     },
   );
+}
+
+class _FakeUpdateCheckService extends UpdateCheckService {
+  _FakeUpdateCheckService(this.result);
+
+  final UpdateCheckResult? result;
+
+  @override
+  Future<UpdateCheckResult?> check(String currentVersion) async => result;
+}
+
+class _NoopDioClient extends DioClient {
+  _NoopDioClient() : super(baseUrl: 'http://localhost');
+
+  @override
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return Response<T>(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 200,
+      data: <String, dynamic>{} as T,
+    );
+  }
 }
 
 Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
@@ -418,16 +518,20 @@ ChatProvider _buildChatProvider({
 
 AppProvider _buildAppProvider({
   required InMemoryAppLocalDataSource localDataSource,
+  DioClient? dioClient,
+  bool initialize = true,
 }) {
   final repository = FakeAppRepository();
   final provider = AppProvider(
     getAppInfo: GetAppInfo(repository),
     checkConnection: CheckConnection(repository),
     localDataSource: localDataSource,
-    dioClient: DioClient(),
+    dioClient: dioClient ?? DioClient(),
     enableHealthPolling: false,
   );
-  unawaited(provider.initialize());
+  if (initialize) {
+    unawaited(provider.initialize());
+  }
   return provider;
 }
 

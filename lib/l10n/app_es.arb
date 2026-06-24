@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "Estás al día",
   "settingsAboutUpdateAvailable": "Actualización disponible: v{version}",
   "settingsAboutUpdateInstalled": "Actualización instalada. Reinicie la app para aplicarla.",
+  "settingsAboutUpdateVersionSummary": "Actual: {installedVersion}; disponible: v{latestVersion}",
   "settingsAboutVersion": "Versión",
   "settingsAboutVersionBuild": "{version} (compilación {buildNumber})",
   "settingsAppearanceAmoledDark": "Modo oscuro AMOLED",

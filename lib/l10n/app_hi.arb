@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "आप अद्यतित (up to date) हैं",
   "settingsAboutUpdateAvailable": "अपडेट उपलब्ध है: v{version}",
   "settingsAboutUpdateInstalled": "अपडेट इंस्टॉल हो गया। लागू करने के लिए ऐप को पुनरारंभ करें।",
+  "settingsAboutUpdateVersionSummary": "वर्तमान: {installedVersion}; उपलब्ध: v{latestVersion}",
   "settingsAboutVersion": "संस्करण",
   "settingsAboutVersionBuild": "{version} (बिल्ड {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLED डार्क मोड",

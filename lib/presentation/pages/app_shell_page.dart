@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../providers/app_provider.dart';
@@ -181,23 +182,43 @@ class _AppShellPageState extends State<AppShellPage> {
           defaultTargetPlatform == TargetPlatform.windows);
 
   /// Shows a one-time SnackBar when a startup update check finds a newer version.
-  /// The action triggers the in-app install flow instead of opening a browser.
+  /// The action installs directly when supported, otherwise opens the release.
   void _showUpdateToast(
     BuildContext context,
     SettingsProvider settingsProvider,
     UpdateCheckResult result,
   ) {
     if (!mounted) return;
+    final canInstallDirectly = settingsProvider.canInstallUpdateDirectly(
+      result,
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(context.l10n.appShellUpdateAvailableResult(result.latestVersion)),
-        duration: const Duration(seconds: 6),
-        action: SnackBarAction(
-          label: context.l10n.appShellInstall,
-          onPressed: () => unawaited(settingsProvider.startInstall()),
+        content: Text(
+          context.l10n.appShellUpdateAvailableResult(result.latestVersion),
         ),
+        duration: const Duration(seconds: 6),
+        action: canInstallDirectly
+            ? SnackBarAction(
+                label: context.l10n.appShellInstall,
+                onPressed: () => unawaited(settingsProvider.startInstall()),
+              )
+            : result.releaseUrl == null
+            ? null
+            : SnackBarAction(
+                label: context.l10n.aboutGitHub,
+                onPressed: () => unawaited(_openReleaseUrl(result.releaseUrl!)),
+              ),
       ),
     );
+  }
+
+  Future<void> _openReleaseUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _showInstallingSnackBar(BuildContext context) {

@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "آپ اپ ٹو ڈیٹ ہیں۔",
   "settingsAboutUpdateAvailable": "اپ ڈیٹ دستیاب ہے: v {version}",
   "settingsAboutUpdateInstalled": "اپ ڈیٹ انسٹال ہو گیا۔ درخواست دینے کے لیے ایپ کو دوبارہ شروع کریں۔",
+  "settingsAboutUpdateVersionSummary": "موجودہ: {installedVersion}؛ دستیاب: v{latestVersion}",
   "settingsAboutVersion": "ورژن",
   "settingsAboutVersionBuild": "{version} (تعمیر {buildNumber} )",
   "settingsAppearanceAmoledDark": "AMOLED ڈارک موڈ",

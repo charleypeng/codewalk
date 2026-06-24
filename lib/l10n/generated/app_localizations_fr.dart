@@ -3045,6 +3045,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Mise à jour installée. Redémarrez l\'application pour l\'appliquer.';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'Actuelle : $installedVersion; disponible : v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'Version';
 
   @override

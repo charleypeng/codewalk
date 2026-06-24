@@ -2858,6 +2858,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAboutUpdateInstalled => '업데이트가 설치되었습니다. 적용하려면 앱을 재시작하세요.';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return '현재: $installedVersion; 사용 가능: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => '버전';
 
   @override

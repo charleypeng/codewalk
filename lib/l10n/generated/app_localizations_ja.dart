@@ -2856,6 +2856,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'アップデートがインストールされました。適用するにはアプリを再起動してください。';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return '現在: $installedVersion; 利用可能: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'バージョン';
 
   @override

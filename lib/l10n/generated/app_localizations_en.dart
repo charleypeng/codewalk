@@ -2970,6 +2970,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Update installed. Restart the app to apply.';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'Current: $installedVersion; available: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'Version';
 
   @override

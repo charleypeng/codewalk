@@ -2988,6 +2988,14 @@ class AppLocalizationsBn extends AppLocalizations {
       'আপডেট ইনস্টল করা হয়েছে। আবেদন করতে অ্যাপটি পুনরায় চালু করুন।';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'বর্তমান: $installedVersion; উপলব্ধ: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'সংস্করণ';
 
   @override

@@ -3005,6 +3005,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Обновление установлено. Перезапустите приложение для применения.';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'Текущая: $installedVersion; доступна: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'Версия';
 
   @override

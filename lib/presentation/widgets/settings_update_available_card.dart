@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -92,7 +91,10 @@ class SettingsUpdateAvailableCard extends StatelessWidget {
     final installed = buildNumber == null || buildNumber.isEmpty
         ? version
         : context.l10n.settingsAboutVersionBuild(buildNumber, version);
-    return '${context.l10n.settingsAboutVersion}: $installed -> v${result.latestVersion}';
+    return context.l10n.settingsAboutUpdateVersionSummary(
+      installed,
+      result.latestVersion,
+    );
   }
 
   Widget _buildInstallControl(BuildContext context) {
@@ -150,7 +152,7 @@ class SettingsUpdateAvailableCard extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        if (_canInstallDirectly)
+        if (settings.canInstallUpdateDirectly(result))
           FilledButton.icon(
             onPressed: () => unawaited(settings.startInstall()),
             icon: Icon(
@@ -177,14 +179,6 @@ class SettingsUpdateAvailableCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  bool get _canInstallDirectly {
-    if (kIsWeb) {
-      return false;
-    }
-    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
-    return !isAndroid || result.apkUrl != null;
   }
 
   Future<void> _openReleaseUrl(String url) async {

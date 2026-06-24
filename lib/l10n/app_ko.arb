@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "최신 버전 상태입니다",
   "settingsAboutUpdateAvailable": "업데이트 가능: v{version}",
   "settingsAboutUpdateInstalled": "업데이트가 설치되었습니다. 적용하려면 앱을 재시작하세요.",
+  "settingsAboutUpdateVersionSummary": "현재: {installedVersion}; 사용 가능: v{latestVersion}",
   "settingsAboutVersion": "버전",
   "settingsAboutVersionBuild": "{version} (빌드 {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLED 다크 모드",

@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "أنت تستخدم أحدث إصدار",
   "settingsAboutUpdateAvailable": "تحديث متوفر: v{version}",
   "settingsAboutUpdateInstalled": "تم تثبيت التحديث. أعد تشغيل التطبيق للتطبيق.",
+  "settingsAboutUpdateVersionSummary": "الحالي: {installedVersion}؛ المتاح: v{latestVersion}",
   "settingsAboutVersion": "الإصدار",
   "settingsAboutVersionBuild": "‏{version} (البناء {buildNumber})",
   "settingsAppearanceAmoledDark": "وضع AMOLED الداكن",

@@ -2976,6 +2976,14 @@ class AppLocalizationsUr extends AppLocalizations {
       'اپ ڈیٹ انسٹال ہو گیا۔ درخواست دینے کے لیے ایپ کو دوبارہ شروع کریں۔';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'موجودہ: $installedVersion؛ دستیاب: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'ورژن';
 
   @override

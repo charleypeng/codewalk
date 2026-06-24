@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "Установлена последняя версия",
   "settingsAboutUpdateAvailable": "Доступно обновление: v{version}",
   "settingsAboutUpdateInstalled": "Обновление установлено. Перезапустите приложение для применения.",
+  "settingsAboutUpdateVersionSummary": "Текущая: {installedVersion}; доступна: v{latestVersion}",
   "settingsAboutVersion": "Версия",
   "settingsAboutVersionBuild": "{version} (сборка {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLED темный режим",

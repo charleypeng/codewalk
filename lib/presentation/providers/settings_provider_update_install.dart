@@ -67,7 +67,7 @@ extension SettingsProviderUpdateInstall on SettingsProvider {
       return;
     }
     final result = _updateCheckResult;
-    if (result == null) {
+    if (result == null || !canInstallUpdateDirectly(result)) {
       return;
     }
 
@@ -82,6 +82,24 @@ extension SettingsProviderUpdateInstall on SettingsProvider {
       await _installAndroid(result);
     } else {
       await _installDesktop();
+    }
+  }
+
+  bool canInstallUpdateDirectly([UpdateCheckResult? result]) {
+    final updateResult = result ?? _updateCheckResult;
+    if (updateResult == null || kIsWeb) {
+      return false;
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return updateResult.apkUrl != null;
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        return true;
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.iOS:
+        return false;
     }
   }
 

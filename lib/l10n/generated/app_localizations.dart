@@ -5285,6 +5285,15 @@ abstract class AppLocalizations {
   /// **'Update installed. Restart the app to apply.'**
   String get settingsAboutUpdateInstalled;
 
+  /// CodeWalk UI string — settingsAboutUpdateVersionSummary
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {installedVersion}; available: v{latestVersion}'**
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  );
+
   /// CodeWalk UI string — settingsAboutVersion
   ///
   /// In en, this message translates to:

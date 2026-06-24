@@ -366,12 +366,59 @@ void main() {
     );
     expect(bannerFinder, findsOneWidget);
     expect(find.text('Update available: v1.3.0'), findsOneWidget);
-    expect(find.text('Version: 1.2.3 (build 45) -> v1.3.0'), findsOneWidget);
+    expect(
+      find.text('Current: 1.2.3 (build 45); available: v1.3.0'),
+      findsOneWidget,
+    );
     expect(find.text('Install update'), findsOneWidget);
     expect(
       tester.getTopLeft(bannerFinder).dy,
       lessThan(tester.getTopLeft(find.text('Setup Wizard')).dy),
     );
+  });
+
+  testWidgets('unsupported update platform opens release page fallback', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      _setPackageInfoVersion(version: '1.2.3', buildNumber: '45');
+      final local = InMemoryAppLocalDataSource()
+        ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+      final settingsProvider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+        updateCheckService: _FakeUpdateCheckService(
+          const UpdateCheckResult(
+            latestVersion: '1.3.0',
+            releaseUrl:
+                'https://github.com/verseles/codewalk/releases/tag/v1.3.0',
+            isNewer: true,
+          ),
+        ),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+      await settingsProvider.checkForUpdate();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<SettingsProvider>.value(
+          value: settingsProvider,
+          child: _localizedMaterialApp(home: const SettingsPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('settings_update_available_banner')),
+        findsOneWidget,
+      );
+      expect(find.text('Install update'), findsNothing);
+      expect(find.text('GitHub'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('settings landing hides update banner when current is latest', (

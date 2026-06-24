@@ -2988,6 +2988,14 @@ class AppLocalizationsHi extends AppLocalizations {
       'अपडेट इंस्टॉल हो गया। लागू करने के लिए ऐप को पुनरारंभ करें।';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'वर्तमान: $installedVersion; उपलब्ध: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'संस्करण';
 
   @override

@@ -2934,6 +2934,14 @@ class AppLocalizationsAr extends AppLocalizations {
       'تم تثبيت التحديث. أعد تشغيل التطبيق للتطبيق.';
 
   @override
+  String settingsAboutUpdateVersionSummary(
+    String installedVersion,
+    String latestVersion,
+  ) {
+    return 'الحالي: $installedVersion؛ المتاح: v$latestVersion';
+  }
+
+  @override
   String get settingsAboutVersion => 'الإصدار';
 
   @override

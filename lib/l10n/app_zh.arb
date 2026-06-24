@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "已是最新版本",
   "settingsAboutUpdateAvailable": "有可用更新: v{version}",
   "settingsAboutUpdateInstalled": "更新已安装。重启应用以应用更改。",
+  "settingsAboutUpdateVersionSummary": "当前: {installedVersion}; 可用: v{latestVersion}",
   "settingsAboutVersion": "版本",
   "settingsAboutVersionBuild": "{version} (构建号 {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLED 深色模式",

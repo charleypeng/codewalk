@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "You''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''re up to date",
   "settingsAboutUpdateAvailable": "Aggiornamento disponibile: v{version}",
   "settingsAboutUpdateInstalled": "Aggiornamento installato. Riavvia l''applicazione per applicarlo.",
+  "settingsAboutUpdateVersionSummary": "Attuale: {installedVersion}; disponibile: v{latestVersion}",
   "settingsAboutVersion": "Versione",
   "settingsAboutVersionBuild": "{version} (build {buildNumber})",
   "settingsAppearanceAmoledDark": "Modalità scura AMOLED",

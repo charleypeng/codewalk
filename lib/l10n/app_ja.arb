@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "最新の状態です",
   "settingsAboutUpdateAvailable": "アップデートが利用可能です: v{version}",
   "settingsAboutUpdateInstalled": "アップデートがインストールされました。適用するにはアプリを再起動してください。",
+  "settingsAboutUpdateVersionSummary": "現在: {installedVersion}; 利用可能: v{latestVersion}",
   "settingsAboutVersion": "バージョン",
   "settingsAboutVersionBuild": "{version} (ビルド {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLEDダークモード",

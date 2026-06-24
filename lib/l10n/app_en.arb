@@ -2999,6 +2999,17 @@
   "@settingsAboutUpdateInstalled": {
     "description": "CodeWalk UI string — settingsAboutUpdateInstalled"
   },
+  "@settingsAboutUpdateVersionSummary": {
+    "description": "CodeWalk UI string — settingsAboutUpdateVersionSummary",
+    "placeholders": {
+      "installedVersion": {
+        "type": "String"
+      },
+      "latestVersion": {
+        "type": "String"
+      }
+    }
+  },
   "@settingsAboutVersion": {
     "description": "CodeWalk UI string — settingsAboutVersion"
   },
@@ -5292,6 +5303,7 @@
   "settingsAboutUpToDate": "You''re up to date",
   "settingsAboutUpdateAvailable": "Update available: v{version}",
   "settingsAboutUpdateInstalled": "Update installed. Restart the app to apply.",
+  "settingsAboutUpdateVersionSummary": "Current: {installedVersion}; available: v{latestVersion}",
   "settingsAboutVersion": "Version",
   "settingsAboutVersionBuild": "{version} (build {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLED dark mode",

@@ -852,6 +852,7 @@
   "settingsAboutUpToDate": "আপনি আপ টু ডেট",
   "settingsAboutUpdateAvailable": "আপডেট উপলব্ধ: v{version}",
   "settingsAboutUpdateInstalled": "আপডেট ইনস্টল করা হয়েছে। আবেদন করতে অ্যাপটি পুনরায় চালু করুন।",
+  "settingsAboutUpdateVersionSummary": "বর্তমান: {installedVersion}; উপলব্ধ: v{latestVersion}",
   "settingsAboutVersion": "সংস্করণ",
   "settingsAboutVersionBuild": "{version} (বিল্ড {buildNumber})",
   "settingsAppearanceAmoledDark": "AMOLED অন্ধকার মোড",
