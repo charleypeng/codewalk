@@ -7,17 +7,22 @@ extension _ChatPageComposerWidgets on _ChatPageState {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              shortcut,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                shortcut,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -73,12 +78,13 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: SessionDiffViewer(
-          diffs: chatProvider.currentSessionDiff,
-          compact: true,
-          initiallyExpanded: false,
-          onFileTap: (path, line) => unawaited(_onFilePathTap(path, line, null)),
-        ),
+          child: SessionDiffViewer(
+            diffs: chatProvider.currentSessionDiff,
+            compact: true,
+            initiallyExpanded: false,
+            onFileTap: (path, line) =>
+                unawaited(_onFilePathTap(path, line, null)),
+          ),
         ),
       ),
     );

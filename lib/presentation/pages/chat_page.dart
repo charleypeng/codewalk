@@ -2145,7 +2145,9 @@ class _ChatPageState extends State<ChatPage>
           ),
           ShortcutAction.escape => (
             action: action,
-            description: context.l10n.chatShortcutsFocusInputCloseDrawer,
+            description:
+                '${context.l10n.terminalRestoreSize} / '
+                '${context.l10n.chatShortcutsFocusInputCloseDrawer}',
           ),
           ShortcutAction.cycleAgentForward => (
             action: action,

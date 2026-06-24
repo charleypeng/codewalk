@@ -121,25 +121,37 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
   }
 
   Widget _buildFullscreenTerminalOverlay(SettingsProvider settingsProvider) {
+    KeyEventResult handleFullscreenTerminalKey(FocusNode _, KeyEvent event) {
+      final activator = ShortcutBindingCodec.parse(
+        settingsProvider.bindingFor(ShortcutAction.escape),
+      );
+      if (event is! KeyDownEvent ||
+          activator == null ||
+          !activator.accepts(event, HardwareKeyboard.instance)) {
+        return KeyEventResult.ignored;
+      }
+      return _restoreMaximizedTerminalIfNeeded(
+            settingsProvider: settingsProvider,
+          )
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored;
+    }
+
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
-        child: Focus(
-          autofocus: true,
-          onKeyEvent: (_, event) {
-            if (event is! KeyDownEvent ||
-                event.logicalKey != LogicalKeyboardKey.escape) {
-              return KeyEventResult.ignored;
-            }
-            return _restoreMaximizedTerminalIfNeeded(
-                  settingsProvider: settingsProvider,
-                )
-                ? KeyEventResult.handled
-                : KeyEventResult.ignored;
-          },
-          child: _buildTerminalPanelSurface(
-            settingsProvider: settingsProvider,
-            onHeightDelta: (_) {},
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: Focus(
+            autofocus: true,
+            onKeyEvent: handleFullscreenTerminalKey,
+            child: _buildTerminalPanelSurface(
+              settingsProvider: settingsProvider,
+              onHeightDelta: (_) {},
+              onTerminalKeyEvent: handleFullscreenTerminalKey,
+            ),
           ),
         ),
       ),
@@ -149,6 +161,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
   Widget _buildTerminalPanelSurface({
     required SettingsProvider settingsProvider,
     required ValueChanged<double> onHeightDelta,
+    FocusOnKeyEventCallback? onTerminalKeyEvent,
   }) {
     return CodewalkTerminalPanel(
       controller: _terminalController,
@@ -177,6 +190,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
         }
         onHeightDelta(delta);
       },
+      onTerminalKeyEvent: onTerminalKeyEvent,
     );
   }
 }

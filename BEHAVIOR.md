@@ -930,7 +930,7 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Then** CodeWalk toggles an embedded terminal panel inside the chat workspace instead of reusing the composer input mode
 - **Then** CodeWalk creates or reconnects to a server-hosted PTY terminal rooted in the active project directory on the OpenCode host and renders it inside the embedded panel
 - **Then** `Close terminal` fully closes the panel and terminates the active server PTY session, while `Minimize terminal` hides the panel without stopping that session
-- **Then** `Maximize terminal` moves the same terminal session into a full-screen overlay that covers the AppBar, conversations/sidebar area, composer, and desktop panes while respecting the platform safe area
+- **Then** `Maximize terminal` moves the same terminal session into a full-screen overlay that covers the AppBar, conversations/sidebar area, composer, and desktop panes while respecting the platform safe area and soft-keyboard insets
 - **Then** `Restore terminal size`, `Escape`, or the mobile system back gesture returns the same terminal session to the inline panel at the saved panel height without reconnecting or resetting the PTY
 - **Then** on Windows, printable hardware keyboard input, including AltGr characters from international layouts, is forwarded to the terminal session instead of being dropped after focus
 - **Given** the user is on a compact/mobile chat layout

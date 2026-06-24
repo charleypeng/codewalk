@@ -2617,6 +2617,10 @@ void main() {
     ) async {
       await tester.binding.setSurfaceSize(const Size(1300, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      const baseMediaQueryData = MediaQueryData(size: Size(1300, 900));
+      final keyboardMediaQueryData = baseMediaQueryData.copyWith(
+        viewInsets: const EdgeInsets.only(bottom: 240),
+      );
 
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
@@ -2632,7 +2636,12 @@ void main() {
       await settingsProvider.initialize();
 
       await tester.pumpWidget(
-        _testApp(provider, appProvider, settingsProvider: settingsProvider),
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -2656,8 +2665,9 @@ void main() {
       expect(tester.getSize(panelFinder), const Size(1300, 900));
       expect(
         find.byKey(const ValueKey<String>('terminal_panel_resize_handle')),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byTooltip('Restore size'), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
@@ -2666,6 +2676,73 @@ void main() {
       expect(settingsProvider.terminalPanelMaximized, isFalse);
       expect(tester.getSize(panelFinder).height, initialHeight);
       expect(tester.getTopLeft(panelFinder).dy, greaterThan(0));
+      expect(
+        find.byKey(const ValueKey<String>('terminal_panel_resize_handle')),
+        findsOneWidget,
+      );
+
+      expect(
+        await settingsProvider.updateShortcut(
+          ShortcutAction.escape,
+          'ctrl+shift+e',
+        ),
+        isNull,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('terminal_panel_maximize_button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: keyboardMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.terminalPanelMaximized, isTrue);
+      expect(tester.getTopLeft(panelFinder), Offset.zero);
+      expect(tester.getSize(panelFinder), const Size(1300, 660));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.terminalPanelMaximized, isTrue);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyE);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.terminalPanelMaximized, isFalse);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('terminal_panel_maximize_button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Restore size'));
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.terminalPanelMaximized, isFalse);
+      expect(tester.getSize(panelFinder).height, initialHeight);
     });
 
     testWidgets('applies compact app bar toolbar heights', (

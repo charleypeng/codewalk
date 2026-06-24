@@ -17,6 +17,7 @@ class CodewalkTerminalPanel extends StatefulWidget {
     required this.onStop,
     required this.onToggleMaximize,
     required this.onHeightDelta,
+    this.onTerminalKeyEvent,
     super.key,
   });
 
@@ -27,6 +28,7 @@ class CodewalkTerminalPanel extends StatefulWidget {
   final VoidCallback onStop;
   final VoidCallback onToggleMaximize;
   final ValueChanged<double> onHeightDelta;
+  final FocusOnKeyEventCallback? onTerminalKeyEvent;
 
   @override
   State<CodewalkTerminalPanel> createState() => _CodewalkTerminalPanelState();
@@ -66,26 +68,27 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
           ),
           child: Column(
             children: [
-              GestureDetector(
-                key: const ValueKey<String>('terminal_panel_resize_handle'),
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragUpdate: (details) {
-                  widget.onHeightDelta(-details.delta.dy);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 4),
-                  child: Center(
-                    child: Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colorScheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(999),
+              if (!widget.isMaximized)
+                GestureDetector(
+                  key: const ValueKey<String>('terminal_panel_resize_handle'),
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragUpdate: (details) {
+                    widget.onHeightDelta(-details.delta.dy);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 8, 8),
                 child: Row(
@@ -176,6 +179,7 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
             deleteDetection:
                 defaultTargetPlatform == TargetPlatform.android ||
                 defaultTargetPlatform == TargetPlatform.iOS,
+            onKeyEvent: widget.onTerminalKeyEvent,
             textStyle: TerminalStyle(fontSize: terminalFontSize),
           ),
         ),
