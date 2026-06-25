@@ -509,11 +509,7 @@ extension _ChatPageChrome on _ChatPageState {
                           appProvider: appProvider,
                           settingsProvider: settingsProvider,
                         );
-                        final alertColor = _serverStatusColor(
-                          context: context,
-                          chatProvider: chatProvider,
-                          appProvider: appProvider,
-                        );
+                        final alertColor = _hamburgerServerAlertColor(context);
                         const menuIcon = Icon(Symbols.menu);
                         final alertIcon = SizedBox(
                           width: 24,
@@ -1265,22 +1261,14 @@ extension _ChatPageChrome on _ChatPageState {
 
   Color _serverStatusColor({
     required BuildContext context,
-    required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final health = _activeServerHealth(appProvider);
-    final deferForegroundWarnings = _shouldDeferForegroundWarningUi(
-      chatProvider: chatProvider,
-      appProvider: appProvider,
-    );
-    if (health == ServerHealthStatus.unhealthy && !deferForegroundWarnings) {
+    if (health == ServerHealthStatus.unhealthy) {
       return colorScheme.error;
     }
-    if (_hasDelayedServerStatus(
-      chatProvider: chatProvider,
-      appProvider: appProvider,
-    )) {
+    if (_hasDelayedServerStatus(appProvider: appProvider)) {
       return Colors.orange;
     }
     return Colors.green;

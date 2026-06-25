@@ -477,10 +477,8 @@ extension _ChatPageScaffold on _ChatPageState {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     return switch (kind) {
-      _HamburgerBadgeReasonKind.serverAlert => _serverStatusColor(
-        context: context,
-        chatProvider: context.read<ChatProvider>(),
-        appProvider: context.read<AppProvider>(),
+      _HamburgerBadgeReasonKind.serverAlert => _hamburgerServerAlertColor(
+        context,
       ),
       _HamburgerBadgeReasonKind.sessionError => colorScheme.error,
       _HamburgerBadgeReasonKind.sessionPendingInteraction =>
@@ -490,6 +488,21 @@ extension _ChatPageScaffold on _ChatPageState {
       _HamburgerBadgeReasonKind.dataSaver => colorScheme.tertiary,
       _HamburgerBadgeReasonKind.none => colorScheme.outline,
     };
+  }
+
+  Color _hamburgerServerAlertColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final appProvider = context.read<AppProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final health = _activeServerHealth(appProvider);
+    if (health == ServerHealthStatus.unhealthy) {
+      return colorScheme.error;
+    }
+    if (_isRecoverableSyncState(chatProvider: chatProvider) &&
+        chatProvider.isRecoverableSyncAlertEscalated) {
+      return Colors.orange;
+    }
+    return _serverStatusColor(context: context, appProvider: appProvider);
   }
 
   Future<void> _handleHamburgerReasonTap({

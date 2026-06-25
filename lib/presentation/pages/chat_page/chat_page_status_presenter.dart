@@ -337,61 +337,35 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     return context.l10n.statusConnected;
   }
 
-  bool _hasDelayedServerStatus({
-    required ChatProvider chatProvider,
-    required AppProvider appProvider,
-  }) {
+  bool _hasDelayedServerStatus({required AppProvider appProvider}) {
     final health = _activeServerHealth(appProvider);
-    if (health == ServerHealthStatus.unhealthy) {
-      return false;
-    }
-    if (_shouldDeferForegroundWarningUi(
-      chatProvider: chatProvider,
-      appProvider: appProvider,
-    )) {
-      return true;
-    }
-    return health == ServerHealthStatus.unknown ||
-        !appProvider.isConnected ||
-        chatProvider.syncState == ChatSyncState.reconnecting ||
-        chatProvider.syncState == ChatSyncState.delayed ||
-        chatProvider.isInDegradedMode;
+    return health == ServerHealthStatus.unknown;
   }
 
   String _serverStatusLabel({
     required BuildContext context,
-    required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
     final health = _activeServerHealth(appProvider);
-    if (health == ServerHealthStatus.unhealthy &&
-        !_shouldDeferForegroundWarningUi(
-          chatProvider: chatProvider,
-          appProvider: appProvider,
-        )) {
+    if (health == ServerHealthStatus.unhealthy) {
       return context.l10n.statusOffline;
     }
-    if (_hasDelayedServerStatus(
-      chatProvider: chatProvider,
-      appProvider: appProvider,
-    )) {
+    if (_hasDelayedServerStatus(appProvider: appProvider)) {
       return context.l10n.statusDelayed;
     }
     return context.l10n.statusOnline;
   }
 
   Widget _buildServerStatusControl({required bool closeOnSelect}) {
-    return Consumer3<AppProvider, ChatProvider, SettingsProvider>(
-      builder: (context, appProvider, chatProvider, settingsProvider, _) {
+    return Consumer2<AppProvider, SettingsProvider>(
+      builder: (context, appProvider, settingsProvider, _) {
         final active = appProvider.activeServer;
         final statusColor = _serverStatusColor(
           context: context,
-          chatProvider: chatProvider,
           appProvider: appProvider,
         );
         final statusLabel = _serverStatusLabel(
           context: context,
-          chatProvider: chatProvider,
           appProvider: appProvider,
         );
         final colorScheme = Theme.of(context).colorScheme;

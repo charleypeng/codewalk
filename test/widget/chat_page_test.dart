@@ -1419,6 +1419,58 @@ void main() {
       },
     );
 
+    testWidgets(
+      'closed server status follows active server health while sync reconnects',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        final activeServerId = appProvider.activeServerId;
+        expect(activeServerId, isNotNull);
+        expect(provider.syncState, ChatSyncState.reconnecting);
+
+        appProvider.setHealthForTesting(
+          activeServerId!,
+          ServerHealthStatus.healthy,
+        );
+        await tester.pump();
+
+        final statusControl = find.byKey(
+          const ValueKey<String>('sidebar_server_status_control'),
+        );
+        expect(statusControl, findsOneWidget);
+        expect(
+          find.descendant(of: statusControl, matching: find.text('Online')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: statusControl, matching: find.text('Delayed')),
+          findsNothing,
+        );
+      },
+    );
+
     testWidgets('shows hamburger data saver badge on cellular throttling', (
       WidgetTester tester,
     ) async {

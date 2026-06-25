@@ -131,10 +131,12 @@
 ### Active server status is simplified to Online / Delayed / Offline
 
 - **Given** the active server status control is visible in the chat chrome
-- **When** health or sync state changes
-- **Then** the control shows `Online` with a green indicator when the active server is healthy and chat sync is not delayed
-- **Then** the control shows `Delayed` with an orange indicator when reconnect/degraded/unknown state is still recoverable or resume-time warning grace is active
-- **Then** the control shows `Offline` with a red indicator only after the active server is confirmed unhealthy
+- **When** active server health changes
+- **Then** the control shows `Online` with a green indicator when the active server health check is healthy
+- **Then** the control shows `Delayed` with an orange indicator only while the active server health is still unknown
+- **Then** the control shows `Offline` with a red indicator when the active server health check is unhealthy
+- **Then** reconnect/degraded chat sync state is reported through the dedicated sync indicator or hamburger loading state instead of overriding a healthy active server summary
+- **Then** the closed control and expanded server menu derive the active server status from the same `ServerHealthStatus` source
 - **Then** the compact status text is rendered immediately after the server name instead of being pushed to a far-right metadata slot
 
 ### Unhealthy server warning waits for confirmation
