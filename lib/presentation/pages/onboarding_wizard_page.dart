@@ -17,8 +17,8 @@ import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import 'opencode_setup_debug_page.dart';
+import 'server_settings_page.dart';
 import 'settings/sections/servers_settings_section.dart';
-
 
 enum SetupWizardInitialFlow {
   choose,
@@ -61,6 +61,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   bool _connectionSuccess = false;
   String? _connectionError;
   bool _testing = false;
+  bool _completingWithSavedServer = false;
   // ID of the server profile added during this wizard session, so "Try again"
   // re-tests health instead of attempting a duplicate addServerProfile.
   String? _addedServerId;
@@ -191,9 +192,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.l10n.onboardingAddServerLater,
-                    ),
+                    Text(context.l10n.onboardingAddServerLater),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       value: dontShowAgain,
@@ -307,6 +306,91 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     ).push(AppPageRoute(builder: (_) => const OpenCodeSetupDebugPage()));
   }
 
+  Future<void> _openServerSettings() async {
+    context.read<AppProvider>().recordSetupDebugEvent(
+      source: 'Onboarding',
+      message: 'User opened server settings after a failed health check.',
+    );
+    await Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (_) => const ServerSettingsPage()));
+  }
+
+  Future<void> _continueWithSavedServer() async {
+    if (_completingWithSavedServer) {
+      return;
+    }
+    setState(() {
+      _completingWithSavedServer = true;
+    });
+
+    final appProvider = context.read<AppProvider>();
+    final serverId = _resolveSavedServerId(appProvider);
+    if (serverId != null) {
+      final activated = await appProvider.setActiveServer(
+        serverId,
+        blockUnhealthy: false,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (!activated) {
+        setState(() {
+          _completingWithSavedServer = false;
+        });
+        _showMessage(appProvider.errorMessage);
+        return;
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    await _complete();
+  }
+
+  String? _resolveSavedServerId(AppProvider appProvider) {
+    final candidates = <String?>[
+      appProvider.activeServerId,
+      _editingServerId,
+      _addedServerId,
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null) {
+        continue;
+      }
+      final exists = appProvider.serverProfiles.any(
+        (profile) => profile.id == candidate,
+      );
+      if (exists) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  void _addAnotherServerAfterFailure() {
+    context.read<AppProvider>().recordSetupDebugEvent(
+      source: 'Onboarding',
+      message: 'User chose to add another server after a failed health check.',
+    );
+    setState(() {
+      _addedServerId = null;
+      _editingServerId = null;
+      _urlController.text = _suggestedServerUrl;
+      _labelController.clear();
+      _usernameController.clear();
+      _passwordController.clear();
+      _basicAuthEnabled = false;
+      _oauthEnabled = false;
+      _tailscaleEnabled = false;
+      _aiGeneratedTitlesEnabled = true;
+      _showQuickGuide = false;
+      _connectionSuccess = false;
+      _connectionError = null;
+      _step = 1;
+    });
+  }
+
   Future<void> _testConnection() async {
     if (_formKey.currentState?.validate() != true) return;
 
@@ -377,9 +461,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       }
 
       final health = appProvider.healthFor(trackedServerId);
-    final healthMessage = health == ServerHealthStatus.unhealthy
-        ? context.l10n.onboardingHealthCheckFailedMayBeStarting
-        : context.l10n.onboardingConnectionUpdated;
+      final healthMessage = health == ServerHealthStatus.unhealthy
+          ? context.l10n.onboardingHealthCheckFailedMayBeStarting
+          : context.l10n.onboardingConnectionUpdated;
       appProvider.recordSetupDebugEvent(
         source: 'Manual connection',
         message: healthMessage,
@@ -390,9 +474,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
-    _connectionError = health == ServerHealthStatus.unhealthy
-        ? context.l10n.onboardingHealthCheckFailedMayBeStarting
-        : null;
+        _connectionError = health == ServerHealthStatus.unhealthy
+            ? context.l10n.onboardingHealthCheckFailedMayBeStarting
+            : null;
         _step = 2;
       });
       return;
@@ -449,9 +533,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       final health = serverId == null
           ? ServerHealthStatus.unhealthy
           : appProvider.healthFor(serverId);
-  final healthMessage = health == ServerHealthStatus.unhealthy
-        ? context.l10n.onboardingAddedButHealthCheckFailed
-        : context.l10n.onboardingConnectionSaved;
+      final healthMessage = health == ServerHealthStatus.unhealthy
+          ? context.l10n.onboardingAddedButHealthCheckFailed
+          : context.l10n.onboardingConnectionSaved;
       appProvider.recordSetupDebugEvent(
         source: 'Manual connection',
         message: healthMessage,
@@ -462,9 +546,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
-    _connectionError = health == ServerHealthStatus.unhealthy
-        ? context.l10n.onboardingAddedButHealthCheckFailed
-        : null;
+        _connectionError = health == ServerHealthStatus.unhealthy
+            ? context.l10n.onboardingAddedButHealthCheckFailed
+            : null;
         _step = 2;
       });
     } else {
@@ -571,9 +655,18 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
   String _titleForCurrentStep() {
     return switch (_step) {
-      0 => widget.showSkipAction ? context.l10n.onboardingSetup : context.l10n.onboardingSetupWizard,
-      1 => _editingServerId == null ? context.l10n.onboardingServerSetup : context.l10n.onboardingEditServer,
-      2 => _connectionSuccess ? context.l10n.onboardingReady : context.l10n.onboardingConnectionIssue,
+      0 =>
+        widget.showSkipAction
+            ? context.l10n.onboardingSetup
+            : context.l10n.onboardingSetupWizard,
+      1 =>
+        _editingServerId == null
+            ? context.l10n.onboardingServerSetup
+            : context.l10n.onboardingEditServer,
+      2 =>
+        _connectionSuccess
+            ? context.l10n.onboardingReady
+            : context.l10n.onboardingConnectionIssue,
       3 => context.l10n.onboardingLocalServerSetup,
       _ => context.l10n.onboardingSetup,
     };
@@ -635,9 +728,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               leading: Icon(Symbols.info_rounded, color: colorScheme.primary),
               title: Text(context.l10n.onboardingOpenCode),
-              subtitle: Text(
-                context.l10n.onboardingCodeWalkAppOpenCode,
-              ),
+              subtitle: Text(context.l10n.onboardingCodeWalkAppOpenCode),
               children: [
                 Text(
                   context.l10n.onboardingOpenCodeRunsLocally,
@@ -781,10 +872,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                                   ?.copyWith(color: colorScheme.onSurface),
                             ),
                             const SizedBox(height: 4),
-                Text(
-                    supportsLocalManaged
-                        ? context.l10n.onboardingDesktopOnlyDiagnose(AppConstants.appName)
-                        : context.l10n.onboardingAvailableOnlyDesktop,
+                            Text(
+                              supportsLocalManaged
+                                  ? context.l10n.onboardingDesktopOnlyDiagnose(
+                                      AppConstants.appName,
+                                    )
+                                  : context.l10n.onboardingAvailableOnlyDesktop,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -884,9 +977,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
           if (!_showQuickGuide) ...[
             Text(
-                _editingServerId == null
-                    ? context.l10n.onboardingServerConnection
-                    : context.l10n.onboardingEditServerConnection,
+              _editingServerId == null
+                  ? context.l10n.onboardingServerConnection
+                  : context.l10n.onboardingEditServerConnection,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -900,23 +993,23 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 leading: const Icon(Symbols.info_rounded),
                 title: Text(context.l10n.onboardingConnectionTips),
-                subtitle: Text(
-                  context.l10n.onboardingDefaultURLEmulator,
-                ),
+                subtitle: Text(context.l10n.onboardingDefaultURLEmulator),
                 children: [
-            _buildSetupHintRow(
-                icon: Symbols.link,
-                text: context.l10n.onboardingSuggestedUrl(_suggestedServerUrl),
-              ),
-              const SizedBox(height: 8),
-              _buildSetupHintRow(
-                icon: Symbols.phone_android,
-                text: context.l10n.onboardingEmulatorRemap,
-              ),
-              const SizedBox(height: 8),
-              _buildSetupHintRow(
-                icon: Symbols.lock,
-                text: context.l10n.onboardingBasicAuthTip,
+                  _buildSetupHintRow(
+                    icon: Symbols.link,
+                    text: context.l10n.onboardingSuggestedUrl(
+                      _suggestedServerUrl,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSetupHintRow(
+                    icon: Symbols.phone_android,
+                    text: context.l10n.onboardingEmulatorRemap,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSetupHintRow(
+                    icon: Symbols.lock,
+                    text: context.l10n.onboardingBasicAuthTip,
                   ),
                 ],
               ),
@@ -952,12 +1045,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_tailscaleEnabled) ...[
-                  _buildTailscalePeerDropdown(),
-                  const SizedBox(height: 12),
-                ],
-                TextFormField(
+                  children: [
+                    if (_tailscaleEnabled) ...[
+                      _buildTailscalePeerDropdown(),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
                       controller: _urlController,
                       decoration: InputDecoration(
                         labelText: context.l10n.onboardingServerUrl,
@@ -976,12 +1069,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       onChanged: (_) => setState(() {}),
                       validator: (value) {
                         final raw = value?.trim() ?? '';
-          if (raw.isEmpty) return context.l10n.onboardingEnterServerUrl;
-          try {
-            AppProvider.normalizeServerUrl(raw);
-            return null;
-          } catch (_) {
-            return context.l10n.onboardingInvalidUrl;
+                        if (raw.isEmpty)
+                          return context.l10n.onboardingEnterServerUrl;
+                        try {
+                          AppProvider.normalizeServerUrl(raw);
+                          return null;
+                        } catch (_) {
+                          return context.l10n.onboardingInvalidUrl;
                         }
                       },
                     ),
@@ -1084,9 +1178,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       },
                       contentPadding: EdgeInsets.zero,
                       title: Text(context.l10n.onboardingAIGeneratedTitles),
-                      subtitle: Text(
-                        context.l10n.onboardingUsesServerTitle,
-                      ),
+                      subtitle: Text(context.l10n.onboardingUsesServerTitle),
                     ),
                     const SizedBox(height: 16),
                     if (_connectionError != null) ...[
@@ -1128,12 +1220,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Symbols.link_rounded),
-        label: Text(
-          _testing
-              ? context.l10n.onboardingTesting
-              : hasTrackedServer
-                  ? context.l10n.onboardingSaveAndTest
-                  : context.l10n.onboardingTestConnection,
+                      label: Text(
+                        _testing
+                            ? context.l10n.onboardingTesting
+                            : hasTrackedServer
+                            ? context.l10n.onboardingSaveAndTest
+                            : context.l10n.onboardingTestConnection,
                       ),
                     ),
                   ],
@@ -1152,22 +1244,29 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         final state = appProvider.tailscaleState;
         final authUrl = state.authUrl?.toString();
         final colorScheme = Theme.of(context).colorScheme;
-    final title = switch (state.nodeState) {
-      TailscaleNodeState.needsLogin => context.l10n.onboardingTailscaleLoginRequired,
-      TailscaleNodeState.needsMachineAuth =>
-        context.l10n.onboardingTailscaleAdminApproval,
-      TailscaleNodeState.connected => context.l10n.onboardingTailscaleConnected,
-      TailscaleNodeState.connecting => context.l10n.onboardingTailscaleConnecting,
-      TailscaleNodeState.error => context.l10n.onboardingTailscaleConnectionFailed,
-      TailscaleNodeState.unsupported => context.l10n.onboardingTailscaleUnsupported,
-      TailscaleNodeState.disconnected =>
-        context.l10n.onboardingTailscaleAuthAfterSave,
-    };
-    final message =
-        state.message ??
-        (state.requiresUserLogin
-            ? context.l10n.onboardingTailscaleOpenLoginUrl
-            : context.l10n.onboardingTailscaleAuthAfterSaveTest(AppConstants.appName));
+        final title = switch (state.nodeState) {
+          TailscaleNodeState.needsLogin =>
+            context.l10n.onboardingTailscaleLoginRequired,
+          TailscaleNodeState.needsMachineAuth =>
+            context.l10n.onboardingTailscaleAdminApproval,
+          TailscaleNodeState.connected =>
+            context.l10n.onboardingTailscaleConnected,
+          TailscaleNodeState.connecting =>
+            context.l10n.onboardingTailscaleConnecting,
+          TailscaleNodeState.error =>
+            context.l10n.onboardingTailscaleConnectionFailed,
+          TailscaleNodeState.unsupported =>
+            context.l10n.onboardingTailscaleUnsupported,
+          TailscaleNodeState.disconnected =>
+            context.l10n.onboardingTailscaleAuthAfterSave,
+        };
+        final message =
+            state.message ??
+            (state.requiresUserLogin
+                ? context.l10n.onboardingTailscaleOpenLoginUrl
+                : context.l10n.onboardingTailscaleAuthAfterSaveTest(
+                    AppConstants.appName,
+                  ));
 
         return Card(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -1255,8 +1354,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               child: Text(
                 context.l10n.tailscaleNoPeers,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             );
           }
@@ -1308,13 +1407,28 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             status == LocalServerRuntimeStatus.stopping;
         final isRunning = status == LocalServerRuntimeStatus.running;
 
-    final (statusColor, statusLabel) = switch (status) {
-      LocalServerRuntimeStatus.running => (Colors.green, context.l10n.toolPresentationRunning),
-      LocalServerRuntimeStatus.starting => (Colors.orange, context.l10n.onboardingStarting),
-      LocalServerRuntimeStatus.stopping => (Colors.orange, context.l10n.onboardingStopping),
-      LocalServerRuntimeStatus.failed => (Colors.red, context.l10n.onboardingFailed),
-      LocalServerRuntimeStatus.stopped => (Colors.grey, context.l10n.onboardingStopped),
-    };
+        final (statusColor, statusLabel) = switch (status) {
+          LocalServerRuntimeStatus.running => (
+            Colors.green,
+            context.l10n.toolPresentationRunning,
+          ),
+          LocalServerRuntimeStatus.starting => (
+            Colors.orange,
+            context.l10n.onboardingStarting,
+          ),
+          LocalServerRuntimeStatus.stopping => (
+            Colors.orange,
+            context.l10n.onboardingStopping,
+          ),
+          LocalServerRuntimeStatus.failed => (
+            Colors.red,
+            context.l10n.onboardingFailed,
+          ),
+          LocalServerRuntimeStatus.stopped => (
+            Colors.grey,
+            context.l10n.onboardingStopped,
+          ),
+        };
 
         return SingleChildScrollView(
           key: const ValueKey('step_local_setup'),
@@ -1375,7 +1489,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               if (appProvider.localServerLastOutput.trim().isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
-                  context.l10n.onboardingLatestOutputAppProvider(appProvider.localServerLastOutput),
+                  context.l10n.onboardingLatestOutputAppProvider(
+                    appProvider.localServerLastOutput,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
@@ -1387,9 +1503,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   color: Theme.of(context).colorScheme.surfaceContainer,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Text(
-                      context.l10n.onboardingManagedLocalServer2,
-                    ),
+                    child: Text(context.l10n.onboardingManagedLocalServer2),
                   ),
                 )
               else ...[
@@ -1399,21 +1513,29 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else ...[
-                  _buildDiagnosticRow(context.l10n.setupDebugPlatform2, report.platform),
-                  _buildToolStatusRow(context.l10n.setupDebugOpenCode2, report.opencode),
+                  _buildDiagnosticRow(
+                    context.l10n.setupDebugPlatform2,
+                    report.platform,
+                  ),
+                  _buildToolStatusRow(
+                    context.l10n.setupDebugOpenCode2,
+                    report.opencode,
+                  ),
                   _buildToolStatusRow(context.l10n.setupDebugNode, report.node),
                   _buildToolStatusRow(context.l10n.setupDebugNpm2, report.npm),
                   _buildToolStatusRow(context.l10n.setupDebugBun2, report.bun),
                   _buildToolStatusRow(context.l10n.setupDebugWSL, report.wsl),
-        _buildDiagnosticRow(
-                  context.l10n.setupDebugNetwork2,
-                  report.hasNetworkAccess ? context.l10n.onboardingReachable : context.l10n.onboardingUnreachable,
-                ),
-                _buildDiagnosticRow(
-                  context.l10n.setupDebugInstallDirectory,
-                  report.installDirectoryWritable
-                      ? context.l10n.onboardingWritable
-                      : context.l10n.onboardingNotWritable,
+                  _buildDiagnosticRow(
+                    context.l10n.setupDebugNetwork2,
+                    report.hasNetworkAccess
+                        ? context.l10n.onboardingReachable
+                        : context.l10n.onboardingUnreachable,
+                  ),
+                  _buildDiagnosticRow(
+                    context.l10n.setupDebugInstallDirectory,
+                    report.installDirectoryWritable
+                        ? context.l10n.onboardingWritable
+                        : context.l10n.onboardingNotWritable,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -1459,7 +1581,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                                 _showMessage(appProvider.errorMessage);
                                 return;
                               }
-                              _showMessage(context.l10n.onboardingUsingDetectedCommand);
+                              _showMessage(
+                                context.l10n.onboardingUsingDetectedCommand,
+                              );
                             },
                       icon: const Icon(Symbols.check_circle_outline),
                       label: Text(context.l10n.onboardingExisting),
@@ -1596,7 +1720,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          context.l10n.onboardingAppProviderLocalSetupLogsLength(appProvider.localSetupLogs.length, appProvider.setupDebugEntries.length),
+                          context.l10n
+                              .onboardingAppProviderLocalSetupLogsLength(
+                                appProvider.localSetupLogs.length,
+                                appProvider.setupDebugEntries.length,
+                              ),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -1608,7 +1736,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               FilledButton.icon(
                 onPressed: () => unawaited(_complete()),
                 icon: const Icon(Symbols.check_circle_rounded),
-                label: Text(widget.showSkipAction ? context.l10n.onboardingContinue : context.l10n.onboardingDone),
+                label: Text(
+                  widget.showSkipAction
+                      ? context.l10n.onboardingContinue
+                      : context.l10n.onboardingDone,
+                ),
               ),
             ],
           ),
@@ -1646,9 +1778,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       details.add(status.note.trim());
     }
 
-  final value = details.isEmpty
-      ? (status.available ? context.l10n.onboardingAvailable : context.l10n.onboardingNotAvailable)
-      : details.join(' | ');
+    final value = details.isEmpty
+        ? (status.available
+              ? context.l10n.onboardingAvailable
+              : context.l10n.onboardingNotAvailable)
+        : details.join(' | ');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -1690,7 +1824,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         key: const ValueKey('step_ready_success'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Symbols.check_circle_rounded, size: 72, color: Colors.green),
+          const Icon(
+            Symbols.check_circle_rounded,
+            size: 72,
+            color: Colors.green,
+          ),
           const SizedBox(height: 24),
           Text(
             successTitle,
@@ -1727,63 +1865,100 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       );
     }
 
-    // Connection failed but server was added
-    return Column(
+    // Connection failed but the profile is saved, so keep the user unblocked.
+    final continueLabel = widget.showSkipAction
+        ? context.l10n.onboardingStartUsing(AppConstants.appName)
+        : context.l10n.onboardingDone;
+    return SingleChildScrollView(
       key: const ValueKey('step_ready_failed'),
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Symbols.warning_amber_rounded, size: 72, color: colorScheme.error),
-        const SizedBox(height: 24),
-        Text(
-          context.l10n.onboardingConnectionIssue,
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _connectionError ?? context.l10n.onboardingCouldNotVerify,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 40),
-        FilledButton.icon(
-          onPressed: () {
-            setState(() {
-              _step = 1;
-              _connectionSuccess = false;
-              _connectionError = null;
-            });
-          },
-          icon: const Icon(Symbols.refresh_rounded),
-          label: Text(context.l10n.terminalTryAgain),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: () {
-            setState(() {
-              _step = 0;
-              _connectionSuccess = false;
-              _connectionError = null;
-            });
-          },
-          icon: const Icon(Symbols.swap_horiz_rounded),
-          label: Text(context.l10n.onboardingChooseAnotherPath),
-        ),
-        const SizedBox(height: 12),
-        TextButton.icon(
-          key: const ValueKey('open_code_setup_debug_button_failed'),
-          onPressed: _openSetupDebugPage,
-          icon: const Icon(Symbols.bug_report_rounded),
-          label: Text(context.l10n.onboardingViewSetupDebug),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: () => unawaited(_complete()),
-          child: Text(context.l10n.onboardingSkip),
-        ),
-      ],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Symbols.warning_amber_rounded,
+            size: 72,
+            color: colorScheme.error,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            context.l10n.onboardingConnectionIssue,
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _connectionError ?? context.l10n.onboardingCouldNotVerify,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.l10n.onboardingAddServerLater,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          FilledButton.icon(
+            key: const ValueKey('continue_with_unhealthy_server_button'),
+            onPressed: _completingWithSavedServer
+                ? null
+                : () => unawaited(_continueWithSavedServer()),
+            icon: const Icon(Symbols.arrow_forward_rounded),
+            label: Text(continueLabel),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const ValueKey(
+              'add_another_server_after_health_failure_button',
+            ),
+            onPressed: _addAnotherServerAfterFailure,
+            icon: const Icon(Symbols.add_rounded),
+            label: Text(context.l10n.serversAddServer),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const ValueKey(
+              'open_server_settings_after_health_failure_button',
+            ),
+            onPressed: () => unawaited(_openServerSettings()),
+            icon: const Icon(Symbols.settings_rounded),
+            label: Text(context.l10n.chatDescriptionOpenSettings),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _step = 1;
+                _connectionSuccess = false;
+                _connectionError = null;
+              });
+            },
+            icon: const Icon(Symbols.refresh_rounded),
+            label: Text(context.l10n.terminalTryAgain),
+          ),
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _step = 0;
+                _connectionSuccess = false;
+                _connectionError = null;
+              });
+            },
+            icon: const Icon(Symbols.swap_horiz_rounded),
+            label: Text(context.l10n.onboardingChooseAnotherPath),
+          ),
+          TextButton.icon(
+            key: const ValueKey('open_code_setup_debug_button_failed'),
+            onPressed: _openSetupDebugPage,
+            icon: const Icon(Symbols.bug_report_rounded),
+            label: Text(context.l10n.onboardingViewSetupDebug),
+          ),
+        ],
+      ),
     );
   }
 

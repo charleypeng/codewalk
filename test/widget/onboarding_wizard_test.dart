@@ -1,5 +1,6 @@
 import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/core/tailscale/tailscale_service.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/l10n/generated/app_localizations.dart';
@@ -13,10 +14,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../support/fakes.dart';
+
+class _NoopTailscaleService extends TailscaleService {
+  @override
+  TailscaleState get state => const TailscaleState.disconnected();
+
+  @override
+  Stream<TailscaleState> get stateChanges =>
+      Stream<TailscaleState>.value(state);
+
+  @override
+  http.Client get httpClient => throw UnsupportedError('No Tailscale client');
+
+  @override
+  Future<TailscaleState> upForProfile({
+    required String profileId,
+    required String profileLabel,
+  }) async {
+    return state;
+  }
+
+  @override
+  Future<void> down() async {}
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +57,9 @@ void main() {
       checkConnection: CheckConnection(FakeAppRepository()),
       localDataSource: localDataSource,
       dioClient: DioClient(),
-      serverHealthRequestTimeout: const Duration(milliseconds: 120),
+      tailscaleService: _NoopTailscaleService(),
+      serverHealthProbe: (_) async => ServerHealthStatus.unhealthy,
+      serverHealthRequestTimeout: const Duration(milliseconds: 5),
       enableHealthPolling: false,
     );
     settingsProvider = SettingsProvider(
@@ -259,7 +286,7 @@ void main() {
       await tester.ensureVisible(find.text('Test connection'));
       await tester.tap(find.text('Test connection'));
       await tester.runAsync(() async {
-        // Keep a small margin above the injected 120ms health timeout.
+        // Keep a margin above the injected health timeout.
         await Future<void>.delayed(const Duration(milliseconds: 180));
       });
       // Use pump instead of pumpAndSettle to avoid timeout from spinner.
@@ -268,6 +295,87 @@ void main() {
       // Server should have been added (health may fail, but profile persists).
       expect(appProvider.serverProfiles.length, 1);
     });
+
+    testWidgets(
+      'health check failure exposes degraded and management actions',
+      (WidgetTester tester) async {
+        await _setLargeSurface(tester);
+        var completed = false;
+        await tester.pumpWidget(
+          buildWizard(onComplete: () => completed = true),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Connect to a running server'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byType(TextFormField).first,
+          'http://127.0.0.1:1',
+        );
+        await tester.pump();
+
+        await tester.ensureVisible(find.text('Test connection'));
+        await tester.tap(find.text('Test connection'));
+        await _waitForReadyFailure(tester);
+
+        expect(find.text('Connection issue'), findsWidgets);
+        expect(find.text('Start using CodeWalk'), findsOneWidget);
+        expect(find.text('Add Server'), findsOneWidget);
+        expect(find.text('Open settings'), findsOneWidget);
+        expect(find.text('Try again'), findsOneWidget);
+        expect(find.text('View setup debug'), findsOneWidget);
+        expect(appProvider.serverProfiles.length, 1);
+
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('continue_with_unhealthy_server_button')),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('continue_with_unhealthy_server_button')),
+        );
+        await _waitForCondition(tester, () => completed);
+
+        expect(completed, isTrue);
+      },
+    );
+
+    testWidgets(
+      'add another server after health failure keeps the failed profile',
+      (WidgetTester tester) async {
+        await _setLargeSurface(tester);
+        await tester.pumpWidget(buildWizard());
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Connect to a running server'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byType(TextFormField).first,
+          'http://127.0.0.1:1',
+        );
+        await tester.pump();
+
+        await tester.ensureVisible(find.text('Test connection'));
+        await tester.tap(find.text('Test connection'));
+        await _waitForReadyFailure(tester);
+
+        expect(appProvider.serverProfiles.length, 1);
+
+        await tester.ensureVisible(find.text('Add Server'));
+        await tester.tap(find.text('Add Server'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('step_server_setup')), findsOneWidget);
+        expect(appProvider.serverProfiles.length, 1);
+
+        final urlField = tester.widget<TextFormField>(
+          find.byType(TextFormField).first,
+        );
+        final expectedDefaultUrl =
+            defaultTargetPlatform == TargetPlatform.android
+            ? 'http://10.0.2.2:4096'
+            : 'http://127.0.0.1:4096';
+        expect(urlField.controller?.text, expectedDefaultUrl);
+      },
+    );
 
     testWidgets(
       'try again re-checks health instead of adding duplicate server',
@@ -281,7 +389,7 @@ void main() {
         await tester.ensureVisible(find.text('Test connection'));
         await tester.tap(find.text('Test connection'));
         await tester.runAsync(() async {
-          // Keep a small margin above the injected 120ms health timeout.
+          // Keep a margin above the injected health timeout.
           await Future<void>.delayed(const Duration(milliseconds: 180));
         });
         await tester.pump();
@@ -299,7 +407,7 @@ void main() {
             await tester.ensureVisible(find.text('Test connection'));
             await tester.tap(find.text('Test connection'));
             await tester.runAsync(() async {
-              // Keep a small margin above the injected 120ms health timeout.
+              // Keep a margin above the injected health timeout.
               await Future<void>.delayed(const Duration(milliseconds: 180));
             });
             await tester.pump();
@@ -523,4 +631,35 @@ void main() {
 Future<void> _setLargeSurface(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(const Size(1200, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
+}
+
+Future<void> _waitForReadyFailure(WidgetTester tester) async {
+  final failure = find.byKey(const ValueKey('step_ready_failed'));
+  for (var attempt = 0; attempt < 30; attempt++) {
+    if (failure.evaluate().isNotEmpty) {
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+      return;
+    }
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+Future<void> _waitForCondition(
+  WidgetTester tester,
+  bool Function() predicate,
+) async {
+  for (var attempt = 0; attempt < 30; attempt++) {
+    if (predicate()) {
+      await tester.pump();
+      return;
+    }
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }

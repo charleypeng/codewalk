@@ -89,11 +89,52 @@
 - **Then** the app shows OpenCode-specific diagnostics, setup events, and captured setup logs
 - **Then** this surface remains separate from the general `App Logs` screen used for CodeWalk runtime logs
 
+### Failed onboarding/server setup health checks are diagnostic, not blocking
+
+- **Given** the user finishes the server-setup form during onboarding (or re-tests an existing saved profile) and the active health check fails (server unreachable, server still starting, wrong URL/port/auth, etc.)
+- **When** the wizard advances to the final `Connection issue` step
+- **Then** the saved profile is kept in `serverProfiles` and remains available for editing, activation, or removal from `Settings > Servers` after the wizard closes
+- **Then** the failure screen treats the failed health check as diagnostic, not a trap: the wizard stays open and exposes a primary continue action plus dedicated recovery paths so the user always has a way out
+- **Then** the screen shows the captured connection error (or a generic `Server connection could not be verified.` fallback) and a reminder that a server can also be added later from `Settings > Servers`
+
+- **Given** the onboarding failure screen is visible
+- **When** the user taps the primary `Start using <AppName>` action (or `Done` when the wizard is opened from `Settings`)
+- **Then** the wizard activates the saved profile as the active server using `setActiveServer(blockUnhealthy: false)` and completes onboarding without re-prompting for the same URL
+- **Then** the app enters a degraded/no-healthy-server state: settings, setup debug, and other non-server-backed surfaces remain reachable, and chat remains limited (composer blocked, server status reports `Offline`) until the active server becomes healthy
+
+- **Given** the onboarding failure screen is visible
+- **When** the user taps `Add Server`
+- **Then** the form resets to the platform default URL suggestion and the wizard returns to the server-setup step so the user can configure another server profile
+- **Then** the previously failed profile is not deleted or replaced — it stays in `serverProfiles` and can still be edited, retried, or removed later from `Settings > Servers`
+
+- **Given** the onboarding failure screen is visible
+- **When** the user taps `Open settings`
+- **Then** the wizard pushes `Settings > Servers` so the user can edit the failed profile, add a different server, or remove it
+- **Then** returning from `Settings > Servers` brings the user back to the failure screen with the failure context preserved
+
+- **Given** the onboarding failure screen is visible
+- **When** the user taps `Try again`
+- **Then** the wizard returns to the server-setup step and re-runs the health check against the saved profile without creating a duplicate server profile
+
+- **Given** the onboarding failure screen is visible
+- **When** the user taps `Choose another path`
+- **Then** the wizard returns to the welcome step so the user can pick a different setup path (connect to a running server, follow guided local setup, or let CodeWalk manage a local desktop install)
+
+- **Given** the onboarding failure screen is visible
+- **When** the user taps `View setup debug`
+- **Then** the dedicated OpenCode setup debug surface opens so the user can inspect platform diagnostics, setup events, and captured setup logs without leaving the failure context
+
+- **Given** the user activates an unhealthy saved profile from the onboarding failure screen
+- **When** the app is now in the degraded/no-healthy-server state
+- **Then** the user is never trapped: chat-side composer and send actions remain blocked and the reason is surfaced (matches `Server goes offline during use`), but the user can still open `Settings > Servers`, add another server, retry the saved profile, or return to setup debug from the degraded chat surface
+- **Then** chat functionality returns automatically as soon as the active server's health check reports a healthy status — no re-onboarding or app restart is required
+
 ### No server = no functionality
 
-- **Given** no server is configured
+- **Given** no server profile is configured (zero saved profiles)
 - **When** the user tries to access any feature
 - **Then** the app blocks access — configuring a server is a prerequisite for all functionality
+- **Then** this hard block only applies when there are no saved profiles; a saved but unhealthy profile no longer blocks access and instead lets the user enter a degraded state (see `Failed onboarding/server setup health checks are diagnostic, not blocking` and `Server goes offline during use`)
 
 ### No-server chat state is stable and actionable
 
@@ -102,6 +143,14 @@
 - **Then** startup connection checks are skipped (no transient connection-error flicker)
 - **Then** the main area shows a dedicated empty state with `No server configured yet`
 - **Then** a `Set up server` button opens the setup wizard directly in the server-connection flow
+
+### Degraded chat state with a saved-but-unhealthy server is actionable
+
+- **Given** at least one server profile is saved and currently active, but its health check is unhealthy (for example, after the user continues from the onboarding failure screen with `Start using <AppName>`)
+- **When** the chat screen initializes or becomes active
+- **Then** startup connection checks still run but do not flash a transient error state during the normal health probe window
+- **Then** the active server status control shows `Offline` so the user can tell why chat is limited
+- **Then** the main chat area still surfaces the existing scoped recovery path (`Settings > Servers`, add another server, retry, view setup debug) instead of leaving the user in a dead end
 
 ---
 
