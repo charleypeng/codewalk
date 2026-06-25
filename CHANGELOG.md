@@ -2,6 +2,15 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.144.0 - 2026-06-25
+
+- docs(logging): document global logging toggle
+- fix(logging): recheck gate before lazy context
+- fix(logging): lazy-build performance log context
+- fix(logging): keep startup logging disabled by default
+- fix(logging): preserve explicit diagnostic opt-ins
+- feat(logging): add global logging toggle
+
 ## v1.143.0 - 2026-06-25
 
 - fix(chat): scope inactive session events
