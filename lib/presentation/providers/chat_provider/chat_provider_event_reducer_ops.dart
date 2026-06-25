@@ -134,6 +134,46 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         (_state == ChatState.sending || _messageSubscription != null);
   }
 
+  bool _isNonCurrentSessionEvent(String? sessionId) {
+    final normalizedSessionId = sessionId?.trim();
+    final currentSessionId = _currentSession?.id.trim();
+    if (normalizedSessionId == null || normalizedSessionId.isEmpty) {
+      return false;
+    }
+    return currentSessionId == null ||
+        currentSessionId.isEmpty ||
+        normalizedSessionId != currentSessionId;
+  }
+
+  bool _shouldHandleFeedbackForEvent(ChatEvent event) {
+    switch (event.type) {
+      case 'permission.asked':
+      case 'permission.updated':
+      case 'permission.v2.asked':
+      case 'permission.v2.updated':
+      case 'question.asked':
+      case 'question.updated':
+      case 'question.v2.asked':
+      case 'question.v2.updated':
+      case 'session.error':
+      case 'session.idle':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  bool _isRootSessionInList(String sessionId, List<ChatSession> sessions) {
+    for (final session in sessions) {
+      if (session.id != sessionId) {
+        continue;
+      }
+      final parentId = session.parentId?.trim();
+      return parentId == null || parentId.isEmpty;
+    }
+    return false;
+  }
+
   ({String message, String? code}) _extractSessionErrorMessageAndCode(
     Map<String, dynamic> properties,
   ) {
@@ -168,11 +208,6 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       }
     }
     final eventSessionId = _extractEventSessionId(event.properties);
-    // Only dispatch sound/notification feedback for session lifecycle events
-    // (idle, error) when the event belongs to the current session.
-    // Sub-agent child sessions should not trigger user-facing sounds.
-    final isSessionLifecycle =
-        event.type == 'session.idle' || event.type == 'session.error';
     final suppressCurrentIdleFeedback =
         event.type == 'session.idle' &&
         eventSessionId != null &&
@@ -192,7 +227,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           return _hasInFlightSendTurnForSession(eventSessionId) &&
               _isRemoteAbortError(message: payload.message, code: payload.code);
         })();
-    if (!isSessionLifecycle || eventSessionId == _currentSession?.id) {
+    if (_shouldHandleFeedbackForEvent(event)) {
       if (suppressCurrentIdleFeedback) {
         _traceFinal(
           'event-session-idle-feedback-suppressed-active-send',
@@ -217,7 +252,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       }
     }
     final properties = event.properties;
+    final currentSessionId = _currentSession?.id;
+    final eventTargetsCurrentSession =
+        eventSessionId != null &&
+        (currentSessionId == null || eventSessionId == currentSessionId);
     if (event.type != 'server.connected' &&
+        eventTargetsCurrentSession &&
         (event.type == 'session.status' ||
             event.type == 'message.created' ||
             event.type == 'message.updated' ||
@@ -262,6 +302,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             existing: existing,
             info: info,
           );
+          if (existing == nextSession) {
+            break;
+          }
           final pendingRename = _pendingRenameTitleBySessionId[nextSession.id];
           if (pendingRename != null) {
             final incomingTitle = nextSession.title?.trim();
@@ -307,8 +350,16 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         final statusMap = properties['status'];
         if (sessionId != null && statusMap is Map<String, dynamic>) {
-          final previousStatusType = _sessionStatusById[sessionId]?.type;
           final status = SessionStatusModel.fromJson(statusMap).toDomain();
+          final previousStatus = _sessionStatusById[sessionId];
+          final previousStatusType = previousStatus?.type;
+          final isNonCurrent = _isNonCurrentSessionEvent(sessionId);
+          final changed = isNonCurrent
+              ? previousStatusType != status.type
+              : previousStatus != status;
+          if (!changed) {
+            break;
+          }
           _sessionStatusById[sessionId] = status;
           if (status.type == SessionStatusType.busy ||
               status.type == SessionStatusType.retry) {
@@ -323,13 +374,18 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             _clearSessionAttentionForSession(sessionId);
           }
           _notifyListeners();
-          _attemptPendingRemoteSelectionSync(reason: 'event-session.status');
+          if (!isNonCurrent || _pendingRemoteSelectionSync) {
+            _attemptPendingRemoteSelectionSync(reason: 'event-session.status');
+          }
         }
         break;
       case 'session.diff':
         final sessionId = properties['sessionID'] as String?;
         final diffRaw = properties['diff'];
         if (sessionId != null && diffRaw is List) {
+          if (_isNonCurrentSessionEvent(sessionId)) {
+            break;
+          }
           final parsed = diffRaw
               .whereType<Map>()
               .map(
@@ -381,6 +437,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         final todosRaw = properties['todos'];
         if (sessionId != null && todosRaw is List) {
+          if (_isNonCurrentSessionEvent(sessionId)) {
+            break;
+          }
           final parsed = todosRaw
               .whereType<Map>()
               .map(
@@ -405,6 +464,14 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             sessionId,
           );
           final previousStatusType = _sessionStatusById[sessionId]?.type;
+          final hadErrorAttention = _sessionErrorAttentionIds.contains(
+            sessionId,
+          );
+          if (!isCurrentSession &&
+              previousStatusType == SessionStatusType.idle &&
+              !hadErrorAttention) {
+            break;
+          }
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
@@ -462,7 +529,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             }
             _notifyListeners();
           }
-          _attemptPendingRemoteSelectionSync(reason: 'event-session.idle');
+          if (isCurrentSession || _pendingRemoteSelectionSync) {
+            _attemptPendingRemoteSelectionSync(reason: 'event-session.idle');
+          }
         }
         break;
       case 'session.error':
@@ -560,20 +629,21 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final messageId = info?['id'] as String?;
         if (sessionId != null && messageId != null) {
           final isCurrentSession = _currentSession?.id == sessionId;
-          if (isCurrentSession) {
-            final existingIndex = _messages.indexWhere(
-              (message) => message.id == messageId,
-            );
-            if (event.type == 'message.created' && existingIndex != -1) {
-              final existing = _messages[existingIndex];
-              if (existing is AssistantMessage && existing.isCompleted) {
-                _traceFinal(
-                  'event-${event.type}-fallback-skip-completed-local',
-                  sessionId: sessionId,
-                  details: 'messageId=$messageId',
-                );
-                break;
-              }
+          if (!isCurrentSession) {
+            break;
+          }
+          final existingIndex = _messages.indexWhere(
+            (message) => message.id == messageId,
+          );
+          if (event.type == 'message.created' && existingIndex != -1) {
+            final existing = _messages[existingIndex];
+            if (existing is AssistantMessage && existing.isCompleted) {
+              _traceFinal(
+                'event-${event.type}-fallback-skip-completed-local',
+                sessionId: sessionId,
+                details: 'messageId=$messageId',
+              );
+              break;
             }
           }
           _traceFinal(
@@ -582,13 +652,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             details:
                 'messageId=$messageId applyToCurrentSession=$isCurrentSession',
           );
-          unawaited(
-            _fetchMessageFallback(
-              sessionId,
-              messageId,
-              applyToCurrentSession: isCurrentSession,
-            ),
-          );
+          unawaited(_fetchMessageFallback(sessionId, messageId));
         }
         break;
       case 'message.part.updated':
@@ -1080,6 +1144,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     Set<String>? nextUnreadCompletionIds;
     Map<String, DateTime>? nextUnreadCompletionTimestamps;
     Set<String>? nextErrorAttentionIds;
+    Map<String, List<ChatPermissionRequest>>? nextPendingPermissionsBySession;
+    Map<String, List<ChatQuestionRequest>>? nextPendingQuestionsBySession;
     switch (event.type) {
       case 'session.created':
       case 'session.updated':
@@ -1132,7 +1198,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         }
         final nextStatus = SessionStatusModel.fromJson(statusMap).toDomain();
         final previousStatus = snapshot.sessionStatusById[sessionId];
-        if (previousStatus == nextStatus) {
+        if (previousStatus?.type == nextStatus.type) {
           return false;
         }
         nextSessionStatusById = Map<String, SessionStatusInfo>.from(
@@ -1147,6 +1213,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             snapshot.sessionUnreadCompletionTimestamps,
           )..remove(sessionId);
         } else if (nextStatus.type == SessionStatusType.idle &&
+            _isRootSessionInList(sessionId, snapshot.sessions) &&
             (previousStatus?.type == SessionStatusType.busy ||
                 previousStatus?.type == SessionStatusType.retry)) {
           nextUnreadCompletionIds = Set<String>.from(
@@ -1163,6 +1230,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           return false;
         }
         final previousStatusType = snapshot.sessionStatusById[sessionId]?.type;
+        final hadErrorAttention = snapshot.sessionErrorAttentionIds.contains(
+          sessionId,
+        );
+        if (previousStatusType == SessionStatusType.idle &&
+            !hadErrorAttention) {
+          return false;
+        }
         const nextIdleStatus = SessionStatusInfo(type: SessionStatusType.idle);
         nextSessionStatusById = Map<String, SessionStatusInfo>.from(
           snapshot.sessionStatusById,
@@ -1173,13 +1247,190 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final wasBusyBeforeIdle =
             previousStatusType == SessionStatusType.busy ||
             previousStatusType == SessionStatusType.retry;
-        if (wasBusyBeforeIdle) {
+        if (wasBusyBeforeIdle &&
+            _isRootSessionInList(sessionId, snapshot.sessions)) {
           nextUnreadCompletionIds = Set<String>.from(
             snapshot.sessionUnreadCompletionIds,
           )..add(sessionId);
           nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
             snapshot.sessionUnreadCompletionTimestamps,
           )..[sessionId] = DateTime.now();
+        }
+        break;
+      case 'session.error':
+        final sessionId = event.properties['sessionID'] as String?;
+        if (sessionId == null || sessionId.trim().isEmpty) {
+          return false;
+        }
+        nextSessionStatusById = Map<String, SessionStatusInfo>.from(
+          snapshot.sessionStatusById,
+        )..[sessionId] = const SessionStatusInfo(type: SessionStatusType.idle);
+        nextUnreadCompletionIds = Set<String>.from(
+          snapshot.sessionUnreadCompletionIds,
+        )..remove(sessionId);
+        nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
+          snapshot.sessionUnreadCompletionTimestamps,
+        )..remove(sessionId);
+        nextErrorAttentionIds = Set<String>.from(
+          snapshot.sessionErrorAttentionIds,
+        )..add(sessionId);
+        break;
+      case 'permission.asked':
+      case 'permission.updated':
+      case 'permission.v2.asked':
+      case 'permission.v2.updated':
+        ChatPermissionRequest permission;
+        try {
+          permission = ChatPermissionRequestModel.fromJson(
+            _eventPayloadOrNested(event.properties, const <String>[
+              'permission',
+              'request',
+              'info',
+            ]),
+          ).toDomain();
+        } catch (error, stackTrace) {
+          AppLogger.warn(
+            'Failed to parse inactive snapshot permission event',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return false;
+        }
+        if (permission.id.trim().isEmpty ||
+            permission.sessionId.trim().isEmpty) {
+          return false;
+        }
+        nextPendingPermissionsBySession =
+            Map<String, List<ChatPermissionRequest>>.from(
+              snapshot.pendingPermissionsBySession,
+            );
+        final sessionPermissions = List<ChatPermissionRequest>.from(
+          nextPendingPermissionsBySession[permission.sessionId] ??
+              const <ChatPermissionRequest>[],
+        );
+        final existingIndex = sessionPermissions.indexWhere(
+          (item) => item.id == permission.id,
+        );
+        if (existingIndex == -1) {
+          sessionPermissions.add(permission);
+        } else {
+          sessionPermissions[existingIndex] = permission;
+        }
+        nextPendingPermissionsBySession[permission.sessionId] =
+            sessionPermissions;
+        break;
+      case 'permission.replied':
+      case 'permission.v2.replied':
+        final replyPayload = _eventPayloadOrNested(
+          event.properties,
+          const <String>['permission', 'request', 'info'],
+        );
+        final sessionId =
+            _extractEventSessionId(replyPayload) ??
+            _extractEventSessionId(event.properties);
+        final requestId =
+            replyPayload['requestID'] as String? ??
+            replyPayload['id'] as String?;
+        if (sessionId == null || requestId == null) {
+          return false;
+        }
+        final existing = snapshot.pendingPermissionsBySession[sessionId];
+        if (existing == null) {
+          return false;
+        }
+        final filtered = existing
+            .where((item) => item.id != requestId)
+            .toList(growable: false);
+        if (filtered.length == existing.length) {
+          return false;
+        }
+        nextPendingPermissionsBySession =
+            Map<String, List<ChatPermissionRequest>>.from(
+              snapshot.pendingPermissionsBySession,
+            );
+        if (filtered.isEmpty) {
+          nextPendingPermissionsBySession.remove(sessionId);
+        } else {
+          nextPendingPermissionsBySession[sessionId] = filtered;
+        }
+        break;
+      case 'question.asked':
+      case 'question.updated':
+      case 'question.v2.asked':
+      case 'question.v2.updated':
+        ChatQuestionRequest question;
+        try {
+          question = ChatQuestionRequestModel.fromJson(
+            _eventPayloadOrNested(event.properties, const <String>[
+              'question',
+              'request',
+              'info',
+            ]),
+          ).toDomain();
+        } catch (error, stackTrace) {
+          AppLogger.warn(
+            'Failed to parse inactive snapshot question event',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return false;
+        }
+        if (question.id.trim().isEmpty || question.sessionId.trim().isEmpty) {
+          return false;
+        }
+        nextPendingQuestionsBySession =
+            Map<String, List<ChatQuestionRequest>>.from(
+              snapshot.pendingQuestionsBySession,
+            );
+        final sessionQuestions = List<ChatQuestionRequest>.from(
+          nextPendingQuestionsBySession[question.sessionId] ??
+              const <ChatQuestionRequest>[],
+        );
+        final existingIndex = sessionQuestions.indexWhere(
+          (item) => item.id == question.id,
+        );
+        if (existingIndex == -1) {
+          sessionQuestions.add(question);
+        } else {
+          sessionQuestions[existingIndex] = question;
+        }
+        nextPendingQuestionsBySession[question.sessionId] = sessionQuestions;
+        break;
+      case 'question.replied':
+      case 'question.rejected':
+      case 'question.v2.replied':
+      case 'question.v2.rejected':
+        final replyPayload = _eventPayloadOrNested(
+          event.properties,
+          const <String>['question', 'request', 'info'],
+        );
+        final sessionId =
+            _extractEventSessionId(replyPayload) ??
+            _extractEventSessionId(event.properties);
+        final requestId =
+            replyPayload['requestID'] as String? ??
+            replyPayload['id'] as String?;
+        if (sessionId == null || requestId == null) {
+          return false;
+        }
+        final existing = snapshot.pendingQuestionsBySession[sessionId];
+        if (existing == null) {
+          return false;
+        }
+        final filtered = existing
+            .where((item) => item.id != requestId)
+            .toList(growable: false);
+        if (filtered.length == existing.length) {
+          return false;
+        }
+        nextPendingQuestionsBySession =
+            Map<String, List<ChatQuestionRequest>>.from(
+              snapshot.pendingQuestionsBySession,
+            );
+        if (filtered.isEmpty) {
+          nextPendingQuestionsBySession.remove(sessionId);
+        } else {
+          nextPendingQuestionsBySession[sessionId] = filtered;
         }
         break;
       default:
@@ -1196,10 +1447,22 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         snapshot.sessionUnreadCompletionTimestamps;
     final effectiveErrorAttentionIds =
         nextErrorAttentionIds ?? snapshot.sessionErrorAttentionIds;
+    final effectivePendingPermissionsBySession =
+        nextPendingPermissionsBySession ?? snapshot.pendingPermissionsBySession;
+    final effectivePendingQuestionsBySession =
+        nextPendingQuestionsBySession ?? snapshot.pendingQuestionsBySession;
 
     final changed =
         !listEquals(snapshot.sessions, effectiveSessions) ||
         !mapEquals(snapshot.sessionStatusById, effectiveSessionStatusById) ||
+        !mapEquals(
+          snapshot.pendingPermissionsBySession,
+          effectivePendingPermissionsBySession,
+        ) ||
+        !mapEquals(
+          snapshot.pendingQuestionsBySession,
+          effectivePendingQuestionsBySession,
+        ) ||
         !setEquals(
           snapshot.sessionUnreadCompletionIds,
           effectiveUnreadCompletionIds,
@@ -1221,8 +1484,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       currentSession: snapshot.currentSession,
       messages: snapshot.messages,
       sessionStatusById: effectiveSessionStatusById,
-      pendingPermissionsBySession: snapshot.pendingPermissionsBySession,
-      pendingQuestionsBySession: snapshot.pendingQuestionsBySession,
+      pendingPermissionsBySession: effectivePendingPermissionsBySession,
+      pendingQuestionsBySession: effectivePendingQuestionsBySession,
       sessionUnreadCompletionIds: effectiveUnreadCompletionIds,
       sessionUnreadCompletionTimestamps: effectiveUnreadCompletionTimestamps,
       sessionErrorAttentionIds: effectiveErrorAttentionIds,

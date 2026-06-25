@@ -424,6 +424,20 @@
 - **Then** the client first fetches a limited recent tail window (delta-like refresh) instead of full history
 - **Then** if the fetched tail has no safe overlap with local cache, the client immediately promotes that authoritative recent server tail, marks older history as incomplete, and automatically falls back to a full fetch to guarantee correctness
 
+### Realtime event scope follows the active session
+
+- **Given** realtime events are connected for the current server and project context
+- **When** an event targets the active/open session
+- **Then** the active session receives the full realtime path, including message snapshots, part deltas, diffs, todos, status, permissions, questions, errors, and final idle signals
+- **When** an event targets another session in the same project context
+- **Then** CodeWalk keeps only summarized/alertable state hot for that session: deduplicated busy/retry/idle status by type, pending permission/question prompts (including v2 aliases), critical error attention, and root-session final-completion unread attention
+- **Then** non-active sessions do not trigger realtime fallback fetches for full message payloads, and `session.diff` / `todo.updated` payloads are deferred until the session becomes active
+- **When** a global event targets a cached but inactive project context
+- **Then** the cached project snapshot is patched only for session list/status/error/final-completion attention and pending permission/question state
+- **Then** unsupported or detailed inactive-context events only mark that context dirty, so returning to the project renders cache immediately and revalidates through SWR instead of reconciling every background event live
+- **When** the user opens a non-active session
+- **Then** cached content appears first when available, followed by active-session revalidation and session insights loading for authoritative messages, diffs, todos, and status
+
 ### New Chat draft state is isolated per project context
 
 - **Given** the user starts `New Chat` draft mode in project A (no active session yet)

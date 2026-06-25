@@ -273,7 +273,7 @@ void main() {
     expect(soundService.calls, 1);
   });
 
-  test('dismissForSession clears notifications for the given session', () async {
+  test('v2 permission ask dispatches pending interaction feedback', () async {
     final settingsProvider = SettingsProvider(
       localDataSource: InMemoryAppLocalDataSource(),
       dioClient: DioClient(),
@@ -287,8 +287,41 @@ void main() {
       soundService: _FakeSoundService(),
     );
 
-    await dispatcher.dismissForSession('ses_clear');
+    await dispatcher.handle(
+      const ChatEvent(
+        type: 'permission.v2.asked',
+        properties: <String, dynamic>{
+          'request': <String, dynamic>{'id': 'perm_v2', 'sessionID': 'ses_v2'},
+        },
+      ),
+      sessionTitleHint: 'Background task',
+      currentSessionId: 'ses_current',
+    );
 
-    expect(notificationService.clearedSessionId, 'ses_clear');
+    expect(notificationService.lastCategory, 'permissions');
+    expect(notificationService.lastSessionId, 'ses_v2');
+    expect(notificationService.lastTitle, 'Background task');
   });
+
+  test(
+    'dismissForSession clears notifications for the given session',
+    () async {
+      final settingsProvider = SettingsProvider(
+        localDataSource: InMemoryAppLocalDataSource(),
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await settingsProvider.initialize();
+      final notificationService = _FakeNotificationService();
+      final dispatcher = EventFeedbackDispatcher(
+        settingsProvider: settingsProvider,
+        notificationService: notificationService,
+        soundService: _FakeSoundService(),
+      );
+
+      await dispatcher.dismissForSession('ses_clear');
+
+      expect(notificationService.clearedSessionId, 'ses_clear');
+    },
+  );
 }

@@ -145,8 +145,13 @@ class EventFeedbackDispatcher {
     );
     switch (event.type) {
       case 'permission.asked':
+      case 'permission.updated':
+      case 'permission.v2.asked':
+      case 'permission.v2.updated':
       case 'question.asked':
       case 'question.updated':
+      case 'question.v2.asked':
+      case 'question.v2.updated':
         return _FeedbackSignal(
           notificationCategory: NotificationCategory.permissions,
           soundCategory: SoundCategory.permissions,

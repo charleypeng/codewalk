@@ -1566,6 +1566,60 @@ void main() {
     );
 
     test(
+      'message.created for non-current session does not fetch background payload',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+        chatRepository.messagesBySession['ses_2'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_background_done',
+            sessionId: 'ses_2',
+            time: DateTime.fromMillisecondsSinceEpoch(1600),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1700),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_background_done',
+                messageId: 'msg_background_done',
+                sessionId: 'ses_2',
+                text: 'done in background',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        final callsBeforeEvent = chatRepository.getMessageCallCount;
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.created',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'id': 'msg_background_done',
+                'sessionID': 'ses_2',
+              },
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(provider.currentSession?.id, 'ses_1');
+        expect(chatRepository.getMessageCallCount, callsBeforeEvent);
+      },
+    );
+
+    test(
       'session.idle no longer triggers fallback refresh for current session completion',
       () async {
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[

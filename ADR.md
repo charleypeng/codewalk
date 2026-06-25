@@ -161,6 +161,8 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 
 **Note** (commit `161b9ce`): Tightened current-session active-turn detection — incomplete `assistant`/`current` sending state remains active even if idle status arrives early, preventing premature turn completion detection. Also narrowed unsupported global `message.*` fallback reconcile — only the visible current session can trigger active-session refresh when no active local stream/compaction guard is in effect.
 
+**Note** (issue #83): Per-session event-scope policy — the realtime stream remains authoritative, but event application is now scoped by whether the session is the current one. The **active session keeps full realtime** behavior (full messages, diffs, todos applied as they arrive). **Non-current sessions do not fetch or apply full message payloads, message diffs, or todos from SSE**; their status signals are summarized/deduped by event type rather than expanded into per-message work, keeping background contexts cheap to track. The following categories remain **alertable/indicator-producing across all sessions** (including non-current): permission/question requests (v1 and v2), `session.error`, and `session.idle` / final-completion transitions. **Inactive context snapshots now receive `session.error` and permission/question state**, so background context indicators stay coherent when the user returns. **Re-entering a session relies on cache-first SWR plus active revalidation** — see ADR-020. This is a pure client-side routing/filtering layer over existing OpenCode SSE events: no server contract changes, no new endpoints, no semantic drift from the official event stream (ADR-023 compliant).
+
 ### Key Files
 
 - `lib/presentation/providers/chat_provider/chat_provider_realtime_ops.dart`
@@ -859,7 +861,7 @@ Adopt a cache-first SWR policy per session:
 2. Persist recent per-session message snapshots through ADR-016 local storage helpers plus SharedPreferences metadata for recency and timestamps.
 3. On `selectSession`, restore cached messages immediately when available and trigger background `loadMessages(...preserveVisibleState: true)` revalidation.
 4. Project Switch Fast-Path: During workspace/project transitions (`serverId::directory`), prioritize restoring the last known session snapshot for that context from cache immediately, bypassing the full "loading" state if valid data exists.
-5. Keep full-fetch correctness path, but incrementally patch non-current session caches on `message.created` / `message.updated` via single-message fallback fetch.
+5. Defer non-current session message payloads — full message bodies, diffs, and todos from SSE are NOT fetched or applied for non-current sessions. While a session is non-current, the realtime stream is scoped to summarized status and alertable event categories only (see ADR-003); full message payload work is deferred until the session becomes current again, at which point the cache-first SWR restore (point 3) and active revalidation take over.
 6. Virtual History Loading: Implement top-scroll pagination by plumbing optional `limit` through the message read stack and adding a `loadOlderMessages()` flow. The UI maintains scroll anchor position across history injections to prevent layout shifts.
 
 ### Rationale
@@ -868,7 +870,7 @@ Adopt a cache-first SWR policy per session:
 - SWR keeps correctness by still revalidating against server state.
 - Project-switch fast-path specifically targets the latency-sensitive workspace transition, where waiting for network before showing *any* chat history creates high friction.
 - Per-session persistence extends ADR-016 beyond one snapshot and keeps cache useful across app restarts.
-- Event-assisted patching improves freshness for background sessions even without a server delta endpoint.
+- Deferring non-current session message work keeps background contexts cheap to track; freshness for non-current sessions comes from alertable/summarized status only, with full reconciliation deferred to the next SWR restore on session re-entry (ADR-003 owns the event-scope policy).
 - Top-scroll pagination enables browsing long histories without high initial memory/latency costs.
 - Anchor restoration ensures a smooth reading experience when prepending messages.
 
@@ -882,6 +884,8 @@ Adopt a cache-first SWR policy per session:
 - ⚠ Cache metadata/key management is more complex (LRU list + per-session timestamps).
 - ⚠ Scroll anchor restoration logic adds complexity to the ChatPage list controller.
 - ❌ No true server-side delta endpoint yet; full-fetch fallback remains necessary for correctness.
+
+**Note** (issue #83): Per-session event-scope policy interaction — re-entering a session restores the persisted snapshot immediately (cache-first SWR) and reconciles against the server through active revalidation. While a session is non-current, the realtime stream feeds only summarized status and alertable event categories (permission/question v1/v2, `session.error`, `session.idle` / final completion); full message payloads, diffs, and todos are deferred until the session becomes current again, at which point this SWR path takes over. See ADR-003 for the full event-scope policy.
 
 ### Key Files
 

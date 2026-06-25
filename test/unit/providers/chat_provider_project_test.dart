@@ -1803,6 +1803,54 @@ void main() {
         expect(unreadAttention.isActive, isFalse);
         expect(unreadAttention.hasUnreadCompletion, isTrue);
         expect(unreadAttention.unreadCompletionAt, isNotNull);
+
+        scopedRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'question.asked',
+            properties: <String, dynamic>{
+              'directory': '/repo/a',
+              'id': 'question_inactive_project',
+              'sessionID': 'ses_a_old',
+              'questions': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'question': 'Proceed in inactive project?',
+                  'header': 'Inactive project',
+                  'options': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'label': 'Yes',
+                      'description': 'Continue',
+                    },
+                  ],
+                },
+              ],
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final pendingAttention = scopedProvider.sessionAttentionForScope(
+          'ses_a_old',
+          scopeId: '/repo/a',
+        );
+        expect(pendingAttention.hasPendingInteraction, isTrue);
+
+        scopedRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'question.replied',
+            properties: <String, dynamic>{
+              'directory': '/repo/a',
+              'sessionID': 'ses_a_old',
+              'requestID': 'question_inactive_project',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final clearedAttention = scopedProvider.sessionAttentionForScope(
+          'ses_a_old',
+          scopeId: '/repo/a',
+        );
+        expect(clearedAttention.hasPendingInteraction, isFalse);
       },
     );
 
