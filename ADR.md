@@ -45,6 +45,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-039: Real Windows STT Fix — Actionable Settings Links and Typed Microphone Preflight
 - ADR-040: Client-Owned Per-Project Icon Discovery
 - ADR-041: Chat Stability Invariants for Delta Reconciliation and Final Reveal
+- ADR-042: Global App Logs Toggle with Default-Off and Lazy Performance Instrumentation
 
 ---
 
@@ -2330,3 +2331,71 @@ This ADR is fully compliant with ADR-023. No OpenCode server contract is changed
 - `test/unit/providers/chat_provider_realtime_test.dart` — regression coverage for monotonic merge and completion guard
 - `test/widget/chat_page_test.dart` — regression coverage for final reveal, FAB visibility, and older-message prepend
 - Ref: issue #76
+
+---
+
+## ADR-042: Global App Logs Toggle with Default-Off and Lazy Performance Instrumentation (2026-06-25)
+
+**Status**: Accepted
+
+**Related**: ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy). Ref: issue #91.
+
+### Context
+
+CodeWalk accumulates in-memory app logs and emits performance instrumentation (operation timings, span contexts, payload captures) across the runtime. Some of this work is observable to the user through an App Logs surface; some is internal telemetry used for diagnostics. Both paths consume CPU and memory even when the user has not asked for that information.
+
+Historically, a `performanceLoggingEnabled` flag existed in `ExperienceSettings` (ADR-007), but there was no user-facing App Logs toggle and the default for new installs and at startup was effectively "on" — app logs accumulated from first launch and some performance-instrumentation call sites still built diagnostic context before the logger could decide whether to emit a timing entry. New users therefore paid a cost for a feature they never asked to enable, and there was no clear way to turn the App Logs surface off without disabling diagnostic support entirely. Legacy installs may also have `performanceLoggingEnabled = true` persisted with no explicit `loggingEnabled` value, creating an ambiguous state once a unified logging toggle is introduced.
+
+### Decision
+
+1. **Global App Logs toggle (`loggingEnabled`) in `ExperienceSettings`** — Add a single user-facing boolean that controls whether the App Logs surface and its in-memory buffer are active. Default value is `false` for new installs and at startup, so a fresh launch does not accumulate logs unless the user explicitly opts in.
+
+2. **Explicit user preference preserved** — When the user has explicitly set `loggingEnabled` (true or false), that value is persisted and restored verbatim on subsequent launches. The migration below only applies to legacy state where no explicit `loggingEnabled` is present.
+
+3. **Legacy migration** — On settings hydration, if the persisted payload contains `performanceLoggingEnabled = true` and no `loggingEnabled` field, copy that intent forward by setting `loggingEnabled = true`. This honors the user's earlier opt-in to performance-related logging without silently flipping the new toggle on for users who never had a logging preference. `performanceLoggingEnabled` itself is left intact for backward compatibility with code that still reads it.
+
+4. **Buffer clear on disable** — When `loggingEnabled` flips to `false` at runtime, the in-memory app log buffer is cleared immediately so the user does not see stale entries in the App Logs surface after opting out. The buffer remains empty while the toggle is off; future log emissions are dropped at the source.
+
+5. **Lazy performance context while logging is off** — Performance instrumentation call sites that need diagnostic context (operation timing tags, safe IDs, payload sizes) pass a lazy `contextBuilder` callback. `AppLogger` invokes that callback only after the effective performance gate is still enabled, including after async work completes. The call sites continue to compile and run, but the per-call work of hashing IDs and allocating context maps is skipped while logging or performance logging is off. This keeps the hot path cheap for the default-off case without scattering broad conditional logic through call sites.
+
+6. **Settings UI** — The settings surface exposes the new `loggingEnabled` toggle with a clear label that it controls the App Logs surface. The migration is transparent: legacy users who had performance logging on will see the toggle enabled after first launch on the new build.
+
+### Rationale
+
+- A single global toggle is simpler to reason about than two coupled flags and matches the user's mental model ("do I want app logs running or not?").
+- Defaulting to off respects the mobile-first UX principle: background work the user did not request should not run by default, especially on battery-constrained devices.
+- Preserving an explicit `loggingEnabled` choice is non-negotiable — silently overriding a value the user set would create a worse UX than the original problem.
+- The legacy migration is one-directional and lossless: it only flips `loggingEnabled` on for users who had the older, narrower `performanceLoggingEnabled` flag on. Users with no logging history stay off.
+- Clearing the buffer on disable avoids showing stale log entries after the user has decided they do not want logs; this is a predictable "off means off" UX guarantee.
+- Lazy context builders are the smallest-blast-radius way to gate expensive performance-log context without scattering `if (loggingEnabled)` checks through every call site, and they keep the call sites statically analyzable.
+- This change is entirely client-side: no OpenCode contract change, no new endpoints, no server payload modifications — fully compatible with ADR-023.
+
+### Consequences
+
+- ✅ New installs and startups default to App Logs off, eliminating background log accumulation and performance-instrumentation overhead for users who do not opt in.
+- ✅ Users with an explicit `loggingEnabled` preference keep it verbatim across upgrades.
+- ✅ Legacy users with `performanceLoggingEnabled = true` and no `loggingEnabled` get the new toggle flipped on, preserving their previous opt-in intent.
+- ✅ Disabling `loggingEnabled` at runtime clears the in-memory buffer and prevents further log emissions from accumulating.
+- ✅ Performance-log context at expensive call sites is gated by lazy context builders, so the default-off hot path stays cheap.
+- ✅ No server contract change — fully ADR-023 compliant.
+- ⚠ The migration is keyed on the legacy `performanceLoggingEnabled = true` condition; future renames of that flag require updating the migration check.
+- ⚠ The effective performance gate still runs on every instrumented operation. This is intentional — it is cheaper than always building diagnostic context, but not free.
+- ❌ Users who relied on implicit-on logging on first launch must explicitly enable the App Logs toggle to see logs.
+
+### ADR-023 Compatibility
+
+This ADR is fully compliant with ADR-023. It introduces no OpenCode server contract change, no new endpoints, and no modification to existing request/response schemas or lifecycle semantics. The toggle, the migration, the buffer-clear behavior, and the lazy performance instrumentation are all client-side concerns operating on local preference state. Server-authoritative behavior and event semantics are unchanged.
+
+### Key Files
+
+- `lib/core/logging/app_logger.dart` — in-memory app log buffer, global emission gate, effective performance gate, clear-on-disable, and lazy `contextBuilder` support
+- `lib/domain/entities/experience_settings.dart` — `loggingEnabled` field, default-off value, and legacy `performanceLoggingEnabled` → `loggingEnabled` migration
+- `lib/presentation/providers/settings_provider.dart` — toggle persistence, AppLogger synchronization, and buffer-clear hook on disable
+- `lib/presentation/pages/logs_page.dart` — `Enable app logging` toggle, disabled-state explanation, and re-enable action
+- `lib/data/datasources/app_local_datasource_storage_helpers.dart` — lazy cache-performance context builders for large cache read/write/migration paths
+- `lib/presentation/providers/chat_provider.dart` — lazy context builders for session/message performance paths
+- `lib/presentation/providers/project_provider.dart` — lazy context builders for project/directory switch performance paths
+- `test/unit/logging/app_logger_performance_test.dart` — global gate, effective performance gate, lazy context, and in-flight disable coverage
+- `test/unit/domain/experience_settings_test.dart` — default-off, explicit preservation, and legacy migration coverage
+- `test/widget/logs_page_test.dart` — LogsPage disabled/default/toggle behavior and performance filter coverage
+- Ref: issue #91

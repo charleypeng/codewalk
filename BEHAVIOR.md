@@ -1635,13 +1635,34 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 ## Debug Logging
 
+### App logging is opt-in and default off
+
+- **Given** CodeWalk is installed for the first time
+- **When** the user opens `App Logs`
+- **Then** app logging is disabled by default
+- **Then** CodeWalk does not collect runtime app log entries until the user enables `Enable app logging`
+- **Then** the logs screen clearly states that logging is disabled and offers an `Enable logging` action
+- **When** the user enables `Enable app logging`
+- **Then** CodeWalk starts collecting in-memory diagnostic app logs for the current runtime session
+- **When** the user disables `Enable app logging`
+- **Then** CodeWalk clears the current in-memory app log buffer and stops collecting new normal or performance log entries
+- **Then** search, export, slowest-performance, and performance-filter controls stop exposing disabled logging data until logging is re-enabled
+- **Given** an existing installation already has an explicit `loggingEnabled` preference
+- **When** CodeWalk starts after upgrade
+- **Then** that explicit preference is preserved
+- **Given** an existing installation enabled the older `Measure performance` diagnostic preference before the global logging toggle existed
+- **When** CodeWalk migrates settings with no explicit `loggingEnabled` key
+- **Then** CodeWalk treats that performance logging opt-in as a diagnostic opt-in and enables app logging so the existing preference keeps working
+
 ### Performance logging is opt-in and persisted
 
 - **Given** CodeWalk is installed for the first time
 - **When** the user opens `App Logs`
 - **Then** performance measurement is disabled by default
+- **Then** the `Measure performance` switch is unavailable while app logging is globally disabled
 - **When** the user enables `Measure performance` on the logs screen
 - **Then** CodeWalk persists that choice and starts recording timing entries for selected expensive operations
+- **Then** timing entries are only collected while both `Enable app logging` and `Measure performance` are enabled
 - **Then** disabling the same option stops new performance timing entries while preserving existing captured logs until the log buffer is cleared or rotated
 - **Then** captured timing entries include chat/session load, message load, large cache reads/writes, legacy cache migration, session snapshot restore/write, HTTP requests, project/directory switch, chat selection changes, selection persistence, ChatProvider listener dispatch, and chat settlement/viewport scans
 
