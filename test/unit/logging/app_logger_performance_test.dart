@@ -77,6 +77,26 @@ void main() {
     );
   });
 
+  test('does not build lazy context when disabled during async task', () async {
+    AppLogger.setLoggingEnabled(true);
+    AppLogger.setPerformanceLoggingEnabled(true);
+    var contextBuilt = false;
+
+    await AppLogger.runPerformanceTask(
+      'cache_read',
+      () async {
+        AppLogger.setLoggingEnabled(false);
+      },
+      contextBuilder: () {
+        contextBuilt = true;
+        return const <String, Object?>{'keyHash': 'abc123'};
+      },
+    );
+
+    expect(contextBuilt, isFalse);
+    expect(AppLogger.entries.value, isEmpty);
+  });
+
   test('records tags and metrics while enabled', () async {
     AppLogger.setLoggingEnabled(true);
     AppLogger.setPerformanceLoggingEnabled(true);

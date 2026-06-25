@@ -221,25 +221,29 @@ class AppLogger {
     try {
       final result = await body();
       stopwatch.stop();
-      recordPerformanceTask(
-        operation: operation,
-        elapsed: stopwatch.elapsed,
-        status: 'ok',
-        tags: tags,
-        context: _buildPerformanceContext(context, contextBuilder),
-      );
+      if (performanceLoggingEnabled) {
+        recordPerformanceTask(
+          operation: operation,
+          elapsed: stopwatch.elapsed,
+          status: 'ok',
+          tags: tags,
+          context: _buildPerformanceContext(context, contextBuilder),
+        );
+      }
       return result;
     } catch (error, stackTrace) {
       stopwatch.stop();
-      recordPerformanceTask(
-        operation: operation,
-        elapsed: stopwatch.elapsed,
-        status: 'error',
-        tags: tags,
-        context: _buildPerformanceContext(context, contextBuilder),
-        error: error,
-        stackTrace: stackTrace,
-      );
+      if (performanceLoggingEnabled) {
+        recordPerformanceTask(
+          operation: operation,
+          elapsed: stopwatch.elapsed,
+          status: 'error',
+          tags: tags,
+          context: _buildPerformanceContext(context, contextBuilder),
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
@@ -259,25 +263,29 @@ class AppLogger {
     try {
       final result = body();
       stopwatch.stop();
-      recordPerformanceTask(
-        operation: operation,
-        elapsed: stopwatch.elapsed,
-        status: 'ok',
-        tags: tags,
-        context: _buildPerformanceContext(context, contextBuilder),
-      );
+      if (performanceLoggingEnabled) {
+        recordPerformanceTask(
+          operation: operation,
+          elapsed: stopwatch.elapsed,
+          status: 'ok',
+          tags: tags,
+          context: _buildPerformanceContext(context, contextBuilder),
+        );
+      }
       return result;
     } catch (error, stackTrace) {
       stopwatch.stop();
-      recordPerformanceTask(
-        operation: operation,
-        elapsed: stopwatch.elapsed,
-        status: 'error',
-        tags: tags,
-        context: _buildPerformanceContext(context, contextBuilder),
-        error: error,
-        stackTrace: stackTrace,
-      );
+      if (performanceLoggingEnabled) {
+        recordPerformanceTask(
+          operation: operation,
+          elapsed: stopwatch.elapsed,
+          status: 'error',
+          tags: tags,
+          context: _buildPerformanceContext(context, contextBuilder),
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
