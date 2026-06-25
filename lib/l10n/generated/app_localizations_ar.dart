@@ -1739,6 +1739,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logsLevel => 'المستوى';
 
   @override
+  String get logsEnableLogging => 'تفعيل سجلات التطبيق';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'يجمع سجلات تشخيصية في الذاكرة. اتركه معطلاً إلا عند استكشاف مشكلة.';
+
+  @override
+  String get logsEnableLoggingAction => 'تفعيل السجلات';
+
+  @override
+  String get logsLoggingDisabledTitle => 'السجلات معطلة';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'لا يجمع CodeWalk سجلات تفصيلية للتطبيق. فعّل السجلات فقط عند الحاجة إلى التشخيص.';
+
+  @override
   String get logsMeasurePerformance => 'قياس الأداء';
 
   @override

@@ -1655,6 +1655,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsLevel => '级别';
 
   @override
+  String get logsEnableLogging => '启用应用日志';
+
+  @override
+  String get logsEnableLoggingDescription => '在内存中收集诊断日志。除非排查问题，否则保持关闭。';
+
+  @override
+  String get logsEnableLoggingAction => '启用日志';
+
+  @override
+  String get logsLoggingDisabledTitle => '日志已关闭';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk 未收集详细应用日志。仅在需要诊断时启用日志。';
+
+  @override
   String get logsMeasurePerformance => '测量性能';
 
   @override

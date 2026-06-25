@@ -1685,6 +1685,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsLevel => '로그 레벨';
 
   @override
+  String get logsEnableLogging => '앱 로그 켜기';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      '메모리에 진단 로그를 수집합니다. 문제를 진단할 때가 아니면 꺼두세요.';
+
+  @override
+  String get logsEnableLoggingAction => '로그 켜기';
+
+  @override
+  String get logsLoggingDisabledTitle => '로그가 꺼져 있습니다';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk가 자세한 앱 로그를 수집하지 않습니다. 진단이 필요할 때만 로그를 켜세요.';
+
+  @override
   String get logsMeasurePerformance => '성능 측정';
 
   @override

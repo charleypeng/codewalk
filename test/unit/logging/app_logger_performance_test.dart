@@ -4,21 +4,55 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   setUp(() {
     AppLogger.clearEntries();
+    AppLogger.setLoggingEnabled(false);
     AppLogger.setPerformanceLoggingEnabled(false);
   });
 
   tearDown(() {
     AppLogger.clearEntries();
+    AppLogger.setLoggingEnabled(false);
     AppLogger.setPerformanceLoggingEnabled(false);
   });
 
+  test('does not record regular logs while global logging is disabled', () {
+    AppLogger.info('regular message');
+    AppLogger.warn('warning message');
+    AppLogger.error('error message');
+
+    expect(AppLogger.loggingEnabled, isFalse);
+    expect(AppLogger.entries.value, isEmpty);
+  });
+
+  test('records regular logs while global logging is enabled', () {
+    AppLogger.setLoggingEnabled(true);
+
+    AppLogger.info('regular message');
+
+    expect(AppLogger.loggingEnabled, isTrue);
+    expect(AppLogger.entries.value.single.message, 'regular message');
+  });
+
   test('does not record performance tasks while disabled', () async {
+    AppLogger.setLoggingEnabled(true);
+
     await AppLogger.runPerformanceTask('load_messages', () async {});
 
     expect(AppLogger.entries.value, isEmpty);
   });
 
+  test(
+    'does not record performance tasks while global logging is disabled',
+    () async {
+      AppLogger.setPerformanceLoggingEnabled(true);
+
+      await AppLogger.runPerformanceTask('load_messages', () async {});
+
+      expect(AppLogger.entries.value, isEmpty);
+    },
+  );
+
   test('records tags and metrics while enabled', () async {
+    AppLogger.setLoggingEnabled(true);
     AppLogger.setPerformanceLoggingEnabled(true);
 
     await AppLogger.runPerformanceTask(
@@ -45,6 +79,7 @@ void main() {
   });
 
   test('redacts sensitive metric keys', () async {
+    AppLogger.setLoggingEnabled(true);
     AppLogger.setPerformanceLoggingEnabled(true);
 
     await AppLogger.runPerformanceTask(
@@ -63,6 +98,7 @@ void main() {
   });
 
   test('round-trips performance entries through json', () async {
+    AppLogger.setLoggingEnabled(true);
     AppLogger.setPerformanceLoggingEnabled(true);
 
     await AppLogger.runPerformanceTask('cache_read', () async {});

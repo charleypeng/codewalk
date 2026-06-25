@@ -1790,6 +1790,23 @@ class AppLocalizationsIt extends AppLocalizations {
   String get logsLevel => 'Livello';
 
   @override
+  String get logsEnableLogging => 'Attiva log app';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'Raccoglie log diagnostici in memoria. Tienilo disattivato salvo quando risolvi problemi.';
+
+  @override
+  String get logsEnableLoggingAction => 'Attiva log';
+
+  @override
+  String get logsLoggingDisabledTitle => 'Log disattivati';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk non sta raccogliendo log dettagliati dell\'app. Attiva i log solo quando servono diagnosi.';
+
+  @override
   String get logsMeasurePerformance => 'Misura prestazioni';
 
   @override

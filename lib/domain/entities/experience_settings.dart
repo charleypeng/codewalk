@@ -685,6 +685,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod: true,
       syncResumeGracePeriod: kDefaultSyncResumeGracePeriod,
       enableExperimentalMultiDeviceSync: false,
+      loggingEnabled: false,
       performanceLoggingEnabled: false,
       themeMode: ThemeModeOption.system,
       localeCode: null,
@@ -743,6 +744,7 @@ class ExperienceSettings {
     required this.keepMobileRealtimeForShortPeriod,
     required this.syncResumeGracePeriod,
     this.enableExperimentalMultiDeviceSync = false,
+    this.loggingEnabled = false,
     this.performanceLoggingEnabled = false,
     this.themeMode = ThemeModeOption.system,
     this.localeCode,
@@ -801,6 +803,7 @@ class ExperienceSettings {
   final bool keepMobileRealtimeForShortPeriod;
   final Duration syncResumeGracePeriod;
   final bool enableExperimentalMultiDeviceSync;
+  final bool loggingEnabled;
   final bool performanceLoggingEnabled;
   final ThemeModeOption themeMode;
   final String? localeCode;
@@ -859,6 +862,7 @@ class ExperienceSettings {
     bool? keepMobileRealtimeForShortPeriod,
     Duration? syncResumeGracePeriod,
     bool? enableExperimentalMultiDeviceSync,
+    bool? loggingEnabled,
     bool? performanceLoggingEnabled,
     ThemeModeOption? themeMode,
     String? Function()? localeCode,
@@ -937,6 +941,7 @@ class ExperienceSettings {
       enableExperimentalMultiDeviceSync:
           enableExperimentalMultiDeviceSync ??
           this.enableExperimentalMultiDeviceSync,
+      loggingEnabled: loggingEnabled ?? this.loggingEnabled,
       performanceLoggingEnabled:
           performanceLoggingEnabled ?? this.performanceLoggingEnabled,
       themeMode: themeMode ?? this.themeMode,
@@ -1041,6 +1046,7 @@ class ExperienceSettings {
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'syncResumeGracePeriodMs': syncResumeGracePeriod.inMilliseconds,
       'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
+      'loggingEnabled': loggingEnabled,
       'performanceLoggingEnabled': performanceLoggingEnabled,
       'themeMode': themeModeOptionKey(themeMode),
       if (localeCode != null) 'localeCode': localeCode,
@@ -1118,6 +1124,7 @@ class ExperienceSettings {
     var syncResumeGracePeriod = defaults.syncResumeGracePeriod;
     var enableExperimentalMultiDeviceSync =
         defaults.enableExperimentalMultiDeviceSync;
+    var loggingEnabled = defaults.loggingEnabled;
     var performanceLoggingEnabled = defaults.performanceLoggingEnabled;
     var speechToTextEngine = defaults.speechToTextEngine;
     var speechSilenceTimeoutSeconds = defaults.speechSilenceTimeoutSeconds;
@@ -1371,6 +1378,11 @@ class ExperienceSettings {
       enableExperimentalMultiDeviceSync = enableExperimentalMultiDeviceSyncJson;
     }
 
+    final loggingEnabledJson = json['loggingEnabled'];
+    if (loggingEnabledJson is bool) {
+      loggingEnabled = loggingEnabledJson;
+    }
+
     final performanceLoggingEnabledJson = json['performanceLoggingEnabled'];
     if (performanceLoggingEnabledJson is bool) {
       performanceLoggingEnabled = performanceLoggingEnabledJson;
@@ -1547,6 +1559,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       syncResumeGracePeriod: syncResumeGracePeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
+      loggingEnabled: loggingEnabled,
       performanceLoggingEnabled: performanceLoggingEnabled,
       themeMode: themeMode,
       localeCode: localeCode,

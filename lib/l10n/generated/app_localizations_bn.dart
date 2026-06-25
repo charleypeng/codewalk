@@ -1768,6 +1768,23 @@ class AppLocalizationsBn extends AppLocalizations {
   String get logsLevel => 'স্তর';
 
   @override
+  String get logsEnableLogging => 'অ্যাপ লগ চালু করুন';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'মেমরিতে ডায়াগনস্টিক লগ সংগ্রহ করে। সমস্যা সমাধান না করলে বন্ধ রাখুন।';
+
+  @override
+  String get logsEnableLoggingAction => 'লগ চালু করুন';
+
+  @override
+  String get logsLoggingDisabledTitle => 'লগ বন্ধ আছে';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk বিস্তারিত অ্যাপ লগ সংগ্রহ করছে না। ডায়াগনস্টিক প্রয়োজন হলে তবেই লগ চালু করুন।';
+
+  @override
   String get logsMeasurePerformance => 'পারফরম্যান্স মাপুন';
 
   @override

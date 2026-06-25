@@ -163,12 +163,13 @@ class DioClient {
 
           _applyStickySessionHeader(options);
 
-          if (AppLogger.performanceLoggingEnabled || !kReleaseMode) {
+          if (AppLogger.loggingEnabled &&
+              (AppLogger.performanceLoggingEnabled || !kReleaseMode)) {
             options.extra[_performanceRequestStartMsKey] =
                 DateTime.now().millisecondsSinceEpoch;
           }
 
-          if (!kReleaseMode) {
+          if (!kReleaseMode && AppLogger.loggingEnabled) {
             final uri = options.uri.toString();
             AppLogger.debug('[Dio] --> ${options.method.toUpperCase()} $uri');
           }
@@ -179,7 +180,7 @@ class DioClient {
           _rememberStickySessionId(
             response.headers.value(_stickySessionIdHeader),
           );
-          if (!kReleaseMode) {
+          if (!kReleaseMode && AppLogger.loggingEnabled) {
             final startMs =
                 response.requestOptions.extra[_performanceRequestStartMsKey]
                     as int?;
@@ -204,7 +205,7 @@ class DioClient {
           _rememberStickySessionId(
             error.response?.headers.value(_stickySessionIdHeader),
           );
-          if (!kReleaseMode) {
+          if (!kReleaseMode && AppLogger.loggingEnabled) {
             final uri = error.requestOptions.uri.toString();
             final method = error.requestOptions.method.toUpperCase();
             final status = error.response?.statusCode;
@@ -236,7 +237,7 @@ class DioClient {
     Object? error,
     StackTrace? stackTrace,
   }) {
-    if (!AppLogger.performanceLoggingEnabled) {
+    if (!AppLogger.loggingEnabled || !AppLogger.performanceLoggingEnabled) {
       return;
     }
     final startMs = options.extra[_performanceRequestStartMsKey] as int?;
@@ -277,7 +278,7 @@ class DioClient {
 
           _applyStickySessionHeader(options);
 
-          if (!kReleaseMode) {
+          if (!kReleaseMode && AppLogger.loggingEnabled) {
             final uri = options.uri.toString();
             AppLogger.debug('[SSE] --> ${options.method.toUpperCase()} $uri');
           }
@@ -293,7 +294,7 @@ class DioClient {
           _rememberStickySessionId(
             error.response?.headers.value(_stickySessionIdHeader),
           );
-          if (!kReleaseMode) {
+          if (!kReleaseMode && AppLogger.loggingEnabled) {
             final uri = error.requestOptions.uri.toString();
             final method = error.requestOptions.method.toUpperCase();
             final status = error.response?.statusCode;

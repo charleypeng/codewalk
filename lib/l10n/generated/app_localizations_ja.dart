@@ -1682,6 +1682,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsLevel => 'レベル';
 
   @override
+  String get logsEnableLogging => 'アプリログを有効化';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'メモリ内に診断ログを収集します。トラブルシュート時以外はオフのままにしてください。';
+
+  @override
+  String get logsEnableLoggingAction => 'ログを有効化';
+
+  @override
+  String get logsLoggingDisabledTitle => 'ログは無効です';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk は詳細なアプリログを収集していません。診断が必要な場合のみログを有効にしてください。';
+
+  @override
   String get logsMeasurePerformance => 'パフォーマンスを測定';
 
   @override

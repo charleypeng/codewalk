@@ -15,11 +15,13 @@ import '../support/pump_localized_app.dart';
 void main() {
   setUp(() {
     AppLogger.clearEntries();
+    AppLogger.setLoggingEnabled(false);
     AppLogger.setPerformanceLoggingEnabled(false);
   });
 
   tearDown(() {
     AppLogger.clearEntries();
+    AppLogger.setLoggingEnabled(false);
     AppLogger.setPerformanceLoggingEnabled(false);
   });
 
@@ -40,6 +42,7 @@ void main() {
 
   testWidgets('renders, filters, and clears logs', (tester) async {
     final provider = buildSettingsProvider(InMemoryAppLocalDataSource());
+    await provider.setLoggingEnabled(true);
     AppLogger.info('alpha message');
     AppLogger.warn('beta message');
 
@@ -64,6 +67,54 @@ void main() {
     expect(find.text('No logs captured yet.'), findsOneWidget);
   });
 
+  testWidgets('defaults app logging off and toggles collection', (
+    tester,
+  ) async {
+    final local = InMemoryAppLocalDataSource();
+    final provider = buildSettingsProvider(local);
+
+    AppLogger.info('hidden message');
+
+    await tester.pumpWidget(
+      localizedMaterialApp(home: logsPageWithProvider(provider)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(provider.loggingEnabled, isFalse);
+    expect(AppLogger.loggingEnabled, isFalse);
+    expect(AppLogger.entries.value, isEmpty);
+    expect(find.text('Logging is disabled'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Enable logging'));
+    await tester.tap(find.text('Enable logging'));
+    await tester.pumpAndSettle();
+
+    expect(provider.loggingEnabled, isTrue);
+    expect(AppLogger.loggingEnabled, isTrue);
+    final persistedEnabled = jsonDecode(local.experienceSettingsJson!);
+    expect(persistedEnabled['loggingEnabled'], isTrue);
+
+    AppLogger.info('visible message');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('visible message'), findsOneWidget);
+
+    await tester.tap(find.text('Enable app logging'));
+    await tester.pumpAndSettle();
+
+    expect(provider.loggingEnabled, isFalse);
+    expect(AppLogger.loggingEnabled, isFalse);
+    expect(AppLogger.entries.value, isEmpty);
+    final persistedDisabled = jsonDecode(local.experienceSettingsJson!);
+    expect(persistedDisabled['loggingEnabled'], isFalse);
+
+    AppLogger.info('hidden again');
+    await tester.pumpAndSettle();
+
+    expect(AppLogger.entries.value, isEmpty);
+    expect(find.textContaining('hidden again'), findsNothing);
+  });
+
   testWidgets('toggles, persists, and filters performance logs', (
     tester,
   ) async {
@@ -74,6 +125,16 @@ void main() {
       localizedMaterialApp(home: logsPageWithProvider(provider)),
     );
     await tester.pumpAndSettle();
+
+    expect(provider.loggingEnabled, isFalse);
+    expect(AppLogger.loggingEnabled, isFalse);
+    expect(find.text('Logging is disabled'), findsOneWidget);
+
+    await tester.tap(find.text('Enable app logging'));
+    await tester.pumpAndSettle();
+
+    expect(provider.loggingEnabled, isTrue);
+    expect(AppLogger.loggingEnabled, isTrue);
 
     expect(provider.performanceLoggingEnabled, isFalse);
     expect(AppLogger.performanceLoggingEnabled, isFalse);
@@ -90,8 +151,13 @@ void main() {
     await AppLogger.runPerformanceTask('load_messages', () async {});
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('regular message'), findsOneWidget);
     expect(find.textContaining('PERFORMANCE load_messages'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('regular message'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.textContaining('regular message'), findsOneWidget);
 
     await tester.tap(find.text('Performance'));
     await tester.pumpAndSettle();

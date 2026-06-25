@@ -1784,6 +1784,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logsLevel => 'Уровень';
 
   @override
+  String get logsEnableLogging => 'Включить логи приложения';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'Сохраняет диагностические логи в памяти. Оставляйте выключенным, если не устраняете проблему.';
+
+  @override
+  String get logsEnableLoggingAction => 'Включить логи';
+
+  @override
+  String get logsLoggingDisabledTitle => 'Логи отключены';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk не собирает подробные логи приложения. Включайте логи только когда нужна диагностика.';
+
+  @override
   String get logsMeasurePerformance => 'Измерять производительность';
 
   @override

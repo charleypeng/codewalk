@@ -585,6 +585,13 @@ const englishTemplate = <String, String>{
   'logsCopyFiltered': 'Copy filtered logs',
   'logsFilterAll': 'All',
   'logsLevel': 'Level',
+  'logsEnableLogging': 'Enable app logging',
+  'logsEnableLoggingDescription':
+      'Collect in-memory diagnostic logs. Keep this off unless you are troubleshooting.',
+  'logsEnableLoggingAction': 'Enable logging',
+  'logsLoggingDisabledTitle': 'Logging is disabled',
+  'logsLoggingDisabledDescription':
+      'CodeWalk is not collecting detailed app logs. Enable logging only when you need diagnostics.',
   'logsNoLogsYet': 'No logs captured yet.',
   'logsNoMatchingLogs': 'No logs match the current filters.',
   'logsSearch': 'Search logs',
@@ -2103,6 +2110,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'نسخ السجلات المصفاة',
     'logsFilterAll': 'الكل',
     'logsLevel': 'المستوى',
+    'logsEnableLogging': 'تفعيل سجلات التطبيق',
+    'logsEnableLoggingDescription':
+        'يجمع سجلات تشخيصية في الذاكرة. اتركه معطلاً إلا عند استكشاف مشكلة.',
+    'logsEnableLoggingAction': 'تفعيل السجلات',
+    'logsLoggingDisabledTitle': 'السجلات معطلة',
+    'logsLoggingDisabledDescription':
+        'لا يجمع CodeWalk سجلات تفصيلية للتطبيق. فعّل السجلات فقط عند الحاجة إلى التشخيص.',
     'logsNoLogsYet': 'لم يتم التقاط أي سجلات بعد.',
     'logsNoMatchingLogs': 'لا توجد سجلات تطابق الفلاتر الحالية.',
     'logsSearch': 'البحث في السجلات',
@@ -3644,6 +3658,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'ফিল্টার করা লগ কপি করুন',
     'logsFilterAll': 'সব',
     'logsLevel': 'স্তর',
+    'logsEnableLogging': 'অ্যাপ লগ চালু করুন',
+    'logsEnableLoggingDescription':
+        'মেমরিতে ডায়াগনস্টিক লগ সংগ্রহ করে। সমস্যা সমাধান না করলে বন্ধ রাখুন।',
+    'logsEnableLoggingAction': 'লগ চালু করুন',
+    'logsLoggingDisabledTitle': 'লগ বন্ধ আছে',
+    'logsLoggingDisabledDescription':
+        'CodeWalk বিস্তারিত অ্যাপ লগ সংগ্রহ করছে না। ডায়াগনস্টিক প্রয়োজন হলে তবেই লগ চালু করুন।',
     'logsNoLogsYet': 'এখনও কোনো লগ ক্যাপচার করা হয়নি।',
     'logsNoMatchingLogs': 'বর্তমান ফিল্টারগুলির সাথে কোনো লগ মিলছে না।',
     'logsSearch': 'লগ অনুসন্ধান করুন',
@@ -5228,6 +5249,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'Gefilterte Protokolle kopieren',
     'logsFilterAll': 'Alle',
     'logsLevel': 'Ebene',
+    'logsEnableLogging': 'App-Logging aktivieren',
+    'logsEnableLoggingDescription':
+        'Sammelt Diagnose-Logs im Arbeitsspeicher. Lassen Sie dies außer zur Fehlersuche deaktiviert.',
+    'logsEnableLoggingAction': 'Logging aktivieren',
+    'logsLoggingDisabledTitle': 'Logging ist deaktiviert',
+    'logsLoggingDisabledDescription':
+        'CodeWalk sammelt keine detaillierten App-Logs. Aktivieren Sie Logging nur, wenn Sie Diagnosedaten benötigen.',
     'logsNoLogsYet': 'Noch keine Logs erfasst.',
     'logsNoMatchingLogs': 'Keine Logs entsprechen den aktuellen Filtern.',
     'logsSearch': 'Protokolle suchen',
@@ -6830,6 +6858,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'Copiar registros filtrados',
     'logsFilterAll': 'Todos',
     'logsLevel': 'Nivel',
+    'logsEnableLogging': 'Activar registros de la app',
+    'logsEnableLoggingDescription':
+        'Recopila registros de diagnóstico en memoria. Manténgalo desactivado salvo al solucionar problemas.',
+    'logsEnableLoggingAction': 'Activar registros',
+    'logsLoggingDisabledTitle': 'Registros desactivados',
+    'logsLoggingDisabledDescription':
+        'CodeWalk no está recopilando registros detallados de la app. Active los registros solo cuando necesite diagnóstico.',
     'logsNoLogsYet': 'No hay registros capturados aún.',
     'logsNoMatchingLogs': 'Ningún registro coincide con los filtros actuales.',
     'logsSearch': 'Buscar registros',
@@ -8464,6 +8499,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'Copier les journaux filtrés',
     'logsFilterAll': 'Tous',
     'logsLevel': 'Niveau',
+    'logsEnableLogging': 'Activer les logs de l\'app',
+    'logsEnableLoggingDescription':
+        'Collecte des logs de diagnostic en mémoire. Laissez désactivé sauf pour résoudre un problème.',
+    'logsEnableLoggingAction': 'Activer les logs',
+    'logsLoggingDisabledTitle': 'Logs désactivés',
+    'logsLoggingDisabledDescription':
+        'CodeWalk ne collecte pas de logs détaillés de l\'app. Activez les logs uniquement lorsque vous avez besoin d\'un diagnostic.',
     'logsNoLogsYet': 'Aucun log capturé pour le moment.',
     'logsNoMatchingLogs': 'Aucun log ne correspond aux filtres actuels.',
     'logsSearch': 'Rechercher dans les journaux',
@@ -10086,6 +10128,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'copy filtered logs',
     'logsFilterAll': 'सभी',
     'logsLevel': 'स्तर (Level)',
+    'logsEnableLogging': 'ऐप लॉगिंग चालू करें',
+    'logsEnableLoggingDescription':
+        'मेमोरी में निदान लॉग इकट्ठा करता है। समस्या हल करते समय ही इसे चालू रखें।',
+    'logsEnableLoggingAction': 'लॉगिंग चालू करें',
+    'logsLoggingDisabledTitle': 'लॉगिंग बंद है',
+    'logsLoggingDisabledDescription':
+        'CodeWalk विस्तृत ऐप लॉग इकट्ठा नहीं कर रहा है। निदान की ज़रूरत होने पर ही लॉगिंग चालू करें।',
     'logsNoLogsYet': 'अभी तक कोई लॉग कैप्चर नहीं किया गया है।',
     'logsNoMatchingLogs': 'कोई भी लॉग वर्तमान फ़िल्टर से मेल नहीं खाता है।',
     'logsSearch': 'लॉग खोजें',
@@ -11683,6 +11732,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'Copia log filtrati',
     'logsFilterAll': 'Tutti',
     'logsLevel': 'Livello',
+    'logsEnableLogging': 'Attiva log app',
+    'logsEnableLoggingDescription':
+        'Raccoglie log diagnostici in memoria. Tienilo disattivato salvo quando risolvi problemi.',
+    'logsEnableLoggingAction': 'Attiva log',
+    'logsLoggingDisabledTitle': 'Log disattivati',
+    'logsLoggingDisabledDescription':
+        'CodeWalk non sta raccogliendo log dettagliati dell\'app. Attiva i log solo quando servono diagnosi.',
     'logsNoLogsYet': 'Nessun log acquisito finora.',
     'logsNoMatchingLogs': 'Nessun log corrisponde ai filtri attuali.',
     'logsSearch': 'Cerca log',
@@ -13218,6 +13274,12 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'コピーフィルター済みログ',
     'logsFilterAll': 'すべて',
     'logsLevel': 'レベル',
+    'logsEnableLogging': 'アプリログを有効化',
+    'logsEnableLoggingDescription': 'メモリ内に診断ログを収集します。トラブルシュート時以外はオフのままにしてください。',
+    'logsEnableLoggingAction': 'ログを有効化',
+    'logsLoggingDisabledTitle': 'ログは無効です',
+    'logsLoggingDisabledDescription':
+        'CodeWalk は詳細なアプリログを収集していません。診断が必要な場合のみログを有効にしてください。',
     'logsNoLogsYet': 'ログはまだ記録されていません。',
     'logsNoMatchingLogs': '現在のフィルタに一致するログはありません。',
     'logsSearch': 'ログを検索',
@@ -14630,6 +14692,12 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': '필터링된 로그 복사',
     'logsFilterAll': '전체',
     'logsLevel': '로그 레벨',
+    'logsEnableLogging': '앱 로그 켜기',
+    'logsEnableLoggingDescription': '메모리에 진단 로그를 수집합니다. 문제를 진단할 때가 아니면 꺼두세요.',
+    'logsEnableLoggingAction': '로그 켜기',
+    'logsLoggingDisabledTitle': '로그가 꺼져 있습니다',
+    'logsLoggingDisabledDescription':
+        'CodeWalk가 자세한 앱 로그를 수집하지 않습니다. 진단이 필요할 때만 로그를 켜세요.',
     'logsNoLogsYet': '아직 캡처된 로그가 없습니다.',
     'logsNoMatchingLogs': '현재 필터와 일치하는 로그가 없습니다.',
     'logsSearch': '로그 검색',
@@ -16112,6 +16180,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'Copiar logs filtrados',
     'logsFilterAll': 'Todos',
     'logsLevel': 'Nível',
+    'logsEnableLogging': 'Ativar logs do app',
+    'logsEnableLoggingDescription':
+        'Coleta logs de diagnóstico em memória. Mantenha desligado, exceto ao solucionar problemas.',
+    'logsEnableLoggingAction': 'Ativar logs',
+    'logsLoggingDisabledTitle': 'Logs desativados',
+    'logsLoggingDisabledDescription':
+        'O CodeWalk não está coletando logs detalhados do app. Ative logs apenas quando precisar diagnosticar problemas.',
     'logsNoLogsYet': 'Nenhum log capturado ainda.',
     'logsNoMatchingLogs': 'Nenhum log corresponde aos filtros atuais.',
     'logsSearch': 'Buscar logs',
@@ -17717,6 +17792,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'Копировать отфильтрованные логи',
     'logsFilterAll': 'Все',
     'logsLevel': 'Уровень',
+    'logsEnableLogging': 'Включить логи приложения',
+    'logsEnableLoggingDescription':
+        'Сохраняет диагностические логи в памяти. Оставляйте выключенным, если не устраняете проблему.',
+    'logsEnableLoggingAction': 'Включить логи',
+    'logsLoggingDisabledTitle': 'Логи отключены',
+    'logsLoggingDisabledDescription':
+        'CodeWalk не собирает подробные логи приложения. Включайте логи только когда нужна диагностика.',
     'logsNoLogsYet': 'Логи пока не записаны.',
     'logsNoMatchingLogs': 'Нет логов, соответствующих текущим фильтрам.',
     'logsSearch': 'Закрыть поиск',
@@ -19289,6 +19371,13 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': 'فلٹر شدہ لاگز کو کاپی کریں۔',
     'logsFilterAll': 'تمام',
     'logsLevel': 'سطح',
+    'logsEnableLogging': 'ایپ لاگز فعال کریں',
+    'logsEnableLoggingDescription':
+        'میموری میں تشخیصی لاگز جمع کرتا ہے۔ مسئلہ حل کرنے کے علاوہ اسے بند رکھیں۔',
+    'logsEnableLoggingAction': 'لاگز فعال کریں',
+    'logsLoggingDisabledTitle': 'لاگز غیر فعال ہیں',
+    'logsLoggingDisabledDescription':
+        'CodeWalk تفصیلی ایپ لاگز جمع نہیں کر رہا۔ تشخیص کی ضرورت ہو تو ہی لاگز فعال کریں۔',
     'logsNoLogsYet': 'ابھی تک کوئی لاگز جمع نہیں ہوئے۔',
     'logsNoMatchingLogs': 'موجودہ فلٹرز سے کوئی لاگز مطابقت نہیں رکھتے۔',
     'logsSearch': 'لاگز تلاش کریں۔',
@@ -20762,6 +20851,11 @@ const translations = <String, Map<String, String>>{
     'logsCopyFiltered': '复制已过滤的日志',
     'logsFilterAll': '全部',
     'logsLevel': '级别',
+    'logsEnableLogging': '启用应用日志',
+    'logsEnableLoggingDescription': '在内存中收集诊断日志。除非排查问题，否则保持关闭。',
+    'logsEnableLoggingAction': '启用日志',
+    'logsLoggingDisabledTitle': '日志已关闭',
+    'logsLoggingDisabledDescription': 'CodeWalk 未收集详细应用日志。仅在需要诊断时启用日志。',
     'logsNoLogsYet': '尚未捕获日志。',
     'logsNoMatchingLogs': '没有符合当前过滤条件的日志。',
     'logsSearch': '搜索日志',

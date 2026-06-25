@@ -3185,6 +3185,36 @@ abstract class AppLocalizations {
   /// **'Level'**
   String get logsLevel;
 
+  /// CodeWalk UI string — logsEnableLogging
+  ///
+  /// In en, this message translates to:
+  /// **'Enable app logging'**
+  String get logsEnableLogging;
+
+  /// CodeWalk UI string — logsEnableLoggingDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Collect in-memory diagnostic logs. Keep this off unless you are troubleshooting.'**
+  String get logsEnableLoggingDescription;
+
+  /// CodeWalk UI string — logsEnableLoggingAction
+  ///
+  /// In en, this message translates to:
+  /// **'Enable logging'**
+  String get logsEnableLoggingAction;
+
+  /// CodeWalk UI string — logsLoggingDisabledTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Logging is disabled'**
+  String get logsLoggingDisabledTitle;
+
+  /// CodeWalk UI string — logsLoggingDisabledDescription
+  ///
+  /// In en, this message translates to:
+  /// **'CodeWalk is not collecting detailed app logs. Enable logging only when you need diagnostics.'**
+  String get logsLoggingDisabledDescription;
+
   /// CodeWalk UI string — logsMeasurePerformance
   ///
   /// In en, this message translates to:

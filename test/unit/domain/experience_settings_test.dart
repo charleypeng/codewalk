@@ -40,6 +40,28 @@ void main() {
   });
 
   group('performance logging serialization', () {
+    test('defaults app logging to disabled', () {
+      expect(ExperienceSettings.defaults().loggingEnabled, isFalse);
+    });
+
+    test('serializes and deserializes app logging', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        loggingEnabled: true,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['loggingEnabled'], isTrue);
+      expect(restored.loggingEnabled, isTrue);
+    });
+
+    test('defaults missing app logging key to disabled', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{});
+
+      expect(restored.loggingEnabled, isFalse);
+    });
+
     test('defaults performance logging to disabled', () {
       expect(ExperienceSettings.defaults().performanceLoggingEnabled, isFalse);
     });

@@ -1763,6 +1763,23 @@ class AppLocalizationsUr extends AppLocalizations {
   String get logsLevel => 'سطح';
 
   @override
+  String get logsEnableLogging => 'ایپ لاگز فعال کریں';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'میموری میں تشخیصی لاگز جمع کرتا ہے۔ مسئلہ حل کرنے کے علاوہ اسے بند رکھیں۔';
+
+  @override
+  String get logsEnableLoggingAction => 'لاگز فعال کریں';
+
+  @override
+  String get logsLoggingDisabledTitle => 'لاگز غیر فعال ہیں';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk تفصیلی ایپ لاگز جمع نہیں کر رہا۔ تشخیص کی ضرورت ہو تو ہی لاگز فعال کریں۔';
+
+  @override
   String get logsMeasurePerformance => 'کارکردگی ناپیں';
 
   @override

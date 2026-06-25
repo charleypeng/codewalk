@@ -1769,6 +1769,21 @@
   "@logsLevel": {
     "description": "CodeWalk UI string — logsLevel"
   },
+  "@logsEnableLogging": {
+    "description": "CodeWalk UI string — logsEnableLogging"
+  },
+  "@logsEnableLoggingDescription": {
+    "description": "CodeWalk UI string — logsEnableLoggingDescription"
+  },
+  "@logsEnableLoggingAction": {
+    "description": "CodeWalk UI string — logsEnableLoggingAction"
+  },
+  "@logsLoggingDisabledTitle": {
+    "description": "CodeWalk UI string — logsLoggingDisabledTitle"
+  },
+  "@logsLoggingDisabledDescription": {
+    "description": "CodeWalk UI string — logsLoggingDisabledDescription"
+  },
   "@logsMeasurePerformance": {
     "description": "CodeWalk UI string — logsMeasurePerformance"
   },
@@ -4954,6 +4969,11 @@
   "logsEntryTags": "Tags",
   "logsFilterAll": "All",
   "logsLevel": "Level",
+  "logsEnableLogging": "Enable app logging",
+  "logsEnableLoggingDescription": "Collect in-memory diagnostic logs. Keep this off unless you are troubleshooting.",
+  "logsEnableLoggingAction": "Enable logging",
+  "logsLoggingDisabledTitle": "Logging is disabled",
+  "logsLoggingDisabledDescription": "CodeWalk is not collecting detailed app logs. Enable logging only when you need diagnostics.",
   "logsMeasurePerformance": "Measure performance",
   "logsMeasurePerformanceDescription": "Capture timing logs for expensive app operations. Leave off unless you are diagnosing lag.",
   "logsNoLogsYet": "No logs captured yet.",

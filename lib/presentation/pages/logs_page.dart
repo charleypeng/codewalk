@@ -146,6 +146,8 @@ class _LogsPageState extends State<LogsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final loggingEnabled = settingsProvider.loggingEnabled;
     return Scaffold(
       appBar: AppBar(
         title: _searchEnabled
@@ -175,11 +177,13 @@ class _LogsPageState extends State<LogsPage> {
             IconButton(
               icon: const Icon(Symbols.search),
               tooltip: context.l10n.logsSearch,
-              onPressed: () {
-                setState(() {
-                  _searchEnabled = true;
-                });
-              },
+              onPressed: loggingEnabled
+                  ? () {
+                      setState(() {
+                        _searchEnabled = true;
+                      });
+                    }
+                  : null,
             ),
           ValueListenableBuilder<UnmodifiableListView<LogEntry>>(
             valueListenable: AppLogger.entries,
@@ -188,7 +192,7 @@ class _LogsPageState extends State<LogsPage> {
               return IconButton(
                 icon: const Icon(Symbols.timer),
                 tooltip: context.l10n.logsSlowestPerformance,
-                onPressed: hasPerformanceData
+                onPressed: loggingEnabled && hasPerformanceData
                     ? () => _showSlowestPerformance(context)
                     : null,
               );
@@ -201,7 +205,7 @@ class _LogsPageState extends State<LogsPage> {
               return IconButton(
                 icon: const Icon(Symbols.copy_all),
                 tooltip: context.l10n.logsCopyFiltered,
-                onPressed: filtered.isEmpty
+                onPressed: !loggingEnabled || filtered.isEmpty
                     ? null
                     : () => _copyLogs(context, filtered),
               );
@@ -217,13 +221,16 @@ class _LogsPageState extends State<LogsPage> {
       body: ValueListenableBuilder<UnmodifiableListView<LogEntry>>(
         valueListenable: AppLogger.entries,
         builder: (context, entries, child) {
-          final settingsProvider = context.watch<SettingsProvider>();
-          final filtered = _filteredEntries();
+          final filtered = loggingEnabled
+              ? _filteredEntries()
+              : const <LogEntry>[];
           final ordered = filtered.reversed.toList(growable: false);
+          final totalEntries = loggingEnabled ? entries.length : 0;
 
           return Column(
             children: [
               _LogsToolbar(
+                loggingEnabled: loggingEnabled,
                 selectedRange: _timeRange,
                 selectedLevels: _levels,
                 performanceLoggingEnabled:
@@ -245,6 +252,11 @@ class _LogsPageState extends State<LogsPage> {
                     }
                   });
                 },
+                onLoggingChanged: (enabled) {
+                  unawaited(
+                    context.read<SettingsProvider>().setLoggingEnabled(enabled),
+                  );
+                },
                 onPerformanceLoggingChanged: (enabled) {
                   unawaited(
                     context
@@ -260,7 +272,17 @@ class _LogsPageState extends State<LogsPage> {
               ),
               const Divider(height: 1),
               Expanded(
-                child: ordered.isEmpty
+                child: !loggingEnabled
+                    ? _LogsDisabledState(
+                        onEnable: () {
+                          unawaited(
+                            context.read<SettingsProvider>().setLoggingEnabled(
+                              true,
+                            ),
+                          );
+                        },
+                      )
+                    : ordered.isEmpty
                     ? Center(
                         child: Text(
                           entries.isEmpty
@@ -293,7 +315,7 @@ class _LogsPageState extends State<LogsPage> {
                 child: Text(
                   context.l10n.logsShowingOrderedLength(
                     ordered.length,
-                    entries.length,
+                    totalEntries,
                   ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -308,22 +330,26 @@ class _LogsPageState extends State<LogsPage> {
 
 class _LogsToolbar extends StatelessWidget {
   const _LogsToolbar({
+    required this.loggingEnabled,
     required this.selectedRange,
     required this.selectedLevels,
     required this.performanceLoggingEnabled,
     required this.performanceFilterOnly,
     required this.onRangeChanged,
     required this.onLevelToggled,
+    required this.onLoggingChanged,
     required this.onPerformanceLoggingChanged,
     required this.onPerformanceFilterToggled,
   });
 
+  final bool loggingEnabled;
   final _LogTimeRange selectedRange;
   final Set<LogLevel> selectedLevels;
   final bool performanceLoggingEnabled;
   final bool performanceFilterOnly;
   final ValueChanged<_LogTimeRange> onRangeChanged;
   final ValueChanged<LogLevel> onLevelToggled;
+  final ValueChanged<bool> onLoggingChanged;
   final ValueChanged<bool> onPerformanceLoggingChanged;
   final VoidCallback onPerformanceFilterToggled;
 
@@ -374,10 +400,18 @@ class _LogsToolbar extends StatelessWidget {
           const SizedBox(height: 12),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
+            title: Text(context.l10n.logsEnableLogging),
+            subtitle: Text(context.l10n.logsEnableLoggingDescription),
+            value: loggingEnabled,
+            onChanged: onLoggingChanged,
+          ),
+          const SizedBox(height: 6),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
             title: Text(context.l10n.logsMeasurePerformance),
             subtitle: Text(context.l10n.logsMeasurePerformanceDescription),
             value: performanceLoggingEnabled,
-            onChanged: onPerformanceLoggingChanged,
+            onChanged: loggingEnabled ? onPerformanceLoggingChanged : null,
           ),
           const SizedBox(height: 6),
           Wrap(
@@ -387,12 +421,67 @@ class _LogsToolbar extends StatelessWidget {
               FilterChip(
                 label: Text(context.l10n.logsPerformanceFilter),
                 selected: performanceFilterOnly,
-                onSelected: (_) => onPerformanceFilterToggled(),
+                onSelected: loggingEnabled
+                    ? (_) => onPerformanceFilterToggled()
+                    : null,
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LogsDisabledState extends StatelessWidget {
+  const _LogsDisabledState({required this.onEnable});
+
+  final VoidCallback onEnable;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Symbols.visibility_off,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      context.l10n.logsLoggingDisabledTitle,
+                      textAlign: TextAlign.center,
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.l10n.logsLoggingDisabledDescription,
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: onEnable,
+                      icon: const Icon(Symbols.play_circle),
+                      label: Text(context.l10n.logsEnableLoggingAction),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1770,6 +1770,23 @@ class AppLocalizationsHi extends AppLocalizations {
   String get logsLevel => 'स्तर (Level)';
 
   @override
+  String get logsEnableLogging => 'ऐप लॉगिंग चालू करें';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'मेमोरी में निदान लॉग इकट्ठा करता है। समस्या हल करते समय ही इसे चालू रखें।';
+
+  @override
+  String get logsEnableLoggingAction => 'लॉगिंग चालू करें';
+
+  @override
+  String get logsLoggingDisabledTitle => 'लॉगिंग बंद है';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk विस्तृत ऐप लॉग इकट्ठा नहीं कर रहा है। निदान की ज़रूरत होने पर ही लॉगिंग चालू करें।';
+
+  @override
   String get logsMeasurePerformance => 'प्रदर्शन मापें';
 
   @override

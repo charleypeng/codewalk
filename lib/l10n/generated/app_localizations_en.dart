@@ -1763,6 +1763,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsLevel => 'Level';
 
   @override
+  String get logsEnableLogging => 'Enable app logging';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'Collect in-memory diagnostic logs. Keep this off unless you are troubleshooting.';
+
+  @override
+  String get logsEnableLoggingAction => 'Enable logging';
+
+  @override
+  String get logsLoggingDisabledTitle => 'Logging is disabled';
+
+  @override
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk is not collecting detailed app logs. Enable logging only when you need diagnostics.';
+
+  @override
   String get logsMeasurePerformance => 'Measure performance';
 
   @override

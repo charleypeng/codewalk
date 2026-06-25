@@ -186,6 +186,7 @@ class SettingsProvider extends ChangeNotifier {
       shouldRunAndroidBackgroundAlerts(_settings);
   bool get enableExperimentalMultiDeviceSync =>
       _settings.enableExperimentalMultiDeviceSync;
+  bool get loggingEnabled => _settings.loggingEnabled;
   bool get performanceLoggingEnabled => _settings.performanceLoggingEnabled;
   SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
   OpenCodeThemePreset? get themePreset => _settings.themePreset;
@@ -299,6 +300,7 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     _cellularDataSaverService.applyLevel(_settings.dataSaverLevel);
+    AppLogger.setLoggingEnabled(_settings.loggingEnabled);
     AppLogger.setPerformanceLoggingEnabled(_settings.performanceLoggingEnabled);
     _lastBackgroundDataSaverDisableState =
         _cellularDataSaverService.shouldDisableBackgroundNetworkTasks;
@@ -729,6 +731,16 @@ class SettingsProvider extends ChangeNotifier {
     }
     _settings = _settings.copyWith(performanceLoggingEnabled: enabled);
     AppLogger.setPerformanceLoggingEnabled(enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setLoggingEnabled(bool enabled) async {
+    if (_settings.loggingEnabled == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(loggingEnabled: enabled);
+    AppLogger.setLoggingEnabled(enabled);
     notifyListeners();
     await _persist();
   }

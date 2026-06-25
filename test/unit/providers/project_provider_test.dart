@@ -61,6 +61,7 @@ void main() {
 
     setUp(() {
       AppLogger.clearEntries();
+      AppLogger.setLoggingEnabled(true);
       localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
       projectRepository = FakeProjectRepository(
@@ -99,7 +100,10 @@ void main() {
       );
     });
 
-    tearDown(AppLogger.clearEntries);
+    tearDown(() {
+      AppLogger.clearEntries();
+      AppLogger.setLoggingEnabled(false);
+    });
 
     test('initializeProject restores scoped current project id', () async {
       await localDataSource.saveCurrentProjectId(
