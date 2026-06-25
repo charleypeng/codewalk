@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.147.1 - 2026-06-25
+
+- fix(composer): randomize across all receiving tips
+
 ## v1.147.0 - 2026-06-25
 
 - feat(composer): expand agent prompt tips
