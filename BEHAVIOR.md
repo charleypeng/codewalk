@@ -196,6 +196,15 @@
 - **Then** the unhealthy snackbar waits an additional 5-second debounce before appearing
 - **Then** if the server recovers before those windows finish, the unhealthy snackbar is not shown
 
+### Foreground resume sync warnings are debounced
+
+- **Given** the app returns to the foreground after mobile or desktop backgrounding
+- **When** the previous realtime signal is stale or the realtime subscription is restarting
+- **Then** CodeWalk keeps the chat sync status out of `Reconnecting` / `Sync delayed` for the configured resume grace period, defaulting to 5 seconds and clamped to 0-30 seconds
+- **Then** a fresh realtime signal during that grace window cancels the pending warning and keeps chat sync `Online`
+- **Then** if the grace period elapses without a fresh realtime signal, the existing delayed/degraded sync behavior is allowed to surface
+- **Then** backgrounding the app again cancels the pending resume warning so it cannot fire after the app has left the foreground
+
 ### Server goes offline during use
 
 - **Given** the active server goes offline while the user is chatting
