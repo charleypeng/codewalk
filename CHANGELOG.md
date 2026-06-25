@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.146.0 - 2026-06-25
+
+- docs(sync): document foreground resume grace
+- fix(sync): debounce foreground resume warnings
+
 ## v1.145.0 - 2026-06-25
 
 - fix(onboarding): unblock failed health checks
