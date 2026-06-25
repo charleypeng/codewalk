@@ -2985,7 +2985,7 @@ class ChatProvider extends ChangeNotifier {
         }
       },
       tags: const <String>{'chat:sessions'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'preserveVisibleState': preserveVisibleState,
         'userInitiated': userInitiated,
         'projectHash': AppLogger.safeContextId(
@@ -3381,7 +3381,7 @@ class ChatProvider extends ChangeNotifier {
         );
       },
       tags: const <String>{'chat:session'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'sessionHash': AppLogger.safeContextId(session.id),
         'previousSessionHash': AppLogger.safeContextId(previousSessionId),
       },
@@ -3549,7 +3549,7 @@ class ChatProvider extends ChangeNotifier {
         );
       },
       tags: const <String>{'chat:messages'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'sessionHash': AppLogger.safeContextId(sessionId),
         'preserveVisibleState': preserveVisibleState,
         'preferDelta': preferDelta,

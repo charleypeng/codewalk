@@ -44,13 +44,38 @@ void main() {
     'does not record performance tasks while global logging is disabled',
     () async {
       AppLogger.setPerformanceLoggingEnabled(true);
+      var contextBuilt = false;
 
-      await AppLogger.runPerformanceTask('load_messages', () async {});
+      await AppLogger.runPerformanceTask(
+        'load_messages',
+        () async {},
+        contextBuilder: () {
+          contextBuilt = true;
+          return const <String, Object?>{'expensive': true};
+        },
+      );
 
       expect(AppLogger.performanceLoggingEnabled, isFalse);
+      expect(contextBuilt, isFalse);
       expect(AppLogger.entries.value, isEmpty);
     },
   );
+
+  test('records lazy performance context while enabled', () async {
+    AppLogger.setLoggingEnabled(true);
+    AppLogger.setPerformanceLoggingEnabled(true);
+
+    await AppLogger.runPerformanceTask(
+      'cache_read',
+      () async {},
+      contextBuilder: () => const <String, Object?>{'keyHash': 'abc123'},
+    );
+
+    expect(
+      AppLogger.entries.value.single.metrics?['context'],
+      <String, Object?>{'keyHash': 'abc123'},
+    );
+  });
 
   test('records tags and metrics while enabled', () async {
     AppLogger.setLoggingEnabled(true);

@@ -211,6 +211,7 @@ class AppLogger {
     Future<T> Function() body, {
     Set<String>? tags,
     Map<String, Object?>? context,
+    Map<String, Object?> Function()? contextBuilder,
   }) async {
     if (!performanceLoggingEnabled) {
       return body();
@@ -225,7 +226,7 @@ class AppLogger {
         elapsed: stopwatch.elapsed,
         status: 'ok',
         tags: tags,
-        context: context,
+        context: _buildPerformanceContext(context, contextBuilder),
       );
       return result;
     } catch (error, stackTrace) {
@@ -235,7 +236,7 @@ class AppLogger {
         elapsed: stopwatch.elapsed,
         status: 'error',
         tags: tags,
-        context: context,
+        context: _buildPerformanceContext(context, contextBuilder),
         error: error,
         stackTrace: stackTrace,
       );
@@ -248,6 +249,7 @@ class AppLogger {
     T Function() body, {
     Set<String>? tags,
     Map<String, Object?>? context,
+    Map<String, Object?> Function()? contextBuilder,
   }) {
     if (!performanceLoggingEnabled) {
       return body();
@@ -262,7 +264,7 @@ class AppLogger {
         elapsed: stopwatch.elapsed,
         status: 'ok',
         tags: tags,
-        context: context,
+        context: _buildPerformanceContext(context, contextBuilder),
       );
       return result;
     } catch (error, stackTrace) {
@@ -272,7 +274,7 @@ class AppLogger {
         elapsed: stopwatch.elapsed,
         status: 'error',
         tags: tags,
-        context: context,
+        context: _buildPerformanceContext(context, contextBuilder),
         error: error,
         stackTrace: stackTrace,
       );
@@ -331,6 +333,20 @@ class AppLogger {
     return input
         .replaceAllMapped(basicAuth, (m) => '${m.group(1)}***')
         .replaceAllMapped(bearerAuth, (m) => '${m.group(1)}***');
+  }
+
+  static Map<String, Object?>? _buildPerformanceContext(
+    Map<String, Object?>? context,
+    Map<String, Object?> Function()? contextBuilder,
+  ) {
+    if (contextBuilder == null) {
+      return context;
+    }
+    try {
+      return contextBuilder();
+    } catch (_) {
+      return context;
+    }
   }
 
   static String _formatDeveloperMessage(String message, Set<String>? tags) {

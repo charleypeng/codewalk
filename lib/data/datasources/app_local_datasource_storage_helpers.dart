@@ -161,7 +161,7 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
         return null;
       },
       tags: const <String>{'cache:read'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'keyHash': AppLogger.safeContextId(key),
         'fileStore': _chatCachePayloadStore != null,
       },
@@ -236,7 +236,7 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
             }
           },
           tags: const <String>{'cache:migrate'},
-          context: <String, Object?>{
+          contextBuilder: () => <String, Object?>{
             'keyHash': AppLogger.safeContextId(key),
             'sizeBytes': value.length,
           },
@@ -310,7 +310,7 @@ extension _AppLocalDataSourceStorageHelpers on AppLocalDataSourceImpl {
         });
       },
       tags: const <String>{'cache:write'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'keyHash': AppLogger.safeContextId(key),
         'sizeBytes': value.length,
         'fileStore': _chatCachePayloadStore != null,

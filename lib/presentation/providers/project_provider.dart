@@ -176,7 +176,7 @@ class ProjectProvider extends ChangeNotifier {
         return true;
       },
       tags: const <String>{'project:switch'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'fromProjectHash': AppLogger.safeContextId(previousProjectId),
         'toProjectHash': AppLogger.safeContextId(projectId),
       },
@@ -272,7 +272,7 @@ class ProjectProvider extends ChangeNotifier {
         return true;
       },
       tags: const <String>{'project:directory'},
-      context: <String, Object?>{
+      contextBuilder: () => <String, Object?>{
         'fromPathHash': AppLogger.safeContextId(previousPath),
         'toPathHash': AppLogger.safeContextId(directory),
       },
