@@ -1332,6 +1332,43 @@ class AppLocalizationsUr extends AppLocalizations {
       'مشورہ: پیچیدہ مسائل کو ڈیبگ کرتے وقت مرحلہ وار پوچھیں';
 
   @override
+  String get chatTipStartWithGoal => 'مشورہ: آخری مقصد سے شروع کریں';
+
+  @override
+  String get chatTipNameRelevantFiles =>
+      'مشورہ: متعلقہ فائلیں، اسکرینیں یا کمانڈز بتائیں';
+
+  @override
+  String get chatTipStateConstraints =>
+      'مشورہ: وہ پابندیاں بتائیں جو ایجنٹ کو برقرار رکھنی ہیں';
+
+  @override
+  String get chatTipAskForPlan => 'مشورہ: بڑے کاموں میں پہلے منصوبہ مانگیں';
+
+  @override
+  String get chatTipDefineVerification =>
+      'مشورہ: بتائیں کون سے ٹیسٹ یا چیکس پاس ہونے چاہئیں';
+
+  @override
+  String get chatTipShareAttempts =>
+      'مشورہ: جو آزمایا اور درست خرابی شیئر کریں';
+
+  @override
+  String get chatTipCompareOptions =>
+      'مشورہ: ٹریڈ آف واضح نہ ہوں تو متبادل مانگیں';
+
+  @override
+  String get chatTipRequestDocs => 'مشورہ: رویہ بدلے تو docs اپ ڈیٹ مانگیں';
+
+  @override
+  String get chatTipAcceptanceCriteria =>
+      'مشورہ: بڑی تبدیلیوں کے لیے قبولیت کے معیار شامل کریں';
+
+  @override
+  String get chatTipUseFocusedAgents =>
+      'مشورہ: پلان، ریویو یا بلڈ کے لیے مرکوز ایجنٹ چنیں';
+
+  @override
   String get chatToggleSidebars => 'سائڈبارز کو ٹوگل کریں۔';
 
   @override

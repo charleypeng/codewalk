@@ -935,6 +935,14 @@
 
 ## Composer
 
+### Composer status tips include agent prompting guidance
+
+- **Given** the assistant is thinking or receiving a response and composer tips are enabled
+- **When** the fixed composer status slot falls back to a tip
+- **Then** CodeWalk rotates localized short tips that cover both composer controls and general agent prompting practices
+- **Then** the agent guidance includes starting with the end goal, naming relevant files/screens/commands, stating constraints, asking for a plan on large tasks, defining expected tests/checks, sharing prior attempts/errors, requesting alternatives, asking for docs updates when behavior changes, adding acceptance criteria, and choosing focused agents for planning/review/build work
+- **Then** disabling composer tips keeps the same status slot but shows the static reasoning fallback instead of rotating guidance
+
 ### Microphone button visual behavior
 
 - **Given** the composer input is visible

@@ -1265,6 +1265,36 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatTipStepByStep => '팁: 복잡한 문제 디버깅 시 단계별 설명을 요청하세요';
 
   @override
+  String get chatTipStartWithGoal => '팁: 최종 목표부터 알려 주세요';
+
+  @override
+  String get chatTipNameRelevantFiles => '팁: 관련 파일, 화면, 명령을 알려 주세요';
+
+  @override
+  String get chatTipStateConstraints => '팁: 에이전트가 지켜야 할 제약을 알려 주세요';
+
+  @override
+  String get chatTipAskForPlan => '팁: 큰 작업은 먼저 계획을 요청하세요';
+
+  @override
+  String get chatTipDefineVerification => '팁: 통과해야 할 테스트나 체크를 알려 주세요';
+
+  @override
+  String get chatTipShareAttempts => '팁: 시도한 내용과 정확한 오류를 공유하세요';
+
+  @override
+  String get chatTipCompareOptions => '팁: 트레이드오프가 불명확하면 대안을 요청하세요';
+
+  @override
+  String get chatTipRequestDocs => '팁: 동작이 바뀌면 docs 업데이트를 요청하세요';
+
+  @override
+  String get chatTipAcceptanceCriteria => '팁: 큰 변경에는 승인 기준을 추가하세요';
+
+  @override
+  String get chatTipUseFocusedAgents => '팁: 계획, 리뷰, 빌드에 맞는 에이전트를 선택하세요';
+
+  @override
   String get chatToggleSidebars => '사이드바 토글';
 
   @override

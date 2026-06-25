@@ -1357,6 +1357,46 @@ class AppLocalizationsIt extends AppLocalizations {
       'Suggerimento: Chiedi passo-passo durante il debug di problemi complessi';
 
   @override
+  String get chatTipStartWithGoal =>
+      'Suggerimento: Inizia con il risultato finale';
+
+  @override
+  String get chatTipNameRelevantFiles =>
+      'Suggerimento: Indica file, schermate o comandi rilevanti';
+
+  @override
+  String get chatTipStateConstraints =>
+      'Suggerimento: Indica i vincoli da preservare';
+
+  @override
+  String get chatTipAskForPlan =>
+      'Suggerimento: Chiedi prima un piano per attività grandi';
+
+  @override
+  String get chatTipDefineVerification =>
+      'Suggerimento: Dì quali test o controlli devono passare';
+
+  @override
+  String get chatTipShareAttempts =>
+      'Suggerimento: Condividi cosa hai provato e il messaggio esatto';
+
+  @override
+  String get chatTipCompareOptions =>
+      'Suggerimento: Chiedi alternative quando i tradeoff non sono chiari';
+
+  @override
+  String get chatTipRequestDocs =>
+      'Suggerimento: Chiedi aggiornamenti docs quando cambia il comportamento';
+
+  @override
+  String get chatTipAcceptanceCriteria =>
+      'Suggerimento: Aggiungi criteri di accettazione per cambi grandi';
+
+  @override
+  String get chatTipUseFocusedAgents =>
+      'Suggerimento: Scegli un agente mirato per piano, review o build';
+
+  @override
   String get chatToggleSidebars => 'Attiva/disattiva barre laterali';
 
   @override

@@ -438,6 +438,19 @@ const englishTemplate = <String, String>{
   'chatTipSlashCommands': 'Tip: Use / to access slash commands',
   'chatTipStepByStep':
       'Tip: Ask for step-by-step when debugging complex issues',
+  'chatTipStartWithGoal': 'Tip: Start with the end goal',
+  'chatTipNameRelevantFiles': 'Tip: Name relevant files, screens, or commands',
+  'chatTipStateConstraints': 'Tip: State constraints the agent must preserve',
+  'chatTipAskForPlan': 'Tip: Ask for a plan first on large tasks',
+  'chatTipDefineVerification': 'Tip: Say which tests or checks should pass',
+  'chatTipShareAttempts': 'Tip: Share what you tried and the exact error',
+  'chatTipCompareOptions':
+      'Tip: Ask for alternatives when tradeoffs are unclear',
+  'chatTipRequestDocs': 'Tip: Ask for docs updates when behavior changes',
+  'chatTipAcceptanceCriteria':
+      'Tip: Add acceptance criteria for larger changes',
+  'chatTipUseFocusedAgents':
+      'Tip: Pick a focused agent for plan, review, or build',
   'chatToggleSidebars': 'Toggle sidebars',
   'chatTokensLabel': 'Tokens: {total}',
   'chatTourProjectsConversations':
@@ -1969,6 +1982,19 @@ const translations = <String, Map<String, String>>{
     'chatTipShellCommands': 'نصيحة: استخدم ! في البداية لتشغيل أوامر شل',
     'chatTipSlashCommands': 'نصيحة: استخدم / للوصول إلى أوامر الشرطة المائلة',
     'chatTipStepByStep': 'نصيحة: اطلب خطوة بخطوة عند تصحيح المشكلات المعقدة',
+    'chatTipStartWithGoal': 'نصيحة: ابدأ بالهدف النهائي',
+    'chatTipNameRelevantFiles':
+        'نصيحة: اذكر الملفات أو الشاشات أو الأوامر ذات الصلة',
+    'chatTipStateConstraints':
+        'نصيحة: اذكر القيود التي يجب على الوكيل الحفاظ عليها',
+    'chatTipAskForPlan': 'نصيحة: اطلب خطة أولا للمهام الكبيرة',
+    'chatTipDefineVerification': 'نصيحة: قل أي اختبارات أو فحوصات يجب أن تنجح',
+    'chatTipShareAttempts': 'نصيحة: شارك ما جربته والخطأ الدقيق',
+    'chatTipCompareOptions': 'نصيحة: اطلب بدائل عندما تكون المفاضلات غير واضحة',
+    'chatTipRequestDocs': 'نصيحة: اطلب تحديث الوثائق عند تغير السلوك',
+    'chatTipAcceptanceCriteria': 'نصيحة: أضف معايير قبول للتغييرات الكبيرة',
+    'chatTipUseFocusedAgents':
+        'نصيحة: اختر وكيلا مركزا للتخطيط أو المراجعة أو البناء',
     'chatToggleSidebars': 'تبديل الأشرطة الجانبية',
     'chatTokensLabel': 'الرموز: {total}',
     'chatTourProjectsConversations': 'استخدم هذا الزر لفتح مشاريعك ومحادثاتك.',
@@ -3508,6 +3534,20 @@ const translations = <String, Map<String, String>>{
         'পরামর্শ: স্ল্যাশ কমান্ড অ্যাক্সেস করতে / ব্যবহার করুন',
     'chatTipStepByStep':
         'পরামর্শ: জটিল সমস্যা ডিবাগ করার সময় ধাপে ধাপে জিজ্ঞাসা করুন',
+    'chatTipStartWithGoal': 'পরামর্শ: শেষ লক্ষ্য দিয়ে শুরু করুন',
+    'chatTipNameRelevantFiles':
+        'পরামর্শ: প্রাসঙ্গিক ফাইল, স্ক্রিন বা কমান্ডের নাম দিন',
+    'chatTipStateConstraints': 'পরামর্শ: এজেন্টকে যে সীমা মানতে হবে তা বলুন',
+    'chatTipAskForPlan': 'পরামর্শ: বড় কাজের আগে একটি পরিকল্পনা চাইুন',
+    'chatTipDefineVerification':
+        'পরামর্শ: কোন পরীক্ষা বা চেক পাস করতে হবে বলুন',
+    'chatTipShareAttempts': 'পরামর্শ: কী চেষ্টা করেছেন এবং সঠিক ত্রুটি জানান',
+    'chatTipCompareOptions': 'পরামর্শ: ট্রেডঅফ অস্পষ্ট হলে বিকল্প চান',
+    'chatTipRequestDocs': 'পরামর্শ: আচরণ বদলালে ডকস আপডেট চাইুন',
+    'chatTipAcceptanceCriteria':
+        'পরামর্শ: বড় পরিবর্তনে গ্রহণযোগ্যতার শর্ত যোগ করুন',
+    'chatTipUseFocusedAgents':
+        'পরামর্শ: পরিকল্পনা, রিভিউ বা বিল্ডের জন্য ফোকাসড এজেন্ট বেছে নিন',
     'chatToggleSidebars': 'সাইডবার টগল করুন',
     'chatTokensLabel': 'টোকেন: {total}',
     'chatTourProjectsConversations':
@@ -5099,6 +5139,25 @@ const translations = <String, Map<String, String>>{
         'Tipp: Verwenden Sie /, um auf Slash-Befehle zuzugreifen',
     'chatTipStepByStep':
         'Tipp: Fragen Sie nach Schritt-für-Schritt beim Debuggen komplexer Probleme',
+    'chatTipStartWithGoal': 'Tipp: Beginnen Sie mit dem Endziel',
+    'chatTipNameRelevantFiles':
+        'Tipp: Nennen Sie relevante Dateien, Screens oder Befehle',
+    'chatTipStateConstraints':
+        'Tipp: Nennen Sie Einschränkungen, die der Agent bewahren muss',
+    'chatTipAskForPlan':
+        'Tipp: Fragen Sie bei großen Aufgaben zuerst nach einem Plan',
+    'chatTipDefineVerification':
+        'Tipp: Sagen Sie, welche Tests oder Checks bestehen sollen',
+    'chatTipShareAttempts':
+        'Tipp: Teilen Sie mit, was Sie versucht haben und welcher Fehler erschien',
+    'chatTipCompareOptions':
+        'Tipp: Fragen Sie nach Alternativen, wenn Tradeoffs unklar sind',
+    'chatTipRequestDocs':
+        'Tipp: Bitten Sie um Doku-Updates, wenn sich Verhalten ändert',
+    'chatTipAcceptanceCriteria':
+        'Tipp: Fügen Sie Akzeptanzkriterien für größere Änderungen hinzu',
+    'chatTipUseFocusedAgents':
+        'Tipp: Wählen Sie einen fokussierten Agenten für Plan, Review oder Build',
     'chatToggleSidebars': 'Seitenleisten umschalten',
     'chatTokensLabel': 'Token: {total}',
     'chatTourProjectsConversations':
@@ -6707,6 +6766,24 @@ const translations = <String, Map<String, String>>{
     'chatTipSlashCommands': 'Consejo: Usa / para acceder a comandos de barra',
     'chatTipStepByStep':
         'Consejo: Pide paso a paso al depurar problemas complejos',
+    'chatTipStartWithGoal': 'Consejo: Empieza por el objetivo final',
+    'chatTipNameRelevantFiles':
+        'Consejo: Nombra archivos, pantallas o comandos relevantes',
+    'chatTipStateConstraints':
+        'Consejo: Indica restricciones que el agente debe preservar',
+    'chatTipAskForPlan': 'Consejo: Pide un plan primero en tareas grandes',
+    'chatTipDefineVerification':
+        'Consejo: Di qué pruebas o comprobaciones deben pasar',
+    'chatTipShareAttempts':
+        'Consejo: Comparte lo que intentaste y el error exacto',
+    'chatTipCompareOptions':
+        'Consejo: Pide alternativas cuando los tradeoffs no estén claros',
+    'chatTipRequestDocs':
+        'Consejo: Pide actualizar docs cuando cambie el comportamiento',
+    'chatTipAcceptanceCriteria':
+        'Consejo: Añade criterios de aceptación en cambios grandes',
+    'chatTipUseFocusedAgents':
+        'Consejo: Elige un agente enfocado para plan, revisión o build',
     'chatToggleSidebars': 'Alternar barras laterales',
     'chatTokensLabel': 'Tokens: {total}',
     'chatTourProjectsConversations':
@@ -8346,6 +8423,22 @@ const translations = <String, Map<String, String>>{
         'Conseil : Utilisez / pour accéder aux commandes slash',
     'chatTipStepByStep':
         'Conseil : Demandez étape par étape lors du débogage de problèmes complexes',
+    'chatTipStartWithGoal': 'Conseil : Commencez par le but final',
+    'chatTipNameRelevantFiles':
+        'Conseil : Nommez les fichiers, écrans ou commandes utiles',
+    'chatTipStateConstraints': 'Conseil : Indiquez les contraintes à préserver',
+    'chatTipAskForPlan': 'Conseil : Demandez un plan avant les grandes tâches',
+    'chatTipDefineVerification':
+        'Conseil : Dites quels tests ou contrôles doivent passer',
+    'chatTipShareAttempts': 'Conseil : Partagez vos essais et le message exact',
+    'chatTipCompareOptions':
+        'Conseil : Demandez des options quand les compromis sont flous',
+    'chatTipRequestDocs':
+        'Conseil : Demandez une mise à jour des docs si le comportement change',
+    'chatTipAcceptanceCriteria':
+        'Conseil : Ajoutez des critères de validation aux grands changements',
+    'chatTipUseFocusedAgents':
+        'Conseil : Choisissez un agent ciblé pour planifier, relire ou construire',
     'chatToggleSidebars': 'Basculer les barres latérales',
     'chatTokensLabel': 'Tokens : {total}',
     'chatTourProjectsConversations':
@@ -9980,6 +10073,21 @@ const translations = <String, Map<String, String>>{
         'सुझाव: स्लैश कमांड तक पहुँचने के लिए / का उपयोग करें',
     'chatTipStepByStep':
         'सुझाव: जटिल समस्याओं को डीबग करते समय चरण-दर-चरण पूछें',
+    'chatTipStartWithGoal': 'सुझाव: अंतिम लक्ष्य से शुरू करें',
+    'chatTipNameRelevantFiles':
+        'सुझाव: संबंधित फ़ाइलें, स्क्रीन या कमांड बताएं',
+    'chatTipStateConstraints':
+        'सुझाव: वे सीमाएं बताएं जिन्हें एजेंट को बचाए रखना है',
+    'chatTipAskForPlan': 'सुझाव: बड़े कार्यों में पहले योजना मांगें',
+    'chatTipDefineVerification':
+        'सुझाव: बताएं कौन से टेस्ट या जांच पास होनी चाहिए',
+    'chatTipShareAttempts': 'सुझाव: आपने क्या आजमाया और सटीक त्रुटि बताएं',
+    'chatTipCompareOptions': 'सुझाव: ट्रेडऑफ अस्पष्ट हों तो विकल्प मांगें',
+    'chatTipRequestDocs': 'सुझाव: व्यवहार बदलने पर डॉक्स अपडेट मांगें',
+    'chatTipAcceptanceCriteria':
+        'सुझाव: बड़े बदलावों के लिए स्वीकृति मानदंड जोड़ें',
+    'chatTipUseFocusedAgents':
+        'सुझाव: योजना, समीक्षा या बिल्ड के लिए केंद्रित एजेंट चुनें',
     'chatToggleSidebars': 'साइडबार टॉगल करें',
     'chatTokensLabel': 'टोकन: {total}',
     'chatTourProjectsConversations':
@@ -11583,6 +11691,24 @@ const translations = <String, Map<String, String>>{
     'chatTipSlashCommands': 'Suggerimento: Usa / per accedere ai comandi slash',
     'chatTipStepByStep':
         'Suggerimento: Chiedi passo-passo durante il debug di problemi complessi',
+    'chatTipStartWithGoal': 'Suggerimento: Inizia con il risultato finale',
+    'chatTipNameRelevantFiles':
+        'Suggerimento: Indica file, schermate o comandi rilevanti',
+    'chatTipStateConstraints': 'Suggerimento: Indica i vincoli da preservare',
+    'chatTipAskForPlan':
+        'Suggerimento: Chiedi prima un piano per attività grandi',
+    'chatTipDefineVerification':
+        'Suggerimento: Dì quali test o controlli devono passare',
+    'chatTipShareAttempts':
+        'Suggerimento: Condividi cosa hai provato e il messaggio esatto',
+    'chatTipCompareOptions':
+        'Suggerimento: Chiedi alternative quando i tradeoff non sono chiari',
+    'chatTipRequestDocs':
+        'Suggerimento: Chiedi aggiornamenti docs quando cambia il comportamento',
+    'chatTipAcceptanceCriteria':
+        'Suggerimento: Aggiungi criteri di accettazione per cambi grandi',
+    'chatTipUseFocusedAgents':
+        'Suggerimento: Scegli un agente mirato per piano, review o build',
     'chatToggleSidebars': 'Attiva/disattiva barre laterali',
     'chatTokensLabel': 'Token: {total}',
     'chatTourProjectsConversations':
@@ -13141,6 +13267,16 @@ const translations = <String, Map<String, String>>{
     'chatTipShellCommands': 'ヒント: 行頭で ! を使用してシェルコマンドを実行します',
     'chatTipSlashCommands': 'ヒント: / を使用してスラッシュコマンドにアクセスします',
     'chatTipStepByStep': 'ヒント: 複雑な問題のデバッグ時はステップバイステップで依頼します',
+    'chatTipStartWithGoal': 'ヒント: 最終目標から始めましょう',
+    'chatTipNameRelevantFiles': 'ヒント: 関連するファイル、画面、コマンドを伝えましょう',
+    'chatTipStateConstraints': 'ヒント: エージェントが守る制約を伝えましょう',
+    'chatTipAskForPlan': 'ヒント: 大きなタスクでは先に計画を依頼しましょう',
+    'chatTipDefineVerification': 'ヒント: 通すべきテストやチェックを伝えましょう',
+    'chatTipShareAttempts': 'ヒント: 試したことと正確なエラーを共有しましょう',
+    'chatTipCompareOptions': 'ヒント: トレードオフが不明なら代替案を依頼しましょう',
+    'chatTipRequestDocs': 'ヒント: 挙動が変わるなら docs 更新を依頼しましょう',
+    'chatTipAcceptanceCriteria': 'ヒント: 大きな変更には受け入れ条件を追加しましょう',
+    'chatTipUseFocusedAgents': 'ヒント: 計画、レビュー、実装に合うエージェントを選びましょう',
     'chatToggleSidebars': 'サイドバーを切り替え',
     'chatTokensLabel': 'トークン: {total}',
     'chatTourProjectsConversations': 'このボタンを使用してプロジェクトや会話を開きます。',
@@ -14560,6 +14696,16 @@ const translations = <String, Map<String, String>>{
     'chatTipShellCommands': '팁: 시작 부분에 !를 사용하여 쉘 명령을 실행하세요',
     'chatTipSlashCommands': '팁: /를 사용하여 슬래시 명령에 액세스하세요',
     'chatTipStepByStep': '팁: 복잡한 문제 디버깅 시 단계별 설명을 요청하세요',
+    'chatTipStartWithGoal': '팁: 최종 목표부터 알려 주세요',
+    'chatTipNameRelevantFiles': '팁: 관련 파일, 화면, 명령을 알려 주세요',
+    'chatTipStateConstraints': '팁: 에이전트가 지켜야 할 제약을 알려 주세요',
+    'chatTipAskForPlan': '팁: 큰 작업은 먼저 계획을 요청하세요',
+    'chatTipDefineVerification': '팁: 통과해야 할 테스트나 체크를 알려 주세요',
+    'chatTipShareAttempts': '팁: 시도한 내용과 정확한 오류를 공유하세요',
+    'chatTipCompareOptions': '팁: 트레이드오프가 불명확하면 대안을 요청하세요',
+    'chatTipRequestDocs': '팁: 동작이 바뀌면 docs 업데이트를 요청하세요',
+    'chatTipAcceptanceCriteria': '팁: 큰 변경에는 승인 기준을 추가하세요',
+    'chatTipUseFocusedAgents': '팁: 계획, 리뷰, 빌드에 맞는 에이전트를 선택하세요',
     'chatToggleSidebars': '사이드바 토글',
     'chatTokensLabel': '토큰: {total}',
     'chatTourProjectsConversations': '이 버튼을 사용하여 프로젝트와 대화를 엽니다.',
@@ -16030,6 +16176,22 @@ const translations = <String, Map<String, String>>{
     'chatTipSlashCommands': 'Dica: Use / para acessar comandos de barra',
     'chatTipStepByStep':
         'Dica: Peça passo a passo ao depurar problemas complexos',
+    'chatTipStartWithGoal': 'Dica: Comece pelo objetivo final',
+    'chatTipNameRelevantFiles':
+        'Dica: Cite arquivos, telas ou comandos relevantes',
+    'chatTipStateConstraints':
+        'Dica: Informe restrições que o agente deve preservar',
+    'chatTipAskForPlan': 'Dica: Peça um plano primeiro em tarefas grandes',
+    'chatTipDefineVerification':
+        'Dica: Diga quais testes ou checagens devem passar',
+    'chatTipShareAttempts': 'Dica: Conte o que tentou e o erro exato',
+    'chatTipCompareOptions': 'Dica: Peça alternativas quando houver tradeoffs',
+    'chatTipRequestDocs':
+        'Dica: Peça atualização de docs quando comportamento mudar',
+    'chatTipAcceptanceCriteria':
+        'Dica: Adicione critérios de aceite em mudanças maiores',
+    'chatTipUseFocusedAgents':
+        'Dica: Escolha um agente focado para plano, revisão ou build',
     'chatToggleSidebars': 'Alternar barras laterais',
     'chatTokensLabel': 'Tokens: {total}',
     'chatTourProjectsConversations':
@@ -17641,6 +17803,23 @@ const translations = <String, Map<String, String>>{
     'chatTipSlashCommands': 'Совет: Используйте / для доступа к слэш-командам',
     'chatTipStepByStep':
         'Совет: Запрашивайте пошаговые инструкции при отладке сложных проблем',
+    'chatTipStartWithGoal': 'Совет: Начните с конечной цели',
+    'chatTipNameRelevantFiles':
+        'Совет: Укажите важные файлы, экраны или команды',
+    'chatTipStateConstraints':
+        'Совет: Укажите ограничения, которые агент должен сохранить',
+    'chatTipAskForPlan': 'Совет: Для больших задач сначала запросите план',
+    'chatTipDefineVerification':
+        'Совет: Укажите, какие тесты или проверки должны пройти',
+    'chatTipShareAttempts': 'Совет: Расскажите, что пробовали, и точную ошибку',
+    'chatTipCompareOptions':
+        'Совет: Запросите варианты, если компромиссы неясны',
+    'chatTipRequestDocs':
+        'Совет: Просите обновить docs, когда поведение меняется',
+    'chatTipAcceptanceCriteria':
+        'Совет: Добавьте критерии приемки для крупных изменений',
+    'chatTipUseFocusedAgents':
+        'Совет: Выберите фокусного агента для плана, ревью или сборки',
     'chatToggleSidebars': 'Переключить боковые панели',
     'chatTokensLabel': 'Токены: {total}',
     'chatTourProjectsConversations':
@@ -19226,6 +19405,21 @@ const translations = <String, Map<String, String>>{
     'chatTipSlashCommands': 'مشورہ: سلیش کمانڈز تک رسائی کے لیے / استعمال کریں',
     'chatTipStepByStep':
         'مشورہ: پیچیدہ مسائل کو ڈیبگ کرتے وقت مرحلہ وار پوچھیں',
+    'chatTipStartWithGoal': 'مشورہ: آخری مقصد سے شروع کریں',
+    'chatTipNameRelevantFiles':
+        'مشورہ: متعلقہ فائلیں، اسکرینیں یا کمانڈز بتائیں',
+    'chatTipStateConstraints':
+        'مشورہ: وہ پابندیاں بتائیں جو ایجنٹ کو برقرار رکھنی ہیں',
+    'chatTipAskForPlan': 'مشورہ: بڑے کاموں میں پہلے منصوبہ مانگیں',
+    'chatTipDefineVerification':
+        'مشورہ: بتائیں کون سے ٹیسٹ یا چیکس پاس ہونے چاہئیں',
+    'chatTipShareAttempts': 'مشورہ: جو آزمایا اور درست خرابی شیئر کریں',
+    'chatTipCompareOptions': 'مشورہ: ٹریڈ آف واضح نہ ہوں تو متبادل مانگیں',
+    'chatTipRequestDocs': 'مشورہ: رویہ بدلے تو docs اپ ڈیٹ مانگیں',
+    'chatTipAcceptanceCriteria':
+        'مشورہ: بڑی تبدیلیوں کے لیے قبولیت کے معیار شامل کریں',
+    'chatTipUseFocusedAgents':
+        'مشورہ: پلان، ریویو یا بلڈ کے لیے مرکوز ایجنٹ چنیں',
     'chatToggleSidebars': 'سائڈبارز کو ٹوگل کریں۔',
     'chatTokensLabel': 'ٹوکنز: {total}',
     'chatTourProjectsConversations':
@@ -20724,6 +20918,16 @@ const translations = <String, Map<String, String>>{
     'chatTipShellCommands': '提示：在开头使用 ! 来运行 shell 命令',
     'chatTipSlashCommands': '提示：使用 / 访问斜杠命令',
     'chatTipStepByStep': '提示：在调试复杂问题时要求逐步进行',
+    'chatTipStartWithGoal': '提示：先说明最终目标',
+    'chatTipNameRelevantFiles': '提示：说明相关文件、界面或命令',
+    'chatTipStateConstraints': '提示：说明代理必须保留的约束',
+    'chatTipAskForPlan': '提示：大任务先请求计划',
+    'chatTipDefineVerification': '提示：说明哪些测试或检查必须通过',
+    'chatTipShareAttempts': '提示：分享已尝试的内容和准确错误',
+    'chatTipCompareOptions': '提示：权衡不清时请求替代方案',
+    'chatTipRequestDocs': '提示：行为变化时请求更新文档',
+    'chatTipAcceptanceCriteria': '提示：大型变更加入验收标准',
+    'chatTipUseFocusedAgents': '提示：为计划、评审或构建选择专注代理',
     'chatToggleSidebars': '切换侧边栏',
     'chatTokensLabel': 'Token：{total}',
     'chatTourProjectsConversations': '使用此按钮打开您的项目和对话。',

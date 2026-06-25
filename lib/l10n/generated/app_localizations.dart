@@ -2411,6 +2411,66 @@ abstract class AppLocalizations {
   /// **'Tip: Ask for step-by-step when debugging complex issues'**
   String get chatTipStepByStep;
 
+  /// CodeWalk UI string — chatTipStartWithGoal
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Start with the end goal'**
+  String get chatTipStartWithGoal;
+
+  /// CodeWalk UI string — chatTipNameRelevantFiles
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Name relevant files, screens, or commands'**
+  String get chatTipNameRelevantFiles;
+
+  /// CodeWalk UI string — chatTipStateConstraints
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: State constraints the agent must preserve'**
+  String get chatTipStateConstraints;
+
+  /// CodeWalk UI string — chatTipAskForPlan
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Ask for a plan first on large tasks'**
+  String get chatTipAskForPlan;
+
+  /// CodeWalk UI string — chatTipDefineVerification
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Say which tests or checks should pass'**
+  String get chatTipDefineVerification;
+
+  /// CodeWalk UI string — chatTipShareAttempts
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Share what you tried and the exact error'**
+  String get chatTipShareAttempts;
+
+  /// CodeWalk UI string — chatTipCompareOptions
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Ask for alternatives when tradeoffs are unclear'**
+  String get chatTipCompareOptions;
+
+  /// CodeWalk UI string — chatTipRequestDocs
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Ask for docs updates when behavior changes'**
+  String get chatTipRequestDocs;
+
+  /// CodeWalk UI string — chatTipAcceptanceCriteria
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Add acceptance criteria for larger changes'**
+  String get chatTipAcceptanceCriteria;
+
+  /// CodeWalk UI string — chatTipUseFocusedAgents
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Pick a focused agent for plan, review, or build'**
+  String get chatTipUseFocusedAgents;
+
   /// CodeWalk UI string — chatToggleSidebars
   ///
   /// In en, this message translates to:

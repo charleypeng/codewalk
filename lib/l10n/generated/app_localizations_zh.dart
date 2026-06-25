@@ -1246,6 +1246,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTipStepByStep => '提示：在调试复杂问题时要求逐步进行';
 
   @override
+  String get chatTipStartWithGoal => '提示：先说明最终目标';
+
+  @override
+  String get chatTipNameRelevantFiles => '提示：说明相关文件、界面或命令';
+
+  @override
+  String get chatTipStateConstraints => '提示：说明代理必须保留的约束';
+
+  @override
+  String get chatTipAskForPlan => '提示：大任务先请求计划';
+
+  @override
+  String get chatTipDefineVerification => '提示：说明哪些测试或检查必须通过';
+
+  @override
+  String get chatTipShareAttempts => '提示：分享已尝试的内容和准确错误';
+
+  @override
+  String get chatTipCompareOptions => '提示：权衡不清时请求替代方案';
+
+  @override
+  String get chatTipRequestDocs => '提示：行为变化时请求更新文档';
+
+  @override
+  String get chatTipAcceptanceCriteria => '提示：大型变更加入验收标准';
+
+  @override
+  String get chatTipUseFocusedAgents => '提示：为计划、评审或构建选择专注代理';
+
+  @override
   String get chatToggleSidebars => '切换侧边栏';
 
   @override

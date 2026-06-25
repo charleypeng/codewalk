@@ -32,6 +32,7 @@ import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/file_node.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
@@ -108,6 +109,30 @@ part 'chat_page/chat_page_mobile_overflow.dart';
 part 'chat_page/chat_page_forward_runtime.dart';
 part 'chat_page/chat_page_widgets.dart';
 
+@visibleForTesting
+List<String> buildComposerReceivingTips(AppLocalizations l10n) => <String>[
+  l10n.chatTipMentionFiles,
+  l10n.chatTipRenameConversation,
+  l10n.chatTipShellCommands,
+  l10n.chatTipSlashCommands,
+  l10n.chatTipLongPressSend,
+  l10n.chatTipContextKnob,
+  l10n.chatTipBeSpecific,
+  l10n.chatTipStepByStep,
+  l10n.chatTipProvideContext,
+  l10n.chatTipBreakTasks,
+  l10n.chatTipStartWithGoal,
+  l10n.chatTipNameRelevantFiles,
+  l10n.chatTipStateConstraints,
+  l10n.chatTipAskForPlan,
+  l10n.chatTipDefineVerification,
+  l10n.chatTipShareAttempts,
+  l10n.chatTipCompareOptions,
+  l10n.chatTipRequestDocs,
+  l10n.chatTipAcceptanceCriteria,
+  l10n.chatTipUseFocusedAgents,
+];
+
 /// Chat page
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, this.projectId});
@@ -171,18 +196,7 @@ class _ChatPageState extends State<ChatPage>
   static const int _maxReturnLatestRevealAttempts = 8;
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
-  List<String> get _receivingTips => [
-    context.l10n.chatTipMentionFiles,
-    context.l10n.chatTipRenameConversation,
-    context.l10n.chatTipShellCommands,
-    context.l10n.chatTipSlashCommands,
-    context.l10n.chatTipLongPressSend,
-    context.l10n.chatTipContextKnob,
-    context.l10n.chatTipBeSpecific,
-    context.l10n.chatTipStepByStep,
-    context.l10n.chatTipProvideContext,
-    context.l10n.chatTipBreakTasks,
-  ];
+  List<String> get _receivingTips => buildComposerReceivingTips(context.l10n);
 
   final ScrollController _scrollController = ScrollController();
   final TimelineSearchService _timelineSearchService =

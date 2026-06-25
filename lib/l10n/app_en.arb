@@ -1352,6 +1352,36 @@
   "@chatTipStepByStep": {
     "description": "CodeWalk UI string — chatTipStepByStep"
   },
+  "@chatTipStartWithGoal": {
+    "description": "CodeWalk UI string — chatTipStartWithGoal"
+  },
+  "@chatTipNameRelevantFiles": {
+    "description": "CodeWalk UI string — chatTipNameRelevantFiles"
+  },
+  "@chatTipStateConstraints": {
+    "description": "CodeWalk UI string — chatTipStateConstraints"
+  },
+  "@chatTipAskForPlan": {
+    "description": "CodeWalk UI string — chatTipAskForPlan"
+  },
+  "@chatTipDefineVerification": {
+    "description": "CodeWalk UI string — chatTipDefineVerification"
+  },
+  "@chatTipShareAttempts": {
+    "description": "CodeWalk UI string — chatTipShareAttempts"
+  },
+  "@chatTipCompareOptions": {
+    "description": "CodeWalk UI string — chatTipCompareOptions"
+  },
+  "@chatTipRequestDocs": {
+    "description": "CodeWalk UI string — chatTipRequestDocs"
+  },
+  "@chatTipAcceptanceCriteria": {
+    "description": "CodeWalk UI string — chatTipAcceptanceCriteria"
+  },
+  "@chatTipUseFocusedAgents": {
+    "description": "CodeWalk UI string — chatTipUseFocusedAgents"
+  },
   "@chatToggleSidebars": {
     "description": "CodeWalk UI string — chatToggleSidebars"
   },
@@ -4840,6 +4870,16 @@
   "chatTipShellCommands": "Tip: Use ! at the start to run shell commands",
   "chatTipSlashCommands": "Tip: Use / to access slash commands",
   "chatTipStepByStep": "Tip: Ask for step-by-step when debugging complex issues",
+  "chatTipStartWithGoal": "Tip: Start with the end goal",
+  "chatTipNameRelevantFiles": "Tip: Name relevant files, screens, or commands",
+  "chatTipStateConstraints": "Tip: State constraints the agent must preserve",
+  "chatTipAskForPlan": "Tip: Ask for a plan first on large tasks",
+  "chatTipDefineVerification": "Tip: Say which tests or checks should pass",
+  "chatTipShareAttempts": "Tip: Share what you tried and the exact error",
+  "chatTipCompareOptions": "Tip: Ask for alternatives when tradeoffs are unclear",
+  "chatTipRequestDocs": "Tip: Ask for docs updates when behavior changes",
+  "chatTipAcceptanceCriteria": "Tip: Add acceptance criteria for larger changes",
+  "chatTipUseFocusedAgents": "Tip: Pick a focused agent for plan, review, or build",
   "chatToggleSidebars": "Toggle sidebars",
   "chatTokensLabel": "Tokens: {total}",
   "chatTourProjectsConversations": "Use this button to open your projects and conversations.",

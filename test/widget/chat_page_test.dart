@@ -45,6 +45,7 @@ import 'package:codewalk/domain/usecases/unshare_chat_session.dart';
 import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
 import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
+import 'package:codewalk/l10n/generated/app_localizations_en.dart';
 import 'package:codewalk/presentation/pages/chat_page.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
@@ -153,6 +154,20 @@ class _SlashCommandFallbackDioClient extends DioClient {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('composer receiving tips cover actionable agent prompt practices', () {
+    final tips = buildComposerReceivingTips(AppLocalizationsEn());
+
+    expect(tips, hasLength(greaterThanOrEqualTo(20)));
+    expect(tips.toSet(), hasLength(tips.length));
+    expect(tips.every((tip) => tip.startsWith('Tip: ')), isTrue);
+    expect(tips.every((tip) => tip.length <= 80), isTrue);
+    expect(tips, contains('Tip: Start with the end goal'));
+    expect(tips, contains('Tip: Name relevant files, screens, or commands'));
+    expect(tips, contains('Tip: State constraints the agent must preserve'));
+    expect(tips, contains('Tip: Say which tests or checks should pass'));
+    expect(tips, contains('Tip: Add acceptance criteria for larger changes'));
+  });
 
   group('ChatPage responsive shell', () {
     testWidgets('toolbar hides redo until session has redo state', (

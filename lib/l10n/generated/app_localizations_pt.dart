@@ -1348,6 +1348,44 @@ class AppLocalizationsPt extends AppLocalizations {
       'Dica: Peça passo a passo ao depurar problemas complexos';
 
   @override
+  String get chatTipStartWithGoal => 'Dica: Comece pelo objetivo final';
+
+  @override
+  String get chatTipNameRelevantFiles =>
+      'Dica: Cite arquivos, telas ou comandos relevantes';
+
+  @override
+  String get chatTipStateConstraints =>
+      'Dica: Informe restrições que o agente deve preservar';
+
+  @override
+  String get chatTipAskForPlan =>
+      'Dica: Peça um plano primeiro em tarefas grandes';
+
+  @override
+  String get chatTipDefineVerification =>
+      'Dica: Diga quais testes ou checagens devem passar';
+
+  @override
+  String get chatTipShareAttempts => 'Dica: Conte o que tentou e o erro exato';
+
+  @override
+  String get chatTipCompareOptions =>
+      'Dica: Peça alternativas quando houver tradeoffs';
+
+  @override
+  String get chatTipRequestDocs =>
+      'Dica: Peça atualização de docs quando comportamento mudar';
+
+  @override
+  String get chatTipAcceptanceCriteria =>
+      'Dica: Adicione critérios de aceite em mudanças maiores';
+
+  @override
+  String get chatTipUseFocusedAgents =>
+      'Dica: Escolha um agente focado para plano, revisão ou build';
+
+  @override
   String get chatToggleSidebars => 'Alternar barras laterais';
 
   @override

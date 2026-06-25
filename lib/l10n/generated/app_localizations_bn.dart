@@ -1337,6 +1337,42 @@ class AppLocalizationsBn extends AppLocalizations {
       'পরামর্শ: জটিল সমস্যা ডিবাগ করার সময় ধাপে ধাপে জিজ্ঞাসা করুন';
 
   @override
+  String get chatTipStartWithGoal => 'পরামর্শ: শেষ লক্ষ্য দিয়ে শুরু করুন';
+
+  @override
+  String get chatTipNameRelevantFiles =>
+      'পরামর্শ: প্রাসঙ্গিক ফাইল, স্ক্রিন বা কমান্ডের নাম দিন';
+
+  @override
+  String get chatTipStateConstraints =>
+      'পরামর্শ: এজেন্টকে যে সীমা মানতে হবে তা বলুন';
+
+  @override
+  String get chatTipAskForPlan => 'পরামর্শ: বড় কাজের আগে একটি পরিকল্পনা চাইুন';
+
+  @override
+  String get chatTipDefineVerification =>
+      'পরামর্শ: কোন পরীক্ষা বা চেক পাস করতে হবে বলুন';
+
+  @override
+  String get chatTipShareAttempts =>
+      'পরামর্শ: কী চেষ্টা করেছেন এবং সঠিক ত্রুটি জানান';
+
+  @override
+  String get chatTipCompareOptions => 'পরামর্শ: ট্রেডঅফ অস্পষ্ট হলে বিকল্প চান';
+
+  @override
+  String get chatTipRequestDocs => 'পরামর্শ: আচরণ বদলালে ডকস আপডেট চাইুন';
+
+  @override
+  String get chatTipAcceptanceCriteria =>
+      'পরামর্শ: বড় পরিবর্তনে গ্রহণযোগ্যতার শর্ত যোগ করুন';
+
+  @override
+  String get chatTipUseFocusedAgents =>
+      'পরামর্শ: পরিকল্পনা, রিভিউ বা বিল্ডের জন্য ফোকাসড এজেন্ট বেছে নিন';
+
+  @override
   String get chatToggleSidebars => 'সাইডবার টগল করুন';
 
   @override

@@ -1311,6 +1311,42 @@ class AppLocalizationsAr extends AppLocalizations {
       'نصيحة: اطلب خطوة بخطوة عند تصحيح المشكلات المعقدة';
 
   @override
+  String get chatTipStartWithGoal => 'نصيحة: ابدأ بالهدف النهائي';
+
+  @override
+  String get chatTipNameRelevantFiles =>
+      'نصيحة: اذكر الملفات أو الشاشات أو الأوامر ذات الصلة';
+
+  @override
+  String get chatTipStateConstraints =>
+      'نصيحة: اذكر القيود التي يجب على الوكيل الحفاظ عليها';
+
+  @override
+  String get chatTipAskForPlan => 'نصيحة: اطلب خطة أولا للمهام الكبيرة';
+
+  @override
+  String get chatTipDefineVerification =>
+      'نصيحة: قل أي اختبارات أو فحوصات يجب أن تنجح';
+
+  @override
+  String get chatTipShareAttempts => 'نصيحة: شارك ما جربته والخطأ الدقيق';
+
+  @override
+  String get chatTipCompareOptions =>
+      'نصيحة: اطلب بدائل عندما تكون المفاضلات غير واضحة';
+
+  @override
+  String get chatTipRequestDocs => 'نصيحة: اطلب تحديث الوثائق عند تغير السلوك';
+
+  @override
+  String get chatTipAcceptanceCriteria =>
+      'نصيحة: أضف معايير قبول للتغييرات الكبيرة';
+
+  @override
+  String get chatTipUseFocusedAgents =>
+      'نصيحة: اختر وكيلا مركزا للتخطيط أو المراجعة أو البناء';
+
+  @override
   String get chatToggleSidebars => 'تبديل الأشرطة الجانبية';
 
   @override

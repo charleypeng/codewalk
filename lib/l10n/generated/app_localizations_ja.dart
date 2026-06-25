@@ -1265,6 +1265,36 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatTipStepByStep => 'ヒント: 複雑な問題のデバッグ時はステップバイステップで依頼します';
 
   @override
+  String get chatTipStartWithGoal => 'ヒント: 最終目標から始めましょう';
+
+  @override
+  String get chatTipNameRelevantFiles => 'ヒント: 関連するファイル、画面、コマンドを伝えましょう';
+
+  @override
+  String get chatTipStateConstraints => 'ヒント: エージェントが守る制約を伝えましょう';
+
+  @override
+  String get chatTipAskForPlan => 'ヒント: 大きなタスクでは先に計画を依頼しましょう';
+
+  @override
+  String get chatTipDefineVerification => 'ヒント: 通すべきテストやチェックを伝えましょう';
+
+  @override
+  String get chatTipShareAttempts => 'ヒント: 試したことと正確なエラーを共有しましょう';
+
+  @override
+  String get chatTipCompareOptions => 'ヒント: トレードオフが不明なら代替案を依頼しましょう';
+
+  @override
+  String get chatTipRequestDocs => 'ヒント: 挙動が変わるなら docs 更新を依頼しましょう';
+
+  @override
+  String get chatTipAcceptanceCriteria => 'ヒント: 大きな変更には受け入れ条件を追加しましょう';
+
+  @override
+  String get chatTipUseFocusedAgents => 'ヒント: 計画、レビュー、実装に合うエージェントを選びましょう';
+
+  @override
   String get chatToggleSidebars => 'サイドバーを切り替え';
 
   @override
