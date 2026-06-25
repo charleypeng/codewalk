@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.143.0 - 2026-06-25
+
+- fix(chat): scope inactive session events
+
 ## v1.142.0 - 2026-06-25
 
 - fix(chat): align server status summary with health
