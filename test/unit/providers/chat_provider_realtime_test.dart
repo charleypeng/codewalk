@@ -57,6 +57,7 @@ void main() {
 
     ChatProvider buildProvider({
       DioClient? dioClient,
+      Duration syncSignalStaleThreshold = const Duration(seconds: 20),
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
       SettingsProvider? settingsProvider,
@@ -68,6 +69,7 @@ void main() {
         localDataSource: localDataSource,
         defaultSettingsProvider: defaultSettingsProvider,
         dioClient: dioClient,
+        syncSignalStaleThreshold: syncSignalStaleThreshold,
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
         settingsProvider: settingsProvider,
@@ -196,6 +198,123 @@ void main() {
           provider.currentSessionPermissions.single.id,
           'perm_aggressive_resume',
         );
+      },
+    );
+
+    test(
+      'foreground resume grace suppresses stale-signal delayed state until reconnect signal arrives',
+      () async {
+        await defaultSettingsProvider.setSyncResumeGracePeriod(
+          const Duration(milliseconds: 120),
+        );
+        provider = buildProvider(
+          syncSignalStaleThreshold: const Duration(milliseconds: 1),
+          syncHealthCheckInterval: const Duration(milliseconds: 10),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'server.connected',
+            properties: <String, dynamic>{},
+          ),
+        );
+        await settleUntil(() => provider.syncState == ChatSyncState.connected);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+
+        await provider.setForegroundActive(false);
+        final resumeFuture = provider.setForegroundActive(true);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.isInResumeGrace, isTrue);
+        expect(provider.syncState, ChatSyncState.connected);
+        expect(provider.isInDegradedMode, isFalse);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'server.connected',
+            properties: <String, dynamic>{},
+          ),
+        );
+        await resumeFuture;
+        await settleUntil(() => !provider.isInResumeGrace);
+
+        expect(provider.syncState, ChatSyncState.connected);
+        expect(provider.isInDegradedMode, isFalse);
+      },
+    );
+
+    test(
+      'foreground resume grace eventually promotes true outage to delayed state',
+      () async {
+        await defaultSettingsProvider.setSyncResumeGracePeriod(
+          const Duration(milliseconds: 40),
+        );
+        provider = buildProvider(
+          syncSignalStaleThreshold: const Duration(milliseconds: 1),
+          syncHealthCheckInterval: const Duration(milliseconds: 10),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'server.connected',
+            properties: <String, dynamic>{},
+          ),
+        );
+        await settleUntil(() => provider.syncState == ChatSyncState.connected);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+
+        await provider.setForegroundActive(false);
+        await provider.setForegroundActive(true);
+        await settleUntil(
+          () =>
+              !provider.isInResumeGrace &&
+              provider.syncState == ChatSyncState.delayed,
+          maxTicks: 80,
+        );
+
+        expect(provider.isInDegradedMode, isTrue);
+      },
+    );
+
+    test(
+      'backgrounding during foreground resume grace cancels pending promotion',
+      () async {
+        await defaultSettingsProvider.setSyncResumeGracePeriod(
+          const Duration(milliseconds: 40),
+        );
+        provider = buildProvider(
+          syncSignalStaleThreshold: const Duration(milliseconds: 1),
+          syncHealthCheckInterval: const Duration(milliseconds: 10),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'server.connected',
+            properties: <String, dynamic>{},
+          ),
+        );
+        await settleUntil(() => provider.syncState == ChatSyncState.connected);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+
+        await provider.setForegroundActive(false);
+        final resumeFuture = provider.setForegroundActive(true);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await provider.setForegroundActive(false);
+        await resumeFuture;
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+
+        expect(provider.isInResumeGrace, isFalse);
+        expect(provider.syncState, ChatSyncState.connected);
+        expect(provider.isInDegradedMode, isFalse);
       },
     );
 

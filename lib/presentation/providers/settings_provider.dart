@@ -182,6 +182,7 @@ class SettingsProvider extends ChangeNotifier {
       _settings.androidBackgroundAlertsEnabled;
   bool get keepMobileRealtimeForShortPeriod =>
       _settings.keepMobileRealtimeForShortPeriod;
+  Duration get syncResumeGracePeriod => _settings.syncResumeGracePeriod;
   bool get shouldMonitorAndroidBackgroundAlerts =>
       shouldRunAndroidBackgroundAlerts(_settings);
   bool get enableExperimentalMultiDeviceSync =>
@@ -712,6 +713,16 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(keepMobileRealtimeForShortPeriod: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSyncResumeGracePeriod(Duration value) async {
+    final nextValue = clampSyncResumeGracePeriod(value);
+    if (_settings.syncResumeGracePeriod == nextValue) {
+      return;
+    }
+    _settings = _settings.copyWith(syncResumeGracePeriod: nextValue);
     notifyListeners();
     await _persist();
   }

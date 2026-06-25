@@ -470,6 +470,40 @@ void main() {
       expect(second.keepMobileRealtimeForShortPeriod, isFalse);
     });
 
+    test('persists and clamps sync resume grace period', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.syncResumeGracePeriod, kDefaultSyncResumeGracePeriod);
+
+      await first.setSyncResumeGracePeriod(const Duration(seconds: 45));
+      expect(first.syncResumeGracePeriod, kMaxSyncResumeGracePeriod);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.syncResumeGracePeriod, kMaxSyncResumeGracePeriod);
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(
+        settingsJson['syncResumeGracePeriodMs'],
+        kMaxSyncResumeGracePeriod.inMilliseconds,
+      );
+
+      await second.setSyncResumeGracePeriod(const Duration(seconds: -1));
+      expect(second.syncResumeGracePeriod, Duration.zero);
+    });
+
     test('persists experimental multi-device sync preference', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(
