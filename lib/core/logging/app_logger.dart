@@ -20,14 +20,14 @@ class AppLogger {
   static final List<LogEntry> _buffer = <LogEntry>[];
   static DateTime _sessionStartedAt = DateTime.now();
   static bool _globalHandlersInstalled = false;
-  static bool? _loggingEnabled;
+  static bool _loggingEnabled = false;
   static bool _performanceLoggingEnabled = false;
 
   static DateTime get sessionStartedAt => _sessionStartedAt;
-  static bool get loggingEnabled => _loggingEnabled == true;
+  static bool get loggingEnabled => _loggingEnabled;
   static bool get performanceLoggingEnabled =>
-      _loggingEnabled != false && _performanceLoggingEnabled;
-  static bool get _canRecordLogs => _loggingEnabled != false;
+      _loggingEnabled && _performanceLoggingEnabled;
+  static bool get _canRecordLogs => _loggingEnabled;
 
   static void setLoggingEnabled(bool enabled) {
     if (_loggingEnabled == enabled) {
