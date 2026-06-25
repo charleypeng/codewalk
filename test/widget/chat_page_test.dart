@@ -156,7 +156,13 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('composer receiving tips cover actionable agent prompt practices', () {
-    final tips = buildComposerReceivingTips(AppLocalizationsEn());
+    final l10n = AppLocalizationsEn();
+    final tips = buildComposerReceivingTips(l10n);
+    int? randomUpperBound;
+    final pickedIndex = pickComposerReceivingTipIndex(l10n, (max) {
+      randomUpperBound = max;
+      return 0;
+    });
 
     expect(tips, hasLength(greaterThanOrEqualTo(20)));
     expect(tips.toSet(), hasLength(tips.length));
@@ -167,6 +173,8 @@ void main() {
     expect(tips, contains('Tip: State constraints the agent must preserve'));
     expect(tips, contains('Tip: Say which tests or checks should pass'));
     expect(tips, contains('Tip: Add acceptance criteria for larger changes'));
+    expect(pickedIndex, 0);
+    expect(randomUpperBound, tips.length);
   });
 
   group('ChatPage responsive shell', () {

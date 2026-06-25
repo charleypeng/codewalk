@@ -133,6 +133,15 @@ List<String> buildComposerReceivingTips(AppLocalizations l10n) => <String>[
   l10n.chatTipUseFocusedAgents,
 ];
 
+@visibleForTesting
+int pickComposerReceivingTipIndex(
+  AppLocalizations l10n,
+  int Function(int max) nextInt,
+) {
+  final tips = buildComposerReceivingTips(l10n);
+  return nextInt(tips.length);
+}
+
 /// Chat page
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, this.projectId});
@@ -533,6 +542,7 @@ class _ChatPageState extends State<ChatPage>
   bool _needsInitialDataRecovery = false;
   bool _initialDataRecoveryInFlight = false;
   int _initialDataRecoveryAttemptCount = 0;
+  bool _didSeedComposerTipIndex = false;
   int _currentTipIndex = 0;
   DateTime? _lastGlobalEscapeAt;
   _ComposerStatusPresentation? _visibleComposerStatus;
@@ -601,7 +611,6 @@ class _ChatPageState extends State<ChatPage>
   @override
   void initState() {
     super.initState();
-    _currentTipIndex = Random().nextInt(10);
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_handleGlobalShortcutKeyEvent);
     _scrollController.addListener(_handleScrollChanged);
@@ -617,6 +626,13 @@ class _ChatPageState extends State<ChatPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_didSeedComposerTipIndex) {
+      _didSeedComposerTipIndex = true;
+      _currentTipIndex = pickComposerReceivingTipIndex(
+        context.l10n,
+        Random().nextInt,
+      );
+    }
     // Invalidate highlight theme cache on dependency change (theme switch).
     _cachedHighlightTheme = null;
     // Safely get ChatProvider reference here
