@@ -1379,13 +1379,14 @@ class ExperienceSettings {
     }
 
     final loggingEnabledJson = json['loggingEnabled'];
-    if (loggingEnabledJson is bool) {
-      loggingEnabled = loggingEnabledJson;
-    }
-
     final performanceLoggingEnabledJson = json['performanceLoggingEnabled'];
     if (performanceLoggingEnabledJson is bool) {
       performanceLoggingEnabled = performanceLoggingEnabledJson;
+    }
+    if (loggingEnabledJson is bool) {
+      loggingEnabled = loggingEnabledJson;
+    } else if (performanceLoggingEnabled) {
+      loggingEnabled = true;
     }
 
     var themeMode = defaults.themeMode;

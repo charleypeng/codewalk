@@ -47,6 +47,7 @@ void main() {
 
       await AppLogger.runPerformanceTask('load_messages', () async {});
 
+      expect(AppLogger.performanceLoggingEnabled, isFalse);
       expect(AppLogger.entries.value, isEmpty);
     },
   );

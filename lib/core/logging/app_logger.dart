@@ -20,12 +20,14 @@ class AppLogger {
   static final List<LogEntry> _buffer = <LogEntry>[];
   static DateTime _sessionStartedAt = DateTime.now();
   static bool _globalHandlersInstalled = false;
-  static bool _loggingEnabled = false;
+  static bool? _loggingEnabled;
   static bool _performanceLoggingEnabled = false;
 
   static DateTime get sessionStartedAt => _sessionStartedAt;
-  static bool get loggingEnabled => _loggingEnabled;
-  static bool get performanceLoggingEnabled => _performanceLoggingEnabled;
+  static bool get loggingEnabled => _loggingEnabled == true;
+  static bool get performanceLoggingEnabled =>
+      _loggingEnabled != false && _performanceLoggingEnabled;
+  static bool get _canRecordLogs => _loggingEnabled != false;
 
   static void setLoggingEnabled(bool enabled) {
     if (_loggingEnabled == enabled) {
@@ -103,7 +105,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? metrics,
   }) {
-    if (kReleaseMode || !_loggingEnabled) {
+    if (kReleaseMode || !_canRecordLogs) {
       return;
     }
     _record(
@@ -130,7 +132,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? metrics,
   }) {
-    if (!_loggingEnabled) {
+    if (!_canRecordLogs) {
       return;
     }
     _record(
@@ -157,7 +159,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? metrics,
   }) {
-    if (!_loggingEnabled) {
+    if (!_canRecordLogs) {
       return;
     }
     _record(
@@ -184,7 +186,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? metrics,
   }) {
-    if (!_loggingEnabled) {
+    if (!_canRecordLogs) {
       return;
     }
     _record(
@@ -210,7 +212,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? context,
   }) async {
-    if (!_loggingEnabled || !_performanceLoggingEnabled) {
+    if (!performanceLoggingEnabled) {
       return body();
     }
 
@@ -247,7 +249,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? context,
   }) {
-    if (!_loggingEnabled || !_performanceLoggingEnabled) {
+    if (!performanceLoggingEnabled) {
       return body();
     }
 
@@ -287,7 +289,7 @@ class AppLogger {
     Object? error,
     StackTrace? stackTrace,
   }) {
-    if (!_loggingEnabled || !_performanceLoggingEnabled) {
+    if (!performanceLoggingEnabled) {
       return;
     }
     final normalizedOperation = _normalizeTagValue(operation);
@@ -437,7 +439,7 @@ class AppLogger {
     Set<String>? tags,
     Map<String, Object?>? metrics,
   }) {
-    if (!_loggingEnabled) {
+    if (!_canRecordLogs) {
       return;
     }
     final entry = LogEntry(

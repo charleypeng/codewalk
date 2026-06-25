@@ -62,6 +62,25 @@ void main() {
       expect(restored.loggingEnabled, isFalse);
     });
 
+    test('migrates explicit performance logging opt-in to app logging', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'performanceLoggingEnabled': true,
+      });
+
+      expect(restored.loggingEnabled, isTrue);
+      expect(restored.performanceLoggingEnabled, isTrue);
+    });
+
+    test('preserves explicit app logging off over performance opt-in', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'loggingEnabled': false,
+        'performanceLoggingEnabled': true,
+      });
+
+      expect(restored.loggingEnabled, isFalse);
+      expect(restored.performanceLoggingEnabled, isTrue);
+    });
+
     test('defaults performance logging to disabled', () {
       expect(ExperienceSettings.defaults().performanceLoggingEnabled, isFalse);
     });
