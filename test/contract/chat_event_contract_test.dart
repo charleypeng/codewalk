@@ -844,9 +844,13 @@ void main() {
             reason: 'Expected SSE delta to update local text before fallback.',
           );
           await settleUntil(
-            () => chatRepository.getMessageCallCount > 0,
-            maxTicks: 40,
-            reason: 'Expected fallback fetch to run after debounce.',
+            () {
+              final message = provider.messages.single as AssistantMessage;
+              return chatRepository.getMessageCallCount > 0 &&
+                  message.isCompleted;
+            },
+            maxTicks: 80,
+            reason: 'Expected fallback fetch to merge completion status.',
           );
 
           final message = provider.messages.single as AssistantMessage;

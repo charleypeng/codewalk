@@ -100,6 +100,25 @@ void main() {
       fail(reason ?? 'Condition was not met before event queue settled.');
     }
 
+    Future<void> emitServerConnected() async {
+      await settleUntil(
+        () => provider.debugHasRealtimeEventSubscription,
+        reason: 'Expected realtime subscription before server.connected.',
+      );
+      await pumpEventQueue();
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'server.connected',
+          properties: <String, dynamic>{},
+        ),
+      );
+      await settleUntil(
+        () => provider.syncState == ChatSyncState.connected,
+        maxTicks: 80,
+        reason: 'Expected server.connected signal to mark connected.',
+      );
+    }
+
     test(
       'aggressive data saver keeps local realtime open and pauses global stream',
       () async {
@@ -215,20 +234,7 @@ void main() {
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
-        await settleUntil(
-          () => provider.debugHasRealtimeEventSubscription,
-          reason: 'Expected realtime subscription before initial signal.',
-        );
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'server.connected',
-            properties: <String, dynamic>{},
-          ),
-        );
-        await settleUntil(
-          () => provider.syncState == ChatSyncState.connected,
-          reason: 'Expected initial server.connected signal to mark connected.',
-        );
+        await emitServerConnected();
 
         await provider.setForegroundActive(false);
         final resumeFuture = provider.setForegroundActive(true);
@@ -264,28 +270,13 @@ void main() {
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 10),
+          syncHealthCheckInterval: const Duration(milliseconds: 50),
         );
 
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
-        await settleUntil(
-          () => provider.debugHasRealtimeEventSubscription,
-          reason: 'Expected realtime subscription before initial signal.',
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'server.connected',
-            properties: <String, dynamic>{},
-          ),
-        );
-        await settleUntil(
-          () => provider.syncState == ChatSyncState.connected,
-          reason: 'Expected initial server.connected signal to mark connected.',
-        );
-        await pumpEventQueue();
+        await emitServerConnected();
 
         await provider.setForegroundActive(false);
         await provider.setForegroundActive(true);
@@ -311,19 +302,13 @@ void main() {
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 10),
+          syncHealthCheckInterval: const Duration(milliseconds: 50),
         );
 
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'server.connected',
-            properties: <String, dynamic>{},
-          ),
-        );
-        await settleUntil(() => provider.syncState == ChatSyncState.connected);
+        await emitServerConnected();
 
         await provider.setForegroundActive(false);
         final resumeFuture = provider.setForegroundActive(true);
