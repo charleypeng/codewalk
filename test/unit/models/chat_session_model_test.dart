@@ -146,5 +146,39 @@ void main() {
       expect(parts[1]['url'], 'data:application/pdf;base64,Zm9v');
       expect(parts[1]['filename'], 'sample.pdf');
     });
+
+    test('serializes multiple file parts with unique part ids', () {
+      const input = ChatInput(
+        providerId: 'google',
+        modelId: 'gemini-2.5-flash',
+        parts: <ChatInputPart>[
+          TextInputPart(text: 'compare these'),
+          FileInputPart(
+            mime: 'image/png',
+            url: 'data:image/png;base64,Zmlyc3Q=',
+            filename: 'first.png',
+          ),
+          FileInputPart(
+            mime: 'image/png',
+            url: 'data:image/png;base64,c2Vjb25k',
+            filename: 'second.png',
+          ),
+        ],
+      );
+
+      final json = ChatInputModel.fromDomain(input).toJson();
+      final parts = json['parts'] as List<dynamic>;
+      final ids = parts
+          .map((part) => (part as Map<String, dynamic>)['id'] as String)
+          .toList(growable: false);
+
+      expect(parts, hasLength(3));
+      expect(ids, everyElement(startsWith('prt_')));
+      expect(ids[0], matches(r'^prt_\d+_\d+_0$'));
+      expect(ids[1], matches(r'^prt_\d+_\d+_1$'));
+      expect(ids[2], matches(r'^prt_\d+_\d+_2$'));
+      expect(ids.toSet(), hasLength(ids.length));
+      expect(parts.where((part) => part['type'] == 'file'), hasLength(2));
+    });
   });
 }

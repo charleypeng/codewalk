@@ -4,6 +4,10 @@ import '../../domain/entities/session.dart';
 
 part 'chat_session_model.g.dart';
 
+// OpenCode stores part IDs globally, so rapid multi-attachment sends need
+// more entropy than a timestamp alone.
+int _chatInputPartIdSequence = 0;
+
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatSessionModel {
@@ -390,6 +394,8 @@ class ChatInputModel {
   }
 
   static ChatInputModel fromDomain(ChatInput input) {
+    final partIdPrefix =
+        'prt_${DateTime.now().microsecondsSinceEpoch}_${_chatInputPartIdSequence++}';
     return ChatInputModel(
       messageId: input.messageId,
       providerId: input.providerId,
@@ -398,7 +404,13 @@ class ChatInputModel {
       mode: input.mode,
       system: input.system,
       tools: input.tools,
-      parts: input.parts.map(ChatInputPartModel.fromDomain).toList(),
+      parts: List<ChatInputPartModel>.generate(
+        input.parts.length,
+        (index) => ChatInputPartModel.fromDomain(
+          input.parts[index],
+          generatedId: '${partIdPrefix}_$index',
+        ),
+      ),
     );
   }
 }
@@ -465,14 +477,17 @@ class ChatInputPartModel {
   }
 
   /// Technical comment translated to English.
-  static ChatInputPartModel fromDomain(ChatInputPart part) {
+  static ChatInputPartModel fromDomain(
+    ChatInputPart part, {
+    required String generatedId,
+  }) {
     switch (part.type) {
       case ChatInputPartType.text:
         final textPart = part as TextInputPart;
         return ChatInputPartModel(
           type: 'text',
           text: textPart.text,
-          id: 'prt_${DateTime.now().millisecondsSinceEpoch}', // Technical comment translated to English.
+          id: generatedId,
         );
       case ChatInputPartType.file:
         final filePart = part as FileInputPart;
@@ -482,16 +497,14 @@ class ChatInputPartModel {
           url: filePart.url,
           source: filePart.source?.toMap(),
           filename: filePart.filename,
-          id: 'prt_${DateTime.now().millisecondsSinceEpoch}', // Technical comment translated to English.
+          id: generatedId,
         );
       case ChatInputPartType.agent:
         final agentPart = part as AgentInputPart;
         return ChatInputPartModel(
           type: 'agent',
           name: agentPart.name,
-          id:
-              agentPart.id ??
-              'prt_${DateTime.now().millisecondsSinceEpoch}', // Technical comment translated to English.
+          id: agentPart.id ?? generatedId,
           source: agentPart.source?.toMap(),
         );
     }
