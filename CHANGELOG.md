@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.152.0 - 2026-06-26
+
+- fix(sidebar): lighten server header controls (#81)
+
 ## v1.151.0 - 2026-06-26
 
 - fix(chat): preserve user-owned scroll position
