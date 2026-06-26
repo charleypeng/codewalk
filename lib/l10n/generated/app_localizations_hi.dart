@@ -2017,6 +2017,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get msgNoValidFilesSelected => 'कोई वैध फ़ाइल नहीं चुनी गई';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'कुछ चयनित फ़ाइलें संलग्न नहीं की जा सकीं।';
+
+  @override
   String get msgReadAloud => 'ज़ोर से पढ़ें';
 
   @override

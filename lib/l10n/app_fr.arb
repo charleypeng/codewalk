@@ -578,6 +578,7 @@
   "msgInfoView": "Voir",
   "msgNoSystemSoundsFound": "Aucun son système n''a été trouvé sur cet appareil.",
   "msgNoValidFilesSelected": "Aucun fichier valide n''a été sélectionné",
+  "msgSomeSelectedFilesNotAttached": "Certains fichiers sélectionnés n''ont pas pu être joints.",
   "msgReadAloud": "Lire à voix haute",
   "msgReadAloudNotAvailable": "La synthèse vocale n''est pas disponible sur cet appareil.",
   "msgSetupDebugCopied": "Débogage de la configuration d''OpenCode copié dans le presse-papiers",

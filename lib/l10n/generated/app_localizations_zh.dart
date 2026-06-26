@@ -1885,6 +1885,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get msgNoValidFilesSelected => '未选择有效的文件';
 
   @override
+  String get msgSomeSelectedFilesNotAttached => '部分所选文件无法附加。';
+
+  @override
   String get msgReadAloud => '朗读';
 
   @override

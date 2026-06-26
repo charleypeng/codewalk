@@ -2015,6 +2015,10 @@ class AppLocalizationsBn extends AppLocalizations {
   String get msgNoValidFilesSelected => 'কোন বৈধ ফাইল নির্বাচন করা হয়নি';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'কিছু নির্বাচিত ফাইল সংযুক্ত করা যায়নি।';
+
+  @override
   String get msgReadAloud => 'জোরে পড়ুন';
 
   @override

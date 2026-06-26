@@ -578,6 +578,7 @@
   "msgInfoView": "عرض",
   "msgNoSystemSoundsFound": "لم يتم العثور على أي صوت للنظام على هذا الجهاز.",
   "msgNoValidFilesSelected": "لم يتم تحديد ملفات صالحة",
+  "msgSomeSelectedFilesNotAttached": "تعذر إرفاق بعض الملفات المحددة.",
   "msgReadAloud": "القراءة بصوت عالٍ",
   "msgReadAloudNotAvailable": "ميزة تحويل النص إلى كلام غير متوفرة على هذا الجهاز.",
   "msgSetupDebugCopied": "تم نسخ تشخيص إعداد OpenCode إلى الحافظة",

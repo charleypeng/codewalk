@@ -1983,6 +1983,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get msgNoValidFilesSelected => 'لم يتم تحديد ملفات صالحة';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'تعذر إرفاق بعض الملفات المحددة.';
+
+  @override
   String get msgReadAloud => 'القراءة بصوت عالٍ';
 
   @override

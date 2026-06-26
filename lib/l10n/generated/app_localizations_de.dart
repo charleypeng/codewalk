@@ -2041,6 +2041,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Es wurden keine gültigen Dateien ausgewählt';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'Einige ausgewählte Dateien konnten nicht angehängt werden.';
+
+  @override
   String get msgReadAloud => 'Vorlesen';
 
   @override

@@ -578,6 +578,7 @@
   "msgInfoView": "دیکھیں",
   "msgNoSystemSoundsFound": "اس ڈیوائس پر کوئی سسٹم ساؤنڈ نہیں ملا۔",
   "msgNoValidFilesSelected": "کوئی درست فائلیں منتخب نہیں کی گئیں۔",
+  "msgSomeSelectedFilesNotAttached": "کچھ منتخب فائلیں منسلک نہیں کی جا سکیں۔",
   "msgReadAloud": "بلند آواز سے پڑھیں",
   "msgReadAloudNotAvailable": "اس ڈیوائس پر ٹیکسٹ ٹو اسپیچ دستیاب نہیں ہے۔",
   "msgSetupDebugCopied": "اوپن کوڈ سیٹ اپ ڈیبگ کلپ بورڈ پر کاپی ہو گیا۔",

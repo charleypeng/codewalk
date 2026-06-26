@@ -1916,6 +1916,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get msgNoValidFilesSelected => '有効なファイルが選択されませんでした';
 
   @override
+  String get msgSomeSelectedFilesNotAttached => '一部の選択したファイルを添付できませんでした。';
+
+  @override
   String get msgReadAloud => '音声読み上げ';
 
   @override

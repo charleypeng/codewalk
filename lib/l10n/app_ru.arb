@@ -578,6 +578,7 @@
   "msgInfoView": "Просмотр",
   "msgNoSystemSoundsFound": "Системные звуки на этом устройстве не найдены.",
   "msgNoValidFilesSelected": "Не были выбраны корректные файлы",
+  "msgSomeSelectedFilesNotAttached": "Некоторые выбранные файлы не удалось прикрепить.",
   "msgReadAloud": "Прочитать вслух",
   "msgReadAloudNotAvailable": "Синтез речи недоступен на этом устройстве.",
   "msgSetupDebugCopied": "Отладочные данные настройки OpenCode скопированы в буфер обмена",

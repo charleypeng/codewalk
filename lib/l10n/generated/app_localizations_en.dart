@@ -2009,6 +2009,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get msgNoValidFilesSelected => 'No valid files were selected';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'Some selected files could not be attached.';
+
+  @override
   String get msgReadAloud => 'Read aloud';
 
   @override

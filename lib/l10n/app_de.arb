@@ -578,6 +578,7 @@
   "msgInfoView": "Ansehen",
   "msgNoSystemSoundsFound": "Auf diesem Gerät wurde kein Systemsound gefunden.",
   "msgNoValidFilesSelected": "Es wurden keine gültigen Dateien ausgewählt",
+  "msgSomeSelectedFilesNotAttached": "Einige ausgewählte Dateien konnten nicht angehängt werden.",
   "msgReadAloud": "Vorlesen",
   "msgReadAloudNotAvailable": "Text-zu-Sprache ist auf diesem Gerät nicht verfügbar.",
   "msgSetupDebugCopied": "OpenCode-Einrichtungsdiagnose in die Zwischenablage kopiert",

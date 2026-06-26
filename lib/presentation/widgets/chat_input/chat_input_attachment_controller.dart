@@ -155,14 +155,12 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
 
     var addedCount = 0;
     _setState(() {
-      final dedupe = <String>{
+      final dedupe = <(String, String, String?)>{
         for (final existing in _attachments)
-          '${existing.mime}|${existing.url}|${existing.filename ?? ""}',
+          (existing.mime, existing.url, existing.filename),
       };
       for (final attachment in nextAttachments) {
-        final key =
-            '${attachment.mime}|${attachment.url}|'
-            '${attachment.filename ?? ""}';
+        final key = (attachment.mime, attachment.url, attachment.filename);
         if (dedupe.add(key)) {
           _attachments.add(attachment);
           addedCount += 1;
@@ -173,7 +171,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
       _notifyDraftChanged();
     }
     if (skippedCount > 0) {
-      _showAttachmentSnack('Some selected files could not be attached.');
+      _showAttachmentSnack(context.l10n.msgSomeSelectedFilesNotAttached);
     }
   }
 

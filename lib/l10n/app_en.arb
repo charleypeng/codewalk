@@ -2500,6 +2500,10 @@
   "@msgNoValidFilesSelected": {
     "description": "CodeWalk UI string — msgNoValidFilesSelected"
   },
+  "msgSomeSelectedFilesNotAttached": "Some selected files could not be attached.",
+  "@msgSomeSelectedFilesNotAttached": {
+    "description": "CodeWalk UI string — msgSomeSelectedFilesNotAttached"
+  },
   "msgReadAloud": "Read aloud",
   "@msgReadAloud": {
     "description": "CodeWalk UI string — msgReadAloud"

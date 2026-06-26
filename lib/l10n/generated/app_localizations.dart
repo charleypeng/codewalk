@@ -3597,6 +3597,12 @@ abstract class AppLocalizations {
   /// **'No valid files were selected'**
   String get msgNoValidFilesSelected;
 
+  /// CodeWalk UI string — msgSomeSelectedFilesNotAttached
+  ///
+  /// In en, this message translates to:
+  /// **'Some selected files could not be attached.'**
+  String get msgSomeSelectedFilesNotAttached;
+
   /// CodeWalk UI string — msgReadAloud
   ///
   /// In en, this message translates to:

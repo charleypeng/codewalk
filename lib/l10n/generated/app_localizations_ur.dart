@@ -2009,6 +2009,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get msgNoValidFilesSelected => 'کوئی درست فائلیں منتخب نہیں کی گئیں۔';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'کچھ منتخب فائلیں منسلک نہیں کی جا سکیں۔';
+
+  @override
   String get msgReadAloud => 'بلند آواز سے پڑھیں';
 
   @override

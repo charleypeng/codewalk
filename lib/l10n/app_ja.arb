@@ -578,6 +578,7 @@
   "msgInfoView": "表示",
   "msgNoSystemSoundsFound": "このデバイスでシステムサウンドが見つかりませんでした。",
   "msgNoValidFilesSelected": "有効なファイルが選択されませんでした",
+  "msgSomeSelectedFilesNotAttached": "一部の選択したファイルを添付できませんでした。",
   "msgReadAloud": "音声読み上げ",
   "msgReadAloudNotAvailable": "このデバイスでは音声合成（TTS）が利用できません。",
   "msgSetupDebugCopied": "OpenCode セットアップデバッグ情報がクリップボードにコピーされました",

@@ -578,6 +578,7 @@
   "msgInfoView": "Ver",
   "msgNoSystemSoundsFound": "Nenhum som do sistema foi encontrado neste dispositivo.",
   "msgNoValidFilesSelected": "Nenhum arquivo válido foi selecionado",
+  "msgSomeSelectedFilesNotAttached": "Alguns arquivos selecionados não puderam ser anexados.",
   "msgReadAloud": "Ler em voz alta",
   "msgReadAloudNotAvailable": "Conversão de texto em fala não disponível neste dispositivo.",
   "msgSetupDebugCopied": "Debug de configuração do OpenCode copiado",

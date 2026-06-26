@@ -578,6 +578,7 @@
   "msgInfoView": "দেখুন",
   "msgNoSystemSoundsFound": "এই ডিভাইসে কোনো সিস্টেম সাউন্ড পাওয়া যায়নি।",
   "msgNoValidFilesSelected": "কোন বৈধ ফাইল নির্বাচন করা হয়নি",
+  "msgSomeSelectedFilesNotAttached": "কিছু নির্বাচিত ফাইল সংযুক্ত করা যায়নি।",
   "msgReadAloud": "জোরে পড়ুন",
   "msgReadAloudNotAvailable": "এই ডিভাইসে টেক্সট-টু-স্পিচ উপলব্ধ নেই।",
   "msgSetupDebugCopied": "OpenCode সেটআপ ডিবাগ ক্লিপবোর্ডে কপি করা হয়েছে",

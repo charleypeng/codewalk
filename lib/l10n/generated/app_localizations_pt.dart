@@ -2029,6 +2029,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get msgNoValidFilesSelected => 'Nenhum arquivo válido foi selecionado';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'Alguns arquivos selecionados não puderam ser anexados.';
+
+  @override
   String get msgReadAloud => 'Ler em voz alta';
 
   @override

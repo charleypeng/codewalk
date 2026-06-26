@@ -2035,6 +2035,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get msgNoValidFilesSelected => 'Не были выбраны корректные файлы';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'Некоторые выбранные файлы не удалось прикрепить.';
+
+  @override
   String get msgReadAloud => 'Прочитать вслух';
 
   @override

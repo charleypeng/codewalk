@@ -578,6 +578,7 @@
   "msgInfoView": "보기",
   "msgNoSystemSoundsFound": "이 기기에서 발견된 시스템 소리가 없습니다.",
   "msgNoValidFilesSelected": "선택된 유효한 파일이 없습니다",
+  "msgSomeSelectedFilesNotAttached": "선택한 일부 파일을 첨부할 수 없습니다.",
   "msgReadAloud": "음성으로 읽기",
   "msgReadAloudNotAvailable": "이 기기에서는 TTS(텍스트 음성 변환)를 사용할 수 없습니다.",
   "msgSetupDebugCopied": "OpenCode 설정 디버그 정보가 클립보드에 복사되었습니다",

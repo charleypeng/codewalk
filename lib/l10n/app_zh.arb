@@ -578,6 +578,7 @@
   "msgInfoView": "查看",
   "msgNoSystemSoundsFound": "在此设备上未找到系统声音。",
   "msgNoValidFilesSelected": "未选择有效的文件",
+  "msgSomeSelectedFilesNotAttached": "部分所选文件无法附加。",
   "msgReadAloud": "朗读",
   "msgReadAloudNotAvailable": "此设备上文字转语音不可用。",
   "msgSetupDebugCopied": "OpenCode 设置调试信息已复制到剪贴板",

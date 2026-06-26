@@ -1919,6 +1919,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get msgNoValidFilesSelected => '선택된 유효한 파일이 없습니다';
 
   @override
+  String get msgSomeSelectedFilesNotAttached => '선택한 일부 파일을 첨부할 수 없습니다.';
+
+  @override
   String get msgReadAloud => '음성으로 읽기';
 
   @override

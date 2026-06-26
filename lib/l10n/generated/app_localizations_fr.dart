@@ -2059,6 +2059,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun fichier valide n\'a été sélectionné';
 
   @override
+  String get msgSomeSelectedFilesNotAttached =>
+      'Certains fichiers sélectionnés n\'ont pas pu être joints.';
+
+  @override
   String get msgReadAloud => 'Lire à voix haute';
 
   @override
