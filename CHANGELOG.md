@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.148.1 - 2026-06-26
+
+- fix(tailscale): recover connected status after up failure
+
 ## v1.148.0 - 2026-06-26
 
 - fix: open embedded Tailscale login flow
