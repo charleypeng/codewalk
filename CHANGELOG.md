@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.148.2 - 2026-06-26
+
+- test(sync): stabilize coverage timing checks
+- fix(sync): keep resume restart quiet after background
+
 ## v1.148.1 - 2026-06-26
 
 - fix(tailscale): recover connected status after up failure
