@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.151.0 - 2026-06-26
+
+- fix(chat): preserve user-owned scroll position
+
 ## v1.150.2 - 2026-06-26
 
 - fix(composer): keep multi-attachment part ids unique
