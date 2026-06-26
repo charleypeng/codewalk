@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.149.0 - 2026-06-26
+
+- fix(i18n): localize quota copy
+
 ## v1.148.3 - 2026-06-26
 
 - test(sync): preserve resume grace health coverage
