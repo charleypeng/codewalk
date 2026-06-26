@@ -12,6 +12,15 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
+            if (widget.allowImageAttachment && widget.allowPdfAttachment)
+              ListTile(
+                leading: const Icon(Symbols.attach_file_rounded),
+                title: Text(context.l10n.composerAttachFiles),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  unawaited(_pickSupportedAttachments());
+                },
+              ),
             if (widget.allowImageAttachment)
               ListTile(
                 leading: const Icon(Symbols.photo_library),
@@ -36,40 +45,98 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
     );
   }
 
-  Future<void> _pickImages() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.image,
-      allowMultiple: true,
-      withData: true,
+  Future<void> _pickSupportedAttachments() async {
+    final result = await _pickAttachmentFiles(
+      type: FileType.custom,
+      allowedExtensions: const <String>[
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'webp',
+        'bmp',
+        'heic',
+        'heif',
+        'pdf',
+      ],
     );
     if (result == null || result.files.isEmpty || !mounted) {
       return;
     }
-    _appendAttachments(result.files, forcePdf: false);
+    _appendAttachments(result.files, allowImageMimeFallback: false);
+  }
+
+  Future<void> _pickImages() async {
+    final result = await _pickAttachmentFiles(type: FileType.image);
+    if (result == null || result.files.isEmpty || !mounted) {
+      return;
+    }
+    _appendAttachments(result.files);
   }
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.pickFiles(
+    final result = await _pickAttachmentFiles(
       type: FileType.custom,
       allowedExtensions: const <String>['pdf'],
-      allowMultiple: true,
-      withData: true,
     );
     if (result == null || result.files.isEmpty || !mounted) {
       return;
     }
-    _appendAttachments(result.files, forcePdf: true);
+    _appendAttachments(result.files, forceMime: 'application/pdf');
   }
 
-  void _appendAttachments(List<PlatformFile> files, {required bool forcePdf}) {
+  Future<FilePickerResult?> _pickAttachmentFiles({
+    required FileType type,
+    List<String>? allowedExtensions,
+  }) async {
+    try {
+      return await FilePicker.pickFiles(
+        type: type,
+        allowedExtensions: allowedExtensions,
+        allowMultiple: true,
+        withData: true,
+      );
+    } on PlatformException {
+      if (mounted) {
+        _showAttachmentSnack(context.l10n.msgNoValidFilesSelected);
+      }
+    } on MissingPluginException {
+      if (mounted) {
+        _showAttachmentSnack(context.l10n.msgNoValidFilesSelected);
+      }
+    } on UnsupportedError {
+      if (mounted) {
+        _showAttachmentSnack(context.l10n.msgNoValidFilesSelected);
+      }
+    }
+    return null;
+  }
+
+  void _appendAttachments(
+    List<PlatformFile> files, {
+    String? forceMime,
+    bool allowImageMimeFallback = true,
+  }) {
     final nextAttachments = <FileInputPart>[];
+    var skippedCount = 0;
     for (final file in files) {
-      final url = _resolveAttachmentUrl(file, forcePdf: forcePdf);
-      if (url == null) {
+      final mime =
+          forceMime ??
+          _resolveAttachmentMime(
+            file,
+            allowImageFallback: allowImageMimeFallback,
+          );
+      if (mime == null) {
+        skippedCount += 1;
         continue;
       }
-      final mime = forcePdf ? 'application/pdf' : _resolveImageMime(file);
+      final url = _resolveAttachmentUrl(file, mime: mime);
+      if (url == null) {
+        skippedCount += 1;
+        continue;
+      }
       if (!_isMimeAllowed(mime)) {
+        skippedCount += 1;
         continue;
       }
       nextAttachments.add(
@@ -82,12 +149,11 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
     }
 
     if (nextAttachments.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.msgNoValidFilesSelected)),
-      );
+      _showAttachmentSnack(context.l10n.msgNoValidFilesSelected);
       return;
     }
 
+    var addedCount = 0;
     _setState(() {
       final dedupe = <String>{
         for (final existing in _attachments)
@@ -99,10 +165,16 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
             '${attachment.filename ?? ""}';
         if (dedupe.add(key)) {
           _attachments.add(attachment);
+          addedCount += 1;
         }
       }
     });
-    _notifyDraftChanged();
+    if (addedCount > 0) {
+      _notifyDraftChanged();
+    }
+    if (skippedCount > 0) {
+      _showAttachmentSnack('Some selected files could not be attached.');
+    }
   }
 
   bool _isMimeAllowed(String mime) {
@@ -115,8 +187,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
     return false;
   }
 
-  String? _resolveAttachmentUrl(PlatformFile file, {required bool forcePdf}) {
-    final mime = forcePdf ? 'application/pdf' : _resolveImageMime(file);
+  String? _resolveAttachmentUrl(PlatformFile file, {required String mime}) {
     if (file.bytes case final bytes?) {
       if (bytes.isEmpty) {
         return null;
@@ -131,7 +202,21 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
     return Uri.file(path).toString();
   }
 
-  String _resolveImageMime(PlatformFile file) {
+  String? _resolveAttachmentMime(
+    PlatformFile file, {
+    required bool allowImageFallback,
+  }) {
+    if (_isPdf(file)) {
+      return 'application/pdf';
+    }
+    return _resolveImageMime(file) ?? (allowImageFallback ? 'image/png' : null);
+  }
+
+  bool _isPdf(PlatformFile file) {
+    return (file.extension ?? '').trim().toLowerCase() == 'pdf';
+  }
+
+  String? _resolveImageMime(PlatformFile file) {
     final ext = (file.extension ?? '').trim().toLowerCase();
     switch (ext) {
       case 'jpg':
@@ -150,7 +235,13 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
       case 'heif':
         return 'image/heif';
       default:
-        return 'image/png';
+        return null;
     }
+  }
+
+  void _showAttachmentSnack(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

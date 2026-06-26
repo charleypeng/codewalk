@@ -90,7 +90,10 @@ void main() {
     );
 
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.byTooltip(L10nBridge.current!.chatStartVoiceInput), findsOneWidget);
+    expect(
+      find.byTooltip(L10nBridge.current!.chatStartVoiceInput),
+      findsOneWidget,
+    );
     expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
     expect(find.byIcon(Symbols.keyboard_return_rounded), findsOneWidget);
 
@@ -621,6 +624,86 @@ void main() {
     expect(find.text('image.png'), findsOneWidget);
     final textField = tester.widget<TextField>(find.byType(TextField));
     expect(textField.controller?.text, isEmpty);
+  });
+
+  testWidgets('attachment picker appends multiple supported files', (
+    WidgetTester tester,
+  ) async {
+    final filePickerCalls = <MethodCall>[];
+    const filePickerChannel = MethodChannel(
+      'miguelruivo.flutter.plugins.filepicker',
+    );
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(filePickerChannel, (call) async {
+      filePickerCalls.add(call);
+      return <Map<String, Object?>>[
+        <String, Object?>{
+          'name': 'screen.png',
+          'size': 3,
+          'bytes': Uint8List.fromList(<int>[1, 2, 3]),
+        },
+        <String, Object?>{
+          'name': 'brief.pdf',
+          'size': 4,
+          'bytes': Uint8List.fromList(<int>[4, 5, 6, 7]),
+        },
+        <String, Object?>{
+          'name': 'notes.txt',
+          'size': 1,
+          'bytes': Uint8List.fromList(<int>[8]),
+        },
+      ];
+    });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(filePickerChannel, null);
+    });
+
+    ChatInputSubmission? sentSubmission;
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (submission) {
+            sentSubmission = submission;
+          },
+          showAttachmentButton: true,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Add attachment'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach files'));
+    await tester.pumpAndSettle();
+
+    expect(filePickerCalls, hasLength(1));
+    expect(filePickerCalls.single.method, 'custom');
+    final pickerArgs =
+        filePickerCalls.single.arguments as Map<Object?, Object?>;
+    expect(pickerArgs['allowMultipleSelection'], isTrue);
+    expect(pickerArgs['withData'], isTrue);
+    expect(
+      pickerArgs['allowedExtensions'],
+      containsAll(<String>['png', 'pdf']),
+    );
+    expect(find.text('screen.png'), findsOneWidget);
+    expect(find.text('brief.pdf'), findsOneWidget);
+    expect(find.text('notes.txt'), findsNothing);
+    expect(
+      find.text('Some selected files could not be attached.'),
+      findsOneWidget,
+    );
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.send_rounded));
+    await tester.pumpAndSettle();
+
+    expect(sentSubmission?.attachments, hasLength(2));
+    expect(
+      sentSubmission?.attachments.map((attachment) => attachment.mime),
+      <String>['image/png', 'application/pdf'],
+    );
   });
 
   testWidgets('prefilled shell draft restores shell mode with ! prefix', (

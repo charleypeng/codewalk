@@ -1081,6 +1081,11 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Given** the user is composing a message
 - **When** the user attaches an image or PDF
 - **Then** the file is attached to the message and sent along with the text
+- **Then** when the selected model supports both image and PDF inputs, `Attach files` opens a single multi-select picker for supported image/PDF files
+- **Then** the type-specific image and PDF pickers remain available as direct fallbacks
+- **Then** every valid selected file is shown as its own composer chip before send
+- **Then** if the platform only returns one selected file, that file is still attached safely
+- **Then** if a mixed selection includes unsupported or unreadable files, valid files stay attached and the composer shows feedback that some files could not be attached
 
 ### Model capability gating
 

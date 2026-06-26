@@ -283,7 +283,7 @@ chat_input_history_controller.dart             # Local command/prompt history an
 chat_input_mentions_controller.dart
 chat_input_commands_controller.dart
 chat_input_suggestion_popover.dart             # Mention/slash/canned popover; renders file, workspace-symbol, and agent badges/icons
-chat_input_attachment_controller.dart
+chat_input_attachment_controller.dart          # Composer attachment picker/append flow; uses multi-select file_picker calls for supported image/PDF files, keeps image/PDF-specific fallbacks, dedupes chips, and reports partial invalid selections without discarding valid attachments
 chat_input_send_controller.dart
 chat_input_speech_controller.dart
 ```
