@@ -10395,6 +10395,113 @@ void main() {
     },
   );
 
+  testWidgets('wheel scroll keeps priority while streaming metrics change', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const sessionId = 'ses_user_scroll_priority_metrics';
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: sessionId,
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'User Scroll Priority Metrics',
+        ),
+      ],
+    );
+    repository.messagesBySession[sessionId] = _threadMessages(sessionId, 80);
+
+    final streamController = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      if (!streamController.isClosed) {
+        await streamController.close();
+      }
+    });
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+
+    await provider.sendMessage('start streaming response');
+    await tester.pump();
+
+    await tester.sendEventToBinding(
+      PointerScrollEvent(
+        position: tester.getCenter(listFinder),
+        scrollDelta: const Offset(0, -120),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 16));
+
+    final scrollableAfterWheel = tester.state<ScrollableState>(
+      scrollableFinder,
+    );
+    final pixelsBeforeMetricsChange = scrollableAfterWheel.position.pixels;
+    expect(
+      scrollableAfterWheel.position.maxScrollExtent -
+          scrollableAfterWheel.position.pixels,
+      greaterThan(40),
+    );
+
+    streamController.add(
+      Right(
+        AssistantMessage(
+          id: 'msg_user_scroll_priority_metrics_stream',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(3000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_scroll_priority_metrics_stream',
+              messageId: 'msg_user_scroll_priority_metrics_stream',
+              sessionId: sessionId,
+              text:
+                  'streaming response content that changes layout while the user has just scrolled the main chat viewport',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.binding.setSurfaceSize(const Size(390, 760));
+    await tester.pump(const Duration(milliseconds: 16));
+
+    final scrollableAfterMetricsChange = tester.state<ScrollableState>(
+      scrollableFinder,
+    );
+    expect(
+      scrollableAfterMetricsChange.position.maxScrollExtent -
+          scrollableAfterMetricsChange.position.pixels,
+      greaterThan(40),
+    );
+    expect(
+      scrollableAfterMetricsChange.position.pixels,
+      closeTo(pixelsBeforeMetricsChange, 120),
+    );
+
+    expect(find.byTooltip('Go to latest message'), findsOneWidget);
+  });
+
   testWidgets(
     'collapses pre-compaction history by default and toggles older messages',
     (WidgetTester tester) async {

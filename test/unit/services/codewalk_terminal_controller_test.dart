@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'package:flutter_test/flutter_test.dart';
+
 import 'package:codewalk/data/datasources/terminal_remote_datasource.dart';
 import 'package:codewalk/data/models/pty_session_model.dart';
 import 'package:codewalk/domain/entities/server_profile.dart';
 import 'package:codewalk/presentation/services/codewalk_terminal_controller.dart';
 import 'package:codewalk/presentation/services/codewalk_terminal_socket.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class FakeTerminalRemoteDataSource implements TerminalRemoteDataSource {
   int createPtyCount = 0;
@@ -34,7 +35,10 @@ class FakeTerminalRemoteDataSource implements TerminalRemoteDataSource {
   }
 
   @override
-  Future<void> deletePty({required String ptyId, required String directory}) async {
+  Future<void> deletePty({
+    required String ptyId,
+    required String directory,
+  }) async {
     deletePtyCount++;
     lastDeletedPtyId = ptyId;
   }
@@ -56,7 +60,8 @@ class FakeTerminalRemoteDataSource implements TerminalRemoteDataSource {
   }
 }
 
-class FakeCodewalkTerminalSocketConnection implements CodewalkTerminalSocketConnection {
+class FakeCodewalkTerminalSocketConnection
+    implements CodewalkTerminalSocketConnection {
   final _messageController = StreamController<List<int>>.broadcast();
   final _doneCompleter = Completer<void>();
   final List<List<int>> sentData = [];
@@ -133,137 +138,154 @@ void main() {
       expect(controller.state, CodewalkTerminalState.starting);
     });
 
-    test('reconnect with force: true deletes current PTY and creates a new one', () async {
-      final controller = CodewalkTerminalController(
-        remoteDataSource: remoteDataSource,
-        socketOpener: socketOpener,
-      );
+    test(
+      'reconnect with force: true deletes current PTY and creates a new one',
+      () async {
+        final controller = CodewalkTerminalController(
+          remoteDataSource: remoteDataSource,
+          socketOpener: socketOpener,
+        );
 
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      expect(remoteDataSource.createPtyCount, 1);
-      expect(remoteDataSource.deletePtyCount, 0);
+        expect(remoteDataSource.createPtyCount, 1);
+        expect(remoteDataSource.deletePtyCount, 0);
 
-      // Trigger a force reconnect
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-        force: true,
-      );
+        // Trigger a force reconnect
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+          force: true,
+        );
 
-      expect(remoteDataSource.deletePtyCount, 1);
-      expect(remoteDataSource.lastDeletedPtyId, 'pty_1');
-      expect(remoteDataSource.createPtyCount, 2);
-    });
+        expect(remoteDataSource.deletePtyCount, 1);
+        expect(remoteDataSource.lastDeletedPtyId, 'pty_1');
+        expect(remoteDataSource.createPtyCount, 2);
+      },
+    );
 
-    test('dead exited PTY session is not reused and triggers fresh PTY creation', () async {
-      final controller = CodewalkTerminalController(
-        remoteDataSource: remoteDataSource,
-        socketOpener: socketOpener,
-      );
+    test(
+      'dead exited PTY session is not reused and triggers fresh PTY creation',
+      () async {
+        final controller = CodewalkTerminalController(
+          remoteDataSource: remoteDataSource,
+          socketOpener: socketOpener,
+        );
 
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      expect(remoteDataSource.createPtyCount, 1);
+        expect(remoteDataSource.createPtyCount, 1);
 
-      // Simulate connection close -> transition to exited
-      await latestSocketConnection.close();
-      await Future<void>.delayed(Duration.zero); // yield for microtasks
+        // Simulate connection close -> transition to exited
+        await latestSocketConnection.close();
+        await Future<void>.delayed(Duration.zero); // yield for microtasks
 
-      expect(controller.state, CodewalkTerminalState.exited);
+        expect(controller.state, CodewalkTerminalState.exited);
 
-      // Attempt to restart shell for same directory, non-forced
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        // Attempt to restart shell for same directory, non-forced
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      // Should delete the old one and create a new one (not reuse)
-      expect(remoteDataSource.deletePtyCount, 1);
-      expect(remoteDataSource.createPtyCount, 2);
-    });
+        // Should delete the old one and create a new one (not reuse)
+        expect(remoteDataSource.deletePtyCount, 1);
+        expect(remoteDataSource.createPtyCount, 2);
+      },
+    );
 
-    test('dead failed PTY session is not reused and triggers fresh PTY creation', () async {
-      final controller = CodewalkTerminalController(
-        remoteDataSource: remoteDataSource,
-        socketOpener: socketOpener,
-      );
+    test(
+      'dead failed PTY session is not reused and triggers fresh PTY creation',
+      () async {
+        final controller = CodewalkTerminalController(
+          remoteDataSource: remoteDataSource,
+          socketOpener: socketOpener,
+        );
 
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      expect(remoteDataSource.createPtyCount, 1);
+        expect(remoteDataSource.createPtyCount, 1);
 
-      // Simulate connection error -> transition to failed
-      latestSocketConnection.emitError(Exception('Socket disconnected unexpectedly'));
-      await Future<void>.delayed(Duration.zero);
+        // Simulate connection error -> transition to failed
+        latestSocketConnection.emitError(
+          Exception('Socket disconnected unexpectedly'),
+        );
+        await Future<void>.delayed(Duration.zero);
 
-      expect(controller.state, CodewalkTerminalState.failed);
+        expect(controller.state, CodewalkTerminalState.failed);
 
-      // Attempt to restart shell for same directory, non-forced
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        // Attempt to restart shell for same directory, non-forced
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      // Should delete the old one and create a new one (not reuse)
-      expect(remoteDataSource.deletePtyCount, 1);
-      expect(remoteDataSource.createPtyCount, 2);
-    });
+        // Should delete the old one and create a new one (not reuse)
+        expect(remoteDataSource.deletePtyCount, 1);
+        expect(remoteDataSource.createPtyCount, 2);
+      },
+    );
 
-    test('stateful UTF-8 decoder handles multi-byte characters split across frames', () async {
-      final controller = CodewalkTerminalController(
-        remoteDataSource: remoteDataSource,
-        socketOpener: socketOpener,
-      );
+    test(
+      'stateful UTF-8 decoder handles multi-byte characters split across frames',
+      () async {
+        final controller = CodewalkTerminalController(
+          remoteDataSource: remoteDataSource,
+          socketOpener: socketOpener,
+        );
 
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      // Euro character (€) is encoded in UTF-8 as 3 bytes: 0xE2, 0x82, 0xAC
-      // Emit the first byte
-      latestSocketConnection.emitBytes([0xE2]);
-      await Future<void>.delayed(Duration.zero);
+        // Euro character (€) is encoded in UTF-8 as 3 bytes: 0xE2, 0x82, 0xAC
+        // Emit the first byte
+        latestSocketConnection.emitBytes([0xE2]);
+        await Future<void>.delayed(Duration.zero);
 
-      // Emit the remaining two bytes
-      latestSocketConnection.emitBytes([0x82, 0xAC]);
-      await Future<void>.delayed(Duration.zero);
+        // Emit the remaining two bytes
+        latestSocketConnection.emitBytes([0x82, 0xAC]);
+        await Future<void>.delayed(Duration.zero);
 
-      // Verify the terminal received the reconstructed Euro sign
-      expect(controller.terminal.buffer.lines[0].toString(), contains('€'));
-    });
+        // Verify the terminal received the reconstructed Euro sign
+        expect(controller.terminal.buffer.lines[0].toString(), contains('€'));
+      },
+    );
 
-    test('swallows resize exceptions during debounced resize on unreachable PTY', () async {
-      remoteDataSource.shouldThrowOnResize = true;
+    test(
+      'swallows resize exceptions during debounced resize on unreachable PTY',
+      () async {
+        remoteDataSource.shouldThrowOnResize = true;
 
-      final controller = CodewalkTerminalController(
-        remoteDataSource: remoteDataSource,
-        socketOpener: socketOpener,
-      );
+        final controller = CodewalkTerminalController(
+          remoteDataSource: remoteDataSource,
+          socketOpener: socketOpener,
+        );
 
-      await controller.startShell(
-        serverProfile: serverProfile,
-        workingDirectory: '/home/project',
-      );
+        await controller.startShell(
+          serverProfile: serverProfile,
+          workingDirectory: '/home/project',
+        );
 
-      // Trigger resize through terminal
-      controller.terminal.resize(100, 40);
+        // Trigger resize through terminal
+        controller.terminal.resize(100, 40);
 
-      // Wait past the 80ms debounce window
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+        // Wait past the 80ms debounce window
+        await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      expect(remoteDataSource.resizePtyCount, 1);
-      // If we got here without throwing an unhandled async error, the exception was swallowed correctly.
-    });
+        expect(remoteDataSource.resizePtyCount, 1);
+        // If we got here without throwing an unhandled async error, the exception was swallowed correctly.
+      },
+    );
   });
 }

@@ -54,7 +54,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
     final currentMax = _scrollController.position.maxScrollExtent;
     if (_isProgrammaticScrollInFlight ||
-        _currentScrollOwner == _ScrollOwner.userDrag ||
+        _hasUserScrollPriority() ||
         _responseSettleFramesRemaining > 0 ||
         _scrollFollowMode == _ScrollFollowMode.reading) {
       _lastKnownMaxScrollExtent = currentMax;
@@ -513,6 +513,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         }
       }
       _trackedSessionId = sessionId;
+      _lastUserScrollIntentAt = null;
       if (sessionId != null) {
         unawaited(
           _notificationService?.clearNotificationsForSession(sessionId),
@@ -569,6 +570,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _wasCurrentSessionActivelyResponding = false;
       _deferAssistantWorkCollapse = false;
       _setScrollOwner(_ScrollOwner.none);
+      _lastUserScrollIntentAt = null;
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
@@ -834,6 +836,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
+    if (_hasUserScrollPriority()) {
+      releaseReturnRevealOwner();
+      return;
+    }
+
     final chatProvider = _chatProvider;
     if (chatProvider == null || chatProvider.currentSession?.id != sessionId) {
       releaseReturnRevealOwner();
@@ -899,6 +906,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           isTailLikelyUnmaterialized &&
           attempt == (_ChatPageState._maxReturnLatestRevealAttempts ~/ 2) - 1;
       if (shouldMaterializeTail) {
+        if (_hasUserScrollPriority()) {
+          releaseReturnRevealOwner();
+          return;
+        }
         _traceFinalUi(
           'return-reveal-midway-tail-jump',
           details:
@@ -941,6 +952,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     if (generation != _returnRevealGeneration) {
+      releaseReturnRevealOwner();
+      return;
+    }
+    if (_hasUserScrollPriority()) {
       releaseReturnRevealOwner();
       return;
     }
@@ -1034,6 +1049,18 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       );
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
+      _markUnreadMessagesBelow();
+      return;
+    }
+
+    if (_hasUserScrollPriority()) {
+      _traceFinalUi(
+        'final-reveal-cancelled-user-scroll',
+        details: 'messageId=$messageId mode=${_scrollFollowMode.name}',
+      );
+      _shouldRevealFinalAssistantOnCompletion = false;
+      _pendingFinalAssistantRevealMessageId = null;
+      _markUnreadMessagesBelow();
       return;
     }
 
@@ -1120,6 +1147,17 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         'final-reveal-cancelled-after-scroll',
         details: 'messageId=$messageId',
       );
+      return;
+    }
+
+    if (_hasUserScrollPriority()) {
+      _traceFinalUi(
+        'final-reveal-cancelled-after-user-scroll',
+        details: 'messageId=$messageId mode=${_scrollFollowMode.name}',
+      );
+      _shouldRevealFinalAssistantOnCompletion = false;
+      _pendingFinalAssistantRevealMessageId = null;
+      _markUnreadMessagesBelow();
       return;
     }
 
@@ -1265,6 +1303,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _scrollToBottom({bool force = false, bool animate = true}) {
+    if (!force && _hasUserScrollPriority()) {
+      _traceFinalUi(
+        'scroll-to-bottom-skipped-user-scroll-priority',
+        details: 'owner=${_currentScrollOwner.name}',
+      );
+      _markUnreadMessagesBelow();
+      return;
+    }
     if (!force &&
         (_currentScrollOwner == _ScrollOwner.newMessage ||
             _currentScrollOwner == _ScrollOwner.streaming)) {

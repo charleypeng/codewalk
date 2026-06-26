@@ -427,7 +427,7 @@ void main() {
         ChangeNotifierProvider<QuotaProvider>.value(
           value: provider,
           child: _buildApp(
-            home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+            home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
           ),
         ),
       );

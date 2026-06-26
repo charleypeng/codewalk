@@ -10,22 +10,89 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
         activity is BallisticScrollActivity;
   }
 
+  bool _isUserScrollActivity({required ScrollDirection userScrollDirection}) {
+    if (_hasActiveUserScrollActivity()) {
+      return true;
+    }
+    if (_isProgrammaticScrollInFlight) {
+      return false;
+    }
+    return userScrollDirection != ScrollDirection.idle ||
+        _scrollController.position.activity is DrivenScrollActivity;
+  }
+
+  bool _hasRecentUserScrollIntent() {
+    final lastIntentAt = _lastUserScrollIntentAt;
+    if (lastIntentAt == null) {
+      return false;
+    }
+    return DateTime.now().difference(lastIntentAt) <
+        _ChatPageState._userScrollIntentHoldDuration;
+  }
+
+  bool _hasActiveOrRecentUserScrollIntent() {
+    return _hasActiveUserScrollActivity() || _hasRecentUserScrollIntent();
+  }
+
+  bool _hasUserScrollPriority() {
+    final hasActiveUserScroll = _hasActiveUserScrollActivity();
+    if (hasActiveUserScroll) {
+      return true;
+    }
+    if (_scrollController.hasClients &&
+        _distanceToBottom() <= _ChatPageState._scrollToBottomEpsilon) {
+      _lastUserScrollIntentAt = null;
+      if (_currentScrollOwner == _ScrollOwner.userDrag) {
+        _setScrollOwner(_ScrollOwner.none);
+      }
+      return false;
+    }
+    if (_hasRecentUserScrollIntent()) {
+      return true;
+    }
+    if (_currentScrollOwner == _ScrollOwner.userDrag) {
+      _setScrollOwner(_ScrollOwner.none);
+    }
+    return false;
+  }
+
+  void _markUserScrollIntent() {
+    final hadIntentLock =
+        _currentScrollOwner == _ScrollOwner.userDrag ||
+        _hasRecentUserScrollIntent();
+    _lastUserScrollIntentAt = DateTime.now();
+    if (!hadIntentLock) {
+      _scrollToBottomRequestToken += 1;
+      _returnRevealGeneration += 1;
+    }
+    if (_currentScrollOwner != _ScrollOwner.userDrag) {
+      _setScrollOwner(_ScrollOwner.userDrag);
+    }
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent || !_scrollController.hasClients) {
+      return;
+    }
+    if (event.scrollDelta.dy == 0 && event.scrollDelta.dx == 0) {
+      return;
+    }
+    _markUserScrollIntent();
+  }
+
   void _handleScrollChanged() {
     if (!_scrollController.hasClients) {
       return;
     }
 
     final userScrollDirection = _scrollController.position.userScrollDirection;
+    if (_isUserScrollActivity(userScrollDirection: userScrollDirection)) {
+      _markUserScrollIntent();
+    }
     _maybeLoadOlderMessagesFromTop(userScrollDirection: userScrollDirection);
 
     if (_isProgrammaticScrollInFlight) {
       return;
-    }
-
-    // Set userDrag owner when user is actively dragging
-    if (_hasActiveUserScrollActivity() &&
-        userScrollDirection != ScrollDirection.idle) {
-      _setScrollOwner(_ScrollOwner.userDrag);
     }
 
     final distance = _distanceToBottom();
@@ -33,7 +100,8 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
 
     if (distance <= _ChatPageState._scrollToBottomEpsilon) {
-      if (_currentScrollOwner == _ScrollOwner.userDrag) {
+      if (_currentScrollOwner == _ScrollOwner.userDrag &&
+          !_hasActiveOrRecentUserScrollIntent()) {
         _setScrollOwner(_ScrollOwner.none);
       }
       if (_scrollFollowMode != _ScrollFollowMode.following) {
@@ -47,7 +115,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     }
 
     if (_currentScrollOwner == _ScrollOwner.userDrag &&
-        userScrollDirection == ScrollDirection.idle) {
+        !_hasActiveOrRecentUserScrollIntent()) {
       _setScrollOwner(_ScrollOwner.none);
     }
 
@@ -97,7 +165,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
-    if (!_hasActiveUserScrollActivity()) {
+    if (!_isUserScrollActivity(userScrollDirection: userScrollDirection)) {
       return;
     }
 
@@ -155,7 +223,9 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       );
       _scrollController.jumpTo(nextPixels);
     } finally {
-      _setScrollOwner(_ScrollOwner.none);
+      if (_currentScrollOwner == _ScrollOwner.paginationRestore) {
+        _setScrollOwner(_ScrollOwner.none);
+      }
     }
   }
 
@@ -168,7 +238,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
-    if (_currentScrollOwner == _ScrollOwner.userDrag && !force) {
+    if (!force && _hasUserScrollPriority()) {
       _markUnreadMessagesBelow();
       return;
     }
@@ -199,6 +269,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
           pass < _ChatPageState._maxScrollToBottomPasses;
           pass += 1
         ) {
+          if (!force && _hasUserScrollPriority()) {
+            _markUnreadMessagesBelow();
+            return;
+          }
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
           await WidgetsBinding.instance.endOfFrame;
           if (!_canContinueScrollToBottomRequest(requestToken)) {
@@ -207,6 +281,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
           if (_distanceToBottom() <= _ChatPageState._scrollToBottomEpsilon) {
             break;
           }
+        }
+        if (!force && _hasUserScrollPriority()) {
+          _markUnreadMessagesBelow();
+          return;
         }
         if (_distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -218,6 +296,11 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
           pass += 1
         ) {
           if (!_canContinueScrollToBottomRequest(requestToken)) {
+            return;
+          }
+
+          if (!force && _hasUserScrollPriority()) {
+            _markUnreadMessagesBelow();
             return;
           }
 
@@ -258,6 +341,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
           await WidgetsBinding.instance.endOfFrame;
         }
 
+        if (!force && _hasUserScrollPriority()) {
+          _markUnreadMessagesBelow();
+          return;
+        }
         if (_canContinueScrollToBottomRequest(requestToken) &&
             _distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);

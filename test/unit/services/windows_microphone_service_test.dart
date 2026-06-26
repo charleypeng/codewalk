@@ -11,12 +11,17 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    test('probe() returns notSupported on non-Windows without invoking channel',
-        () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-      final service = const WindowsMicrophoneService();
-      expect(await service.probe(), WindowsMicrophoneAccessStatus.notSupported);
-    });
+    test(
+      'probe() returns notSupported on non-Windows without invoking channel',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+        const service = WindowsMicrophoneService();
+        expect(
+          await service.probe(),
+          WindowsMicrophoneAccessStatus.notSupported,
+        );
+      },
+    );
 
     test('probe() parses known status strings on Windows', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.windows;
@@ -35,10 +40,7 @@ void main() {
           await probeWith('allowed'),
           WindowsMicrophoneAccessStatus.allowed,
         );
-        expect(
-          await probeWith('denied'),
-          WindowsMicrophoneAccessStatus.denied,
-        );
+        expect(await probeWith('denied'), WindowsMicrophoneAccessStatus.denied);
         expect(
           await probeWith('noInputDevice'),
           WindowsMicrophoneAccessStatus.noInputDevice,
@@ -51,14 +53,8 @@ void main() {
           await probeWith('notSupported'),
           WindowsMicrophoneAccessStatus.notSupported,
         );
-        expect(
-          await probeWith('bogus'),
-          WindowsMicrophoneAccessStatus.unknown,
-        );
-        expect(
-          await probeWith(null),
-          WindowsMicrophoneAccessStatus.unknown,
-        );
+        expect(await probeWith('bogus'), WindowsMicrophoneAccessStatus.unknown);
+        expect(await probeWith(null), WindowsMicrophoneAccessStatus.unknown);
       } finally {
         messenger.setMockMethodCallHandler(channel, null);
       }
@@ -80,21 +76,23 @@ void main() {
       }
     });
 
-    test('probe() maps MissingPluginException to notSupported on Windows',
-        () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-      const channel = MethodChannel('codewalk/windows_microphone');
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      messenger.setMockMethodCallHandler(channel, (call) async {
-        throw MissingPluginException('not registered');
-      });
-      try {
-        final status = await const WindowsMicrophoneService().probe();
-        expect(status, WindowsMicrophoneAccessStatus.notSupported);
-      } finally {
-        messenger.setMockMethodCallHandler(channel, null);
-      }
-    });
+    test(
+      'probe() maps MissingPluginException to notSupported on Windows',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+        const channel = MethodChannel('codewalk/windows_microphone');
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          throw MissingPluginException('not registered');
+        });
+        try {
+          final status = await const WindowsMicrophoneService().probe();
+          expect(status, WindowsMicrophoneAccessStatus.notSupported);
+        } finally {
+          messenger.setMockMethodCallHandler(channel, null);
+        }
+      },
+    );
   });
 }

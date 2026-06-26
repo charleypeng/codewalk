@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart'
+    show PointerScrollEvent, PointerSignalEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderBox, ScrollDirection;
 import 'package:flutter/scheduler.dart';
@@ -203,6 +205,9 @@ class _ChatPageState extends State<ChatPage>
   static const int _maxFinalAssistantRevealAttempts = 8;
   static const double _returnLatestRevealAlignment = 0.0;
   static const int _maxReturnLatestRevealAttempts = 8;
+  static const Duration _userScrollIntentHoldDuration = Duration(
+    milliseconds: 900,
+  );
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   List<String> get _receivingTips => buildComposerReceivingTips(context.l10n);
@@ -309,6 +314,7 @@ class _ChatPageState extends State<ChatPage>
   bool _olderMessagesLoadTriggerArmed = true;
   bool _olderMessagesAnchorRestoreInFlight = false;
   _ScrollOwner _currentScrollOwner = _ScrollOwner.none;
+  DateTime? _lastUserScrollIntentAt;
   _CachedViewportRestoreTarget _pendingCachedViewportRestoreTarget =
       _CachedViewportRestoreTarget.none;
   int _scrollToBottomRequestToken = 0;
@@ -344,9 +350,9 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) {
       return;
     }
-    if (_currentScrollOwner == _ScrollOwner.userDrag) {
+    if (_hasUserScrollPriority()) {
       _traceFinalUi(
-        'passive-scroll-suppressed-user-drag',
+        'passive-scroll-suppressed-user-scroll-priority',
         details: 'reason=$reason',
       );
       _markUnreadMessagesBelow();

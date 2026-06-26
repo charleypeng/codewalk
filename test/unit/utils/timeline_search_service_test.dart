@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:codewalk/core/utils/timeline_search_service.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const service = TimelineSearchService();

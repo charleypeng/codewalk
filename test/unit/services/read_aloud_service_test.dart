@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:codewalk/presentation/services/read_aloud_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,11 +14,8 @@ class _FakeFlutterTts implements FlutterTts {
 
   VoidCallback? _startHandler;
   VoidCallback? _completionHandler;
-  ErrorHandler? _errorHandler;
   VoidCallback? _cancelHandler;
   VoidCallback? _pauseHandler;
-  VoidCallback? _continueHandler;
-  ProgressHandler? _progressHandler;
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
@@ -74,9 +69,7 @@ class _FakeFlutterTts implements FlutterTts {
   }
 
   @override
-  void setErrorHandler(ErrorHandler handler) {
-    _errorHandler = handler;
-  }
+  void setErrorHandler(ErrorHandler handler) {}
 
   @override
   void setCancelHandler(VoidCallback callback) {
@@ -89,18 +82,16 @@ class _FakeFlutterTts implements FlutterTts {
   }
 
   @override
-  void setContinueHandler(VoidCallback callback) {
-    _continueHandler = callback;
-  }
+  void setContinueHandler(VoidCallback callback) {}
 
   @override
-  void setProgressHandler(ProgressHandler callback) {
-    _progressHandler = callback;
-  }
+  void setProgressHandler(ProgressHandler callback) {}
 
   @override
   Future<dynamic> get getEngines async {
-    return <dynamic>[{'name': 'fake-engine'}];
+    return <dynamic>[
+      {'name': 'fake-engine'},
+    ];
   }
 
   @override
@@ -143,10 +134,7 @@ void main() {
       final tts = _FakeFlutterTts();
       final service = ReadAloudService(tts: tts);
 
-      await service.speak(
-        messageId: 'msg_1',
-        text: 'Hello world',
-      );
+      await service.speak(messageId: 'msg_1', text: 'Hello world');
 
       expect(tts.spokenTexts, contains('Hello world'));
       // Note: _completionHandler fires immediately in the fake, so

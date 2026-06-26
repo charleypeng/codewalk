@@ -51,7 +51,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart' hide Provider;
 
 import '../support/fakes.dart';
-import '../support/pump_localized_app.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

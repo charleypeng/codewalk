@@ -360,81 +360,84 @@ extension _ChatPageTimelineViewport on _ChatPageState {
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
     _pruneTimelineSearchMessageKeys(chatProvider.messages);
 
-    return NotificationListener<ScrollMetricsNotification>(
-      onNotification: _handleScrollMetricsChanged,
-      child: CustomScrollView(
-        key: const ValueKey<String>('chat_message_list'),
-        controller: _scrollController,
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 8),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final entry = timelineEntries[index];
-                  Widget child;
-                  if (entry is _TimelineMessageEntry) {
-                    final message = entry.message;
-                    final messageWidget = _buildTimelineMessageWidget(
-                      message: message,
-                      chatProvider: chatProvider,
-                      settingsProvider: settingsProvider,
-                      latestReasoningPartKey: latestReasoningPartKey,
-                      latestRevertibleMessageId: latestRevertibleMessageId,
-                      isSubConversation: isSubConversation,
-                      finalAssistantRevealMessageId:
-                          finalAssistantRevealMessageId,
-                    );
-                    child = KeyedSubtree(
-                      key: ValueKey<String>(entry.key),
-                      child: SizedBox(
-                        key: _timelineSearchMessageKey(message.id),
-                        child: messageWidget,
-                      ),
-                    );
-                  } else if (entry is _TimelineCollapsedHistoryEntry) {
-                    child = _buildCollapsedHistoryEntry(entry);
-                  } else if (entry is _TimelineCollapsedAssistantWorkEntry) {
-                    child = _buildCollapsedAssistantWorkEntry(
-                      entry,
-                      buildPreviewMessage: (message) =>
-                          _buildTimelineMessageWidget(
-                            message: message,
-                            chatProvider: chatProvider,
-                            settingsProvider: settingsProvider,
-                            latestReasoningPartKey: latestReasoningPartKey,
-                            latestRevertibleMessageId:
-                                latestRevertibleMessageId,
-                            isSubConversation: isSubConversation,
-                            finalAssistantRevealMessageId:
-                                finalAssistantRevealMessageId,
-                            wrapRevealAnchor: false,
-                            keyPrefix: 'assistant_work_preview',
-                          ),
-                    );
-                  } else if (entry is _TimelinePendingAssistantEntry) {
-                    child = _buildPendingAssistantEntry(entry);
-                  } else if (entry is _TimelinePermissionPromptEntry) {
-                    child = _buildInlinePermissionPromptEntry(
-                      entry,
-                      chatProvider,
-                    );
-                  } else {
-                    child = _buildRetryingMessageIndicator();
-                  }
+    return Listener(
+      onPointerSignal: _handlePointerSignal,
+      child: NotificationListener<ScrollMetricsNotification>(
+        onNotification: _handleScrollMetricsChanged,
+        child: CustomScrollView(
+          key: const ValueKey<String>('chat_message_list'),
+          controller: _scrollController,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.only(bottom: 8),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final entry = timelineEntries[index];
+                    Widget child;
+                    if (entry is _TimelineMessageEntry) {
+                      final message = entry.message;
+                      final messageWidget = _buildTimelineMessageWidget(
+                        message: message,
+                        chatProvider: chatProvider,
+                        settingsProvider: settingsProvider,
+                        latestReasoningPartKey: latestReasoningPartKey,
+                        latestRevertibleMessageId: latestRevertibleMessageId,
+                        isSubConversation: isSubConversation,
+                        finalAssistantRevealMessageId:
+                            finalAssistantRevealMessageId,
+                      );
+                      child = KeyedSubtree(
+                        key: ValueKey<String>(entry.key),
+                        child: SizedBox(
+                          key: _timelineSearchMessageKey(message.id),
+                          child: messageWidget,
+                        ),
+                      );
+                    } else if (entry is _TimelineCollapsedHistoryEntry) {
+                      child = _buildCollapsedHistoryEntry(entry);
+                    } else if (entry is _TimelineCollapsedAssistantWorkEntry) {
+                      child = _buildCollapsedAssistantWorkEntry(
+                        entry,
+                        buildPreviewMessage: (message) =>
+                            _buildTimelineMessageWidget(
+                              message: message,
+                              chatProvider: chatProvider,
+                              settingsProvider: settingsProvider,
+                              latestReasoningPartKey: latestReasoningPartKey,
+                              latestRevertibleMessageId:
+                                  latestRevertibleMessageId,
+                              isSubConversation: isSubConversation,
+                              finalAssistantRevealMessageId:
+                                  finalAssistantRevealMessageId,
+                              wrapRevealAnchor: false,
+                              keyPrefix: 'assistant_work_preview',
+                            ),
+                      );
+                    } else if (entry is _TimelinePendingAssistantEntry) {
+                      child = _buildPendingAssistantEntry(entry);
+                    } else if (entry is _TimelinePermissionPromptEntry) {
+                      child = _buildInlinePermissionPromptEntry(
+                        entry,
+                        chatProvider,
+                      );
+                    } else {
+                      child = _buildRetryingMessageIndicator();
+                    }
 
-                  return child;
-                },
-                childCount: timelineEntries.length,
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: true,
-                addSemanticIndexes: false,
-                findChildIndexCallback: (key) =>
-                    _findTimelineEntryIndexByKey(key, timelineEntries),
+                    return child;
+                  },
+                  childCount: timelineEntries.length,
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
+                  addSemanticIndexes: false,
+                  findChildIndexCallback: (key) =>
+                      _findTimelineEntryIndexByKey(key, timelineEntries),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
