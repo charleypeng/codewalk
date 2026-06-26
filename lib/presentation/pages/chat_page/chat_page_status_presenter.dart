@@ -435,17 +435,21 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           },
           child: Container(
             key: const ValueKey<String>('sidebar_server_status_control'),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
             decoration: BoxDecoration(
-              border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.4),
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.26,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: AppShapes.borderLarge,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Symbols.cloud, size: 16),
+                Icon(
+                  Symbols.cloud,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 8),
                 Container(
                   width: 8,
@@ -515,7 +519,11 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Symbols.arrow_drop_down, size: 18),
+                Icon(
+                  Symbols.arrow_drop_down,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ],
             ),
           ),

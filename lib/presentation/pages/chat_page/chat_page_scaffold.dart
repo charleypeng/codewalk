@@ -10,27 +10,44 @@ extension _ChatPageScaffold on _ChatPageState {
   }
 
   Widget _buildSidebarNavigation({required bool closeOnSelect}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
       child: Row(
         children: [
           Expanded(
             child: _buildServerStatusControl(closeOnSelect: closeOnSelect),
           ),
-          const SizedBox(width: 8),
-          Tooltip(
-            message: context.l10n.chatSettings,
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: FilledButton.tonal(
-                key: const ValueKey<String>('sidebar_settings_icon_button'),
-                style: FilledButton.styleFrom(padding: EdgeInsets.zero),
-                onPressed: () =>
-                    unawaited(_openSettingsPage(closeOnSelect: closeOnSelect)),
-                child: const Icon(Symbols.settings),
+          const SizedBox(width: 6),
+          IconButton(
+            key: const ValueKey<String>('sidebar_settings_icon_button'),
+            tooltip: context.l10n.chatSettings,
+            style: ButtonStyle(
+              minimumSize: const WidgetStatePropertyAll<Size>(Size.square(40)),
+              padding: const WidgetStatePropertyAll<EdgeInsetsGeometry>(
+                EdgeInsets.zero,
               ),
+              tapTargetSize: MaterialTapTargetSize.padded,
+              foregroundColor: WidgetStatePropertyAll<Color>(
+                colorScheme.onSurfaceVariant,
+              ),
+              backgroundColor: const WidgetStatePropertyAll<Color>(
+                Colors.transparent,
+              ),
+              overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                if (states.contains(WidgetState.focused)) {
+                  return colorScheme.primary.withValues(alpha: 0.12);
+                }
+                if (states.contains(WidgetState.pressed) ||
+                    states.contains(WidgetState.hovered)) {
+                  return colorScheme.onSurfaceVariant.withValues(alpha: 0.10);
+                }
+                return null;
+              }),
             ),
+            onPressed: () =>
+                unawaited(_openSettingsPage(closeOnSelect: closeOnSelect)),
+            icon: const Icon(Symbols.settings, size: 20),
           ),
         ],
       ),

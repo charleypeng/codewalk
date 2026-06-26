@@ -1494,6 +1494,59 @@ void main() {
       },
     );
 
+    testWidgets(
+      'sidebar header uses low-emphasis server and settings controls',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        final statusControl = find.byKey(
+          const ValueKey<String>('sidebar_server_status_control'),
+        );
+        expect(statusControl, findsOneWidget);
+        final statusContainer = tester.widget<Container>(statusControl);
+        final statusDecoration = statusContainer.decoration as BoxDecoration?;
+        expect(statusDecoration?.border, isNull);
+        expect(statusDecoration?.color, isNotNull);
+
+        final settingsButton = find.byKey(
+          const ValueKey<String>('sidebar_settings_icon_button'),
+        );
+        expect(settingsButton, findsOneWidget);
+        expect(tester.widget(settingsButton), isA<IconButton>());
+        expect(tester.getSize(settingsButton).width, greaterThanOrEqualTo(44));
+        expect(tester.getSize(settingsButton).height, greaterThanOrEqualTo(44));
+        expect(
+          find.ancestor(
+            of: settingsButton,
+            matching: find.byType(FilledButton),
+          ),
+          findsNothing,
+        );
+      },
+    );
+
     testWidgets('shows hamburger data saver badge on cellular throttling', (
       WidgetTester tester,
     ) async {

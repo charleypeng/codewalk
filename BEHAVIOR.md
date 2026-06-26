@@ -358,6 +358,8 @@
 - **Given** the Conversations sidebar is rendered
 - **When** server status, sidebar header controls, recent sessions, project groups, and session rows are shown
 - **Then** those blocks do not paint nested card or row-wide container backgrounds over the sidebar background
+- **Then** the server switcher uses a low-emphasis filled surface without a default outline, keeping the active server name and Online/Delayed/Offline state visible
+- **Then** the sidebar settings control uses an icon-only action without a solid default background while preserving tooltip, focus, hover, pressed, and tap affordances
 - **Then** selected project, selected session, and current recent-session rows remain visible through a thin primary accent indicator plus foreground text/icon emphasis
 - **Then** unread and busy state indicators remain visible as compact foreground badges instead of row-wide fills or outlines
 
