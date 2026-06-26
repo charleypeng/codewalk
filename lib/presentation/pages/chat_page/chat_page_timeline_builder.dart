@@ -795,6 +795,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                   _sendButtonTourTargetKey,
                               onTourSkip: _handlePostOnboardingTourSkip,
                               appDensity: settingsProvider.appDensity,
+                              composerSpellCheckEnabled:
+                                  settingsProvider.composerSpellCheckEnabled,
                               onRemoveContextItem: (index) {
                                 if (index >= 0 &&
                                     index < _fileContextItems.length) {

@@ -956,6 +956,8 @@
   "settingsBehaviorChatRenderModeDescription": "Choose whether assistant responses appear as they stream or reveal after the current turn settles.",
   "settingsBehaviorChatRenderModeLive": "Live",
   "settingsBehaviorChatRenderModeLiveDescription": "Show assistant text, reasoning, and tool activity as OpenCode streams events.",
+  "settingsBehaviorComposerSpellCheck": "Composer spell check",
+  "settingsBehaviorComposerSpellCheckDescription": "Use native platform spell check, suggestions, and autocorrect in the chat composer.",
   "settingsBehaviorConfigDeferred": "CodeWalk موجودہ جواب کے ختم ہونے کے بعد اس OpenCode ترتیب کو لاگو کرے گا۔",
   "settingsBehaviorConfigUpdateFailed": "اوپن کوڈ {field} کو اپ ڈیٹ نہیں کیا جا سکا۔",
   "settingsBehaviorConversationUsername": "گفتگو کا صارف نام",

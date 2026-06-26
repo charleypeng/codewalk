@@ -132,6 +132,30 @@ void main() {
     });
   });
 
+  group('composer spell check serialization', () {
+    test('defaults composer spell check to enabled', () {
+      expect(ExperienceSettings.defaults().composerSpellCheckEnabled, isTrue);
+    });
+
+    test('keeps composer spell check enabled for older settings json', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{});
+
+      expect(restored.composerSpellCheckEnabled, isTrue);
+    });
+
+    test('serializes and deserializes disabled composer spell check', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        composerSpellCheckEnabled: false,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['composerSpellCheckEnabled'], isFalse);
+      expect(restored.composerSpellCheckEnabled, isFalse);
+    });
+  });
+
   group('locale serialization', () {
     test('defaults to system locale', () {
       expect(ExperienceSettings.defaults().localeCode, isNull);

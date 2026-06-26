@@ -274,6 +274,7 @@ class ChatInputWidget extends StatefulWidget {
     this.sendButtonShowcaseTargetKey,
     this.onTourSkip,
     this.appDensity = AppDensity.normal,
+    this.composerSpellCheckEnabled = true,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -309,6 +310,7 @@ class ChatInputWidget extends StatefulWidget {
   final GlobalKey? sendButtonShowcaseTargetKey;
   final VoidCallback? onTourSkip;
   final AppDensity appDensity;
+  final bool composerSpellCheckEnabled;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -368,6 +370,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   DateTime? _lastNormalModeEscapeAt;
 
   FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode;
+
+  SpellCheckConfiguration get _composerSpellCheckConfiguration {
+    if (!widget.composerSpellCheckEnabled ||
+        !WidgetsBinding
+            .instance
+            .platformDispatcher
+            .nativeSpellCheckServiceDefined) {
+      return const SpellCheckConfiguration.disabled();
+    }
+    return const SpellCheckConfiguration();
+  }
 
   bool get _hasDraftContent =>
       _controller.text.trim().isNotEmpty ||
@@ -1267,6 +1280,12 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                           ? TextInputAction.newline
                                           : TextInputAction.send,
                                       keyboardType: TextInputType.multiline,
+                                      autocorrect:
+                                          widget.composerSpellCheckEnabled,
+                                      enableSuggestions:
+                                          widget.composerSpellCheckEnabled,
+                                      spellCheckConfiguration:
+                                          _composerSpellCheckConfiguration,
                                       onChanged: _handleTextChanged,
                                       onSubmitted: (_) =>
                                           unawaited(_handleSendMessage()),

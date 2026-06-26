@@ -4097,6 +4097,14 @@
   "@settingsBehaviorChatRenderModeLiveDescription": {
     "description": "CodeWalk UI string — settingsBehaviorChatRenderModeLiveDescription"
   },
+  "settingsBehaviorComposerSpellCheck": "Composer spell check",
+  "@settingsBehaviorComposerSpellCheck": {
+    "description": "CodeWalk UI string — settingsBehaviorComposerSpellCheck"
+  },
+  "settingsBehaviorComposerSpellCheckDescription": "Use native platform spell check, suggestions, and autocorrect in the chat composer.",
+  "@settingsBehaviorComposerSpellCheckDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorComposerSpellCheckDescription"
+  },
   "settingsBehaviorConfigDeferred": "CodeWalk will apply this OpenCode setting after the current response finishes.",
   "@settingsBehaviorConfigDeferred": {
     "description": "CodeWalk UI string — settingsBehaviorConfigDeferred"

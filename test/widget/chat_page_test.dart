@@ -1547,6 +1547,111 @@ void main() {
       },
     );
 
+    testWidgets('composer enables native spell check by default', (
+      WidgetTester tester,
+    ) async {
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      _disableAutomaticUpdateChecksForTest(localDataSource);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, settingsProvider: settingsProvider),
+      );
+      await tester.pumpAndSettle();
+
+      final composerField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('composer_input_row')),
+          matching: find.byType(TextField),
+        ),
+      );
+
+      expect(composerField.autocorrect, isTrue);
+      expect(composerField.enableSuggestions, isTrue);
+      expect(
+        composerField.spellCheckConfiguration?.spellCheckEnabled,
+        WidgetsBinding
+            .instance
+            .platformDispatcher
+            .nativeSpellCheckServiceDefined,
+      );
+    });
+
+    testWidgets(
+      'composer disables native spell check when Behavior toggle is off',
+      (WidgetTester tester) async {
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ])
+          ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+            'checkUpdatesOnOpen': false,
+            'composerSpellCheckEnabled': false,
+          });
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+        final settingsProvider = SettingsProvider(
+          localDataSource: localDataSource,
+          dioClient: DioClient(),
+          soundService: SoundService(),
+        );
+        await settingsProvider.initialize();
+        addTearDown(settingsProvider.dispose);
+
+        await tester.pumpWidget(
+          _testApp(provider, appProvider, settingsProvider: settingsProvider),
+        );
+        await tester.pumpAndSettle();
+
+        final composerField = tester.widget<TextField>(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('composer_input_row')),
+            matching: find.byType(TextField),
+          ),
+        );
+
+        expect(composerField.autocorrect, isFalse);
+        expect(composerField.enableSuggestions, isFalse);
+        expect(
+          composerField.spellCheckConfiguration?.spellCheckEnabled,
+          isFalse,
+        );
+      },
+    );
+
     testWidgets('shows hamburger data saver badge on cellular throttling', (
       WidgetTester tester,
     ) async {

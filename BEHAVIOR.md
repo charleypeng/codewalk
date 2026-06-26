@@ -619,6 +619,16 @@
 - **Then** sessions with no saved draft reopen with an empty composer
 - **Then** transient drafts restored after a rejected send or undo/redo history action keep priority over the persisted session draft until that transient state is consumed
 
+### Composer uses native spell check by default
+
+- **Given** the chat composer is visible in a new installation or in settings without a saved spell-check preference
+- **When** the user types in the composer input
+- **Then** CodeWalk enables Flutter's native platform text correction path for that composer field: autocorrect, suggestions, and spell check are enabled where the platform supports them
+- **Then** CodeWalk does not send composer text to any external correction service
+- **When** the user turns off `Composer spell check` in `Settings > Behavior`
+- **Then** the composer disables autocorrect, suggestions, and spell check for that field only
+- **Then** other technical inputs keep their existing behavior and are not changed by this setting
+
 ### Composer extras menu includes canned answers and attachments
 
 - **Given** the user is composing a message

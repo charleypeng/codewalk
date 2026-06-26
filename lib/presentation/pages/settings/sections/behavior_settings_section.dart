@@ -77,6 +77,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             const SizedBox(height: 16),
             _buildChatRenderModeCard(context, settingsProvider),
             const SizedBox(height: 16),
+            _buildComposerSpellCheckCard(context, settingsProvider),
+            const SizedBox(height: 16),
             Card(
               child: Column(
                 children: [
@@ -679,6 +681,24 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             Text(description, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildComposerSpellCheckCard(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    return Card(
+      child: SwitchListTile.adaptive(
+        key: const ValueKey<String>('settings_toggle_composer_spell_check'),
+        title: Text(context.l10n.settingsBehaviorComposerSpellCheck),
+        subtitle: Text(
+          context.l10n.settingsBehaviorComposerSpellCheckDescription,
+        ),
+        value: settingsProvider.composerSpellCheckEnabled,
+        onChanged: (value) =>
+            unawaited(settingsProvider.setComposerSpellCheckEnabled(value)),
       ),
     );
   }

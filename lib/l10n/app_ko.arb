@@ -956,6 +956,8 @@
   "settingsBehaviorChatRenderModeDescription": "Choose whether assistant responses appear as they stream or reveal after the current turn settles.",
   "settingsBehaviorChatRenderModeLive": "Live",
   "settingsBehaviorChatRenderModeLiveDescription": "Show assistant text, reasoning, and tool activity as OpenCode streams events.",
+  "settingsBehaviorComposerSpellCheck": "Composer spell check",
+  "settingsBehaviorComposerSpellCheckDescription": "Use native platform spell check, suggestions, and autocorrect in the chat composer.",
   "settingsBehaviorConfigDeferred": "CodeWalk는 현재 응답이 완료된 후 이 OpenCode 설정을 적용합니다.",
   "settingsBehaviorConfigUpdateFailed": "OpenCode {field}을(를) 업데이트할 수 없습니다.",
   "settingsBehaviorConversationUsername": "대화 사용자 이름",

@@ -3369,6 +3369,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'Show assistant text, reasoning, and tool activity as OpenCode streams events.';
 
   @override
+  String get settingsBehaviorComposerSpellCheck => 'Composer spell check';
+
+  @override
+  String get settingsBehaviorComposerSpellCheckDescription =>
+      'Use native platform spell check, suggestions, and autocorrect in the chat composer.';
+
+  @override
   String get settingsBehaviorConfigDeferred =>
       'CodeWalk applicherà questa impostazione di OpenCode al termine della risposta corrente.';
 

@@ -377,6 +377,53 @@ void main() {
     );
   });
 
+  testWidgets('Behavior settings toggles composer spell check preference', (
+    WidgetTester tester,
+  ) async {
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+    final settingsProvider = SettingsProvider(
+      localDataSource: local,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: _localizedMaterialApp(home: const SettingsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Behavior').first);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(
+        const ValueKey<String>('settings_toggle_composer_spell_check'),
+      ),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    final toggleFinder = find.byKey(
+      const ValueKey<String>('settings_toggle_composer_spell_check'),
+    );
+    expect(find.text('Composer spell check'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(toggleFinder).value, isTrue);
+
+    await tester.tap(toggleFinder);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<SwitchListTile>(toggleFinder).value, isFalse);
+    expect(settingsProvider.composerSpellCheckEnabled, isFalse);
+    final persisted = jsonDecode(local.experienceSettingsJson!) as Map;
+    expect(persisted['composerSpellCheckEnabled'], isFalse);
+  });
+
   testWidgets('unsupported update platform opens release page fallback', (
     WidgetTester tester,
   ) async {

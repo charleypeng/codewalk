@@ -5870,6 +5870,18 @@ abstract class AppLocalizations {
   /// **'Show assistant text, reasoning, and tool activity as OpenCode streams events.'**
   String get settingsBehaviorChatRenderModeLiveDescription;
 
+  /// CodeWalk UI string — settingsBehaviorComposerSpellCheck
+  ///
+  /// In en, this message translates to:
+  /// **'Composer spell check'**
+  String get settingsBehaviorComposerSpellCheck;
+
+  /// CodeWalk UI string — settingsBehaviorComposerSpellCheckDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Use native platform spell check, suggestions, and autocorrect in the chat composer.'**
+  String get settingsBehaviorComposerSpellCheckDescription;
+
   /// CodeWalk UI string — settingsBehaviorConfigDeferred
   ///
   /// In en, this message translates to:

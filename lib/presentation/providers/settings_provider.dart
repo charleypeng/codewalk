@@ -159,6 +159,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
   bool get showMathRendering => _settings.showMathRendering;
+  bool get composerSpellCheckEnabled => _settings.composerSpellCheckEnabled;
   bool get terminalPanelVisible => _settings.terminalPanelVisible;
   double get terminalPanelHeight => _settings.terminalPanelHeight;
   bool get terminalPanelMaximized => _settings.terminalPanelMaximized;
@@ -639,6 +640,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showMathRendering: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setComposerSpellCheckEnabled(bool enabled) async {
+    if (_settings.composerSpellCheckEnabled == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(composerSpellCheckEnabled: enabled);
     notifyListeners();
     await _persist();
   }
