@@ -80,7 +80,8 @@ class TailscaleService {
       try {
         final status = await _client.status();
         final state = _stateFromStatus(status);
-        if (state.authUrl != null ||
+        if (state.isConnected ||
+            state.authUrl != null ||
             state.nodeState == TailscaleNodeState.needsLogin ||
             state.nodeState == TailscaleNodeState.needsMachineAuth) {
           return _publish(state);
