@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.150.2 - 2026-06-26
+
+- fix(composer): keep multi-attachment part ids unique
+
 ## v1.150.1 - 2026-06-26
 
 - fix(composer): tighten multi-attachment feedback
