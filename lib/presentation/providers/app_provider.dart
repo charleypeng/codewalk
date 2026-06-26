@@ -52,6 +52,7 @@ class AppProvider extends ChangeNotifier {
     required AppLocalDataSource localDataSource,
     required DioClient dioClient,
     TailscaleService? tailscaleService,
+    Future<bool> Function(Uri authUrl)? tailscaleAuthLauncher,
     CellularDataSaverService? cellularDataSaverService,
     LocalOpencodeServerRuntime? localServerRuntime,
     Future<ServerHealthStatus> Function(ServerProfile profile)?
@@ -64,6 +65,10 @@ class AppProvider extends ChangeNotifier {
        _localDataSource = localDataSource,
        _dioClient = dioClient,
        _tailscaleService = tailscaleService ?? TailscaleService(),
+       _tailscaleAuthLauncher =
+           tailscaleAuthLauncher ??
+           ((authUrl) =>
+               launchUrl(authUrl, mode: LaunchMode.externalApplication)),
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled(),
        _localServerRuntime =
@@ -81,6 +86,7 @@ class AppProvider extends ChangeNotifier {
   final AppLocalDataSource _localDataSource;
   final DioClient _dioClient;
   final TailscaleService _tailscaleService;
+  final Future<bool> Function(Uri authUrl) _tailscaleAuthLauncher;
   final CellularDataSaverService _cellularDataSaverService;
   final LocalOpencodeServerRuntime _localServerRuntime;
   final Future<ServerHealthStatus> Function(ServerProfile profile)?
@@ -532,13 +538,76 @@ class AppProvider extends ChangeNotifier {
     }
     await _applyTailscaleTransport(profile);
     final refreshedUrl = _tailscaleState.authUrl;
-    if (refreshedUrl == null) return false;
-    return _launchTailscaleAuthUrl(refreshedUrl);
+    if (refreshedUrl != null) {
+      return _launchTailscaleAuthUrl(refreshedUrl);
+    }
+    final awaitedUrl = await _waitForTailscaleAuthUrl();
+    if (awaitedUrl == null) return false;
+    return _launchTailscaleAuthUrl(awaitedUrl);
+  }
+
+  Future<Uri?> _waitForTailscaleAuthUrl({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    final currentUrl = _tailscaleState.authUrl;
+    if (currentUrl != null) return currentUrl;
+
+    bool isTerminal(TailscaleState state) =>
+        state.nodeState == TailscaleNodeState.connected ||
+        state.nodeState == TailscaleNodeState.disconnected ||
+        state.nodeState == TailscaleNodeState.error ||
+        state.nodeState == TailscaleNodeState.unsupported;
+
+    if (isTerminal(_tailscaleState)) {
+      return null;
+    }
+
+    final completer = Completer<Uri?>();
+    Timer? timer;
+    StreamSubscription<TailscaleState>? subscription;
+
+    void complete(Uri? value) {
+      if (completer.isCompleted) return;
+      timer?.cancel();
+      unawaited(subscription?.cancel());
+      completer.complete(value);
+    }
+
+    subscription = _tailscaleService.stateChanges.listen(
+      (state) {
+        final authUrl = state.authUrl;
+        if (authUrl != null) {
+          complete(authUrl);
+          return;
+        }
+        if (isTerminal(state)) {
+          complete(null);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        AppLogger.warn(
+          'Failed while waiting for Tailscale authentication URL',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        complete(null);
+      },
+    );
+    final latestState = _tailscaleState;
+    if (latestState.authUrl != null) {
+      complete(latestState.authUrl);
+    } else if (isTerminal(latestState)) {
+      complete(null);
+    }
+    if (!completer.isCompleted) {
+      timer = Timer(timeout, () => complete(null));
+    }
+    return completer.future;
   }
 
   Future<bool> _launchTailscaleAuthUrl(Uri authUrl) async {
     try {
-      return launchUrl(authUrl, mode: LaunchMode.externalApplication);
+      return _tailscaleAuthLauncher(authUrl);
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to launch Tailscale authentication URL',

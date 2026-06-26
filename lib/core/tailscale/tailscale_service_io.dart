@@ -77,6 +77,17 @@ class TailscaleService {
       );
       return _publish(_stateFromStatus(status));
     } catch (error, stackTrace) {
+      try {
+        final status = await _client.status();
+        final state = _stateFromStatus(status);
+        if (state.authUrl != null ||
+            state.nodeState == TailscaleNodeState.needsLogin ||
+            state.nodeState == TailscaleNodeState.needsMachineAuth) {
+          return _publish(state);
+        }
+      } catch (_) {
+        // Keep the original start failure as the actionable error below.
+      }
       AppLogger.warn(
         '[Tailscale] Failed to start node for profile $profileId',
         error: error,
@@ -135,7 +146,8 @@ class TailscaleService {
   void _listenToNodeState() {
     _nodeStateSubscription ??= _client.onStateChange.listen((state) {
       _lastStreamedNodeState = state;
-      if (state == ts.NodeState.needsLogin) {
+      if (state == ts.NodeState.needsLogin ||
+          state == ts.NodeState.needsMachineAuth) {
         unawaited(_publishStatusSnapshotIfStill(state));
         return;
       }
@@ -160,22 +172,25 @@ class TailscaleService {
   /// Maps upstream [ts.TailscaleNode] list to domain [TailscalePeer] list,
   /// sorted online-first then by host name.
   static List<TailscalePeer> _mapNodes(List<ts.TailscaleNode> raw) {
-    final mapped = raw
-        .where((n) => n.hostName.isNotEmpty)
-        .map((n) => TailscalePeer(
-              stableId: n.stableNodeId,
-              hostName: n.hostName,
-              dnsName: n.dnsName,
-              tailscaleIPs: List<String>.unmodifiable(n.tailscaleIPs),
-              online: n.online,
-              os: n.os,
-            ))
-        .toList()
-      ..sort((a, b) {
-        // Online peers first, then alphabetical by hostName.
-        if (a.online != b.online) return a.online ? -1 : 1;
-        return a.hostName.toLowerCase().compareTo(b.hostName.toLowerCase());
-      });
+    final mapped =
+        raw
+            .where((n) => n.hostName.isNotEmpty)
+            .map(
+              (n) => TailscalePeer(
+                stableId: n.stableNodeId,
+                hostName: n.hostName,
+                dnsName: n.dnsName,
+                tailscaleIPs: List<String>.unmodifiable(n.tailscaleIPs),
+                online: n.online,
+                os: n.os,
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            // Online peers first, then alphabetical by hostName.
+            if (a.online != b.online) return a.online ? -1 : 1;
+            return a.hostName.toLowerCase().compareTo(b.hostName.toLowerCase());
+          });
     return List<TailscalePeer>.unmodifiable(mapped);
   }
 
@@ -190,6 +205,9 @@ class TailscaleService {
         error: error,
         stackTrace: stackTrace,
       );
+      if (_lastStreamedNodeState == expected) {
+        _publish(_stateFromNodeState(expected));
+      }
     }
   }
 
@@ -239,11 +257,13 @@ class TailscaleService {
       ts.NodeState.running => const TailscaleState(
         nodeState: TailscaleNodeState.connected,
       ),
-      ts.NodeState.needsLogin => const TailscaleState(
+      ts.NodeState.needsLogin => TailscaleState(
         nodeState: TailscaleNodeState.needsLogin,
+        authUrl: _state.authUrl,
       ),
-      ts.NodeState.needsMachineAuth => const TailscaleState(
+      ts.NodeState.needsMachineAuth => TailscaleState(
         nodeState: TailscaleNodeState.needsMachineAuth,
+        authUrl: _state.authUrl,
         message: 'This Tailscale node is waiting for admin approval.',
       ),
       ts.NodeState.starting => const TailscaleState(

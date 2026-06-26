@@ -236,6 +236,9 @@
 - **Then** CodeWalk routes OpenCode API and SSE traffic through the embedded userspace Tailscale node instead of requiring a system VPN
 - **Then** Basic Auth or Cloudflare Access OAuth can still own authentication because Tailscale only owns transport
 - **Then** inactive Tailscale profiles report unknown health instead of starting additional Tailscale nodes
+- **Then** when Tailscale requires login or machine approval, onboarding and server settings show the Tailscale authentication URL and let the user copy it
+- **Then** tapping the Tailscale authenticate action opens that URL in the external browser when the platform can launch it
+- **Then** if the authentication URL cannot be opened, the app keeps the URL visible and shows an actionable failure message instead of silently blocking the flow
 - **Then** Windows and web users do not get a broken Tailscale toggle
 
 ### Offline startup reloads initial data automatically after recovery

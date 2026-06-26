@@ -325,6 +325,54 @@ void main() {
       },
     );
 
+    test('waits for Tailscale auth URL before launching login', () async {
+      final previous = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = previous);
+
+      final tailscale = _FakeTailscaleService(
+        const TailscaleState(nodeState: TailscaleNodeState.connecting),
+      );
+      addTearDown(tailscale.controller.close);
+      final launched = <Uri>[];
+      provider = AppProvider(
+        getAppInfo: GetAppInfo(repository),
+        checkConnection: CheckConnection(repository),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        tailscaleService: tailscale,
+        tailscaleAuthLauncher: (authUrl) async {
+          launched.add(authUrl);
+          return true;
+        },
+        localServerRuntime: localServerRuntime,
+        serverHealthProbe: (_) async => ServerHealthStatus.unknown,
+        enableHealthPolling: false,
+      );
+
+      await provider.initialize();
+      final created = await provider.addServerProfile(
+        url: 'http://codewalk.tailnet.ts.net:4096',
+        tailscaleEnabled: true,
+        setAsActive: true,
+      );
+
+      expect(created, isTrue);
+
+      final loginUrl = Uri.parse('https://login.tailscale.com/a/test');
+      final authFuture = provider.authenticateTailscale();
+      await Future<void>.delayed(Duration.zero);
+      tailscale.controller.add(
+        TailscaleState(
+          nodeState: TailscaleNodeState.needsLogin,
+          authUrl: loginUrl,
+        ),
+      );
+
+      expect(await authFuture, isTrue);
+      expect(launched, <Uri>[loginUrl]);
+    });
+
     test(
       'startLocalServer creates and activates managed local profile',
       () async {
