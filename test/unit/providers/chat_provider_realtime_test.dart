@@ -232,7 +232,7 @@ void main() {
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 200),
+          syncHealthCheckInterval: const Duration(milliseconds: 50),
         );
 
         await provider.projectProvider.initializeProject();
@@ -274,7 +274,7 @@ void main() {
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 200),
+          syncHealthCheckInterval: const Duration(milliseconds: 50),
         );
 
         await provider.projectProvider.initializeProject();
