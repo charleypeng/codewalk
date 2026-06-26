@@ -7,10 +7,20 @@ const _arbDir = 'lib/l10n';
 const _template = 'app_en.arb';
 
 final _locales = const {
-  'ar', 'bn', 'de', 'en',
-  'es', 'fr', 'hi', 'it',
-  'ja', 'ko', 'pt', 'ru',
-  'zh', 'ur',
+  'ar',
+  'bn',
+  'de',
+  'en',
+  'es',
+  'fr',
+  'hi',
+  'it',
+  'ja',
+  'ko',
+  'pt',
+  'ru',
+  'zh',
+  'ur',
 };
 
 String _escapeArb(String value) {
@@ -45,6 +55,8 @@ String _buildEnArb() {
     buf.writeln('  "@$key": {');
     buf.writeln('    "description": "CodeWalk UI string — $key"');
 
+    // Generated AppLocalizations method parameters follow this deterministic
+    // placeholder order, so call sites must be updated after placeholder edits.
     final placeholders = _sortedPlaceholders(_extractPlaceholders(value));
     if (placeholders.isNotEmpty) {
       buf.writeln(',');
@@ -52,7 +64,10 @@ String _buildEnArb() {
       for (var p = 0; p < placeholders.length; p++) {
         final ph = placeholders[p];
         var type = 'String';
-        if (RegExp(r'^(count|total|length|length2|inSeconds|usagePercent|added|removed|index|current|limit|code)$', caseSensitive: false).hasMatch(ph) ||
+        if (RegExp(
+              r'^(count|total|success|length|length2|inSeconds|elapsedMs|usagePercent|added|removed|index|current|limit|code)$',
+              caseSensitive: false,
+            ).hasMatch(ph) ||
             value.contains('{${ph}, plural,')) {
           type = 'int';
         } else if (ph.toLowerCase() == 'cost') {
@@ -107,8 +122,7 @@ void main() {
     if (locale == 'en') continue;
 
     final fileName = '$_arbDir/app_$locale.arb';
-    final translations =
-        defs.translations[locale] ?? <String, String>{};
+    final translations = defs.translations[locale] ?? <String, String>{};
     final arbContent = _buildTranslatedArb(locale, translations);
     File(fileName).writeAsStringSync(arbContent);
   }

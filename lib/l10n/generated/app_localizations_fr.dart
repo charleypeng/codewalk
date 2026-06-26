@@ -364,29 +364,29 @@ class AppLocalizationsFr extends AppLocalizations {
       'Actif actuellement sur les données mobiles.';
 
   @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDataSaverCellularOnly =>
       'S\'applique uniquement lorsque la connexion est mobile/cellulaire.';
 
   @override
-  String get behaviorDataSaverWaiting =>
-      'En attente de la prochaine fenêtre de synchronisation des données mobiles.';
-
-  @override
   String get behaviorDataSaverOff => 'Off';
-
-  @override
-  String get behaviorDataSaverStandard => 'Standard';
-
-  @override
-  String get behaviorDataSaverAggressive => 'Aggressive';
 
   @override
   String get behaviorDataSaverOffHint =>
       'Full realtime and automatic refreshes are enabled.';
 
   @override
-  String get behaviorDataSaverAggressiveDescription =>
-      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'En attente de la prochaine fenêtre de synchronisation des données mobiles.';
 
   @override
   String get behaviorDisabled => 'Désactivé';
@@ -498,13 +498,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ajoutez un serveur pour commencer à discuter.';
 
   @override
-  String get chatBlockResponsePendingDescription =>
-      'The answer will appear as a single block when this turn finishes.';
-
-  @override
-  String get chatBlockResponsePendingTitle => 'Generating response';
-
-  @override
   String get chatAppBarMoreActions => 'Plus d\'actions';
 
   @override
@@ -546,6 +539,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatBadgeSyncing => 'Synchronisation des conversations...';
+
+  @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
 
   @override
   String get chatCachedConversationsYet =>
@@ -1333,6 +1333,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune tâche n\'est disponible pour cette session.';
 
   @override
+  String get chatTipAcceptanceCriteria =>
+      'Conseil : Ajoutez des critères de validation aux grands changements';
+
+  @override
+  String get chatTipAskForPlan =>
+      'Conseil : Demandez un plan avant les grandes tâches';
+
+  @override
   String get chatTipBeSpecific =>
       'Conseil : Soyez précis — les prompts courts obtiennent des réponses plus rapides';
 
@@ -1341,8 +1349,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Conseil : Divisez les grandes tâches en prompts plus petits';
 
   @override
+  String get chatTipCompareOptions =>
+      'Conseil : Demandez des options quand les compromis sont flous';
+
+  @override
   String get chatTipContextKnob =>
       'Conseil : Appuyez sur le bouton de contexte pour voir les détails d\'\'\'\'\'\'\'\'\'\'\'\'\'\'\'\'utilisation';
+
+  @override
+  String get chatTipDefineVerification =>
+      'Conseil : Dites quels tests ou contrôles doivent passer';
 
   @override
   String get chatTipLongPressSend =>
@@ -1353,12 +1369,24 @@ class AppLocalizationsFr extends AppLocalizations {
       'Conseil : Utilisez @ pour mentionner des fichiers dans votre prompt';
 
   @override
+  String get chatTipNameRelevantFiles =>
+      'Conseil : Nommez les fichiers, écrans ou commandes utiles';
+
+  @override
   String get chatTipProvideContext =>
       'Conseil : Fournissez du contexte — collez les messages d\'\'\'\'\'\'\'\'\'\'\'\'\'\'\'\'erreur et les logs';
 
   @override
   String get chatTipRenameConversation =>
       'Conseil : Appuyez sur le titre pour renommer une conversation';
+
+  @override
+  String get chatTipRequestDocs =>
+      'Conseil : Demandez une mise à jour des docs si le comportement change';
+
+  @override
+  String get chatTipShareAttempts =>
+      'Conseil : Partagez vos essais et le message exact';
 
   @override
   String get chatTipShellCommands =>
@@ -1369,43 +1397,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Conseil : Utilisez / pour accéder aux commandes slash';
 
   @override
-  String get chatTipStepByStep =>
-      'Conseil : Demandez étape par étape lors du débogage de problèmes complexes';
-
-  @override
   String get chatTipStartWithGoal => 'Conseil : Commencez par le but final';
-
-  @override
-  String get chatTipNameRelevantFiles =>
-      'Conseil : Nommez les fichiers, écrans ou commandes utiles';
 
   @override
   String get chatTipStateConstraints =>
       'Conseil : Indiquez les contraintes à préserver';
 
   @override
-  String get chatTipAskForPlan =>
-      'Conseil : Demandez un plan avant les grandes tâches';
-
-  @override
-  String get chatTipDefineVerification =>
-      'Conseil : Dites quels tests ou contrôles doivent passer';
-
-  @override
-  String get chatTipShareAttempts =>
-      'Conseil : Partagez vos essais et le message exact';
-
-  @override
-  String get chatTipCompareOptions =>
-      'Conseil : Demandez des options quand les compromis sont flous';
-
-  @override
-  String get chatTipRequestDocs =>
-      'Conseil : Demandez une mise à jour des docs si le comportement change';
-
-  @override
-  String get chatTipAcceptanceCriteria =>
-      'Conseil : Ajoutez des critères de validation aux grands changements';
+  String get chatTipStepByStep =>
+      'Conseil : Demandez étape par étape lors du débogage de problèmes complexes';
 
   @override
   String get chatTipUseFocusedAgents =>
@@ -1782,12 +1782,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get forwardNoSessions => 'No recent sessions';
 
   @override
-  String forwardPartial(Object success, Object total) {
+  String forwardPartial(int success, int total) {
     return 'Forwarded to $success of $total';
   }
 
   @override
-  String forwardProvenanceLabel(Object origin) {
+  String forwardProvenanceLabel(String origin) {
     return 'Forwarded from: $origin';
   }
 
@@ -1798,7 +1798,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get forwardSearchHint => 'Search';
 
   @override
-  String forwardSelectedCount(Object count) {
+  String forwardSelectedCount(int count) {
     return '$count selected';
   }
 
@@ -1812,7 +1812,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get forwardShortcutHint => 'Ctrl+Shift+F';
 
   @override
-  String forwardSuccess(Object count) {
+  String forwardSuccess(int count) {
     return 'Forwarded to $count sessions';
   }
 
@@ -1835,6 +1835,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get logsCopyFiltered => 'Copier les journaux filtrés';
 
   @override
+  String get logsEnableLogging => 'Activer les logs de l\'app';
+
+  @override
+  String get logsEnableLoggingAction => 'Activer les logs';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'Collecte des logs de diagnostic en mémoire. Laissez désactivé sauf pour résoudre un problème.';
+
+  @override
   String get logsEntryContext => 'Contexte';
 
   @override
@@ -1847,21 +1857,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get logsLevel => 'Niveau';
 
   @override
-  String get logsEnableLogging => 'Activer les logs de l\'app';
-
-  @override
-  String get logsEnableLoggingDescription =>
-      'Collecte des logs de diagnostic en mémoire. Laissez désactivé sauf pour résoudre un problème.';
-
-  @override
-  String get logsEnableLoggingAction => 'Activer les logs';
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk ne collecte pas de logs détaillés de l\'app. Activez les logs uniquement lorsque vous avez besoin d\'un diagnostic.';
 
   @override
   String get logsLoggingDisabledTitle => 'Logs désactivés';
-
-  @override
-  String get logsLoggingDisabledDescription =>
-      'CodeWalk ne collecte pas de logs détaillés de l\'app. Activez les logs uniquement lorsque vous avez besoin d\'un diagnostic.';
 
   @override
   String get logsMeasurePerformance => 'Mesurer les performances';
@@ -1891,8 +1891,8 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   ) {
     return 'PERFORMANCE $operation | $elapsedMs ms | $status';
@@ -2592,13 +2592,54 @@ class AppLocalizationsFr extends AppLocalizations {
   String get quotaAuthCookie => 'Cookie d\'authentification';
 
   @override
+  String get quotaConnect => 'Connecter';
+
+  @override
   String get quotaForget => 'Oublier';
+
+  @override
+  String get quotaOpenCodeGoConnectDescription =>
+      'Connectez le tableau de bord d\'utilisation pour afficher les limites glissantes, hebdomadaires et mensuelles.';
+
+  @override
+  String get quotaOpenCodeGoDetected => 'OpenCode Go détecté';
+
+  @override
+  String get quotaOpenCodeGoNeedsReconnect =>
+      'OpenCode Go doit être reconnecté';
+
+  @override
+  String get quotaOpenCodeGoReconnectDescription =>
+      'Actualisez les identifiants du tableau de bord pour restaurer les barres d\'utilisation.';
 
   @override
   String get quotaOpenCodeGoUsage => 'Utilisation d\'OpenCode Go';
 
   @override
   String get quotaOpenDashboard => 'Ouvrir le tableau de bord OpenCode';
+
+  @override
+  String get quotaPaceExplanation =>
+      'Le rythme prédit l\'utilisation totale à la fin de la fenêtre de limite actuelle selon le taux actuel.';
+
+  @override
+  String quotaPacePercent(String percent) {
+    return 'Rythme $percent%';
+  }
+
+  @override
+  String get quotaRateLimits => 'Limites d\'utilisation';
+
+  @override
+  String get quotaReconnect => 'Reconnecter';
+
+  @override
+  String get quotaRefreshing => 'Actualisation...';
+
+  @override
+  String quotaResetsIn(String time) {
+    return 'Réinitialisation dans $time';
+  }
 
   @override
   String get quotaSaving => 'Enregistrement...';

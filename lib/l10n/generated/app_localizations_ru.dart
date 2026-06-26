@@ -361,29 +361,29 @@ class AppLocalizationsRu extends AppLocalizations {
       'Активно сейчас при использовании мобильного интернета.';
 
   @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDataSaverCellularOnly =>
       'Применяется только при мобильном подключении.';
 
   @override
-  String get behaviorDataSaverWaiting =>
-      'Ожидание следующего окна синхронизации мобильных данных.';
-
-  @override
   String get behaviorDataSaverOff => 'Off';
-
-  @override
-  String get behaviorDataSaverStandard => 'Standard';
-
-  @override
-  String get behaviorDataSaverAggressive => 'Aggressive';
 
   @override
   String get behaviorDataSaverOffHint =>
       'Full realtime and automatic refreshes are enabled.';
 
   @override
-  String get behaviorDataSaverAggressiveDescription =>
-      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'Ожидание следующего окна синхронизации мобильных данных.';
 
   @override
   String get behaviorDisabled => 'Отключено';
@@ -494,13 +494,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatAddServerToStart => 'Добавьте сервер, чтобы начать общение.';
 
   @override
-  String get chatBlockResponsePendingDescription =>
-      'The answer will appear as a single block when this turn finishes.';
-
-  @override
-  String get chatBlockResponsePendingTitle => 'Generating response';
-
-  @override
   String get chatAppBarMoreActions => 'Другие действия';
 
   @override
@@ -541,6 +534,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatBadgeSyncing => 'Синхронизация бесед...';
+
+  @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
 
   @override
   String get chatCachedConversationsYet => 'Кэшированных бесед пока нет';
@@ -1310,6 +1310,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Для этой сессии нет доступных задач.';
 
   @override
+  String get chatTipAcceptanceCriteria =>
+      'Совет: Добавьте критерии приемки для крупных изменений';
+
+  @override
+  String get chatTipAskForPlan =>
+      'Совет: Для больших задач сначала запросите план';
+
+  @override
   String get chatTipBeSpecific =>
       'Совет: Будьте конкретны — более короткие запросы обрабатываются быстрее';
 
@@ -1318,8 +1326,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Совет: Разбивайте большие задачи на более мелкие запросы';
 
   @override
+  String get chatTipCompareOptions =>
+      'Совет: Запросите варианты, если компромиссы неясны';
+
+  @override
   String get chatTipContextKnob =>
       'Совет: Нажмите на индикатор контекста, чтобы просмотреть подробности его использования';
+
+  @override
+  String get chatTipDefineVerification =>
+      'Совет: Укажите, какие тесты или проверки должны пройти';
 
   @override
   String get chatTipLongPressSend =>
@@ -1330,12 +1346,24 @@ class AppLocalizationsRu extends AppLocalizations {
       'Совет: Используйте @ для упоминания файлов в вашем запросе';
 
   @override
+  String get chatTipNameRelevantFiles =>
+      'Совет: Укажите важные файлы, экраны или команды';
+
+  @override
   String get chatTipProvideContext =>
       'Совет: Предоставляйте контекст — вставляйте сообщения об ошибках и логи';
 
   @override
   String get chatTipRenameConversation =>
       'Совет: Нажмите на заголовок, чтобы переименовать беседу';
+
+  @override
+  String get chatTipRequestDocs =>
+      'Совет: Просите обновить docs, когда поведение меняется';
+
+  @override
+  String get chatTipShareAttempts =>
+      'Совет: Расскажите, что пробовали, и точную ошибку';
 
   @override
   String get chatTipShellCommands =>
@@ -1346,43 +1374,15 @@ class AppLocalizationsRu extends AppLocalizations {
       'Совет: Используйте / для доступа к слэш-командам';
 
   @override
-  String get chatTipStepByStep =>
-      'Совет: Запрашивайте пошаговые инструкции при отладке сложных проблем';
-
-  @override
   String get chatTipStartWithGoal => 'Совет: Начните с конечной цели';
-
-  @override
-  String get chatTipNameRelevantFiles =>
-      'Совет: Укажите важные файлы, экраны или команды';
 
   @override
   String get chatTipStateConstraints =>
       'Совет: Укажите ограничения, которые агент должен сохранить';
 
   @override
-  String get chatTipAskForPlan =>
-      'Совет: Для больших задач сначала запросите план';
-
-  @override
-  String get chatTipDefineVerification =>
-      'Совет: Укажите, какие тесты или проверки должны пройти';
-
-  @override
-  String get chatTipShareAttempts =>
-      'Совет: Расскажите, что пробовали, и точную ошибку';
-
-  @override
-  String get chatTipCompareOptions =>
-      'Совет: Запросите варианты, если компромиссы неясны';
-
-  @override
-  String get chatTipRequestDocs =>
-      'Совет: Просите обновить docs, когда поведение меняется';
-
-  @override
-  String get chatTipAcceptanceCriteria =>
-      'Совет: Добавьте критерии приемки для крупных изменений';
+  String get chatTipStepByStep =>
+      'Совет: Запрашивайте пошаговые инструкции при отладке сложных проблем';
 
   @override
   String get chatTipUseFocusedAgents =>
@@ -1758,12 +1758,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get forwardNoSessions => 'No recent sessions';
 
   @override
-  String forwardPartial(Object success, Object total) {
+  String forwardPartial(int success, int total) {
     return 'Forwarded to $success of $total';
   }
 
   @override
-  String forwardProvenanceLabel(Object origin) {
+  String forwardProvenanceLabel(String origin) {
     return 'Forwarded from: $origin';
   }
 
@@ -1774,7 +1774,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get forwardSearchHint => 'Search';
 
   @override
-  String forwardSelectedCount(Object count) {
+  String forwardSelectedCount(int count) {
     return '$count selected';
   }
 
@@ -1788,7 +1788,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get forwardShortcutHint => 'Ctrl+Shift+F';
 
   @override
-  String forwardSuccess(Object count) {
+  String forwardSuccess(int count) {
     return 'Forwarded to $count sessions';
   }
 
@@ -1811,6 +1811,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logsCopyFiltered => 'Копировать отфильтрованные логи';
 
   @override
+  String get logsEnableLogging => 'Включить логи приложения';
+
+  @override
+  String get logsEnableLoggingAction => 'Включить логи';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'Сохраняет диагностические логи в памяти. Оставляйте выключенным, если не устраняете проблему.';
+
+  @override
   String get logsEntryContext => 'Контекст';
 
   @override
@@ -1823,21 +1833,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logsLevel => 'Уровень';
 
   @override
-  String get logsEnableLogging => 'Включить логи приложения';
-
-  @override
-  String get logsEnableLoggingDescription =>
-      'Сохраняет диагностические логи в памяти. Оставляйте выключенным, если не устраняете проблему.';
-
-  @override
-  String get logsEnableLoggingAction => 'Включить логи';
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk не собирает подробные логи приложения. Включайте логи только когда нужна диагностика.';
 
   @override
   String get logsLoggingDisabledTitle => 'Логи отключены';
-
-  @override
-  String get logsLoggingDisabledDescription =>
-      'CodeWalk не собирает подробные логи приложения. Включайте логи только когда нужна диагностика.';
 
   @override
   String get logsMeasurePerformance => 'Измерять производительность';
@@ -1867,8 +1867,8 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   ) {
     return 'ПРОИЗВОДИТЕЛЬНОСТЬ $operation | $elapsedMs мс | $status';
@@ -2560,13 +2560,54 @@ class AppLocalizationsRu extends AppLocalizations {
   String get quotaAuthCookie => 'Cookie авторизации';
 
   @override
+  String get quotaConnect => 'Подключить';
+
+  @override
   String get quotaForget => 'Забыть';
+
+  @override
+  String get quotaOpenCodeGoConnectDescription =>
+      'Подключите дашборд использования, чтобы показывать скользящие, недельные и месячные лимиты.';
+
+  @override
+  String get quotaOpenCodeGoDetected => 'Обнаружен OpenCode Go';
+
+  @override
+  String get quotaOpenCodeGoNeedsReconnect =>
+      'OpenCode Go нужно подключить повторно';
+
+  @override
+  String get quotaOpenCodeGoReconnectDescription =>
+      'Обновите учетные данные дашборда, чтобы восстановить полосы использования.';
 
   @override
   String get quotaOpenCodeGoUsage => 'Использование OpenCode Go';
 
   @override
   String get quotaOpenDashboard => 'Открыть дашборд OpenCode';
+
+  @override
+  String get quotaPaceExplanation =>
+      'Темп прогнозирует общий расход к концу текущего окна лимита на основе текущей скорости.';
+
+  @override
+  String quotaPacePercent(String percent) {
+    return 'Темп $percent%';
+  }
+
+  @override
+  String get quotaRateLimits => 'Лимиты использования';
+
+  @override
+  String get quotaReconnect => 'Подключить повторно';
+
+  @override
+  String get quotaRefreshing => 'Обновление...';
+
+  @override
+  String quotaResetsIn(String time) {
+    return 'Сброс через $time';
+  }
 
   @override
   String get quotaSaving => 'Сохранение...';

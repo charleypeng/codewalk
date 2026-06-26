@@ -680,17 +680,23 @@ abstract class AppLocalizations {
   /// **'Active now on mobile data.'**
   String get behaviorDataSaverActive;
 
+  /// CodeWalk UI string — behaviorDataSaverAggressive
+  ///
+  /// In en, this message translates to:
+  /// **'Aggressive'**
+  String get behaviorDataSaverAggressive;
+
+  /// CodeWalk UI string — behaviorDataSaverAggressiveDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.'**
+  String get behaviorDataSaverAggressiveDescription;
+
   /// CodeWalk UI string — behaviorDataSaverCellularOnly
   ///
   /// In en, this message translates to:
   /// **'Only applies when the connection is cellular/mobile.'**
   String get behaviorDataSaverCellularOnly;
-
-  /// CodeWalk UI string — behaviorDataSaverWaiting
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for the next mobile-data sync window.'**
-  String get behaviorDataSaverWaiting;
 
   /// CodeWalk UI string — behaviorDataSaverOff
   ///
@@ -698,29 +704,23 @@ abstract class AppLocalizations {
   /// **'Off'**
   String get behaviorDataSaverOff;
 
-  /// CodeWalk UI string — behaviorDataSaverStandard
-  ///
-  /// In en, this message translates to:
-  /// **'Standard'**
-  String get behaviorDataSaverStandard;
-
-  /// CodeWalk UI string — behaviorDataSaverAggressive
-  ///
-  /// In en, this message translates to:
-  /// **'Aggressive'**
-  String get behaviorDataSaverAggressive;
-
   /// CodeWalk UI string — behaviorDataSaverOffHint
   ///
   /// In en, this message translates to:
   /// **'Full realtime and automatic refreshes are enabled.'**
   String get behaviorDataSaverOffHint;
 
-  /// CodeWalk UI string — behaviorDataSaverAggressiveDescription
+  /// CodeWalk UI string — behaviorDataSaverStandard
   ///
   /// In en, this message translates to:
-  /// **'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.'**
-  String get behaviorDataSaverAggressiveDescription;
+  /// **'Standard'**
+  String get behaviorDataSaverStandard;
+
+  /// CodeWalk UI string — behaviorDataSaverWaiting
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the next mobile-data sync window.'**
+  String get behaviorDataSaverWaiting;
 
   /// CodeWalk UI string — behaviorDisabled
   ///
@@ -908,18 +908,6 @@ abstract class AppLocalizations {
   /// **'Add a server to start chatting.'**
   String get chatAddServerToStart;
 
-  /// CodeWalk UI string — chatBlockResponsePendingDescription
-  ///
-  /// In en, this message translates to:
-  /// **'The answer will appear as a single block when this turn finishes.'**
-  String get chatBlockResponsePendingDescription;
-
-  /// CodeWalk UI string — chatBlockResponsePendingTitle
-  ///
-  /// In en, this message translates to:
-  /// **'Generating response'**
-  String get chatBlockResponsePendingTitle;
-
   /// CodeWalk UI string — chatAppBarMoreActions
   ///
   /// In en, this message translates to:
@@ -985,6 +973,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Syncing conversations...'**
   String get chatBadgeSyncing;
+
+  /// CodeWalk UI string — chatBlockResponsePendingDescription
+  ///
+  /// In en, this message translates to:
+  /// **'The answer will appear as a single block when this turn finishes.'**
+  String get chatBlockResponsePendingDescription;
+
+  /// CodeWalk UI string — chatBlockResponsePendingTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Generating response'**
+  String get chatBlockResponsePendingTitle;
 
   /// CodeWalk UI string — chatCachedConversationsYet
   ///
@@ -2351,6 +2351,18 @@ abstract class AppLocalizations {
   /// **'No tasks are available for this session.'**
   String get chatTasksAvailableSession;
 
+  /// CodeWalk UI string — chatTipAcceptanceCriteria
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Add acceptance criteria for larger changes'**
+  String get chatTipAcceptanceCriteria;
+
+  /// CodeWalk UI string — chatTipAskForPlan
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Ask for a plan first on large tasks'**
+  String get chatTipAskForPlan;
+
   /// CodeWalk UI string — chatTipBeSpecific
   ///
   /// In en, this message translates to:
@@ -2363,11 +2375,23 @@ abstract class AppLocalizations {
   /// **'Tip: Break large tasks into smaller prompts'**
   String get chatTipBreakTasks;
 
+  /// CodeWalk UI string — chatTipCompareOptions
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Ask for alternatives when tradeoffs are unclear'**
+  String get chatTipCompareOptions;
+
   /// CodeWalk UI string — chatTipContextKnob
   ///
   /// In en, this message translates to:
   /// **'Tip: Tap the context knob to see usage details'**
   String get chatTipContextKnob;
+
+  /// CodeWalk UI string — chatTipDefineVerification
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Say which tests or checks should pass'**
+  String get chatTipDefineVerification;
 
   /// CodeWalk UI string — chatTipLongPressSend
   ///
@@ -2381,6 +2405,12 @@ abstract class AppLocalizations {
   /// **'Tip: Use @ to mention files in your prompt'**
   String get chatTipMentionFiles;
 
+  /// CodeWalk UI string — chatTipNameRelevantFiles
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Name relevant files, screens, or commands'**
+  String get chatTipNameRelevantFiles;
+
   /// CodeWalk UI string — chatTipProvideContext
   ///
   /// In en, this message translates to:
@@ -2392,6 +2422,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tip: Tap the title to rename a conversation'**
   String get chatTipRenameConversation;
+
+  /// CodeWalk UI string — chatTipRequestDocs
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Ask for docs updates when behavior changes'**
+  String get chatTipRequestDocs;
+
+  /// CodeWalk UI string — chatTipShareAttempts
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Share what you tried and the exact error'**
+  String get chatTipShareAttempts;
 
   /// CodeWalk UI string — chatTipShellCommands
   ///
@@ -2405,23 +2447,11 @@ abstract class AppLocalizations {
   /// **'Tip: Use / to access slash commands'**
   String get chatTipSlashCommands;
 
-  /// CodeWalk UI string — chatTipStepByStep
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Ask for step-by-step when debugging complex issues'**
-  String get chatTipStepByStep;
-
   /// CodeWalk UI string — chatTipStartWithGoal
   ///
   /// In en, this message translates to:
   /// **'Tip: Start with the end goal'**
   String get chatTipStartWithGoal;
-
-  /// CodeWalk UI string — chatTipNameRelevantFiles
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Name relevant files, screens, or commands'**
-  String get chatTipNameRelevantFiles;
 
   /// CodeWalk UI string — chatTipStateConstraints
   ///
@@ -2429,41 +2459,11 @@ abstract class AppLocalizations {
   /// **'Tip: State constraints the agent must preserve'**
   String get chatTipStateConstraints;
 
-  /// CodeWalk UI string — chatTipAskForPlan
+  /// CodeWalk UI string — chatTipStepByStep
   ///
   /// In en, this message translates to:
-  /// **'Tip: Ask for a plan first on large tasks'**
-  String get chatTipAskForPlan;
-
-  /// CodeWalk UI string — chatTipDefineVerification
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Say which tests or checks should pass'**
-  String get chatTipDefineVerification;
-
-  /// CodeWalk UI string — chatTipShareAttempts
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Share what you tried and the exact error'**
-  String get chatTipShareAttempts;
-
-  /// CodeWalk UI string — chatTipCompareOptions
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Ask for alternatives when tradeoffs are unclear'**
-  String get chatTipCompareOptions;
-
-  /// CodeWalk UI string — chatTipRequestDocs
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Ask for docs updates when behavior changes'**
-  String get chatTipRequestDocs;
-
-  /// CodeWalk UI string — chatTipAcceptanceCriteria
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Add acceptance criteria for larger changes'**
-  String get chatTipAcceptanceCriteria;
+  /// **'Tip: Ask for step-by-step when debugging complex issues'**
+  String get chatTipStepByStep;
 
   /// CodeWalk UI string — chatTipUseFocusedAgents
   ///
@@ -3135,13 +3135,13 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Forwarded to {success} of {total}'**
-  String forwardPartial(Object success, Object total);
+  String forwardPartial(int success, int total);
 
   /// CodeWalk UI string — forwardProvenanceLabel
   ///
   /// In en, this message translates to:
   /// **'Forwarded from: {origin}'**
-  String forwardProvenanceLabel(Object origin);
+  String forwardProvenanceLabel(String origin);
 
   /// CodeWalk UI string — forwardRetry
   ///
@@ -3159,7 +3159,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{count} selected'**
-  String forwardSelectedCount(Object count);
+  String forwardSelectedCount(int count);
 
   /// CodeWalk UI string — forwardSend
   ///
@@ -3183,7 +3183,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Forwarded to {count} sessions'**
-  String forwardSuccess(Object count);
+  String forwardSuccess(int count);
 
   /// CodeWalk UI string — forwardUndo
   ///
@@ -3221,6 +3221,24 @@ abstract class AppLocalizations {
   /// **'Copy filtered logs'**
   String get logsCopyFiltered;
 
+  /// CodeWalk UI string — logsEnableLogging
+  ///
+  /// In en, this message translates to:
+  /// **'Enable app logging'**
+  String get logsEnableLogging;
+
+  /// CodeWalk UI string — logsEnableLoggingAction
+  ///
+  /// In en, this message translates to:
+  /// **'Enable logging'**
+  String get logsEnableLoggingAction;
+
+  /// CodeWalk UI string — logsEnableLoggingDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Collect in-memory diagnostic logs. Keep this off unless you are troubleshooting.'**
+  String get logsEnableLoggingDescription;
+
   /// CodeWalk UI string — logsEntryContext
   ///
   /// In en, this message translates to:
@@ -3245,35 +3263,17 @@ abstract class AppLocalizations {
   /// **'Level'**
   String get logsLevel;
 
-  /// CodeWalk UI string — logsEnableLogging
+  /// CodeWalk UI string — logsLoggingDisabledDescription
   ///
   /// In en, this message translates to:
-  /// **'Enable app logging'**
-  String get logsEnableLogging;
-
-  /// CodeWalk UI string — logsEnableLoggingDescription
-  ///
-  /// In en, this message translates to:
-  /// **'Collect in-memory diagnostic logs. Keep this off unless you are troubleshooting.'**
-  String get logsEnableLoggingDescription;
-
-  /// CodeWalk UI string — logsEnableLoggingAction
-  ///
-  /// In en, this message translates to:
-  /// **'Enable logging'**
-  String get logsEnableLoggingAction;
+  /// **'CodeWalk is not collecting detailed app logs. Enable logging only when you need diagnostics.'**
+  String get logsLoggingDisabledDescription;
 
   /// CodeWalk UI string — logsLoggingDisabledTitle
   ///
   /// In en, this message translates to:
   /// **'Logging is disabled'**
   String get logsLoggingDisabledTitle;
-
-  /// CodeWalk UI string — logsLoggingDisabledDescription
-  ///
-  /// In en, this message translates to:
-  /// **'CodeWalk is not collecting detailed app logs. Enable logging only when you need diagnostics.'**
-  String get logsLoggingDisabledDescription;
 
   /// CodeWalk UI string — logsMeasurePerformance
   ///
@@ -3322,8 +3322,8 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PERFORMANCE {operation} | {elapsedMs} ms | {status}'**
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   );
 
@@ -4491,11 +4491,41 @@ abstract class AppLocalizations {
   /// **'Auth cookie'**
   String get quotaAuthCookie;
 
+  /// CodeWalk UI string — quotaConnect
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get quotaConnect;
+
   /// CodeWalk UI string — quotaForget
   ///
   /// In en, this message translates to:
   /// **'Forget'**
   String get quotaForget;
+
+  /// CodeWalk UI string — quotaOpenCodeGoConnectDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the usage dashboard to show rolling, weekly, and monthly limits.'**
+  String get quotaOpenCodeGoConnectDescription;
+
+  /// CodeWalk UI string — quotaOpenCodeGoDetected
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode Go detected'**
+  String get quotaOpenCodeGoDetected;
+
+  /// CodeWalk UI string — quotaOpenCodeGoNeedsReconnect
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode Go needs reconnect'**
+  String get quotaOpenCodeGoNeedsReconnect;
+
+  /// CodeWalk UI string — quotaOpenCodeGoReconnectDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh the dashboard credentials to restore usage bars.'**
+  String get quotaOpenCodeGoReconnectDescription;
 
   /// CodeWalk UI string — quotaOpenCodeGoUsage
   ///
@@ -4508,6 +4538,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open OpenCode dashboard'**
   String get quotaOpenDashboard;
+
+  /// CodeWalk UI string — quotaPaceExplanation
+  ///
+  /// In en, this message translates to:
+  /// **'Pace predicts total usage by the end of the current limit window based on the current rate.'**
+  String get quotaPaceExplanation;
+
+  /// CodeWalk UI string — quotaPacePercent
+  ///
+  /// In en, this message translates to:
+  /// **'Pace {percent}%'**
+  String quotaPacePercent(String percent);
+
+  /// CodeWalk UI string — quotaRateLimits
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limits'**
+  String get quotaRateLimits;
+
+  /// CodeWalk UI string — quotaReconnect
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get quotaReconnect;
+
+  /// CodeWalk UI string — quotaRefreshing
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing...'**
+  String get quotaRefreshing;
+
+  /// CodeWalk UI string — quotaResetsIn
+  ///
+  /// In en, this message translates to:
+  /// **'Resets in {time}'**
+  String quotaResetsIn(String time);
 
   /// CodeWalk UI string — quotaSaving
   ///

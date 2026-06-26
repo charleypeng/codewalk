@@ -331,27 +331,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get behaviorDataSaverActive => 'モバイルデータ通信で現在有効です。';
 
   @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDataSaverCellularOnly => '接続がモバイルデータ通信の場合にのみ適用されます。';
 
   @override
-  String get behaviorDataSaverWaiting => '次のモバイルデータ同期ウィンドウを待機しています。';
-
-  @override
   String get behaviorDataSaverOff => 'Off';
-
-  @override
-  String get behaviorDataSaverStandard => 'Standard';
-
-  @override
-  String get behaviorDataSaverAggressive => 'Aggressive';
 
   @override
   String get behaviorDataSaverOffHint =>
       'Full realtime and automatic refreshes are enabled.';
 
   @override
-  String get behaviorDataSaverAggressiveDescription =>
-      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverWaiting => '次のモバイルデータ同期ウィンドウを待機しています。';
 
   @override
   String get behaviorDisabled => '無効';
@@ -453,13 +453,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatAddServerToStart => 'チャットを開始するにはサーバーを追加してください。';
 
   @override
-  String get chatBlockResponsePendingDescription =>
-      'The answer will appear as a single block when this turn finishes.';
-
-  @override
-  String get chatBlockResponsePendingTitle => 'Generating response';
-
-  @override
   String get chatAppBarMoreActions => 'その他のアクション';
 
   @override
@@ -497,6 +490,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatBadgeSyncing => '会話を同期中...';
+
+  @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
 
   @override
   String get chatCachedConversationsYet => 'キャッシュされた会話はまだありません';
@@ -1235,13 +1235,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatTasksAvailableSession => 'このセッションで利用可能なタスクはありません。';
 
   @override
+  String get chatTipAcceptanceCriteria => 'ヒント: 大きな変更には受け入れ条件を追加しましょう';
+
+  @override
+  String get chatTipAskForPlan => 'ヒント: 大きなタスクでは先に計画を依頼しましょう';
+
+  @override
   String get chatTipBeSpecific => 'ヒント: 具体的に — 短いプロンプトほど早く回答が得られます';
 
   @override
   String get chatTipBreakTasks => 'ヒント: 大きなタスクを小さなプロンプトに分割します';
 
   @override
+  String get chatTipCompareOptions => 'ヒント: トレードオフが不明なら代替案を依頼しましょう';
+
+  @override
   String get chatTipContextKnob => 'ヒント: コンテキストノブをタップして使用状況の詳細を表示します';
+
+  @override
+  String get chatTipDefineVerification => 'ヒント: 通すべきテストやチェックを伝えましょう';
 
   @override
   String get chatTipLongPressSend => 'ヒント: 送信を長押しして改行を挿入します';
@@ -1250,10 +1262,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatTipMentionFiles => 'ヒント: プロンプトで @ を使用してファイルに言及します';
 
   @override
+  String get chatTipNameRelevantFiles => 'ヒント: 関連するファイル、画面、コマンドを伝えましょう';
+
+  @override
   String get chatTipProvideContext => 'ヒント: コンテキストを提供 — エラーメッセージやログを貼り付けます';
 
   @override
   String get chatTipRenameConversation => 'ヒント: タイトルをタップして会話の名前を変更します';
+
+  @override
+  String get chatTipRequestDocs => 'ヒント: 挙動が変わるなら docs 更新を依頼しましょう';
+
+  @override
+  String get chatTipShareAttempts => 'ヒント: 試したことと正確なエラーを共有しましょう';
 
   @override
   String get chatTipShellCommands => 'ヒント: 行頭で ! を使用してシェルコマンドを実行します';
@@ -1262,34 +1283,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatTipSlashCommands => 'ヒント: / を使用してスラッシュコマンドにアクセスします';
 
   @override
-  String get chatTipStepByStep => 'ヒント: 複雑な問題のデバッグ時はステップバイステップで依頼します';
-
-  @override
   String get chatTipStartWithGoal => 'ヒント: 最終目標から始めましょう';
-
-  @override
-  String get chatTipNameRelevantFiles => 'ヒント: 関連するファイル、画面、コマンドを伝えましょう';
 
   @override
   String get chatTipStateConstraints => 'ヒント: エージェントが守る制約を伝えましょう';
 
   @override
-  String get chatTipAskForPlan => 'ヒント: 大きなタスクでは先に計画を依頼しましょう';
-
-  @override
-  String get chatTipDefineVerification => 'ヒント: 通すべきテストやチェックを伝えましょう';
-
-  @override
-  String get chatTipShareAttempts => 'ヒント: 試したことと正確なエラーを共有しましょう';
-
-  @override
-  String get chatTipCompareOptions => 'ヒント: トレードオフが不明なら代替案を依頼しましょう';
-
-  @override
-  String get chatTipRequestDocs => 'ヒント: 挙動が変わるなら docs 更新を依頼しましょう';
-
-  @override
-  String get chatTipAcceptanceCriteria => 'ヒント: 大きな変更には受け入れ条件を追加しましょう';
+  String get chatTipStepByStep => 'ヒント: 複雑な問題のデバッグ時はステップバイステップで依頼します';
 
   @override
   String get chatTipUseFocusedAgents => 'ヒント: 計画、レビュー、実装に合うエージェントを選びましょう';
@@ -1647,12 +1647,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forwardNoSessions => 'No recent sessions';
 
   @override
-  String forwardPartial(Object success, Object total) {
+  String forwardPartial(int success, int total) {
     return 'Forwarded to $success of $total';
   }
 
   @override
-  String forwardProvenanceLabel(Object origin) {
+  String forwardProvenanceLabel(String origin) {
     return 'Forwarded from: $origin';
   }
 
@@ -1663,7 +1663,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forwardSearchHint => 'Search';
 
   @override
-  String forwardSelectedCount(Object count) {
+  String forwardSelectedCount(int count) {
     return '$count selected';
   }
 
@@ -1677,7 +1677,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forwardShortcutHint => 'Ctrl+Shift+F';
 
   @override
-  String forwardSuccess(Object count) {
+  String forwardSuccess(int count) {
     return 'Forwarded to $count sessions';
   }
 
@@ -1700,6 +1700,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsCopyFiltered => 'コピーフィルター済みログ';
 
   @override
+  String get logsEnableLogging => 'アプリログを有効化';
+
+  @override
+  String get logsEnableLoggingAction => 'ログを有効化';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'メモリ内に診断ログを収集します。トラブルシュート時以外はオフのままにしてください。';
+
+  @override
   String get logsEntryContext => 'コンテキスト';
 
   @override
@@ -1712,21 +1722,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsLevel => 'レベル';
 
   @override
-  String get logsEnableLogging => 'アプリログを有効化';
-
-  @override
-  String get logsEnableLoggingDescription =>
-      'メモリ内に診断ログを収集します。トラブルシュート時以外はオフのままにしてください。';
-
-  @override
-  String get logsEnableLoggingAction => 'ログを有効化';
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk は詳細なアプリログを収集していません。診断が必要な場合のみログを有効にしてください。';
 
   @override
   String get logsLoggingDisabledTitle => 'ログは無効です';
-
-  @override
-  String get logsLoggingDisabledDescription =>
-      'CodeWalk は詳細なアプリログを収集していません。診断が必要な場合のみログを有効にしてください。';
 
   @override
   String get logsMeasurePerformance => 'パフォーマンスを測定';
@@ -1754,8 +1754,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   ) {
     return 'パフォーマンス $operation | $elapsedMs ms | $status';
@@ -2413,13 +2413,52 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quotaAuthCookie => '認証クッキー';
 
   @override
+  String get quotaConnect => '接続';
+
+  @override
   String get quotaForget => '忘れる';
+
+  @override
+  String get quotaOpenCodeGoConnectDescription =>
+      '使用量ダッシュボードに接続して、ローリング、週次、月次の制限を表示します。';
+
+  @override
+  String get quotaOpenCodeGoDetected => 'OpenCode Go を検出しました';
+
+  @override
+  String get quotaOpenCodeGoNeedsReconnect => 'OpenCode Go の再接続が必要です';
+
+  @override
+  String get quotaOpenCodeGoReconnectDescription =>
+      '使用量バーを復元するには、ダッシュボードの認証情報を更新してください。';
 
   @override
   String get quotaOpenCodeGoUsage => 'OpenCode Go 使用量';
 
   @override
   String get quotaOpenDashboard => 'OpenCodeダッシュボードを開く';
+
+  @override
+  String get quotaPaceExplanation => 'ペースは現在の速度に基づき、現在の制限ウィンドウ終了時の合計使用量を予測します。';
+
+  @override
+  String quotaPacePercent(String percent) {
+    return 'ペース $percent%';
+  }
+
+  @override
+  String get quotaRateLimits => '利用制限';
+
+  @override
+  String get quotaReconnect => '再接続';
+
+  @override
+  String get quotaRefreshing => '更新中...';
+
+  @override
+  String quotaResetsIn(String time) {
+    return '$time後にリセット';
+  }
 
   @override
   String get quotaSaving => '保存中...';

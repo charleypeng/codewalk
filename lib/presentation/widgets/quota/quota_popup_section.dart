@@ -80,7 +80,7 @@ class _QuotaPopupSectionState extends State<QuotaPopupSection> {
               children: [
                 Expanded(
                   child: Text(
-                    'Rate limits',
+                    context.l10n.quotaRateLimits,
                     style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -93,7 +93,7 @@ class _QuotaPopupSectionState extends State<QuotaPopupSection> {
                   child: quotaProvider.isLoading
                       ? _QuotaSweepText(
                           key: const ValueKey('quota-refreshing-label'),
-                          text: 'Refreshing...',
+                          text: context.l10n.quotaRefreshing,
                           duration: const Duration(milliseconds: 1100),
                           style: textTheme.labelMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
@@ -163,11 +163,11 @@ class _OpenCodeGoSetupCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final title = hasSavedCredentials
-        ? 'OpenCode Go needs reconnect'
-        : 'OpenCode Go detected';
+        ? context.l10n.quotaOpenCodeGoNeedsReconnect
+        : context.l10n.quotaOpenCodeGoDetected;
     final description = hasSavedCredentials
-        ? 'Refresh the dashboard credentials to restore usage bars.'
-        : 'Connect the usage dashboard to show rolling, weekly, and monthly limits.';
+        ? context.l10n.quotaOpenCodeGoReconnectDescription
+        : context.l10n.quotaOpenCodeGoConnectDescription;
     return Container(
       key: const ValueKey('opencode-go-quota-setup-card'),
       margin: const EdgeInsets.only(top: 10),
@@ -211,7 +211,11 @@ class _OpenCodeGoSetupCard extends StatelessWidget {
               FilledButton.tonal(
                 key: const ValueKey('opencode-go-connect-usage-dashboard'),
                 onPressed: () => _showOpenCodeGoDashboardDialog(context),
-                child: Text(hasSavedCredentials ? 'Reconnect' : 'Connect'),
+                child: Text(
+                  hasSavedCredentials
+                      ? context.l10n.quotaReconnect
+                      : context.l10n.quotaConnect,
+                ),
               ),
               if (hasSavedCredentials)
                 TextButton(

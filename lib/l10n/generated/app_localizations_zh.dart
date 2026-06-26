@@ -320,27 +320,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get behaviorDataSaverActive => '当前已在移动数据网络上激活。';
 
   @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDataSaverCellularOnly => '仅在蜂窝/移动网络连接时适用。';
 
   @override
-  String get behaviorDataSaverWaiting => '正在等待下一个移动数据同步窗口。';
-
-  @override
   String get behaviorDataSaverOff => 'Off';
-
-  @override
-  String get behaviorDataSaverStandard => 'Standard';
-
-  @override
-  String get behaviorDataSaverAggressive => 'Aggressive';
 
   @override
   String get behaviorDataSaverOffHint =>
       'Full realtime and automatic refreshes are enabled.';
 
   @override
-  String get behaviorDataSaverAggressiveDescription =>
-      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverWaiting => '正在等待下一个移动数据同步窗口。';
 
   @override
   String get behaviorDisabled => '已禁用';
@@ -439,13 +439,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatAddServerToStart => '添加服务器以开始聊天。';
 
   @override
-  String get chatBlockResponsePendingDescription =>
-      'The answer will appear as a single block when this turn finishes.';
-
-  @override
-  String get chatBlockResponsePendingTitle => 'Generating response';
-
-  @override
   String get chatAppBarMoreActions => '更多操作';
 
   @override
@@ -483,6 +476,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatBadgeSyncing => '正在同步会话...';
+
+  @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
 
   @override
   String get chatCachedConversationsYet => '暂无缓存的对话';
@@ -1216,13 +1216,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTasksAvailableSession => '此会话没有可用的任务。';
 
   @override
+  String get chatTipAcceptanceCriteria => '提示：大型变更加入验收标准';
+
+  @override
+  String get chatTipAskForPlan => '提示：大任务先请求计划';
+
+  @override
   String get chatTipBeSpecific => '提示：请具体一些 — 简短的提示词能获得更快的回答';
 
   @override
   String get chatTipBreakTasks => '提示：将大任务分解为更小的提示词';
 
   @override
+  String get chatTipCompareOptions => '提示：权衡不清时请求替代方案';
+
+  @override
   String get chatTipContextKnob => '提示：点击上下文旋钮查看使用详情';
+
+  @override
+  String get chatTipDefineVerification => '提示：说明哪些测试或检查必须通过';
 
   @override
   String get chatTipLongPressSend => '提示：长按发送键插入新行';
@@ -1231,10 +1243,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTipMentionFiles => '提示：在提示词中使用 @ 来提及文件';
 
   @override
+  String get chatTipNameRelevantFiles => '提示：说明相关文件、界面或命令';
+
+  @override
   String get chatTipProvideContext => '提示：提供上下文 — 粘贴错误消息和日志';
 
   @override
   String get chatTipRenameConversation => '提示：点击标题重命名对话';
+
+  @override
+  String get chatTipRequestDocs => '提示：行为变化时请求更新文档';
+
+  @override
+  String get chatTipShareAttempts => '提示：分享已尝试的内容和准确错误';
 
   @override
   String get chatTipShellCommands => '提示：在开头使用 ! 来运行 shell 命令';
@@ -1243,34 +1264,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTipSlashCommands => '提示：使用 / 访问斜杠命令';
 
   @override
-  String get chatTipStepByStep => '提示：在调试复杂问题时要求逐步进行';
-
-  @override
   String get chatTipStartWithGoal => '提示：先说明最终目标';
-
-  @override
-  String get chatTipNameRelevantFiles => '提示：说明相关文件、界面或命令';
 
   @override
   String get chatTipStateConstraints => '提示：说明代理必须保留的约束';
 
   @override
-  String get chatTipAskForPlan => '提示：大任务先请求计划';
-
-  @override
-  String get chatTipDefineVerification => '提示：说明哪些测试或检查必须通过';
-
-  @override
-  String get chatTipShareAttempts => '提示：分享已尝试的内容和准确错误';
-
-  @override
-  String get chatTipCompareOptions => '提示：权衡不清时请求替代方案';
-
-  @override
-  String get chatTipRequestDocs => '提示：行为变化时请求更新文档';
-
-  @override
-  String get chatTipAcceptanceCriteria => '提示：大型变更加入验收标准';
+  String get chatTipStepByStep => '提示：在调试复杂问题时要求逐步进行';
 
   @override
   String get chatTipUseFocusedAgents => '提示：为计划、评审或构建选择专注代理';
@@ -1620,12 +1620,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get forwardNoSessions => 'No recent sessions';
 
   @override
-  String forwardPartial(Object success, Object total) {
+  String forwardPartial(int success, int total) {
     return 'Forwarded to $success of $total';
   }
 
   @override
-  String forwardProvenanceLabel(Object origin) {
+  String forwardProvenanceLabel(String origin) {
     return 'Forwarded from: $origin';
   }
 
@@ -1636,7 +1636,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get forwardSearchHint => 'Search';
 
   @override
-  String forwardSelectedCount(Object count) {
+  String forwardSelectedCount(int count) {
     return '$count selected';
   }
 
@@ -1650,7 +1650,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get forwardShortcutHint => 'Ctrl+Shift+F';
 
   @override
-  String forwardSuccess(Object count) {
+  String forwardSuccess(int count) {
     return 'Forwarded to $count sessions';
   }
 
@@ -1673,6 +1673,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsCopyFiltered => '复制已过滤的日志';
 
   @override
+  String get logsEnableLogging => '启用应用日志';
+
+  @override
+  String get logsEnableLoggingAction => '启用日志';
+
+  @override
+  String get logsEnableLoggingDescription => '在内存中收集诊断日志。除非排查问题，否则保持关闭。';
+
+  @override
   String get logsEntryContext => '上下文';
 
   @override
@@ -1685,20 +1694,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsLevel => '级别';
 
   @override
-  String get logsEnableLogging => '启用应用日志';
-
-  @override
-  String get logsEnableLoggingDescription => '在内存中收集诊断日志。除非排查问题，否则保持关闭。';
-
-  @override
-  String get logsEnableLoggingAction => '启用日志';
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk 未收集详细应用日志。仅在需要诊断时启用日志。';
 
   @override
   String get logsLoggingDisabledTitle => '日志已关闭';
-
-  @override
-  String get logsLoggingDisabledDescription =>
-      'CodeWalk 未收集详细应用日志。仅在需要诊断时启用日志。';
 
   @override
   String get logsMeasurePerformance => '测量性能';
@@ -1725,8 +1725,8 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   ) {
     return '性能 $operation | $elapsedMs 毫秒 | $status';
@@ -2367,13 +2367,50 @@ class AppLocalizationsZh extends AppLocalizations {
   String get quotaAuthCookie => '认证 Cookie';
 
   @override
+  String get quotaConnect => '连接';
+
+  @override
   String get quotaForget => '忘记';
+
+  @override
+  String get quotaOpenCodeGoConnectDescription => '连接用量仪表板以显示滚动、每周和每月限制。';
+
+  @override
+  String get quotaOpenCodeGoDetected => '已检测到 OpenCode Go';
+
+  @override
+  String get quotaOpenCodeGoNeedsReconnect => 'OpenCode Go 需要重新连接';
+
+  @override
+  String get quotaOpenCodeGoReconnectDescription => '刷新仪表板凭据以恢复用量条。';
 
   @override
   String get quotaOpenCodeGoUsage => 'OpenCode Go 用量';
 
   @override
   String get quotaOpenDashboard => '打开 OpenCode 仪表板';
+
+  @override
+  String get quotaPaceExplanation => '节奏会根据当前速率预测当前限制窗口结束时的总用量。';
+
+  @override
+  String quotaPacePercent(String percent) {
+    return '节奏 $percent%';
+  }
+
+  @override
+  String get quotaRateLimits => '用量限制';
+
+  @override
+  String get quotaReconnect => '重新连接';
+
+  @override
+  String get quotaRefreshing => '正在刷新...';
+
+  @override
+  String quotaResetsIn(String time) {
+    return '将在 $time 后重置';
+  }
 
   @override
   String get quotaSaving => '正在保存...';

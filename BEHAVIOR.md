@@ -26,6 +26,14 @@
 
 - `ar` (Arabic — RTL), `bn` (Bengali), `de` (German), `en` (English), `es` (Spanish), `fr` (French), `hi` (Hindi), `it` (Italian), `ja` (Japanese), `ko` (Korean), `pt` (Brazilian Portuguese), `ru` (Russian), `zh` (Simplified Chinese), `ur` (Urdu — RTL)
 
+### Quota/rate-limit popover static UI copy is localized
+
+- **Given** the user has selected a non-English locale in `Settings > Behavior`
+- **When** the user opens the quota details from the `Context usage` status
+- **Then** static UI copy in the popover is rendered in the active locale, including the `Rate limits` section title, loading state, the `OpenCode Go detected` setup card and its `Connect`/`Reconnect` actions, the `Pace` chip and its desktop tooltip / mobile snackbar, and the reset/refresh action labels
+- **Then** provider names (e.g. `opencode-go`, `minimax-coding-plan`, `minimax-cn-coding-plan`, `cursor`, `ollama-cloud`, `Snowflake Cortex`, `Grok/xAI`, `Cohere North`) stay untranslated as server-defined identifiers
+- **Then** window labels (rolling, weekly, monthly) and all server-originated quota values, units, and percentage figures stay untranslated (ADR-023 compliance)
+
 ### Non-translatable invariants
 
 - OpenCode wire event types, permission key names, tool state values, `prompt_async` contract fields, REST paths, config key names, model/provider/agent identifiers, and server-originated content remain untranslated (ADR-023 compliance)

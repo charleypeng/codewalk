@@ -6087,7 +6087,7 @@ void main() {
       find.text(L10nBridge.current!.chatPageStatusCompactNow),
       findsOneWidget,
     );
-    expect(find.text('Rate limits'), findsOneWidget);
+    expect(find.text(L10nBridge.current!.quotaRateLimits), findsOneWidget);
     expect(find.text('Claude'), findsOneWidget);
     expect(find.text('OpenRouter'), findsOneWidget);
 
@@ -6096,7 +6096,10 @@ void main() {
 
     expect(find.text('5-Hour'), findsOneWidget);
     expect(find.text('7-Day Limit'), findsOneWidget);
-    expect(find.textContaining('Pace '), findsWidgets);
+    final pacePrefix = L10nBridge.current!
+        .quotaPacePercent('')
+        .replaceAll('%', '');
+    expect(find.textContaining(pacePrefix), findsWidgets);
   });
 
   testWidgets('file viewer shows binary and error states', (

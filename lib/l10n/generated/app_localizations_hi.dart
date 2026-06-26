@@ -353,29 +353,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get behaviorDataSaverActive => 'मोबाइल डेटा पर अभी सक्रिय है।';
 
   @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDataSaverCellularOnly =>
       'केवल तब लागू होता है जब कनेक्शन सेलुलर/मोबाइल हो।';
 
   @override
-  String get behaviorDataSaverWaiting =>
-      'अगले मोबाइल-डेटा सिंक विंडो की प्रतीक्षा की जा रही है।';
-
-  @override
   String get behaviorDataSaverOff => 'Off';
-
-  @override
-  String get behaviorDataSaverStandard => 'Standard';
-
-  @override
-  String get behaviorDataSaverAggressive => 'Aggressive';
 
   @override
   String get behaviorDataSaverOffHint =>
       'Full realtime and automatic refreshes are enabled.';
 
   @override
-  String get behaviorDataSaverAggressiveDescription =>
-      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'अगले मोबाइल-डेटा सिंक विंडो की प्रतीक्षा की जा रही है।';
 
   @override
   String get behaviorDisabled => 'अक्षम';
@@ -484,13 +484,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chatAddServerToStart => 'चैटिंग शुरू करने के लिए एक सर्वर जोड़ें।';
 
   @override
-  String get chatBlockResponsePendingDescription =>
-      'The answer will appear as a single block when this turn finishes.';
-
-  @override
-  String get chatBlockResponsePendingTitle => 'Generating response';
-
-  @override
   String get chatAppBarMoreActions => 'अधिक क्रियाएं';
 
   @override
@@ -529,6 +522,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chatBadgeSyncing => 'बातचीत सिंक हो रही है...';
+
+  @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
 
   @override
   String get chatCachedConversationsYet => 'अभी तक कोई कैश्ड बातचीत नहीं है';
@@ -1299,6 +1299,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस सत्र के लिए कोई कार्य उपलब्ध नहीं हैं।';
 
   @override
+  String get chatTipAcceptanceCriteria =>
+      'सुझाव: बड़े बदलावों के लिए स्वीकृति मानदंड जोड़ें';
+
+  @override
+  String get chatTipAskForPlan => 'सुझाव: बड़े कार्यों में पहले योजना मांगें';
+
+  @override
   String get chatTipBeSpecific =>
       'सुझाव: विशिष्ट बनें — छोटे प्रॉम्प्ट का उत्तर तेज़ी से मिलता है';
 
@@ -1307,8 +1314,16 @@ class AppLocalizationsHi extends AppLocalizations {
       'सुझाव: बड़े कार्यों को छोटे प्रॉम्प्ट में विभाजित करें';
 
   @override
+  String get chatTipCompareOptions =>
+      'सुझाव: ट्रेडऑफ अस्पष्ट हों तो विकल्प मांगें';
+
+  @override
   String get chatTipContextKnob =>
       'सुझाव: उपयोग विवरण देखने के लिए संदर्भ नॉब पर टैप करें';
+
+  @override
+  String get chatTipDefineVerification =>
+      'सुझाव: बताएं कौन से टेस्ट या जांच पास होनी चाहिए';
 
   @override
   String get chatTipLongPressSend =>
@@ -1319,12 +1334,23 @@ class AppLocalizationsHi extends AppLocalizations {
       'सुझाव: अपने प्रॉम्प्ट में फ़ाइलों का उल्लेख करने के लिए @ का उपयोग करें';
 
   @override
+  String get chatTipNameRelevantFiles =>
+      'सुझाव: संबंधित फ़ाइलें, स्क्रीन या कमांड बताएं';
+
+  @override
   String get chatTipProvideContext =>
       'सुझाव: संदर्भ प्रदान करें — त्रुटि संदेश और लॉग पेस्ट करें';
 
   @override
   String get chatTipRenameConversation =>
       'सुझाव: बातचीत का नाम बदलने के लिए शीर्षक पर टैप करें';
+
+  @override
+  String get chatTipRequestDocs => 'सुझाव: व्यवहार बदलने पर डॉक्स अपडेट मांगें';
+
+  @override
+  String get chatTipShareAttempts =>
+      'सुझाव: आपने क्या आजमाया और सटीक त्रुटि बताएं';
 
   @override
   String get chatTipShellCommands =>
@@ -1335,41 +1361,15 @@ class AppLocalizationsHi extends AppLocalizations {
       'सुझाव: स्लैश कमांड तक पहुँचने के लिए / का उपयोग करें';
 
   @override
-  String get chatTipStepByStep =>
-      'सुझाव: जटिल समस्याओं को डीबग करते समय चरण-दर-चरण पूछें';
-
-  @override
   String get chatTipStartWithGoal => 'सुझाव: अंतिम लक्ष्य से शुरू करें';
-
-  @override
-  String get chatTipNameRelevantFiles =>
-      'सुझाव: संबंधित फ़ाइलें, स्क्रीन या कमांड बताएं';
 
   @override
   String get chatTipStateConstraints =>
       'सुझाव: वे सीमाएं बताएं जिन्हें एजेंट को बचाए रखना है';
 
   @override
-  String get chatTipAskForPlan => 'सुझाव: बड़े कार्यों में पहले योजना मांगें';
-
-  @override
-  String get chatTipDefineVerification =>
-      'सुझाव: बताएं कौन से टेस्ट या जांच पास होनी चाहिए';
-
-  @override
-  String get chatTipShareAttempts =>
-      'सुझाव: आपने क्या आजमाया और सटीक त्रुटि बताएं';
-
-  @override
-  String get chatTipCompareOptions =>
-      'सुझाव: ट्रेडऑफ अस्पष्ट हों तो विकल्प मांगें';
-
-  @override
-  String get chatTipRequestDocs => 'सुझाव: व्यवहार बदलने पर डॉक्स अपडेट मांगें';
-
-  @override
-  String get chatTipAcceptanceCriteria =>
-      'सुझाव: बड़े बदलावों के लिए स्वीकृति मानदंड जोड़ें';
+  String get chatTipStepByStep =>
+      'सुझाव: जटिल समस्याओं को डीबग करते समय चरण-दर-चरण पूछें';
 
   @override
   String get chatTipUseFocusedAgents =>
@@ -1742,12 +1742,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get forwardNoSessions => 'No recent sessions';
 
   @override
-  String forwardPartial(Object success, Object total) {
+  String forwardPartial(int success, int total) {
     return 'Forwarded to $success of $total';
   }
 
   @override
-  String forwardProvenanceLabel(Object origin) {
+  String forwardProvenanceLabel(String origin) {
     return 'Forwarded from: $origin';
   }
 
@@ -1758,7 +1758,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get forwardSearchHint => 'Search';
 
   @override
-  String forwardSelectedCount(Object count) {
+  String forwardSelectedCount(int count) {
     return '$count selected';
   }
 
@@ -1772,7 +1772,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get forwardShortcutHint => 'Ctrl+Shift+F';
 
   @override
-  String forwardSuccess(Object count) {
+  String forwardSuccess(int count) {
     return 'Forwarded to $count sessions';
   }
 
@@ -1795,6 +1795,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get logsCopyFiltered => 'copy filtered logs';
 
   @override
+  String get logsEnableLogging => 'ऐप लॉगिंग चालू करें';
+
+  @override
+  String get logsEnableLoggingAction => 'लॉगिंग चालू करें';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      'मेमोरी में निदान लॉग इकट्ठा करता है। समस्या हल करते समय ही इसे चालू रखें।';
+
+  @override
   String get logsEntryContext => 'संदर्भ';
 
   @override
@@ -1807,21 +1817,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get logsLevel => 'स्तर (Level)';
 
   @override
-  String get logsEnableLogging => 'ऐप लॉगिंग चालू करें';
-
-  @override
-  String get logsEnableLoggingDescription =>
-      'मेमोरी में निदान लॉग इकट्ठा करता है। समस्या हल करते समय ही इसे चालू रखें।';
-
-  @override
-  String get logsEnableLoggingAction => 'लॉगिंग चालू करें';
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk विस्तृत ऐप लॉग इकट्ठा नहीं कर रहा है। निदान की ज़रूरत होने पर ही लॉगिंग चालू करें।';
 
   @override
   String get logsLoggingDisabledTitle => 'लॉगिंग बंद है';
-
-  @override
-  String get logsLoggingDisabledDescription =>
-      'CodeWalk विस्तृत ऐप लॉग इकट्ठा नहीं कर रहा है। निदान की ज़रूरत होने पर ही लॉगिंग चालू करें।';
 
   @override
   String get logsMeasurePerformance => 'प्रदर्शन मापें';
@@ -1851,8 +1851,8 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   ) {
     return 'प्रदर्शन $operation | $elapsedMs ms | $status';
@@ -2539,13 +2539,54 @@ class AppLocalizationsHi extends AppLocalizations {
   String get quotaAuthCookie => 'प्रमाणीकरण (Auth) कुकी';
 
   @override
+  String get quotaConnect => 'कनेक्ट करें';
+
+  @override
   String get quotaForget => 'भूल जाएं';
+
+  @override
+  String get quotaOpenCodeGoConnectDescription =>
+      'रोलिंग, साप्ताहिक और मासिक सीमाएँ दिखाने के लिए उपयोग डैशबोर्ड कनेक्ट करें।';
+
+  @override
+  String get quotaOpenCodeGoDetected => 'OpenCode Go मिला';
+
+  @override
+  String get quotaOpenCodeGoNeedsReconnect =>
+      'OpenCode Go को फिर से कनेक्ट करना होगा';
+
+  @override
+  String get quotaOpenCodeGoReconnectDescription =>
+      'उपयोग बार वापस लाने के लिए डैशबोर्ड क्रेडेंशियल रीफ़्रेश करें।';
 
   @override
   String get quotaOpenCodeGoUsage => 'OpenCode Go उपयोग';
 
   @override
   String get quotaOpenDashboard => 'OpenCode डैशबोर्ड खोलें';
+
+  @override
+  String get quotaPaceExplanation =>
+      'गति मौजूदा दर के आधार पर वर्तमान सीमा विंडो के अंत तक कुल उपयोग का अनुमान लगाती है।';
+
+  @override
+  String quotaPacePercent(String percent) {
+    return 'गति $percent%';
+  }
+
+  @override
+  String get quotaRateLimits => 'उपयोग सीमाएँ';
+
+  @override
+  String get quotaReconnect => 'फिर से कनेक्ट करें';
+
+  @override
+  String get quotaRefreshing => 'ताज़ा हो रहा है...';
+
+  @override
+  String quotaResetsIn(String time) {
+    return '$time में रीसेट होगा';
+  }
 
   @override
   String get quotaSaving => 'सहेजा जा रहा है...';

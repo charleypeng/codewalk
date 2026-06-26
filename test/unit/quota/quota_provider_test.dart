@@ -1,18 +1,17 @@
 import 'dart:async';
 
-import 'package:codewalk/core/i18n/app_locales.dart';
+import 'package:codewalk/core/i18n/l10n_bridge.dart';
 import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
 import 'package:codewalk/domain/entities/quota.dart';
-import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/providers/quota_provider.dart';
 import 'package:codewalk/presentation/widgets/quota/quota_entry_row.dart';
 import 'package:codewalk/presentation/widgets/quota/quota_popup_section.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import '../../support/fakes.dart' as support;
+import '../../support/pump_localized_app.dart';
 
 class _FakeQuotaRemoteDataSource implements QuotaRemoteDataSource {
   _FakeQuotaRemoteDataSource(this.results);
@@ -208,20 +207,20 @@ void main() {
       ]),
     );
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider<QuotaProvider>.value(
-          value: provider,
-          child: _buildApp(
-            home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
-          ),
+    await tester.pumpWidget(
+      ChangeNotifierProvider<QuotaProvider>.value(
+        value: provider,
+        child: _buildApp(
+          home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
         ),
-      );
-  await tester.pump();
-  await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
 
-  expect(find.text('Rate limits'), findsOneWidget);
-  expect(find.text('Codex'), findsOneWidget);
-  expect(find.text('5-Hour'), findsOneWidget);
+    expect(find.text(L10nBridge.current!.quotaRateLimits), findsOneWidget);
+    expect(find.text('Codex'), findsOneWidget);
+    expect(find.text('5-Hour'), findsOneWidget);
   });
 
   testWidgets(
@@ -276,7 +275,7 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Rate limits'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.quotaRateLimits), findsOneWidget);
       expect(find.text('Codex'), findsOneWidget);
       expect(find.text('5-Hour'), findsOneWidget);
       expect(find.text('Weekly Limit'), findsOneWidget);
@@ -434,8 +433,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Rate limits'), findsOneWidget);
-      expect(find.text('Refreshing...'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.quotaRateLimits), findsOneWidget);
+      expect(find.text(L10nBridge.current!.quotaRefreshing), findsOneWidget);
       expect(
         find.byKey(const ValueKey('quota-initial-loading-state')),
         findsOneWidget,
@@ -445,7 +444,7 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Rate limits'), findsNothing);
+      expect(find.text(L10nBridge.current!.quotaRateLimits), findsNothing);
       expect(
         find.byKey(const ValueKey('quota-initial-loading-state')),
         findsNothing,
@@ -482,8 +481,11 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Rate limits'), findsOneWidget);
-      expect(find.text('OpenCode Go detected'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.quotaRateLimits), findsOneWidget);
+      expect(
+        find.text(L10nBridge.current!.quotaOpenCodeGoDetected),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey('opencode-go-connect-usage-dashboard')),
         findsOneWidget,
@@ -513,7 +515,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
 
-      expect(find.text('Rate limits'), findsOneWidget);
+      expect(find.text(L10nBridge.current!.quotaRateLimits), findsOneWidget);
       expect(
         find.byKey(const ValueKey('quota-refresh-button')),
         findsOneWidget,
@@ -523,7 +525,7 @@ void main() {
         findsNothing,
       );
 
-      await tester.tap(find.text('Refresh'));
+      await tester.tap(find.text(L10nBridge.current!.chatRefresh));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
 
@@ -550,14 +552,5 @@ void main() {
 }
 
 Widget _buildApp({required Widget home}) {
-  return MaterialApp(
-    locale: const Locale('en'),
-    localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-      AppLocalizations.delegate,
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-    ],
-    supportedLocales: AppLocales.supported,
-    home: home,
-  );
+  return localizedMaterialApp(home: home);
 }

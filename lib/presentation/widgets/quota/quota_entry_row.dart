@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/l10n_context.dart';
 import '../../../domain/entities/quota.dart';
 import '../../utils/quota_pace_utils.dart';
 import 'pace_label.dart';
@@ -66,7 +67,9 @@ class QuotaEntryRow extends StatelessWidget {
           if (entry.resetAfterSeconds != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Resets in ${formatRemainingTime(entry.resetAfterSeconds!.toDouble())}',
+              context.l10n.quotaResetsIn(
+                formatRemainingTime(entry.resetAfterSeconds!.toDouble()),
+              ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

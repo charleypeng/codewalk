@@ -332,27 +332,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get behaviorDataSaverActive => '현재 모바일 데이터에서 활성화되어 있습니다.';
 
   @override
+  String get behaviorDataSaverAggressive => 'Aggressive';
+
+  @override
+  String get behaviorDataSaverAggressiveDescription =>
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+
+  @override
   String get behaviorDataSaverCellularOnly => '모바일/셀룰러 연결 시에만 적용됩니다.';
 
   @override
-  String get behaviorDataSaverWaiting => '다음 모바일 데이터 동기화 주기를 대기 중입니다.';
-
-  @override
   String get behaviorDataSaverOff => 'Off';
-
-  @override
-  String get behaviorDataSaverStandard => 'Standard';
-
-  @override
-  String get behaviorDataSaverAggressive => 'Aggressive';
 
   @override
   String get behaviorDataSaverOffHint =>
       'Full realtime and automatic refreshes are enabled.';
 
   @override
-  String get behaviorDataSaverAggressiveDescription =>
-      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.';
+  String get behaviorDataSaverStandard => 'Standard';
+
+  @override
+  String get behaviorDataSaverWaiting => '다음 모바일 데이터 동기화 주기를 대기 중입니다.';
 
   @override
   String get behaviorDisabled => '비활성화됨';
@@ -453,13 +453,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatAddServerToStart => '대화를 시작하려면 서버를 추가하세요.';
 
   @override
-  String get chatBlockResponsePendingDescription =>
-      'The answer will appear as a single block when this turn finishes.';
-
-  @override
-  String get chatBlockResponsePendingTitle => 'Generating response';
-
-  @override
   String get chatAppBarMoreActions => '추가 작업';
 
   @override
@@ -497,6 +490,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatBadgeSyncing => '대화 동기화 중...';
+
+  @override
+  String get chatBlockResponsePendingDescription =>
+      'The answer will appear as a single block when this turn finishes.';
+
+  @override
+  String get chatBlockResponsePendingTitle => 'Generating response';
 
   @override
   String get chatCachedConversationsYet => '캐시된 대화가 없습니다';
@@ -1235,13 +1235,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatTasksAvailableSession => '이 세션에서 사용할 수 있는 작업이 없습니다.';
 
   @override
+  String get chatTipAcceptanceCriteria => '팁: 큰 변경에는 승인 기준을 추가하세요';
+
+  @override
+  String get chatTipAskForPlan => '팁: 큰 작업은 먼저 계획을 요청하세요';
+
+  @override
   String get chatTipBeSpecific => '팁: 구체적으로 작성하세요 — 프롬프트가 짧을수록 답변이 빠릅니다';
 
   @override
   String get chatTipBreakTasks => '팁: 큰 작업은 작은 프롬프트로 나누세요';
 
   @override
+  String get chatTipCompareOptions => '팁: 트레이드오프가 불명확하면 대안을 요청하세요';
+
+  @override
   String get chatTipContextKnob => '팁: 컨텍스트 노브를 탭하여 사용 세부 정보를 확인하세요';
+
+  @override
+  String get chatTipDefineVerification => '팁: 통과해야 할 테스트나 체크를 알려 주세요';
 
   @override
   String get chatTipLongPressSend => '팁: 전송 버튼을 길게 눌러 줄바꿈을 삽입하세요';
@@ -1250,10 +1262,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatTipMentionFiles => '팁: 프롬프트에서 @를 사용하여 파일을 언급하세요';
 
   @override
+  String get chatTipNameRelevantFiles => '팁: 관련 파일, 화면, 명령을 알려 주세요';
+
+  @override
   String get chatTipProvideContext => '팁: 컨텍스트를 제공하세요 — 오류 메시지와 로그를 붙여넣으세요';
 
   @override
   String get chatTipRenameConversation => '팁: 제목을 탭하여 대화 이름을 변경하세요';
+
+  @override
+  String get chatTipRequestDocs => '팁: 동작이 바뀌면 docs 업데이트를 요청하세요';
+
+  @override
+  String get chatTipShareAttempts => '팁: 시도한 내용과 정확한 오류를 공유하세요';
 
   @override
   String get chatTipShellCommands => '팁: 시작 부분에 !를 사용하여 쉘 명령을 실행하세요';
@@ -1262,34 +1283,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatTipSlashCommands => '팁: /를 사용하여 슬래시 명령에 액세스하세요';
 
   @override
-  String get chatTipStepByStep => '팁: 복잡한 문제 디버깅 시 단계별 설명을 요청하세요';
-
-  @override
   String get chatTipStartWithGoal => '팁: 최종 목표부터 알려 주세요';
-
-  @override
-  String get chatTipNameRelevantFiles => '팁: 관련 파일, 화면, 명령을 알려 주세요';
 
   @override
   String get chatTipStateConstraints => '팁: 에이전트가 지켜야 할 제약을 알려 주세요';
 
   @override
-  String get chatTipAskForPlan => '팁: 큰 작업은 먼저 계획을 요청하세요';
-
-  @override
-  String get chatTipDefineVerification => '팁: 통과해야 할 테스트나 체크를 알려 주세요';
-
-  @override
-  String get chatTipShareAttempts => '팁: 시도한 내용과 정확한 오류를 공유하세요';
-
-  @override
-  String get chatTipCompareOptions => '팁: 트레이드오프가 불명확하면 대안을 요청하세요';
-
-  @override
-  String get chatTipRequestDocs => '팁: 동작이 바뀌면 docs 업데이트를 요청하세요';
-
-  @override
-  String get chatTipAcceptanceCriteria => '팁: 큰 변경에는 승인 기준을 추가하세요';
+  String get chatTipStepByStep => '팁: 복잡한 문제 디버깅 시 단계별 설명을 요청하세요';
 
   @override
   String get chatTipUseFocusedAgents => '팁: 계획, 리뷰, 빌드에 맞는 에이전트를 선택하세요';
@@ -1650,12 +1650,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forwardNoSessions => 'No recent sessions';
 
   @override
-  String forwardPartial(Object success, Object total) {
+  String forwardPartial(int success, int total) {
     return 'Forwarded to $success of $total';
   }
 
   @override
-  String forwardProvenanceLabel(Object origin) {
+  String forwardProvenanceLabel(String origin) {
     return 'Forwarded from: $origin';
   }
 
@@ -1666,7 +1666,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forwardSearchHint => 'Search';
 
   @override
-  String forwardSelectedCount(Object count) {
+  String forwardSelectedCount(int count) {
     return '$count selected';
   }
 
@@ -1680,7 +1680,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forwardShortcutHint => 'Ctrl+Shift+F';
 
   @override
-  String forwardSuccess(Object count) {
+  String forwardSuccess(int count) {
     return 'Forwarded to $count sessions';
   }
 
@@ -1703,6 +1703,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsCopyFiltered => '필터링된 로그 복사';
 
   @override
+  String get logsEnableLogging => '앱 로그 켜기';
+
+  @override
+  String get logsEnableLoggingAction => '로그 켜기';
+
+  @override
+  String get logsEnableLoggingDescription =>
+      '메모리에 진단 로그를 수집합니다. 문제를 진단할 때가 아니면 꺼두세요.';
+
+  @override
   String get logsEntryContext => '컨텍스트';
 
   @override
@@ -1715,21 +1725,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsLevel => '로그 레벨';
 
   @override
-  String get logsEnableLogging => '앱 로그 켜기';
-
-  @override
-  String get logsEnableLoggingDescription =>
-      '메모리에 진단 로그를 수집합니다. 문제를 진단할 때가 아니면 꺼두세요.';
-
-  @override
-  String get logsEnableLoggingAction => '로그 켜기';
+  String get logsLoggingDisabledDescription =>
+      'CodeWalk가 자세한 앱 로그를 수집하지 않습니다. 진단이 필요할 때만 로그를 켜세요.';
 
   @override
   String get logsLoggingDisabledTitle => '로그가 꺼져 있습니다';
-
-  @override
-  String get logsLoggingDisabledDescription =>
-      'CodeWalk가 자세한 앱 로그를 수집하지 않습니다. 진단이 필요할 때만 로그를 켜세요.';
 
   @override
   String get logsMeasurePerformance => '성능 측정';
@@ -1757,8 +1757,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String logsPerformanceTileTitle(
-    String operation,
     int elapsedMs,
+    String operation,
     String status,
   ) {
     return '성능 $operation | $elapsedMs ms | $status';
@@ -2416,13 +2416,53 @@ class AppLocalizationsKo extends AppLocalizations {
   String get quotaAuthCookie => '인증 쿠키';
 
   @override
+  String get quotaConnect => '연결';
+
+  @override
   String get quotaForget => '삭제';
+
+  @override
+  String get quotaOpenCodeGoConnectDescription =>
+      '사용량 대시보드를 연결하여 롤링, 주간, 월간 한도를 표시합니다.';
+
+  @override
+  String get quotaOpenCodeGoDetected => 'OpenCode Go 감지됨';
+
+  @override
+  String get quotaOpenCodeGoNeedsReconnect => 'OpenCode Go 재연결 필요';
+
+  @override
+  String get quotaOpenCodeGoReconnectDescription =>
+      '사용량 막대를 복원하려면 대시보드 자격 증명을 새로고침하세요.';
 
   @override
   String get quotaOpenCodeGoUsage => 'OpenCode Go 사용량';
 
   @override
   String get quotaOpenDashboard => 'OpenCode 대시보드 열기';
+
+  @override
+  String get quotaPaceExplanation =>
+      '페이스는 현재 속도를 기준으로 현재 한도 기간이 끝날 때의 총 사용량을 예측합니다.';
+
+  @override
+  String quotaPacePercent(String percent) {
+    return '페이스 $percent%';
+  }
+
+  @override
+  String get quotaRateLimits => '사용 한도';
+
+  @override
+  String get quotaReconnect => '다시 연결';
+
+  @override
+  String get quotaRefreshing => '새로고침 중...';
+
+  @override
+  String quotaResetsIn(String time) {
+    return '$time 후 재설정';
+  }
 
   @override
   String get quotaSaving => '저장 중...';

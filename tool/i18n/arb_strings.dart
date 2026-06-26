@@ -846,10 +846,54 @@ const englishTemplate = <String, String>{
   'questionQuestionsProvidedSubmit':
       'No questions provided. You can submit an empty response.',
   'questionReviewAnswersSubmitting': 'Review your answers before submitting.',
+  'behaviorDataSaverAggressive': 'Aggressive',
+  'behaviorDataSaverAggressiveDescription':
+      'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+  'behaviorDataSaverOff': 'Off',
+  'behaviorDataSaverOffHint':
+      'Full realtime and automatic refreshes are enabled.',
+  'behaviorDataSaverStandard': 'Standard',
+  'chatBlockResponsePendingDescription':
+      'The answer will appear as a single block when this turn finishes.',
+  'chatBlockResponsePendingTitle': 'Generating response',
+  'logsEntryContext': 'Context',
+  'logsEntryTags': 'Tags',
+  'logsMeasurePerformance': 'Measure performance',
+  'logsMeasurePerformanceDescription':
+      'Capture timing logs for expensive app operations. Leave off unless you are diagnosing lag.',
+  'logsNoPerformanceData': 'No performance logs match the current filters.',
+  'logsPerformanceDuration': '{elapsedMs} ms',
+  'logsPerformanceFilter': 'Performance',
+  'logsPerformanceTileTitle':
+      'PERFORMANCE {operation} | {elapsedMs} ms | {status}',
+  'logsSlowestPerformance': 'Slowest performance logs',
+  'settingsBehaviorChatRenderMode': 'Chat render mode',
+  'settingsBehaviorChatRenderModeBlock': 'Block',
+  'settingsBehaviorChatRenderModeBlockDescription':
+      'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+  'settingsBehaviorChatRenderModeDescription':
+      'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+  'settingsBehaviorChatRenderModeLive': 'Live',
+  'settingsBehaviorChatRenderModeLiveDescription':
+      'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
   'quotaAuthCookie': 'Auth cookie',
+  'quotaConnect': 'Connect',
   'quotaForget': 'Forget',
+  'quotaOpenCodeGoConnectDescription':
+      'Connect the usage dashboard to show rolling, weekly, and monthly limits.',
+  'quotaOpenCodeGoDetected': 'OpenCode Go detected',
+  'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go needs reconnect',
+  'quotaOpenCodeGoReconnectDescription':
+      'Refresh the dashboard credentials to restore usage bars.',
   'quotaOpenCodeGoUsage': 'OpenCode Go usage',
   'quotaOpenDashboard': 'Open OpenCode dashboard',
+  'quotaPaceExplanation':
+      'Pace predicts total usage by the end of the current limit window based on the current rate.',
+  'quotaPacePercent': 'Pace {percent}%',
+  'quotaRateLimits': 'Rate limits',
+  'quotaReconnect': 'Reconnect',
+  'quotaRefreshing': 'Refreshing...',
+  'quotaResetsIn': 'Resets in {time}',
   'quotaSaving': 'Saving...',
   'quotaWorkspaceId': 'Workspace ID',
   'serverClearOAuth': 'Clear OAuth',
@@ -2382,10 +2426,54 @@ const translations = <String, Map<String, String>>{
     'questionQuestionsProvidedSubmit':
         'لم يتم تقديم أسئلة. يمكنك إرسال استجابة فارغة.',
     'questionReviewAnswersSubmitting': 'راجع إجاباتك قبل الإرسال.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'السياق',
+    'logsEntryTags': 'الوسوم',
+    'logsMeasurePerformance': 'قياس الأداء',
+    'logsMeasurePerformanceDescription':
+        'يسجل زمن العمليات المكلفة في التطبيق. اتركه معطلاً إلا عند تشخيص البطء.',
+    'logsNoPerformanceData': 'لا توجد سجلات أداء تطابق عوامل التصفية الحالية.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'الأداء',
+    'logsPerformanceTileTitle':
+        'الأداء {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'أبطأ سجلات الأداء',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'ملف تعريف ارتباط المصادقة (Auth cookie)',
+    'quotaConnect': 'اتصال',
     'quotaForget': 'نسيان',
+    'quotaOpenCodeGoConnectDescription':
+        'صل لوحة معلومات الاستخدام لعرض الحدود المتحركة والأسبوعية والشهرية.',
+    'quotaOpenCodeGoDetected': 'تم اكتشاف OpenCode Go',
+    'quotaOpenCodeGoNeedsReconnect': 'يحتاج OpenCode Go إلى إعادة الاتصال',
+    'quotaOpenCodeGoReconnectDescription':
+        'حدّث بيانات اعتماد لوحة المعلومات لاستعادة أشرطة الاستخدام.',
     'quotaOpenCodeGoUsage': 'استخدام OpenCode Go',
     'quotaOpenDashboard': 'فتح لوحة معلومات OpenCode',
+    'quotaPaceExplanation':
+        'تتوقع الوتيرة إجمالي الاستخدام بنهاية نافذة الحد الحالية بناءً على المعدل الحالي.',
+    'quotaPacePercent': 'الوتيرة {percent}%',
+    'quotaRateLimits': 'حدود الاستخدام',
+    'quotaReconnect': 'إعادة الاتصال',
+    'quotaRefreshing': 'جارٍ التحديث...',
+    'quotaResetsIn': 'يُعاد الضبط خلال {time}',
     'quotaSaving': 'جاري الحفظ...',
     'quotaWorkspaceId': 'معرف مساحة العمل',
     'serverClearOAuth': 'مسح مصادقة OAuth',
@@ -3955,10 +4043,55 @@ const translations = <String, Map<String, String>>{
         'কোন প্রশ্ন প্রদান করা হয় না. আপনি একটি খালি প্রতিক্রিয়া জমা দিতে পারেন.',
     'questionReviewAnswersSubmitting':
         'জমা দেওয়ার আগে আপনার উত্তর পর্যালোচনা করুন.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'প্রসঙ্গ',
+    'logsEntryTags': 'ট্যাগ',
+    'logsMeasurePerformance': 'পারফরম্যান্স মাপুন',
+    'logsMeasurePerformanceDescription':
+        'অ্যাপের ব্যয়বহুল অপারেশনের সময় ধরে। ধীরগতি নির্ণয় ছাড়া বন্ধ রাখুন।',
+    'logsNoPerformanceData':
+        'বর্তমান ফিল্টারের সাথে কোনো পারফরম্যান্স লগ মেলে না।',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'পারফরম্যান্স',
+    'logsPerformanceTileTitle':
+        'পারফরম্যান্স {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'সবচেয়ে ধীর পারফরম্যান্স লগ',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'প্রমাণ কুকি',
+    'quotaConnect': 'সংযোগ করুন',
     'quotaForget': 'ভুলে যাও',
+    'quotaOpenCodeGoConnectDescription':
+        'ব্যবহারের ড্যাশবোর্ড সংযোগ করুন যাতে চলমান, সাপ্তাহিক ও মাসিক সীমা দেখা যায়।',
+    'quotaOpenCodeGoDetected': 'OpenCode Go শনাক্ত হয়েছে',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go পুনরায় সংযোগ দরকার',
+    'quotaOpenCodeGoReconnectDescription':
+        'ব্যবহারের বার ফিরিয়ে আনতে ড্যাশবোর্ডের পরিচয়পত্র রিফ্রেশ করুন।',
     'quotaOpenCodeGoUsage': 'OpenCode Go ব্যবহার',
     'quotaOpenDashboard': 'OpenCode ড্যাশবোর্ড খুলুন',
+    'quotaPaceExplanation':
+        'বর্তমান হারের ভিত্তিতে বর্তমান সীমা উইন্ডোর শেষে মোট ব্যবহার কত হবে তা গতি অনুমান করে।',
+    'quotaPacePercent': 'গতি {percent}%',
+    'quotaRateLimits': 'কোটা',
+    'quotaReconnect': 'পুনরায় সংযোগ করুন',
+    'quotaRefreshing': 'আপডেট হচ্ছে...',
+    'quotaResetsIn': '{time} পরে রিসেট হবে',
     'quotaSaving': 'সংরক্ষণ করা হচ্ছে...',
     'quotaWorkspaceId': 'ওয়ার্কস্পেস আইডি',
     'serverClearOAuth': 'OAuth সাফ করুন',
@@ -5574,10 +5707,55 @@ const translations = <String, Map<String, String>>{
         'Keine Fragen bereitgestellt. Sie können eine leere Antwort übermitteln.',
     'questionReviewAnswersSubmitting':
         'Überprüfen Sie Ihre Antworten vor dem Absenden.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'Kontext',
+    'logsEntryTags': 'Tags',
+    'logsMeasurePerformance': 'Leistung messen',
+    'logsMeasurePerformanceDescription':
+        'Erfasst Zeitmessungen für teure App-Operationen. Nur zur Diagnose von Verzögerungen aktivieren.',
+    'logsNoPerformanceData':
+        'Keine Leistungslogs entsprechen den aktuellen Filtern.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'Leistung',
+    'logsPerformanceTileTitle':
+        'LEISTUNG {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'Langsamste Leistungslogs',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'Authentifizierungs-Cookie',
+    'quotaConnect': 'Verbinden',
     'quotaForget': 'Vergessen',
+    'quotaOpenCodeGoConnectDescription':
+        'Verbinden Sie das Nutzungs-Dashboard, um gleitende, wöchentliche und monatliche Limits anzuzeigen.',
+    'quotaOpenCodeGoDetected': 'OpenCode Go erkannt',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go muss neu verbunden werden',
+    'quotaOpenCodeGoReconnectDescription':
+        'Aktualisieren Sie die Dashboard-Anmeldedaten, um die Nutzungsbalken wiederherzustellen.',
     'quotaOpenCodeGoUsage': 'OpenCode-Go-Nutzung',
     'quotaOpenDashboard': 'OpenCode-Dashboard öffnen',
+    'quotaPaceExplanation':
+        'Das Tempo prognostiziert die Gesamtnutzung am Ende des aktuellen Limitfensters anhand der aktuellen Rate.',
+    'quotaPacePercent': 'Tempo {percent}%',
+    'quotaRateLimits': 'Nutzungslimits',
+    'quotaReconnect': 'Neu verbinden',
+    'quotaRefreshing': 'Aktualisierung...',
+    'quotaResetsIn': 'Wird in {time} zurückgesetzt',
     'quotaSaving': 'Wird gespeichert...',
     'quotaWorkspaceId': 'Arbeitsbereich-ID',
     'serverClearOAuth': 'OAuth löschen',
@@ -7196,10 +7374,55 @@ const translations = <String, Map<String, String>>{
         'No se proporcionaron preguntas. Puede enviar una respuesta vacía.',
     'questionReviewAnswersSubmitting':
         'Revise sus respuestas antes de enviarlas.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'Contexto',
+    'logsEntryTags': 'Etiquetas',
+    'logsMeasurePerformance': 'Medir rendimiento',
+    'logsMeasurePerformanceDescription':
+        'Captura tiempos de operaciones costosas de la app. Déjelo apagado salvo al diagnosticar lentitud.',
+    'logsNoPerformanceData':
+        'Ningún registro de rendimiento coincide con los filtros actuales.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'Rendimiento',
+    'logsPerformanceTileTitle':
+        'RENDIMIENTO {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'Registros de rendimiento más lentos',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'Cookie de autenticación',
+    'quotaConnect': 'Conectar',
     'quotaForget': 'Olvidar',
+    'quotaOpenCodeGoConnectDescription':
+        'Conecta el panel de uso para mostrar límites móviles, semanales y mensuales.',
+    'quotaOpenCodeGoDetected': 'OpenCode Go detectado',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go necesita reconectarse',
+    'quotaOpenCodeGoReconnectDescription':
+        'Actualiza las credenciales del panel para restaurar las barras de uso.',
     'quotaOpenCodeGoUsage': 'Uso de OpenCode Go',
     'quotaOpenDashboard': 'Abrir panel de OpenCode',
+    'quotaPaceExplanation':
+        'El ritmo predice el uso total al final de la ventana de límite actual según la tasa actual.',
+    'quotaPacePercent': 'Ritmo {percent}%',
+    'quotaRateLimits': 'Límites de uso',
+    'quotaReconnect': 'Reconectar',
+    'quotaRefreshing': 'Actualizando...',
+    'quotaResetsIn': 'Se restablece en {time}',
     'quotaSaving': 'Guardando...',
     'quotaWorkspaceId': 'ID del Espacio de Trabajo',
     'serverClearOAuth': 'Limpiar OAuth',
@@ -8863,10 +9086,55 @@ const translations = <String, Map<String, String>>{
         'Aucune question fournie. Vous pouvez soumettre une réponse vide.',
     'questionReviewAnswersSubmitting':
         'Vérifiez vos réponses avant de les soumettre.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'Contexte',
+    'logsEntryTags': 'Tags',
+    'logsMeasurePerformance': 'Mesurer les performances',
+    'logsMeasurePerformanceDescription':
+        'Capture la durée des opérations coûteuses. Laissez désactivé sauf pour diagnostiquer une lenteur.',
+    'logsNoPerformanceData':
+        'Aucun journal de performance ne correspond aux filtres actuels.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'Performance',
+    'logsPerformanceTileTitle':
+        'PERFORMANCE {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'Journaux de performance les plus lents',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'Cookie d\'authentification',
+    'quotaConnect': 'Connecter',
     'quotaForget': 'Oublier',
+    'quotaOpenCodeGoConnectDescription':
+        'Connectez le tableau de bord d\'utilisation pour afficher les limites glissantes, hebdomadaires et mensuelles.',
+    'quotaOpenCodeGoDetected': 'OpenCode Go détecté',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go doit être reconnecté',
+    'quotaOpenCodeGoReconnectDescription':
+        'Actualisez les identifiants du tableau de bord pour restaurer les barres d\'utilisation.',
     'quotaOpenCodeGoUsage': 'Utilisation d\'OpenCode Go',
     'quotaOpenDashboard': 'Ouvrir le tableau de bord OpenCode',
+    'quotaPaceExplanation':
+        'Le rythme prédit l\'utilisation totale à la fin de la fenêtre de limite actuelle selon le taux actuel.',
+    'quotaPacePercent': 'Rythme {percent}%',
+    'quotaRateLimits': 'Limites d\'utilisation',
+    'quotaReconnect': 'Reconnecter',
+    'quotaRefreshing': 'Actualisation...',
+    'quotaResetsIn': 'Réinitialisation dans {time}',
     'quotaSaving': 'Enregistrement...',
     'quotaWorkspaceId': 'ID de l\'espace de travail',
     'serverClearOAuth': 'Effacer l\'OAuth',
@@ -10491,10 +10759,55 @@ const translations = <String, Map<String, String>>{
         'कोई प्रश्न प्रदान नहीं किया गया। आप एक खाली प्रतिक्रिया सबमिट कर सकते हैं।',
     'questionReviewAnswersSubmitting':
         'सबमिट करने से पहले अपने उत्तरों की समीक्षा करें।',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'संदर्भ',
+    'logsEntryTags': 'टैग',
+    'logsMeasurePerformance': 'प्रदर्शन मापें',
+    'logsMeasurePerformanceDescription':
+        'ऐप के महंगे ऑपरेशन का समय कैप्चर करता है। धीमापन जांचते समय ही चालू रखें।',
+    'logsNoPerformanceData':
+        'मौजूदा फ़िल्टर से कोई प्रदर्शन लॉग मेल नहीं खाता।',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'प्रदर्शन',
+    'logsPerformanceTileTitle':
+        'प्रदर्शन {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'सबसे धीमे प्रदर्शन लॉग',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'प्रमाणीकरण (Auth) कुकी',
+    'quotaConnect': 'कनेक्ट करें',
     'quotaForget': 'भूल जाएं',
+    'quotaOpenCodeGoConnectDescription':
+        'रोलिंग, साप्ताहिक और मासिक सीमाएँ दिखाने के लिए उपयोग डैशबोर्ड कनेक्ट करें।',
+    'quotaOpenCodeGoDetected': 'OpenCode Go मिला',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go को फिर से कनेक्ट करना होगा',
+    'quotaOpenCodeGoReconnectDescription':
+        'उपयोग बार वापस लाने के लिए डैशबोर्ड क्रेडेंशियल रीफ़्रेश करें।',
     'quotaOpenCodeGoUsage': 'OpenCode Go उपयोग',
     'quotaOpenDashboard': 'OpenCode डैशबोर्ड खोलें',
+    'quotaPaceExplanation':
+        'गति मौजूदा दर के आधार पर वर्तमान सीमा विंडो के अंत तक कुल उपयोग का अनुमान लगाती है।',
+    'quotaPacePercent': 'गति {percent}%',
+    'quotaRateLimits': 'उपयोग सीमाएँ',
+    'quotaReconnect': 'फिर से कनेक्ट करें',
+    'quotaRefreshing': 'ताज़ा हो रहा है...',
+    'quotaResetsIn': '{time} में रीसेट होगा',
     'quotaSaving': 'सहेजा जा रहा है...',
     'quotaWorkspaceId': 'कार्यक्षेत्र (Workspace) ID',
     'serverClearOAuth': 'OAuth साफ़ करें',
@@ -12125,10 +12438,55 @@ const translations = <String, Map<String, String>>{
         'Nessuna domanda fornita. È possibile inviare una risposta vuota.',
     'questionReviewAnswersSubmitting':
         'Esamina le tue risposte prima di inviarle.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'Contesto',
+    'logsEntryTags': 'Tag',
+    'logsMeasurePerformance': 'Misura prestazioni',
+    'logsMeasurePerformanceDescription':
+        'Registra i tempi delle operazioni costose dell\'app. Lascialo disattivato salvo diagnosi di lentezza.',
+    'logsNoPerformanceData':
+        'Nessun log di prestazioni corrisponde ai filtri attuali.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'Prestazioni',
+    'logsPerformanceTileTitle':
+        'PRESTAZIONI {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'Log di prestazioni più lenti',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'Cookie di autenticazione',
+    'quotaConnect': 'Connetti',
     'quotaForget': 'Dimentica',
+    'quotaOpenCodeGoConnectDescription':
+        'Connetti la dashboard di utilizzo per mostrare limiti mobili, settimanali e mensili.',
+    'quotaOpenCodeGoDetected': 'OpenCode Go rilevato',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go deve essere riconnesso',
+    'quotaOpenCodeGoReconnectDescription':
+        'Aggiorna le credenziali della dashboard per ripristinare le barre di utilizzo.',
     'quotaOpenCodeGoUsage': 'Utilizzo di OpenCode Go',
     'quotaOpenDashboard': 'Apri dashboard di OpenCode',
+    'quotaPaceExplanation':
+        'Il ritmo prevede l\'utilizzo totale alla fine della finestra di limite corrente in base al tasso attuale.',
+    'quotaPacePercent': 'Ritmo {percent}%',
+    'quotaRateLimits': 'Limiti di utilizzo',
+    'quotaReconnect': 'Riconnetti',
+    'quotaRefreshing': 'Aggiornamento...',
+    'quotaResetsIn': 'Si reimposta tra {time}',
     'quotaSaving': 'Salvataggio in corso...',
     'quotaWorkspaceId': 'ID area di lavoro',
     'serverClearOAuth': 'Cancella OAuth',
@@ -13638,10 +13996,53 @@ const translations = <String, Map<String, String>>{
     'questionQuestionRequest': '質問リクエスト',
     'questionQuestionsProvidedSubmit': '提供された質問はありません。空の回答を送信できます。',
     'questionReviewAnswersSubmitting': '送信する前に回答を確認してください。',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'コンテキスト',
+    'logsEntryTags': 'タグ',
+    'logsMeasurePerformance': 'パフォーマンスを測定',
+    'logsMeasurePerformanceDescription':
+        '重いアプリ操作の所要時間を記録します。遅延診断時以外はオフにしてください。',
+    'logsNoPerformanceData': '現在のフィルターに一致するパフォーマンスログはありません。',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'パフォーマンス',
+    'logsPerformanceTileTitle':
+        'パフォーマンス {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': '最も遅いパフォーマンスログ',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': '認証クッキー',
+    'quotaConnect': '接続',
     'quotaForget': '忘れる',
+    'quotaOpenCodeGoConnectDescription':
+        '使用量ダッシュボードに接続して、ローリング、週次、月次の制限を表示します。',
+    'quotaOpenCodeGoDetected': 'OpenCode Go を検出しました',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go の再接続が必要です',
+    'quotaOpenCodeGoReconnectDescription':
+        '使用量バーを復元するには、ダッシュボードの認証情報を更新してください。',
     'quotaOpenCodeGoUsage': 'OpenCode Go 使用量',
     'quotaOpenDashboard': 'OpenCodeダッシュボードを開く',
+    'quotaPaceExplanation': 'ペースは現在の速度に基づき、現在の制限ウィンドウ終了時の合計使用量を予測します。',
+    'quotaPacePercent': 'ペース {percent}%',
+    'quotaRateLimits': '利用制限',
+    'quotaReconnect': '再接続',
+    'quotaRefreshing': '更新中...',
+    'quotaResetsIn': '{time}後にリセット',
     'quotaSaving': '保存中...',
     'quotaWorkspaceId': 'ワークスペースID',
     'serverClearOAuth': 'OAuth情報をクリア',
@@ -15067,10 +15468,50 @@ const translations = <String, Map<String, String>>{
     'questionQuestionRequest': '질문 요청',
     'questionQuestionsProvidedSubmit': '제공된 질문이 없습니다. 빈 응답을 제출할 수 있습니다.',
     'questionReviewAnswersSubmitting': '제출하기 전에 답변을 검토하세요.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': '컨텍스트',
+    'logsEntryTags': '태그',
+    'logsMeasurePerformance': '성능 측정',
+    'logsMeasurePerformanceDescription':
+        '앱의 비용이 큰 작업 시간을 기록합니다. 지연을 진단할 때만 켜세요.',
+    'logsNoPerformanceData': '현재 필터와 일치하는 성능 로그가 없습니다.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': '성능',
+    'logsPerformanceTileTitle': '성능 {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': '가장 느린 성능 로그',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': '인증 쿠키',
+    'quotaConnect': '연결',
     'quotaForget': '삭제',
+    'quotaOpenCodeGoConnectDescription': '사용량 대시보드를 연결하여 롤링, 주간, 월간 한도를 표시합니다.',
+    'quotaOpenCodeGoDetected': 'OpenCode Go 감지됨',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go 재연결 필요',
+    'quotaOpenCodeGoReconnectDescription': '사용량 막대를 복원하려면 대시보드 자격 증명을 새로고침하세요.',
     'quotaOpenCodeGoUsage': 'OpenCode Go 사용량',
     'quotaOpenDashboard': 'OpenCode 대시보드 열기',
+    'quotaPaceExplanation': '페이스는 현재 속도를 기준으로 현재 한도 기간이 끝날 때의 총 사용량을 예측합니다.',
+    'quotaPacePercent': '페이스 {percent}%',
+    'quotaRateLimits': '사용 한도',
+    'quotaReconnect': '다시 연결',
+    'quotaRefreshing': '새로고침 중...',
+    'quotaResetsIn': '{time} 후 재설정',
     'quotaSaving': '저장 중...',
     'quotaWorkspaceId': '워크스페이스 ID',
     'serverClearOAuth': 'OAuth 정보 지우기',
@@ -16604,10 +17045,55 @@ const translations = <String, Map<String, String>>{
     'questionQuestionsProvidedSubmit':
         'Nenhuma pergunta fornecida. Você pode enviar uma resposta vazia.',
     'questionReviewAnswersSubmitting': 'Revise suas respostas antes de enviar.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'Contexto',
+    'logsEntryTags': 'Tags',
+    'logsMeasurePerformance': 'Medir desempenho',
+    'logsMeasurePerformanceDescription':
+        'Captura tempos de operações caras do app. Deixe desligado, exceto ao diagnosticar lentidão.',
+    'logsNoPerformanceData':
+        'Nenhum log de desempenho corresponde aos filtros atuais.',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'Desempenho',
+    'logsPerformanceTileTitle':
+        'DESEMPENHO {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'Logs de desempenho mais lentos',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'Cookie de autenticação',
+    'quotaConnect': 'Conectar',
     'quotaForget': 'Esquecer',
+    'quotaOpenCodeGoConnectDescription':
+        'Conecte o dashboard de uso para mostrar limites móveis, semanais e mensais.',
+    'quotaOpenCodeGoDetected': 'OpenCode Go detectado',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go precisa reconectar',
+    'quotaOpenCodeGoReconnectDescription':
+        'Atualize as credenciais do dashboard para restaurar as barras de uso.',
     'quotaOpenCodeGoUsage': 'Uso do OpenCode Go',
     'quotaOpenDashboard': 'Abrir dashboard OpenCode',
+    'quotaPaceExplanation':
+        'O ritmo prevê o uso total ao fim da janela de limite atual com base na taxa atual.',
+    'quotaPacePercent': 'Ritmo {percent}%',
+    'quotaRateLimits': 'Cotas',
+    'quotaReconnect': 'Reconectar',
+    'quotaRefreshing': 'Atualizando...',
+    'quotaResetsIn': 'Redefine em {time}',
     'quotaSaving': 'Salvando...',
     'quotaWorkspaceId': 'ID do Workspace',
     'serverClearOAuth': 'Limpar OAuth',
@@ -18230,10 +18716,55 @@ const translations = <String, Map<String, String>>{
     'questionQuestionsProvidedSubmit':
         'Вопросы не предоставлены. Вы можете отправить пустой ответ.',
     'questionReviewAnswersSubmitting': 'Проверьте свои ответы перед отправкой.',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'Контекст',
+    'logsEntryTags': 'Теги',
+    'logsMeasurePerformance': 'Измерять производительность',
+    'logsMeasurePerformanceDescription':
+        'Записывает время дорогих операций приложения. Включайте только для диагностики задержек.',
+    'logsNoPerformanceData':
+        'Нет журналов производительности для текущих фильтров.',
+    'logsPerformanceDuration': '{elapsedMs} мс',
+    'logsPerformanceFilter': 'Производительность',
+    'logsPerformanceTileTitle':
+        'ПРОИЗВОДИТЕЛЬНОСТЬ {operation} | {elapsedMs} мс | {status}',
+    'logsSlowestPerformance': 'Самые медленные журналы производительности',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'Cookie авторизации',
+    'quotaConnect': 'Подключить',
     'quotaForget': 'Забыть',
+    'quotaOpenCodeGoConnectDescription':
+        'Подключите дашборд использования, чтобы показывать скользящие, недельные и месячные лимиты.',
+    'quotaOpenCodeGoDetected': 'Обнаружен OpenCode Go',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go нужно подключить повторно',
+    'quotaOpenCodeGoReconnectDescription':
+        'Обновите учетные данные дашборда, чтобы восстановить полосы использования.',
     'quotaOpenCodeGoUsage': 'Использование OpenCode Go',
     'quotaOpenDashboard': 'Открыть дашборд OpenCode',
+    'quotaPaceExplanation':
+        'Темп прогнозирует общий расход к концу текущего окна лимита на основе текущей скорости.',
+    'quotaPacePercent': 'Темп {percent}%',
+    'quotaRateLimits': 'Лимиты использования',
+    'quotaReconnect': 'Подключить повторно',
+    'quotaRefreshing': 'Обновление...',
+    'quotaResetsIn': 'Сброс через {time}',
     'quotaSaving': 'Сохранение...',
     'quotaWorkspaceId': 'ID рабочей области',
     'serverClearOAuth': 'Очистить OAuth',
@@ -19819,10 +20350,55 @@ const translations = <String, Map<String, String>>{
         'کوئی سوالات فراہم نہیں کیے گئے۔ آپ خالی جواب جمع کرا سکتے ہیں۔',
     'questionReviewAnswersSubmitting':
         'جمع کرانے سے پہلے اپنے جوابات کا جائزہ لیں۔',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': 'سیاق',
+    'logsEntryTags': 'ٹیگز',
+    'logsMeasurePerformance': 'کارکردگی ناپیں',
+    'logsMeasurePerformanceDescription':
+        'ایپ کے مہنگے آپریشنز کا وقت محفوظ کرتا ہے۔ سستی کی تشخیص کے علاوہ بند رکھیں۔',
+    'logsNoPerformanceData': 'موجودہ فلٹرز سے کوئی کارکردگی لاگ نہیں ملتا۔',
+    'logsPerformanceDuration': '{elapsedMs} ms',
+    'logsPerformanceFilter': 'کارکردگی',
+    'logsPerformanceTileTitle':
+        'کارکردگی {operation} | {elapsedMs} ms | {status}',
+    'logsSlowestPerformance': 'سب سے سست کارکردگی لاگز',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': 'اوتھ کوکی',
+    'quotaConnect': 'کنیکٹ کریں',
     'quotaForget': 'بھول جاؤ',
+    'quotaOpenCodeGoConnectDescription':
+        'رولنگ، ہفتہ وار اور ماہانہ حدود دکھانے کے لیے استعمال کا ڈیش بورڈ کنیکٹ کریں۔',
+    'quotaOpenCodeGoDetected': 'OpenCode Go کا پتہ چلا',
+    'quotaOpenCodeGoNeedsReconnect':
+        'OpenCode Go کو دوبارہ کنیکٹ کرنے کی ضرورت ہے',
+    'quotaOpenCodeGoReconnectDescription':
+        'استعمال کی بارز بحال کرنے کے لیے ڈیش بورڈ اسناد کو ریفریش کریں۔',
     'quotaOpenCodeGoUsage': 'اوپن کوڈ گو کا استعمال',
     'quotaOpenDashboard': 'اوپن کوڈ ڈیش بورڈ کھولیں۔',
+    'quotaPaceExplanation':
+        'رفتار موجودہ شرح کی بنیاد پر موجودہ حد ونڈو کے آخر تک کل استعمال کی پیش گوئی کرتی ہے۔',
+    'quotaPacePercent': 'رفتار {percent}%',
+    'quotaRateLimits': 'استعمال کی حدود',
+    'quotaReconnect': 'دوبارہ کنیکٹ کریں',
+    'quotaRefreshing': 'تازہ ہو رہا ہے...',
+    'quotaResetsIn': '{time} میں ری سیٹ ہوگا',
     'quotaSaving': 'محفوظ کر رہا ہے...',
     'quotaWorkspaceId': 'ورک اسپیس ID',
     'serverClearOAuth': 'OAuth کو صاف کریں۔',
@@ -21271,10 +21847,49 @@ const translations = <String, Map<String, String>>{
     'questionQuestionRequest': '问题请求',
     'questionQuestionsProvidedSubmit': '未提供问题。您可以提交空响应。',
     'questionReviewAnswersSubmitting': '在提交前核对您的答案。',
+    'behaviorDataSaverAggressive': 'Aggressive',
+    'behaviorDataSaverAggressiveDescription':
+        'Low-bandwidth mode: only the visible workspace stream stays live, global updates are paused, and automatic refreshes are stretched.',
+    'behaviorDataSaverOff': 'Off',
+    'behaviorDataSaverOffHint':
+        'Full realtime and automatic refreshes are enabled.',
+    'behaviorDataSaverStandard': 'Standard',
+    'chatBlockResponsePendingDescription':
+        'The answer will appear as a single block when this turn finishes.',
+    'chatBlockResponsePendingTitle': 'Generating response',
+    'logsEntryContext': '上下文',
+    'logsEntryTags': '标签',
+    'logsMeasurePerformance': '测量性能',
+    'logsMeasurePerformanceDescription': '捕获应用高开销操作的耗时。除非诊断卡顿，否则保持关闭。',
+    'logsNoPerformanceData': '没有符合当前筛选条件的性能日志。',
+    'logsPerformanceDuration': '{elapsedMs} 毫秒',
+    'logsPerformanceFilter': '性能',
+    'logsPerformanceTileTitle': '性能 {operation} | {elapsedMs} 毫秒 | {status}',
+    'logsSlowestPerformance': '最慢的性能日志',
+    'settingsBehaviorChatRenderMode': 'Chat render mode',
+    'settingsBehaviorChatRenderModeBlock': 'Block',
+    'settingsBehaviorChatRenderModeBlockDescription':
+        'Hide live assistant text, reasoning, and tool cards until the current turn can be shown as one block.',
+    'settingsBehaviorChatRenderModeDescription':
+        'Choose whether assistant responses appear as they stream or reveal after the current turn settles.',
+    'settingsBehaviorChatRenderModeLive': 'Live',
+    'settingsBehaviorChatRenderModeLiveDescription':
+        'Show assistant text, reasoning, and tool activity as OpenCode streams events.',
     'quotaAuthCookie': '认证 Cookie',
+    'quotaConnect': '连接',
     'quotaForget': '忘记',
+    'quotaOpenCodeGoConnectDescription': '连接用量仪表板以显示滚动、每周和每月限制。',
+    'quotaOpenCodeGoDetected': '已检测到 OpenCode Go',
+    'quotaOpenCodeGoNeedsReconnect': 'OpenCode Go 需要重新连接',
+    'quotaOpenCodeGoReconnectDescription': '刷新仪表板凭据以恢复用量条。',
     'quotaOpenCodeGoUsage': 'OpenCode Go 用量',
     'quotaOpenDashboard': '打开 OpenCode 仪表板',
+    'quotaPaceExplanation': '节奏会根据当前速率预测当前限制窗口结束时的总用量。',
+    'quotaPacePercent': '节奏 {percent}%',
+    'quotaRateLimits': '用量限制',
+    'quotaReconnect': '重新连接',
+    'quotaRefreshing': '正在刷新...',
+    'quotaResetsIn': '将在 {time} 后重置',
     'quotaSaving': '正在保存...',
     'quotaWorkspaceId': '工作区 ID',
     'serverClearOAuth': '清除 OAuth',

@@ -506,8 +506,8 @@ class _LogTile extends StatelessWidget {
     final status = entry.performanceStatus;
     final title = entry.isPerformance
         ? context.l10n.logsPerformanceTileTitle(
-            operation ?? entry.message,
             elapsedMs ?? 0,
+            operation ?? entry.message,
             status ?? 'ok',
           )
         : entry.level.name.toUpperCase();

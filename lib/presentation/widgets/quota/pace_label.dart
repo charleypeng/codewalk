@@ -1,15 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/l10n_context.dart';
 import '../../../domain/entities/quota.dart';
 
 class PaceLabel extends StatelessWidget {
   const PaceLabel({super.key, required this.paceInfo});
 
   final PaceInfo paceInfo;
-
-  static const String explanation =
-      'Pace predicts total usage by the end of the current limit window based on the current rate.';
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +23,9 @@ class PaceLabel extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
     final child = Text(
-      'Pace ${paceInfo.predictedFinalPercent.round()}%',
+      context.l10n.quotaPacePercent(
+        paceInfo.predictedFinalPercent.round().toString(),
+      ),
       style: textStyle,
     );
 
@@ -38,7 +38,7 @@ class PaceLabel extends StatelessWidget {
       );
     }
 
-    return Tooltip(message: explanation, child: child);
+    return Tooltip(message: context.l10n.quotaPaceExplanation, child: child);
   }
 
   void _showExplanation(BuildContext context) {
@@ -47,6 +47,8 @@ class PaceLabel extends StatelessWidget {
       return;
     }
     messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(const SnackBar(content: Text(explanation)));
+    messenger.showSnackBar(
+      SnackBar(content: Text(context.l10n.quotaPaceExplanation)),
+    );
   }
 }
