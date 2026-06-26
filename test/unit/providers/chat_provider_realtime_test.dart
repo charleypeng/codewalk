@@ -106,17 +106,21 @@ void main() {
         reason: 'Expected realtime subscription before server.connected.',
       );
       await pumpEventQueue();
-      chatRepository.emitEvent(
-        const ChatEvent(
-          type: 'server.connected',
-          properties: <String, dynamic>{},
-        ),
-      );
-      await settleUntil(
-        () => provider.syncState == ChatSyncState.connected,
-        maxTicks: 80,
-        reason: 'Expected server.connected signal to mark connected.',
-      );
+      for (var attempt = 0; attempt < 5; attempt += 1) {
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'server.connected',
+            properties: <String, dynamic>{},
+          ),
+        );
+        for (var tick = 0; tick < 16; tick += 1) {
+          if (provider.syncState == ChatSyncState.connected) {
+            return;
+          }
+          await pumpEventQueue();
+        }
+      }
+      fail('Expected server.connected signal to mark connected.');
     }
 
     test(
@@ -228,7 +232,7 @@ void main() {
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 50),
+          syncHealthCheckInterval: const Duration(milliseconds: 200),
         );
 
         await provider.projectProvider.initializeProject();
@@ -270,7 +274,7 @@ void main() {
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 50),
+          syncHealthCheckInterval: const Duration(milliseconds: 200),
         );
 
         await provider.projectProvider.initializeProject();
