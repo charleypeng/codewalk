@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.148.3 - 2026-06-26
+
+- test(sync): preserve resume grace health coverage
+- test(sync): retry connected signal in coverage tests
+
 ## v1.148.2 - 2026-06-26
 
 - test(sync): stabilize coverage timing checks
