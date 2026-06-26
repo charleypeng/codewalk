@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.148.0 - 2026-06-26
+
+- fix: open embedded Tailscale login flow
+- test: stabilize realtime resume grace validation
+
 ## v1.147.1 - 2026-06-25
 
 - fix(composer): randomize across all receiving tips
