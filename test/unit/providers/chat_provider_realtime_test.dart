@@ -215,14 +215,22 @@ void main() {
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason: 'Expected realtime subscription before initial signal.',
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 10));
         chatRepository.emitEvent(
           const ChatEvent(
             type: 'server.connected',
             properties: <String, dynamic>{},
           ),
         );
-        await settleUntil(() => provider.syncState == ChatSyncState.connected);
-        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await settleUntil(
+          () => provider.syncState == ChatSyncState.connected,
+          reason: 'Expected initial server.connected signal to mark connected.',
+        );
+        await pumpEventQueue();
 
         await provider.setForegroundActive(false);
         final resumeFuture = provider.setForegroundActive(true);
@@ -260,22 +268,33 @@ void main() {
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason: 'Expected realtime subscription before initial signal.',
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 10));
         chatRepository.emitEvent(
           const ChatEvent(
             type: 'server.connected',
             properties: <String, dynamic>{},
           ),
         );
-        await settleUntil(() => provider.syncState == ChatSyncState.connected);
-        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await settleUntil(
+          () => provider.syncState == ChatSyncState.connected,
+          reason: 'Expected initial server.connected signal to mark connected.',
+        );
+        await pumpEventQueue();
 
         await provider.setForegroundActive(false);
         await provider.setForegroundActive(true);
+        await Future<void>.delayed(const Duration(milliseconds: 60));
         await settleUntil(
           () =>
               !provider.isInResumeGrace &&
               provider.syncState == ChatSyncState.delayed,
           maxTicks: 80,
+          reason:
+              'Expected stale realtime signal after resume grace to enter delayed state.',
         );
 
         expect(provider.isInDegradedMode, isTrue);
