@@ -205,11 +205,11 @@ void main() {
       'foreground resume grace suppresses stale-signal delayed state until reconnect signal arrives',
       () async {
         await defaultSettingsProvider.setSyncResumeGracePeriod(
-          const Duration(milliseconds: 120),
+          const Duration(seconds: 1),
         );
         provider = buildProvider(
           syncSignalStaleThreshold: const Duration(milliseconds: 1),
-          syncHealthCheckInterval: const Duration(milliseconds: 10),
+          syncHealthCheckInterval: const Duration(milliseconds: 50),
         );
 
         await provider.projectProvider.initializeProject();
@@ -219,7 +219,6 @@ void main() {
           () => provider.debugHasRealtimeEventSubscription,
           reason: 'Expected realtime subscription before initial signal.',
         );
-        await Future<void>.delayed(const Duration(milliseconds: 10));
         chatRepository.emitEvent(
           const ChatEvent(
             type: 'server.connected',
@@ -230,11 +229,14 @@ void main() {
           () => provider.syncState == ChatSyncState.connected,
           reason: 'Expected initial server.connected signal to mark connected.',
         );
-        await pumpEventQueue();
 
         await provider.setForegroundActive(false);
         final resumeFuture = provider.setForegroundActive(true);
-        await Future<void>.delayed(const Duration(milliseconds: 30));
+        await settleUntil(
+          () => provider.isInResumeGrace,
+          reason: 'Expected foreground return to enter resume grace.',
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
 
         expect(provider.isInResumeGrace, isTrue);
         expect(provider.syncState, ChatSyncState.connected);
@@ -322,11 +324,13 @@ void main() {
           ),
         );
         await settleUntil(() => provider.syncState == ChatSyncState.connected);
-        await Future<void>.delayed(const Duration(milliseconds: 5));
 
         await provider.setForegroundActive(false);
         final resumeFuture = provider.setForegroundActive(true);
-        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await settleUntil(
+          () => provider.isInResumeGrace,
+          reason: 'Expected foreground return to enter resume grace.',
+        );
         await provider.setForegroundActive(false);
         await resumeFuture;
         await Future<void>.delayed(const Duration(milliseconds: 60));

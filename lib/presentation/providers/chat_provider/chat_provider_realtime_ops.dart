@@ -156,6 +156,10 @@ extension _ChatProviderRealtimeOps on ChatProvider {
           previousGlobalSubscription,
           label: 'global event',
         );
+        if (!_isForegroundActive) {
+          AppLogger.info('sync_subscription_start_skip reason=background');
+          return;
+        }
         if (!_isInResumeGrace) {
           _setSyncState(
             ChatSyncState.reconnecting,
