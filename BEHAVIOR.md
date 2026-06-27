@@ -374,7 +374,8 @@
 - **Given** the Conversations sidebar is rendered
 - **When** the sidebar loads
 - **Then** session search is collapsed by default and rendered as a magnifying-glass `IconButton` in the header row next to the project-context and new-chat buttons
-- **Then** the old persistent `TextField` below the filter/sort chips is removed, saving vertical space
+- **Then** session filtering and sorting are exposed through one compact header menu with a current-state badge (for example `A/R`) and a tooltip/menu that spell out the full filter and sort labels
+- **Then** the old persistent `TextField` and separate filter/sort chip row below the header are removed, saving vertical space
 
 - **Given** the user taps the search icon button
 - **When** the button is pressed
@@ -387,7 +388,7 @@
 - **Given** the user types a search query
 - **When** the query text changes
 - **Then** the session list filters immediately by title and summary (case-insensitive), reusing the existing `ChatProvider.setSessionSearchQuery` path
-- **Then** the filter/sort chips remain visible and functional alongside the active search
+- **Then** the active session filter and sort order continue to apply while the expanded search field owns the full header width
 
 - **Given** an active search query is present
 - **When** the user taps outside the field or presses Enter/Submit

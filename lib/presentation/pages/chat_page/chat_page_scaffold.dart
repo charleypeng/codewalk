@@ -240,6 +240,9 @@ extension _ChatPageScaffold on _ChatPageState {
                                       tooltip:
                                           context.l10n.chatSearchConversations,
                                     ),
+                                    _buildSessionHeaderFilterButton(
+                                      chatProvider,
+                                    ),
                                     _buildTourTarget(
                                       showcaseKey: _projectContextTourKey,
                                       targetKey: _projectContextTourTargetKey,
@@ -293,70 +296,6 @@ extension _ChatPageScaffold on _ChatPageState {
                                       ),
                                   ],
                                 ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      PopupMenuButton<SessionListFilter>(
-                        tooltip: context.l10n.chatFilterSessions,
-                        onSelected: chatProvider.setSessionListFilter,
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: SessionListFilter.active,
-                            child: Text(context.l10n.chatFilterActive),
-                          ),
-                          PopupMenuItem(
-                            value: SessionListFilter.archived,
-                            child: Text(context.l10n.chatFilterArchived),
-                          ),
-                          PopupMenuItem(
-                            value: SessionListFilter.all,
-                            child: Text(context.l10n.chatFilterAll),
-                          ),
-                        ],
-                        child: _headerChip(
-                          context,
-                          icon: Symbols.filter_list,
-                          label: switch (chatProvider.sessionListFilter) {
-                            SessionListFilter.active =>
-                              context.l10n.chatFilterActive,
-                            SessionListFilter.archived =>
-                              context.l10n.chatFilterArchived,
-                            SessionListFilter.all => context.l10n.chatFilterAll,
-                          },
-                        ),
-                      ),
-                      PopupMenuButton<SessionListSort>(
-                        tooltip: context.l10n.chatSortSessions,
-                        onSelected: chatProvider.setSessionListSort,
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: SessionListSort.recent,
-                            child: Text(context.l10n.chatSortMostRecent),
-                          ),
-                          PopupMenuItem(
-                            value: SessionListSort.oldest,
-                            child: Text(context.l10n.chatSortOldest),
-                          ),
-                          PopupMenuItem(
-                            value: SessionListSort.title,
-                            child: Text(context.l10n.chatSortTitle),
-                          ),
-                        ],
-                        child: _headerChip(
-                          context,
-                          icon: Symbols.sort,
-                          label: switch (chatProvider.sessionListSort) {
-                            SessionListSort.recent =>
-                              context.l10n.chatSortRecent,
-                            SessionListSort.oldest =>
-                              context.l10n.chatSortOldest,
-                            SessionListSort.title => context.l10n.chatSortTitle,
-                          },
                         ),
                       ),
                     ],
@@ -561,6 +500,167 @@ extension _ChatPageScaffold on _ChatPageState {
       case _HamburgerBadgeReasonKind.none:
         return;
     }
+  }
+
+  Widget _buildSessionHeaderFilterButton(ChatProvider chatProvider) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final filterLabel = _sessionFilterLabel(chatProvider.sessionListFilter);
+    final sortLabel = _sessionSortLabel(
+      chatProvider.sessionListSort,
+      compact: true,
+    );
+    return PopupMenuButton<_SessionHeaderMenuAction>(
+      key: const ValueKey<String>('sidebar_session_filter_button'),
+      tooltip: '${context.l10n.chatFilterSessions}: $filterLabel / $sortLabel',
+      onSelected: (action) =>
+          _handleSessionHeaderMenuAction(action, chatProvider),
+      itemBuilder: (context) => [
+        PopupMenuItem<_SessionHeaderMenuAction>(
+          enabled: false,
+          child: Text(
+            context.l10n.chatFilterSessions,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        CheckedPopupMenuItem<_SessionHeaderMenuAction>(
+          key: const ValueKey<String>('sidebar_session_filter_active_item'),
+          value: _SessionHeaderMenuAction.filterActive,
+          checked: chatProvider.sessionListFilter == SessionListFilter.active,
+          child: Text(context.l10n.chatFilterActive),
+        ),
+        CheckedPopupMenuItem<_SessionHeaderMenuAction>(
+          key: const ValueKey<String>('sidebar_session_filter_archived_item'),
+          value: _SessionHeaderMenuAction.filterArchived,
+          checked: chatProvider.sessionListFilter == SessionListFilter.archived,
+          child: Text(context.l10n.chatFilterArchived),
+        ),
+        CheckedPopupMenuItem<_SessionHeaderMenuAction>(
+          key: const ValueKey<String>('sidebar_session_filter_all_item'),
+          value: _SessionHeaderMenuAction.filterAll,
+          checked: chatProvider.sessionListFilter == SessionListFilter.all,
+          child: Text(context.l10n.chatFilterAll),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<_SessionHeaderMenuAction>(
+          enabled: false,
+          child: Text(
+            context.l10n.chatSortSessions,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        CheckedPopupMenuItem<_SessionHeaderMenuAction>(
+          key: const ValueKey<String>('sidebar_session_sort_recent_item'),
+          value: _SessionHeaderMenuAction.sortRecent,
+          checked: chatProvider.sessionListSort == SessionListSort.recent,
+          child: Text(context.l10n.chatSortMostRecent),
+        ),
+        CheckedPopupMenuItem<_SessionHeaderMenuAction>(
+          key: const ValueKey<String>('sidebar_session_sort_oldest_item'),
+          value: _SessionHeaderMenuAction.sortOldest,
+          checked: chatProvider.sessionListSort == SessionListSort.oldest,
+          child: Text(context.l10n.chatSortOldest),
+        ),
+        CheckedPopupMenuItem<_SessionHeaderMenuAction>(
+          key: const ValueKey<String>('sidebar_session_sort_title_item'),
+          value: _SessionHeaderMenuAction.sortTitle,
+          checked: chatProvider.sessionListSort == SessionListSort.title,
+          child: Text(context.l10n.chatSortTitle),
+        ),
+      ],
+      child: SizedBox(
+        width: 44,
+        height: 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            const Icon(Symbols.filter_list),
+            PositionedDirectional(
+              top: 5,
+              end: 0,
+              child: Container(
+                width: 30,
+                height: 16,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: ShapeDecoration(
+                  color: colorScheme.secondaryContainer,
+                  shape: const StadiumBorder(),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _sessionHeaderFilterBadgeLabel(chatProvider),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleSessionHeaderMenuAction(
+    _SessionHeaderMenuAction action,
+    ChatProvider chatProvider,
+  ) {
+    switch (action) {
+      case _SessionHeaderMenuAction.filterActive:
+        chatProvider.setSessionListFilter(SessionListFilter.active);
+        return;
+      case _SessionHeaderMenuAction.filterArchived:
+        chatProvider.setSessionListFilter(SessionListFilter.archived);
+        return;
+      case _SessionHeaderMenuAction.filterAll:
+        chatProvider.setSessionListFilter(SessionListFilter.all);
+        return;
+      case _SessionHeaderMenuAction.sortRecent:
+        chatProvider.setSessionListSort(SessionListSort.recent);
+        return;
+      case _SessionHeaderMenuAction.sortOldest:
+        chatProvider.setSessionListSort(SessionListSort.oldest);
+        return;
+      case _SessionHeaderMenuAction.sortTitle:
+        chatProvider.setSessionListSort(SessionListSort.title);
+        return;
+    }
+  }
+
+  String _sessionFilterLabel(SessionListFilter filter) {
+    return switch (filter) {
+      SessionListFilter.active => context.l10n.chatFilterActive,
+      SessionListFilter.archived => context.l10n.chatFilterArchived,
+      SessionListFilter.all => context.l10n.chatFilterAll,
+    };
+  }
+
+  String _sessionSortLabel(SessionListSort sort, {required bool compact}) {
+    return switch (sort) {
+      SessionListSort.recent =>
+        compact ? context.l10n.chatSortRecent : context.l10n.chatSortMostRecent,
+      SessionListSort.oldest => context.l10n.chatSortOldest,
+      SessionListSort.title => context.l10n.chatSortTitle,
+    };
+  }
+
+  String _sessionHeaderFilterBadgeLabel(ChatProvider chatProvider) {
+    // Keep badge codes ASCII and bounded; tooltip/menu expose localized names.
+    final filterCode = switch (chatProvider.sessionListFilter) {
+      SessionListFilter.active => 'A',
+      SessionListFilter.archived => 'Ar',
+      SessionListFilter.all => 'All',
+    };
+    final sortCode = switch (chatProvider.sessionListSort) {
+      SessionListSort.recent => 'R',
+      SessionListSort.oldest => 'O',
+      SessionListSort.title => 'T',
+    };
+    return '$filterCode/$sortCode';
   }
 
   Widget _buildGroupedConversationsList({

@@ -244,6 +244,15 @@ enum _DisplayToggleAction {
   replayTour,
 }
 
+enum _SessionHeaderMenuAction {
+  filterActive,
+  filterArchived,
+  filterAll,
+  sortRecent,
+  sortOldest,
+  sortTitle,
+}
+
 enum _HistoryToolbarAction { undo, redo }
 
 enum _CurrentSessionAction {

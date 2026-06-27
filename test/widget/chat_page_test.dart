@@ -3429,6 +3429,114 @@ void main() {
       },
     );
 
+    testWidgets(
+      'sidebar combines session filter and sort into one header menu',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        addTearDown(provider.dispose);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey<String>('sidebar_session_filter_button')),
+          findsOneWidget,
+        );
+        final filterButton = tester.widget<PopupMenuButton>(
+          find.byKey(const ValueKey<String>('sidebar_session_filter_button')),
+        );
+        expect(filterButton.tooltip, 'Filter sessions: Active / Recent');
+        expect(find.text('A/R'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('sidebar_session_filter_button')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(
+            const ValueKey<String>('sidebar_session_filter_active_item'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(
+            const ValueKey<String>('sidebar_session_sort_recent_item'),
+          ),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('sidebar_session_filter_all_item')),
+        );
+        await tester.pumpAndSettle();
+        expect(provider.sessionListFilter, SessionListFilter.all);
+        expect(find.text('All/R'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('sidebar_session_filter_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(
+            const ValueKey<String>('sidebar_session_sort_oldest_item'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(provider.sessionListSort, SessionListSort.oldest);
+        expect(find.text('All/O'), findsOneWidget);
+      },
+    );
+
+    testWidgets('mobile drawer exposes compact session filter menu', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      addTearDown(provider.dispose);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_drawer_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('sidebar_session_filter_button')),
+        findsOneWidget,
+      );
+      expect(find.text('A/R'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('sidebar_session_filter_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('sidebar_session_filter_active_item'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('sidebar_session_sort_recent_item')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('recent sessions highlights the current session row', (
       WidgetTester tester,
     ) async {
