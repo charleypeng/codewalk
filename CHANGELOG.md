@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.154.1 - 2026-06-27
+
+- fix(sidebar): close drawer for new chat
+
 ## v1.154.0 - 2026-06-27
 
 - fix(sidebar): combine session filter controls (#79)
