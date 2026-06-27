@@ -1048,6 +1048,101 @@ void main() {
       },
     );
 
+    testWidgets('mobile new chat from drawer closes the drawer', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      addTearDown(provider.dispose);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_drawer_button')),
+      );
+      await tester.pumpAndSettle();
+
+      final scaffoldState = tester.state<ScaffoldState>(
+        find.byType(Scaffold).first,
+      );
+      expect(scaffoldState.isDrawerOpen, isTrue);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('sidebar_new_chat_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(scaffoldState.isDrawerOpen, isFalse);
+      expect(find.text('How can I help you today?'), findsOneWidget);
+    });
+
+    testWidgets('mobile new chat shortcut closes an open drawer', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      addTearDown(provider.dispose);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_drawer_button')),
+      );
+      await tester.pumpAndSettle();
+
+      final scaffoldState = tester.state<ScaffoldState>(
+        find.byType(Scaffold).first,
+      );
+      expect(scaffoldState.isDrawerOpen, isTrue);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyN);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyN);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(scaffoldState.isDrawerOpen, isFalse);
+      expect(find.text('How can I help you today?'), findsOneWidget);
+    });
+
     testWidgets(
       'latest session tap wins while another session switch is in flight',
       (WidgetTester tester) async {

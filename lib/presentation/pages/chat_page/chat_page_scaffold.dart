@@ -271,8 +271,15 @@ extension _ChatPageScaffold on _ChatPageState {
                                       ),
                                     ),
                                     IconButton(
+                                      key: const ValueKey<String>(
+                                        'sidebar_new_chat_button',
+                                      ),
                                       icon: const Icon(Symbols.add),
-                                      onPressed: _createNewSession,
+                                      onPressed: () => unawaited(
+                                        _createNewSession(
+                                          closeDrawerOnCreate: closeOnSelect,
+                                        ),
+                                      ),
                                       tooltip: context.l10n.chatNewChat,
                                     ),
                                     if (!FeatureFlags.refreshlessRealtime)

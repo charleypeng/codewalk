@@ -1584,9 +1584,10 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     });
   }
 
-  Future<void> _createNewSession() async {
+  Future<void> _createNewSession({bool closeDrawerOnCreate = false}) async {
     final chatProvider = context.read<ChatProvider>();
 
+    _closeDrawerIfNeeded(closeOnSelect: closeDrawerOnCreate);
     await chatProvider.beginNewChatDraft();
     if (!mounted) {
       return;

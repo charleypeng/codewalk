@@ -288,6 +288,7 @@
 - **When** the user taps `New Chat` (or uses the equivalent shortcut/command)
 - **Then** the composer opens immediately in a draft state without waiting for remote session creation
 - **Then** the session is created lazily on the first send action
+- **Then** if `New Chat` is tapped from the mobile Conversations drawer, the drawer closes so the clean draft composer is visible immediately
 
 ### New Chat draft is not replaced by background refreshes
 

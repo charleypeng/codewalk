@@ -1848,7 +1848,7 @@ class _ChatPageState extends State<ChatPage>
         final actionMap = <Type, Action<Intent>>{
           _NewSessionIntent: CallbackAction<_NewSessionIntent>(
             onInvoke: (_) {
-              _createNewSession();
+              _createNewSession(closeDrawerOnCreate: true);
               return null;
             },
           ),

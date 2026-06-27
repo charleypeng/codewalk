@@ -75,7 +75,7 @@ extension _ChatPageShortcuts on _ChatPageState {
     final isSubConversation = parentId != null && parentId.isNotEmpty;
     switch (action) {
       case ShortcutAction.newChat:
-        _createNewSession();
+        _createNewSession(closeDrawerOnCreate: true);
         return;
       case ShortcutAction.refresh:
         if (!FeatureFlags.refreshlessRealtime) {
