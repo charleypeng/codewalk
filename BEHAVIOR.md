@@ -776,9 +776,15 @@
 
 - **Given** the active session has changed files available for review
 - **When** `Review changes` is enabled in `Display toggles`
-- **Then** the timeline or desktop utility pane shows the review-changes file list when that surface is otherwise eligible to render it
+- **Then** the timeline or desktop utility pane shows the review-changes file list opened on the changed files when that surface is otherwise eligible to render it
+- **Then** refreshes and passive session updates preserve the selected file and manually expanded/collapsed diff hunks whenever their file/hunk identity still exists
 - **When** the user disables `Review changes` in `Display toggles`
 - **Then** the review-changes file list block is hidden without clearing or mutating the session diff data
+
+- **Given** the active session has changed files available for review
+- **When** the user opens `Review changes` from the session action menu
+- **Then** the session details dialog renders the review section before tasks so the changed files are the first focused content
+- **Then** subsequent insight refreshes do not reset the selected file or hunk expansion state unless the underlying file or hunk no longer exists
 
 ### Sub-conversation threads keep a full composer with parent return
 

@@ -87,9 +87,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       final combinedScale = mediaQuery.textScaler.scale(1.0) * chatFontScale;
       messageWidget = MediaQuery(
         key: ValueKey<String>('chat_message_font_scale_${message.id}'),
-        data: mediaQuery.copyWith(
-          textScaler: TextScaler.linear(combinedScale),
-        ),
+        data: mediaQuery.copyWith(textScaler: TextScaler.linear(combinedScale)),
         child: messageWidget,
       );
     }
@@ -109,9 +107,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final combinedScale = mediaQuery.textScaler.scale(1.0) * chatFontScale;
     return MediaQuery(
       key: const ValueKey<String>('chat_input_font_scale'),
-      data: mediaQuery.copyWith(
-        textScaler: TextScaler.linear(combinedScale),
-      ),
+      data: mediaQuery.copyWith(textScaler: TextScaler.linear(combinedScale)),
       child: child,
     );
   }
@@ -652,7 +648,16 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                               (!isCompactLayout && utilityPaneVisible)) {
                             return const SizedBox.shrink();
                           }
-                          return _buildInlineDiffCard(context, chatProvider);
+                          final maxInlineDiffHeight = min(
+                            MediaQuery.sizeOf(context).height * 0.32,
+                            280.0,
+                          );
+                          return ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: maxInlineDiffHeight,
+                            ),
+                            child: _buildInlineDiffCard(context, chatProvider),
+                          );
                         },
                       ),
                       // Message list — guarded by Selector to skip rebuild on selection-only changes
@@ -706,106 +711,111 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                   'chat_input_${currentSessionId ?? 'draft'}',
                                 ),
                                 onSendMessage: (submission) async {
-                                Future<void>
-                                clearComposerContextIfNeeded() async {
-                                  if (_fileContextItems.isNotEmpty) {
-                                    _setState(() {
-                                      _fileContextItems.clear();
-                                    });
+                                  Future<void>
+                                  clearComposerContextIfNeeded() async {
+                                    if (_fileContextItems.isNotEmpty) {
+                                      _setState(() {
+                                        _fileContextItems.clear();
+                                      });
+                                    }
                                   }
-                                }
 
-                                final slashInvocation =
-                                    submission.mode == ChatComposerMode.shell
-                                    ? null
-                                    : _parseSlashCommandInvocation(
-                                        submission.text,
-                                      );
+                                  final slashInvocation =
+                                      submission.mode == ChatComposerMode.shell
+                                      ? null
+                                      : _parseSlashCommandInvocation(
+                                          submission.text,
+                                        );
 
-                                if (slashInvocation != null) {
-                                  final builtinHandled =
-                                      await _handleBuiltinSlashCommand(
-                                        commandName: slashInvocation.name,
-                                        chatProvider: chatProvider,
-                                      );
-                                  await clearComposerContextIfNeeded();
-                                  if (builtinHandled) {
+                                  if (slashInvocation != null) {
+                                    final builtinHandled =
+                                        await _handleBuiltinSlashCommand(
+                                          commandName: slashInvocation.name,
+                                          chatProvider: chatProvider,
+                                        );
+                                    await clearComposerContextIfNeeded();
+                                    if (builtinHandled) {
+                                      return;
+                                    }
+
+                                    _prepareForOutgoingUserMessage();
+                                    await chatProvider.submitMessage(
+                                      submission.text.trim(),
+                                      commandMode: true,
+                                    );
+                                    _scrollToBottom(force: true);
                                     return;
                                   }
 
                                   _prepareForOutgoingUserMessage();
                                   await chatProvider.submitMessage(
-                                    submission.text.trim(),
-                                    commandMode: true,
+                                    submission.text,
+                                    attachments: submission.attachments,
+                                    shellMode:
+                                        submission.mode ==
+                                        ChatComposerMode.shell,
                                   );
+                                  await clearComposerContextIfNeeded();
                                   _scrollToBottom(force: true);
-                                  return;
-                                }
-
-                                _prepareForOutgoingUserMessage();
-                                await chatProvider.submitMessage(
-                                  submission.text,
-                                  attachments: submission.attachments,
-                                  shellMode:
-                                      submission.mode == ChatComposerMode.shell,
-                                );
-                                await clearComposerContextIfNeeded();
-                                _scrollToBottom(force: true);
-                              },
-                              onStopRequested: () async {
-                                await _requestStopActiveResponse(chatProvider);
-                              },
-                              onStopHintRequested: _showComposerStopHint,
-                              onDraftChanged: (draft) {
-                                _scheduleComposerDraftPersistence(
-                                  sessionId: currentSessionId,
-                                  draft: draft,
-                                );
-                              },
-                              onMentionQuery: _queryMentionSuggestions,
-                              onSlashQuery: _querySlashSuggestions,
-                              onBuiltinSlashCommand: (commandName) =>
-                                  _handleBuiltinSlashCommand(
-                                    commandName: commandName,
-                                    chatProvider: chatProvider,
-                                  ),
-                              sentMessageHistory: sentMessageHistory,
-                              prefilledDraft: _composerPrefilledDraft,
-                              prefilledDraftVersion:
-                                  _composerPrefilledDraftVersion,
-                              enabled: composerEnabled,
-                              blockReason: composerBlockReason,
-                              isResponding: chatProvider.canAbortActiveResponse,
-                              focusNode: _inputFocusNode,
-                              controller: _chatInputController,
-                              showAttachmentButton: attachmentsEnabled,
-                              showInlineAttachmentButton: false,
-                              allowImageAttachment: supportsImages,
-                              allowPdfAttachment: supportsPdf,
-                              cannedAnswersDataSource: di.sl(),
-                              cannedAnswersServerId:
-                                  projectProvider.activeServerId,
-                              cannedAnswersScopeId:
-                                  projectProvider.currentScopeId,
-                              contextItems: _fileContextItems,
-                              composerShowcaseKey: _composerTourKey,
-                              composerShowcaseTargetKey: _composerTourTargetKey,
-                              sendButtonShowcaseKey: _sendButtonTourKey,
-                              sendButtonShowcaseTargetKey:
-                                  _sendButtonTourTargetKey,
-                              onTourSkip: _handlePostOnboardingTourSkip,
-                              appDensity: settingsProvider.appDensity,
-                              composerSpellCheckEnabled:
-                                  settingsProvider.composerSpellCheckEnabled,
-                              onRemoveContextItem: (index) {
-                                if (index >= 0 &&
-                                    index < _fileContextItems.length) {
-                                  _setState(() {
-                                    _fileContextItems.removeAt(index);
-                                  });
-                                }
-                              },
-                            ),
+                                },
+                                onStopRequested: () async {
+                                  await _requestStopActiveResponse(
+                                    chatProvider,
+                                  );
+                                },
+                                onStopHintRequested: _showComposerStopHint,
+                                onDraftChanged: (draft) {
+                                  _scheduleComposerDraftPersistence(
+                                    sessionId: currentSessionId,
+                                    draft: draft,
+                                  );
+                                },
+                                onMentionQuery: _queryMentionSuggestions,
+                                onSlashQuery: _querySlashSuggestions,
+                                onBuiltinSlashCommand: (commandName) =>
+                                    _handleBuiltinSlashCommand(
+                                      commandName: commandName,
+                                      chatProvider: chatProvider,
+                                    ),
+                                sentMessageHistory: sentMessageHistory,
+                                prefilledDraft: _composerPrefilledDraft,
+                                prefilledDraftVersion:
+                                    _composerPrefilledDraftVersion,
+                                enabled: composerEnabled,
+                                blockReason: composerBlockReason,
+                                isResponding:
+                                    chatProvider.canAbortActiveResponse,
+                                focusNode: _inputFocusNode,
+                                controller: _chatInputController,
+                                showAttachmentButton: attachmentsEnabled,
+                                showInlineAttachmentButton: false,
+                                allowImageAttachment: supportsImages,
+                                allowPdfAttachment: supportsPdf,
+                                cannedAnswersDataSource: di.sl(),
+                                cannedAnswersServerId:
+                                    projectProvider.activeServerId,
+                                cannedAnswersScopeId:
+                                    projectProvider.currentScopeId,
+                                contextItems: _fileContextItems,
+                                composerShowcaseKey: _composerTourKey,
+                                composerShowcaseTargetKey:
+                                    _composerTourTargetKey,
+                                sendButtonShowcaseKey: _sendButtonTourKey,
+                                sendButtonShowcaseTargetKey:
+                                    _sendButtonTourTargetKey,
+                                onTourSkip: _handlePostOnboardingTourSkip,
+                                appDensity: settingsProvider.appDensity,
+                                composerSpellCheckEnabled:
+                                    settingsProvider.composerSpellCheckEnabled,
+                                onRemoveContextItem: (index) {
+                                  if (index >= 0 &&
+                                      index < _fileContextItems.length) {
+                                    _setState(() {
+                                      _fileContextItems.removeAt(index);
+                                    });
+                                  }
+                                },
+                              ),
                             );
                           },
                         ),

@@ -1495,6 +1495,9 @@ extension _ChatPageScaffold on _ChatPageState {
                       if (chatProvider.currentSessionDiff.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         SessionDiffViewer(
+                          key: ValueKey<String>(
+                            'desktop_session_diff_${chatProvider.currentSession?.id ?? 'none'}',
+                          ),
                           diffs: chatProvider.currentSessionDiff,
                           compact: false,
                           onFileTap: (path, line) =>

@@ -16307,6 +16307,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('1 file changed'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_0_lib/main.dart'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(
       find.byKey(const ValueKey<String>('appbar_display_toggles_button')),

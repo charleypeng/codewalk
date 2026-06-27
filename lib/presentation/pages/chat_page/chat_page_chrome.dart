@@ -356,6 +356,9 @@ extension _ChatPageChrome on _ChatPageState {
       const SizedBox(height: 8),
       if (chatProvider.currentSessionDiff.isNotEmpty)
         SessionDiffViewer(
+          key: ValueKey<String>(
+            'dialog_session_diff_${chatProvider.currentSession?.id ?? 'none'}',
+          ),
           diffs: chatProvider.currentSessionDiff,
           compact: false,
           onFileTap: (path, line) =>

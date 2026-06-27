@@ -51,10 +51,11 @@ class SessionDiffViewer extends StatefulWidget {
 class _SessionDiffViewerState extends State<SessionDiffViewer> {
   late bool _expanded;
   int _selectedIndex = 0;
+  String? _selectedFile;
   late DiffViewMode _viewMode;
 
-  /// Per-hunk collapse state (hunk index → expanded).
-  Map<int, bool> _hunkExpanded = {};
+  /// Per-hunk collapse state keyed by file and hunk identity.
+  final Map<String, bool> _hunkExpandedByKey = <String, bool>{};
 
   /// Cached highlight theme to avoid rebuilding on every line.
   Map<String, TextStyle>? _cachedHighlightTheme;
@@ -65,6 +66,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     super.initState();
     _expanded = widget.initiallyExpanded;
     _viewMode = widget.initialMode ?? DiffViewMode.unified;
+    _selectedFile = widget.diffs.isEmpty ? null : widget.diffs.first.file;
   }
 
   @override
@@ -72,15 +74,20 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     super.didUpdateWidget(oldWidget);
     if (widget.diffs.isEmpty) {
       _selectedIndex = 0;
+      _selectedFile = null;
       return;
     }
-    if (_selectedIndex >= widget.diffs.length) {
+    final selectedFile = _selectedFile;
+    final matchingIndex = selectedFile == null
+        ? -1
+        : widget.diffs.indexWhere((diff) => diff.file == selectedFile);
+    if (matchingIndex >= 0) {
+      _selectedIndex = matchingIndex;
+    } else if (_selectedIndex >= widget.diffs.length) {
       _selectedIndex = widget.diffs.length - 1;
     }
-    // Reset hunk collapse state when the selected file changes
-    if (oldWidget.diffs != widget.diffs) {
-      _hunkExpanded = {};
-    }
+    _selectedFile = widget.diffs[_selectedIndex].file;
+    _pruneHunkStateForCurrentFiles();
   }
 
   @override
@@ -104,9 +111,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       onExpansionChanged: (value) => setState(() => _expanded = value),
       leading: const Icon(Symbols.preview),
       title: Text(widget.title),
-        subtitle: Text(
-          context.l10n.sessionDiffFilesChanged(widget.diffs.length),
-        ),
+      subtitle: Text(context.l10n.sessionDiffFilesChanged(widget.diffs.length)),
       childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       children: [
         _buildDiffFileDropdown(context),
@@ -141,10 +146,10 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
                 ),
                 _buildViewModeToggle(context),
                 const SizedBox(width: 8),
-        Text(
-          context.l10n.sessionDiffFilesChanged(widget.diffs.length),
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
+                Text(
+                  context.l10n.sessionDiffFilesChanged(widget.diffs.length),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -153,10 +158,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
                 height: 320,
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 200,
-                      child: _buildDiffFileTree(context),
-                    ),
+                    SizedBox(width: 200, child: _buildDiffFileTree(context)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -208,10 +210,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       ),
     ];
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: segments,
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: segments);
   }
 
   Widget _buildModeChip({
@@ -230,7 +229,6 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
         child: IconButton(
           onPressed: () => setState(() {
             _viewMode = mode;
-            _hunkExpanded = {};
           }),
           icon: Icon(icon, size: 18),
           style: IconButton.styleFrom(
@@ -331,16 +329,11 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
         contentPadding: EdgeInsets.only(left: 12.0 + depth * 16.0),
         selected: selected,
         leading: const Icon(Symbols.description, size: 18),
-        title: Text(
-          node.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: Text(node.name, maxLines: 1, overflow: TextOverflow.ellipsis),
         onTap: () {
           if (node.diffIndex != null) {
             setState(() {
-              _selectedIndex = node.diffIndex!;
-              _hunkExpanded = {};
+              _selectDiffIndex(node.diffIndex!);
             });
           }
         },
@@ -371,7 +364,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   Widget _buildDiffFileDropdown(BuildContext context) {
     return DropdownButtonFormField<int>(
       key: const ValueKey<String>('session_diff_viewer_dropdown'),
-      initialValue: _selectedIndex,
+      value: _selectedIndex,
       items: [
         for (var index = 0; index < widget.diffs.length; index += 1)
           DropdownMenuItem<int>(
@@ -385,8 +378,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       onChanged: (value) {
         if (value == null) return;
         setState(() {
-          _selectedIndex = value;
-          _hunkExpanded = {};
+          _selectDiffIndex(value);
         });
       },
       decoration: InputDecoration(
@@ -420,10 +412,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text('+${diff.additions} -${diff.deletions}'),
-            onTap: () => setState(() {
-              _selectedIndex = index;
-              _hunkExpanded = {};
-            }),
+            onTap: () => setState(() => _selectDiffIndex(index)),
           );
         },
       ),
@@ -474,7 +463,11 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     );
 
     if (onTap == null) return chip;
-    return GestureDetector(onTap: onTap, behavior: HitTestBehavior.opaque, child: chip);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: chip,
+    );
   }
 
   // ── Diff preview (mode-aware) ────────────────────────────────────────
@@ -543,7 +536,11 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               onTap: () => widget.onFileTap?.call(diff.file, null),
               child: Row(
                 children: [
-                  Icon(Symbols.description, size: 18, color: theme.colorScheme.primary),
+                  Icon(
+                    Symbols.description,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -594,11 +591,11 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: brightness == Brightness.dark
-                  ? color.withValues(alpha: 0.9)
-                  : color.withValues(alpha: 0.8),
-              fontFamily: 'monospace',
-            ),
+          color: brightness == Brightness.dark
+              ? color.withValues(alpha: 0.9)
+              : color.withValues(alpha: 0.8),
+          fontFamily: 'monospace',
+        ),
       ),
     );
   }
@@ -612,10 +609,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   ) {
     final language = resolveDiffHighlightLanguage(diff.file);
     final highlightTheme = _getHighlightTheme(context);
-    final monospaceStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontFamily: 'monospace',
-          height: 1.45,
-        );
+    final monospaceStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', height: 1.45);
 
     return ListView.builder(
       key: ValueKey<String>(
@@ -628,7 +624,6 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
         return _buildHunkSection(
           context: context,
           hunk: hunk,
-          hunkIndex: hunkIndex,
           language: language,
           highlightTheme: highlightTheme,
           monospaceStyle: monospaceStyle,
@@ -647,10 +642,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   ) {
     final language = resolveDiffHighlightLanguage(diff.file);
     final highlightTheme = _getHighlightTheme(context);
-    final monospaceStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontFamily: 'monospace',
-          height: 1.45,
-        );
+    final monospaceStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', height: 1.45);
 
     return ListView.builder(
       key: ValueKey<String>(
@@ -663,7 +657,6 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
         return _buildSplitHunkSection(
           context: context,
           hunk: hunk,
-          hunkIndex: hunkIndex,
           language: language,
           highlightTheme: highlightTheme,
           monospaceStyle: monospaceStyle,
@@ -678,20 +671,21 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   Widget _buildHunkSection({
     required BuildContext context,
     required DiffHunk hunk,
-    required int hunkIndex,
     required String language,
     required Map<String, TextStyle> highlightTheme,
     required TextStyle? monospaceStyle,
     required SessionDiff diff,
   }) {
-    final isExpanded = _hunkExpanded[hunkIndex] ??
+    final hunkKey = _hunkStateKey(diff, hunk);
+    final isExpanded =
+        _hunkExpandedByKey[hunkKey] ??
         (hunk.lineCount <= kDefaultCollapseThreshold);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // Hunk header — tappable to toggle collapse
-        _buildHunkHeader(context, hunk, hunkIndex, isExpanded, diff),
+        _buildHunkHeader(context, hunk, hunkKey, isExpanded, diff),
         if (isExpanded)
           for (var i = 0; i < hunk.lines.length; i++)
             _buildUnifiedDiffLine(
@@ -701,8 +695,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               highlightTheme: highlightTheme,
               monospaceStyle: monospaceStyle,
             ),
-        if (!isExpanded)
-          _buildCollapsedHunkIndicator(context, hunk.lineCount),
+        if (!isExpanded) _buildCollapsedHunkIndicator(context, hunk.lineCount),
       ],
     );
   }
@@ -712,13 +705,14 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   Widget _buildSplitHunkSection({
     required BuildContext context,
     required DiffHunk hunk,
-    required int hunkIndex,
     required String language,
     required Map<String, TextStyle> highlightTheme,
     required TextStyle? monospaceStyle,
     required SessionDiff diff,
   }) {
-    final isExpanded = _hunkExpanded[hunkIndex] ??
+    final hunkKey = _hunkStateKey(diff, hunk);
+    final isExpanded =
+        _hunkExpandedByKey[hunkKey] ??
         (hunk.lineCount <= kDefaultCollapseThreshold);
 
     // Split lines: pair removals with additions
@@ -727,7 +721,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildHunkHeader(context, hunk, hunkIndex, isExpanded, diff),
+        _buildHunkHeader(context, hunk, hunkKey, isExpanded, diff),
         if (isExpanded)
           for (final pair in pairs)
             _buildSplitDiffRow(
@@ -737,8 +731,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               highlightTheme: highlightTheme,
               monospaceStyle: monospaceStyle,
             ),
-        if (!isExpanded)
-          _buildCollapsedHunkIndicator(context, hunk.lineCount),
+        if (!isExpanded) _buildCollapsedHunkIndicator(context, hunk.lineCount),
       ],
     );
   }
@@ -781,14 +774,14 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   Widget _buildHunkHeader(
     BuildContext context,
     DiffHunk hunk,
-    int hunkIndex,
+    String hunkKey,
     bool isExpanded,
     SessionDiff diff,
   ) {
     final style = _lineStyle(context, DiffLineType.hunk);
     return GestureDetector(
       onTap: () => setState(() {
-        _hunkExpanded[hunkIndex] = !isExpanded;
+        _hunkExpandedByKey[hunkKey] = !isExpanded;
       }),
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -807,9 +800,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               child: Text(
                 hunk.header.content,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                      color: style.textColor,
-                    ),
+                  fontFamily: 'monospace',
+                  color: style.textColor,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -856,8 +849,8 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     required Map<String, TextStyle> highlightTheme,
     required TextStyle? monospaceStyle,
   }) {
-  final style = _lineStyle(context, line.type);
-  const gutterWidth = 48.0;
+    final style = _lineStyle(context, line.type);
+    const gutterWidth = 48.0;
 
     // Line number strings
     final oldNo = line.oldLineNo?.toString() ?? '';
@@ -879,8 +872,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               oldNo,
               textAlign: TextAlign.right,
               style: monospaceStyle?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 fontSize: 10,
               ),
             ),
@@ -892,8 +886,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               newNo,
               textAlign: TextAlign.right,
               style: monospaceStyle?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 fontSize: 10,
               ),
             ),
@@ -920,7 +915,8 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               codeContent: codeContent,
               language: language,
               highlightTheme: highlightTheme,
-              baseStyle: monospaceStyle?.copyWith(color: style.textColor) ??
+              baseStyle:
+                  monospaceStyle?.copyWith(color: style.textColor) ??
                   TextStyle(color: style.textColor, fontFamily: 'monospace'),
               lineType: line.type,
             ),
@@ -987,13 +983,16 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   }) {
     if (line == null) {
       // Empty cell for unpaired line
-      final emptyBg = Theme.of(context).colorScheme.surfaceContainerHighest
-          .withValues(alpha: 0.3);
+      final emptyBg = Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
       return Container(color: emptyBg);
     }
 
     final style = _lineStyle(context, line.type);
-    final lineNo = isOld ? (line.oldLineNo?.toString() ?? '') : (line.newLineNo?.toString() ?? '');
+    final lineNo = isOld
+        ? (line.oldLineNo?.toString() ?? '')
+        : (line.newLineNo?.toString() ?? '');
     final codeContent = _stripDiffPrefix(line);
 
     return Container(
@@ -1008,8 +1007,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               lineNo,
               textAlign: TextAlign.right,
               style: monospaceStyle?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 fontSize: 10,
               ),
             ),
@@ -1036,7 +1036,8 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               codeContent: codeContent,
               language: language,
               highlightTheme: highlightTheme,
-              baseStyle: monospaceStyle?.copyWith(color: style.textColor) ??
+              baseStyle:
+                  monospaceStyle?.copyWith(color: style.textColor) ??
                   TextStyle(color: style.textColor, fontFamily: 'monospace'),
               lineType: line.type,
             ),
@@ -1101,16 +1102,16 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               ? TextSpan(text: value, style: theme[className])
               : TextSpan(text: value),
         );
-    } else if (children != null) {
-      final tmp = <TextSpan>[];
-      currentSpans.add(TextSpan(children: tmp, style: theme[className]));
-      stack.add(currentSpans);
-      currentSpans = tmp;
-      for (final child in children) {
-        traverse(child);
+      } else if (children != null) {
+        final tmp = <TextSpan>[];
+        currentSpans.add(TextSpan(children: tmp, style: theme[className]));
+        stack.add(currentSpans);
+        currentSpans = tmp;
+        for (final child in children) {
+          traverse(child);
+        }
+        currentSpans = stack.isNotEmpty ? stack.removeLast() : spans;
       }
-      currentSpans = stack.isNotEmpty ? stack.removeLast() : spans;
-    }
     }
 
     for (final node in nodes) {
@@ -1122,7 +1123,8 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   // ── Highlight theme cache ────────────────────────────────────────────
 
   Map<String, TextStyle> _getHighlightTheme(BuildContext context) {
-    final themeTokens = Theme.of(context).extension<OpenCodeThemeTokens>() ??
+    final themeTokens =
+        Theme.of(context).extension<OpenCodeThemeTokens>() ??
         classicThemeTokensFrom(Theme.of(context).colorScheme);
     if (_cachedHighlightTheme != null &&
         _cachedThemeKey == themeTokens.themeId) {
@@ -1150,9 +1152,12 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   String _stripDiffPrefix(DiffLine line) {
     final content = line.content;
     return switch (line.type) {
-      DiffLineType.add => content.startsWith('+') ? content.substring(1) : content,
-      DiffLineType.remove => content.startsWith('-') ? content.substring(1) : content,
-      DiffLineType.context => content.startsWith(' ') ? content.substring(1) : content,
+      DiffLineType.add =>
+        content.startsWith('+') ? content.substring(1) : content,
+      DiffLineType.remove =>
+        content.startsWith('-') ? content.substring(1) : content,
+      DiffLineType.context =>
+        content.startsWith(' ') ? content.substring(1) : content,
       _ => content,
     };
   }
@@ -1164,6 +1169,23 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       DiffLineType.remove => '-',
       _ => ' ',
     };
+  }
+
+  void _selectDiffIndex(int index) {
+    _selectedIndex = index;
+    _selectedFile = widget.diffs[index].file;
+  }
+
+  String _hunkStateKey(SessionDiff diff, DiffHunk hunk) {
+    return '${diff.file}\n${hunk.header.content}\n'
+        '${hunk.oldStart}:${hunk.oldCount}:${hunk.newStart}:${hunk.newCount}';
+  }
+
+  void _pruneHunkStateForCurrentFiles() {
+    final filePrefixes = widget.diffs.map((diff) => '${diff.file}\n').toSet();
+    _hunkExpandedByKey.removeWhere(
+      (key, _) => !filePrefixes.any(key.startsWith),
+    );
   }
 
   // ── Empty content fallback ───────────────────────────────────────────
@@ -1203,20 +1225,20 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               ),
             ),
             const SizedBox(height: 8),
-        Text(
-          context.l10n.sessionDiffLinesAddedRemoved(
-            diff.additions,
-            diff.deletions,
-          ),
-          style: theme.textTheme.bodySmall?.copyWith(
+            Text(
+              context.l10n.sessionDiffLinesAddedRemoved(
+                diff.additions,
+                diff.deletions,
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
-        Text(
-          context.l10n.sessionDiffContentNotCaptured,
-          style: theme.textTheme.labelSmall?.copyWith(
+            Text(
+              context.l10n.sessionDiffContentNotCaptured,
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
@@ -1233,35 +1255,35 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     final brightness = Theme.of(context).brightness;
     return switch (type) {
       DiffLineType.add => _DiffLineStyle(
-          textColor: brightness == Brightness.dark
-              ? Colors.green.shade300
-              : Colors.green.shade700,
-          backgroundColor: brightness == Brightness.dark
-              ? Colors.green.shade900.withValues(alpha: 0.28)
-              : Colors.green.shade50,
-        ),
+        textColor: brightness == Brightness.dark
+            ? Colors.green.shade300
+            : Colors.green.shade700,
+        backgroundColor: brightness == Brightness.dark
+            ? Colors.green.shade900.withValues(alpha: 0.28)
+            : Colors.green.shade50,
+      ),
       DiffLineType.remove => _DiffLineStyle(
-          textColor: brightness == Brightness.dark
-              ? Colors.red.shade300
-              : Colors.red.shade700,
-          backgroundColor: brightness == Brightness.dark
-              ? Colors.red.shade900.withValues(alpha: 0.28)
-              : Colors.red.shade50,
-        ),
+        textColor: brightness == Brightness.dark
+            ? Colors.red.shade300
+            : Colors.red.shade700,
+        backgroundColor: brightness == Brightness.dark
+            ? Colors.red.shade900.withValues(alpha: 0.28)
+            : Colors.red.shade50,
+      ),
       DiffLineType.hunk => _DiffLineStyle(
-          textColor: brightness == Brightness.dark
-              ? Colors.amber.shade300
-              : Colors.orange.shade800,
-          backgroundColor: brightness == Brightness.dark
-              ? Colors.amber.shade900.withValues(alpha: 0.22)
-              : Colors.orange.shade50,
-        ),
+        textColor: brightness == Brightness.dark
+            ? Colors.amber.shade300
+            : Colors.orange.shade800,
+        backgroundColor: brightness == Brightness.dark
+            ? Colors.amber.shade900.withValues(alpha: 0.22)
+            : Colors.orange.shade50,
+      ),
       DiffLineType.metadata => _DiffLineStyle(
-          textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       DiffLineType.context => _DiffLineStyle(
-          textColor: Theme.of(context).colorScheme.onSurface,
-        ),
+        textColor: Theme.of(context).colorScheme.onSurface,
+      ),
     };
   }
 }

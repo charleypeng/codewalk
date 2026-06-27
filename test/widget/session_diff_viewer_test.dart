@@ -119,7 +119,9 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const ValueKey<String>('session_diff_tree_file_1')));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('session_diff_tree_file_1')),
+    );
     await tester.pumpAndSettle();
 
     expect(
@@ -156,7 +158,10 @@ void main() {
     // Fallback shows filename and stats
     expect(find.text('lib/empty.dart'), findsWidgets);
     expect(find.text('+5 lines added -2 lines removed'), findsOneWidget);
-    expect(find.text('File content not captured by the server'), findsOneWidget);
+    expect(
+      find.text('File content not captured by the server'),
+      findsOneWidget,
+    );
     expect(find.byIcon(Symbols.preview_off), findsOneWidget);
   });
 
@@ -285,7 +290,8 @@ void main() {
       additions: 1,
       deletions: 1,
       status: 'modified',
-      patch: '--- a/lib/patched.dart\n+++ b/lib/patched.dart\n@@ -1,3 +1,4 @@\n void main() {\n- print(\'hello\');\n+ print(\'hello world\');\n }',
+      patch:
+          '--- a/lib/patched.dart\n+++ b/lib/patched.dart\n@@ -1,3 +1,4 @@\n void main() {\n- print(\'hello\');\n+ print(\'hello world\');\n }',
     );
 
     await tester.pumpWidget(
@@ -316,7 +322,8 @@ void main() {
       additions: 1,
       deletions: 1,
       status: 'modified',
-      patch: '--- a/lib/both.dart\n+++ b/lib/both.dart\n@@ -1 +1 @@\n-old content\n+new from patch',
+      patch:
+          '--- a/lib/both.dart\n+++ b/lib/both.dart\n@@ -1 +1 @@\n-old content\n+new from patch',
     );
 
     await tester.pumpWidget(
@@ -360,7 +367,10 @@ void main() {
 
     // Empty patch falls back to LCS with empty before/after → fallback UI
     expect(find.text('+3 lines added -1 lines removed'), findsOneWidget);
-    expect(find.text('File content not captured by the server'), findsOneWidget);
+    expect(
+      find.text('File content not captured by the server'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('view mode toggle switches between summary, unified, and split', (
@@ -492,9 +502,7 @@ void main() {
     expect(find.textContaining('collapsed'), findsOneWidget);
   });
 
-  testWidgets('tapping collapsed hunk expands it', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('tapping collapsed hunk expands it', (WidgetTester tester) async {
     final patchLines = <String>[
       '--- a/lib/large.dart',
       '+++ b/lib/large.dart',
@@ -533,6 +541,119 @@ void main() {
 
     // After expanding, the collapsed indicator should be gone
     expect(find.textContaining('collapsed'), findsNothing);
+  });
+
+  testWidgets('keeps manually expanded hunk open across diff refreshes', (
+    WidgetTester tester,
+  ) async {
+    final patchLines = <String>[
+      '--- a/lib/large.dart',
+      '+++ b/lib/large.dart',
+      '@@ -1,25 +1,25 @@',
+      for (var i = 1; i <= 24; i++) ' line $i',
+      '-old line 25',
+      '+new line 25',
+    ];
+    final largeDiff = SessionDiff(
+      file: 'lib/large.dart',
+      before: '',
+      after: '',
+      additions: 1,
+      deletions: 1,
+      status: 'modified',
+      patch: patchLines.join('\n'),
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        SessionDiffViewer(
+          diffs: <SessionDiff>[largeDiff],
+          compact: true,
+          initiallyExpanded: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('@@').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('collapsed'), findsNothing);
+
+    final refreshedDiff = SessionDiff(
+      file: 'lib/large.dart',
+      before: '',
+      after: '',
+      additions: 1,
+      deletions: 1,
+      status: 'modified',
+      patch: patchLines.join('\n'),
+    );
+    await tester.pumpWidget(
+      wrap(
+        SessionDiffViewer(
+          diffs: <SessionDiff>[refreshedDiff],
+          compact: true,
+          initiallyExpanded: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('collapsed'), findsNothing);
+  });
+
+  testWidgets('keeps selected file focused when refreshed diffs reorder', (
+    WidgetTester tester,
+  ) async {
+    const secondDiff = SessionDiff(
+      file: 'lib/second.dart',
+      before: 'before second',
+      after: 'after second',
+      additions: 1,
+      deletions: 1,
+      status: 'modified',
+    );
+
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      wrap(
+        const SessionDiffViewer(
+          diffs: <SessionDiff>[sampleDiff, secondDiff],
+          compact: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('session_diff_tree_file_1')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_1_lib/second.dart'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        const SessionDiffViewer(
+          diffs: <SessionDiff>[secondDiff, sampleDiff],
+          compact: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_0_lib/second.dart'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('diff parser utilities work correctly', (
