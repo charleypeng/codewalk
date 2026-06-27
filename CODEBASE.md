@@ -373,6 +373,7 @@ make test
 make coverage
 make check
 dart tool/i18n/generate_arb.dart && flutter gen-l10n  # Regenerate all 14 locale ARBs and localization delegates
+make web
 make android
 make desktop
 make release V=patch|minor|major
@@ -436,6 +437,7 @@ tool/release/changelog.py              # Changelog update/extract helper used by
 ## Notes
 
 - `make android` builds an arm64 APK, uses a monotonic installable build number aligned with release versioning (so repeated local uploads replace the previous installation without making later releases look like downgrades), and sends the artifact with `~/bin/hey`; use `HEY_CAPTION` to override the upload caption.
+- `make web` builds the static Flutter web app into `build/web` with configurable `WEB_BASE_HREF` (default `/`) and verifies the expected entry files for Cloudflare Pages or static hosting upload.
 - `make release V=patch|minor|major` requires a clean worktree, updates `CHANGELOG.md` through `tool/release/changelog.py`, bumps `pubspec.yaml`, commits, tags, and pushes.
 - Android manifest declares `REQUEST_INSTALL_PACKAGES` permission and a `FileProvider` authority (`com.verseles.codewalk.fileprovider`) required for APK sideload installs via `open_filex`.
 - Sensitive server credentials are persisted through `flutter_secure_storage` (v10.0.0) via `AppLocalDataSource`.

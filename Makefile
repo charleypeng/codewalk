@@ -1,4 +1,4 @@
-.PHONY: help deps gen theme-sync theme-sync-check icons icons-tray icons-app tray-prepare icons-check analyze test test-fast test-unit test-widget test-integration test-shard coverage smoke check check-fast desktop android precommit clean release
+.PHONY: help deps gen theme-sync theme-sync-check icons icons-tray icons-app tray-prepare icons-check analyze test test-fast test-unit test-widget test-integration test-shard coverage smoke check check-fast web desktop android precommit clean release
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
@@ -8,6 +8,7 @@ ANALYZE_LOG = /tmp/flutter_analyze.log
 TEST_JOBS ?= 12
 FAST_EXCLUDE_TAGS ?= slow,integration
 ANDROID_BUILD_CODE_OFFSET ?= 2001
+WEB_BASE_HREF ?= /
 
 READ_PUBSPEC_VERSION_SH = app_version=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); print; exit}' pubspec.yaml); \
 	app_version_name=$$(printf '%s' "$$app_version" | cut -d+ -f1); \
@@ -56,6 +57,7 @@ help:
 	@echo "  make smoke      Run integration smoke test against OpenCode server"
 	@echo "  make check      deps + gen + analyze + test"
 	@echo "  make check-fast deps + gen + analyze + test-fast"
+	@echo "  make web        Build Flutter web app into build/web"
 	@echo "  make desktop    Build desktop app for current host OS"
 	@echo "  make android    Build Android APK (arm64)"
 	@echo "  make precommit  check + android"
@@ -274,6 +276,12 @@ smoke:
 check: deps gen analyze test
 
 check-fast: deps gen analyze test-fast
+
+web:
+	flutter build web --release --base-href "$(WEB_BASE_HREF)" $(QUIET)
+	@test -f build/web/index.html || (echo "Missing build/web/index.html after web build"; exit 1)
+	@test -f build/web/flutter_bootstrap.js || (echo "Missing build/web/flutter_bootstrap.js after web build"; exit 1)
+	@echo "Web build ready: build/web/ (base href: $(WEB_BASE_HREF))"
 
 desktop:
 	@set -e; \

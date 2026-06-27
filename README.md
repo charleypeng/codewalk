@@ -132,11 +132,69 @@ Installers automatically pick the right release for your platform.
 make check      # deps + codegen + analyze + test
 make check-fast # deps + codegen + analyze + test-fast
 make test-fast  # excludes slow/integration tags
+make web        # build Flutter web app into build/web
 make android    # build arm64 APK
 make release V=patch # bump pubspec, update CHANGELOG.md, commit, tag, push
 ```
 
 Use `make check` for normal validation. When you need a testable Android artifact, run `HEY_CAPTION="specific caption" make android` after checks pass.
+
+### Web Deploy: Cloudflare Pages or Static Hosting
+
+CodeWalk's web build is a static Flutter app. The build does not need Cloudflare secrets or compile-time OpenCode credentials; users add their OpenCode server profile inside the app after opening the deployed site.
+
+1. Build the web app:
+
+   ```bash
+   make web
+   ```
+
+   This runs `flutter build web --release --base-href "/"` and writes the static site to `build/web`.
+
+2. For a subpath deployment, set a base href that starts and ends with `/`:
+
+   ```bash
+   WEB_BASE_HREF="/codewalk/" make web
+   ```
+
+3. Preview the static output locally for root-hosted builds:
+
+   ```bash
+   python3 -m http.server 8080 --directory build/web
+   ```
+
+   If you build with a subpath `WEB_BASE_HREF`, preview it under the same path prefix; otherwise browser asset URLs will not match the local server root.
+
+4. Publish `build/web` to Cloudflare Pages.
+
+   Direct upload with Wrangler:
+
+   ```bash
+   npx wrangler pages deploy build/web --project-name codewalk
+   ```
+
+   Cloudflare Pages Git settings, if your Pages build image has Flutter available:
+
+   ```text
+   Build command: make web
+   Build output directory: build/web
+   Root directory: (leave blank)
+   ```
+
+5. Configure the OpenCode server that the browser app will connect to. For a Pages deployment at `https://your-codewalk.pages.dev`, allow that exact origin:
+
+   ```bash
+   export OPENCODE_SERVER_PASSWORD="choose-a-password"
+   opencode serve --hostname 0.0.0.0 --port 4096 --cors "https://your-codewalk.pages.dev"
+   ```
+
+6. Add a CodeWalk server profile in the web app using your reachable server URL and Basic Auth credentials.
+
+Known limitations:
+
+- An HTTPS-hosted CodeWalk site cannot call a plain HTTP OpenCode server on a LAN IP because browsers block mixed content. Use HTTPS for the OpenCode origin, a trusted reverse proxy/tunnel, or run the CodeWalk web build from a local HTTP origin during private testing.
+- CORS must allow the exact CodeWalk origin when Basic Auth or other credentials are used; do not rely on wildcard CORS for authenticated browser requests.
+- The OpenCode server URL must be reachable from the user's browser, not from Cloudflare's build system.
 
 ### Server Configuration
 
