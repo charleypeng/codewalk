@@ -203,7 +203,15 @@ class MyApp extends StatelessWidget {
                     data: mediaQuery.copyWith(textScaler: composedScaler),
                     child: child ?? const SizedBox.shrink(),
                   );
-                  return scaledChild;
+                  return Theme(
+                    data: AppTheme.withResponsiveSnackBars(
+                      Theme.of(context),
+                      mediaQuery,
+                      textDirection:
+                          Directionality.maybeOf(context) ?? TextDirection.ltr,
+                    ),
+                    child: scaledChild,
+                  );
                 },
                 home: const AppShellPage(),
                 debugShowCheckedModeBanner: false,

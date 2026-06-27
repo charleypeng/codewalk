@@ -198,6 +198,7 @@ class _AppShellPageState extends State<AppShellPage> {
           context.l10n.appShellUpdateAvailableResult(result.latestVersion),
         ),
         duration: const Duration(seconds: 6),
+        showCloseIcon: true,
         action: canInstallDirectly
             ? SnackBarAction(
                 label: context.l10n.appShellInstall,
@@ -226,6 +227,7 @@ class _AppShellPageState extends State<AppShellPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: const Duration(days: 1),
+        showCloseIcon: true,
         content: Row(
           children: [
             const SizedBox(
@@ -250,6 +252,7 @@ class _AppShellPageState extends State<AppShellPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: const Duration(days: 1), // dismissed programmatically
+        showCloseIcon: true,
         content: ListenableBuilder(
           listenable: settingsProvider,
           builder: (_, __) => Column(
@@ -286,6 +289,7 @@ class _AppShellPageState extends State<AppShellPage> {
               : context.l10n.appShellUpdateInstalledRestartApp,
         ),
         duration: const Duration(seconds: 10),
+        showCloseIcon: true,
         action: isDesktop
             ? SnackBarAction(
                 label: context.l10n.appShellRestart,
@@ -308,6 +312,7 @@ class _AppShellPageState extends State<AppShellPage> {
       SnackBar(
         content: Text(context.l10n.appShellInstallFailed),
         duration: const Duration(seconds: 8),
+        showCloseIcon: true,
         action: SnackBarAction(
           label: context.l10n.chatRetry2,
           onPressed: () {

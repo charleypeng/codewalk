@@ -1,4 +1,5 @@
 import 'package:codewalk/domain/entities/experience_settings.dart';
+import 'package:codewalk/presentation/theme/app_shapes.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,92 @@ void main() {
       AppTheme.visualDensityFor(AppDensity.extraSpacious),
       const VisualDensity(horizontal: 2, vertical: 2),
     );
+  });
+
+  test('uses simple mobile snackbar styling without close icon', () {
+    final theme = AppTheme.lightFrom(
+      ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+    );
+    final resolved = AppTheme.withResponsiveSnackBars(
+      theme,
+      const MediaQueryData(size: Size(390, 844)),
+    );
+
+    expect(resolved.snackBarTheme.behavior, SnackBarBehavior.floating);
+    expect(resolved.snackBarTheme.showCloseIcon, isFalse);
+    expect(
+      resolved.snackBarTheme.insetPadding,
+      const EdgeInsets.fromLTRB(16, 8, 16, 16),
+    );
+    expect(resolved.snackBarTheme.width, isNull);
+    expect(
+      (resolved.snackBarTheme.shape! as RoundedRectangleBorder).borderRadius,
+      AppShapes.borderLarge,
+    );
+  });
+
+  test('limits desktop snackbar width through lateral inset padding', () {
+    final theme = AppTheme.lightFrom(
+      ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+    );
+    final resolved = AppTheme.withResponsiveSnackBars(
+      theme,
+      const MediaQueryData(size: Size(1200, 900)),
+    );
+
+    expect(resolved.snackBarTheme.behavior, SnackBarBehavior.floating);
+    expect(resolved.snackBarTheme.showCloseIcon, isTrue);
+    expect(
+      resolved.snackBarTheme.insetPadding,
+      const EdgeInsets.fromLTRB(756, 8, 24, 24),
+    );
+    expect(resolved.snackBarTheme.width, isNull);
+    expect(
+      (resolved.snackBarTheme.shape! as RoundedRectangleBorder).borderRadius,
+      AppShapes.borderLarge,
+    );
+  });
+
+  test('mirrors desktop snackbar lateral side in RTL layouts', () {
+    final theme = AppTheme.lightFrom(
+      ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+    );
+    final resolved = AppTheme.withResponsiveSnackBars(
+      theme,
+      const MediaQueryData(size: Size(1200, 900)),
+      textDirection: TextDirection.rtl,
+    );
+
+    expect(
+      resolved.snackBarTheme.insetPadding,
+      const EdgeInsets.fromLTRB(24, 8, 756, 24),
+    );
+  });
+
+  test('uses expanded window size class for desktop snackbar layout', () {
+    final theme = AppTheme.lightFrom(
+      ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+    );
+
+    final medium = AppTheme.withResponsiveSnackBars(
+      theme,
+      const MediaQueryData(size: Size(839, 900)),
+    );
+    final expanded = AppTheme.withResponsiveSnackBars(
+      theme,
+      const MediaQueryData(size: Size(840, 900)),
+    );
+
+    expect(
+      medium.snackBarTheme.insetPadding,
+      const EdgeInsets.fromLTRB(16, 8, 16, 16),
+    );
+    expect(medium.snackBarTheme.showCloseIcon, isFalse);
+    expect(
+      expanded.snackBarTheme.insetPadding,
+      const EdgeInsets.fromLTRB(396, 8, 24, 24),
+    );
+    expect(expanded.snackBarTheme.showCloseIcon, isTrue);
   });
 
   test('scales composer model controls by density', () {

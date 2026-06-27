@@ -1250,6 +1250,16 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **When** the user taps anywhere on that snackbar
 - **Then** the snackbar dismisses immediately without waiting for timeout
 
+### In-app snackbars adapt to viewport size
+
+- **Given** CodeWalk shows an in-app snackbar/toast message
+- **When** the viewport is compact/mobile-sized
+- **Then** simple messages render as floating transient toast-style bars without a default close icon
+- **Then** action buttons, when provided by the message, remain the explicit user action instead of duplicating a close affordance
+- **When** the viewport is wide/desktop-sized
+- **Then** floating snackbars use a constrained lateral layout instead of spanning across the full app width
+- **Then** the same event is still rendered through a single snackbar path, not duplicated as both a toast and a persistent box
+
 ---
 
 ## Layout

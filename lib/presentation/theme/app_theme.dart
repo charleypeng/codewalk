@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/experience_settings.dart';
+import '../utils/window_size_class.dart';
 import 'app_shapes.dart';
 
 class AppTheme {
   AppTheme._();
 
   static const Color seedColor = Color(0xFF3A6EA5);
+  static const double _desktopSnackBarMaxWidth = 420;
+  static const double _desktopSnackBarSideInset = 24;
+  static const double _mobileSnackBarHorizontalInset = 16;
 
   static ThemeData lightFrom(
     ColorScheme colorScheme, {
@@ -54,6 +58,48 @@ class AppTheme {
 
   static bool usesCompactLayout(AppDensity density) {
     return density == AppDensity.extraDense || density == AppDensity.dense;
+  }
+
+  static ThemeData withResponsiveSnackBars(
+    ThemeData theme,
+    MediaQueryData mediaQuery, {
+    TextDirection textDirection = TextDirection.ltr,
+  }) {
+    final viewportWidth = mediaQuery.size.width;
+    final wideLayout = WindowSizeClass.fromWidth(
+      viewportWidth,
+    ).isAtLeastExpanded;
+    final desktopLooseInset = wideLayout
+        ? (viewportWidth - _desktopSnackBarMaxWidth - _desktopSnackBarSideInset)
+              .clamp(_desktopSnackBarSideInset, viewportWidth)
+              .toDouble()
+        : _mobileSnackBarHorizontalInset;
+    final snackBarInset = wideLayout
+        ? EdgeInsets.fromLTRB(
+            textDirection == TextDirection.rtl
+                ? _desktopSnackBarSideInset
+                : desktopLooseInset,
+            8,
+            textDirection == TextDirection.rtl
+                ? desktopLooseInset
+                : _desktopSnackBarSideInset,
+            24,
+          )
+        : const EdgeInsets.fromLTRB(
+            _mobileSnackBarHorizontalInset,
+            8,
+            _mobileSnackBarHorizontalInset,
+            16,
+          );
+
+    return theme.copyWith(
+      snackBarTheme: theme.snackBarTheme.copyWith(
+        behavior: SnackBarBehavior.floating,
+        insetPadding: snackBarInset,
+        showCloseIcon: wideLayout,
+        shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
+      ),
+    );
   }
 
   static ThemeData _buildTheme({
@@ -154,7 +200,7 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         backgroundColor: colorScheme.inverseSurface,
         contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
-        showCloseIcon: true,
+        showCloseIcon: false,
         closeIconColor: colorScheme.onInverseSurface,
       ),
       chipTheme: base.chipTheme.copyWith(

@@ -1138,18 +1138,27 @@ class _ChatPageState extends State<ChatPage>
     SnackBarAction? action,
     Duration duration = const Duration(seconds: 4),
     SnackBarBehavior behavior = SnackBarBehavior.floating,
+    bool? showCloseIcon,
   }) {
     final dismissOnTap = action == null;
     return SnackBar(
       behavior: behavior,
       duration: duration,
       action: action,
+      showCloseIcon: showCloseIcon,
+      padding: dismissOnTap ? EdgeInsets.zero : null,
       content: dismissOnTap
           ? GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () =>
                   ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar(),
-              child: content,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: SizedBox(width: double.infinity, child: content),
+              ),
             )
           : content,
     );
@@ -1161,6 +1170,7 @@ class _ChatPageState extends State<ChatPage>
     Duration duration = const Duration(seconds: 4),
     bool hideCurrent = true,
     SnackBarBehavior behavior = SnackBarBehavior.floating,
+    bool? showCloseIcon,
   }) {
     if (!mounted) {
       return;
@@ -1178,6 +1188,7 @@ class _ChatPageState extends State<ChatPage>
         action: action,
         duration: duration,
         behavior: behavior,
+        showCloseIcon: showCloseIcon,
       ),
     );
   }
@@ -1188,6 +1199,7 @@ class _ChatPageState extends State<ChatPage>
     Duration duration = const Duration(seconds: 4),
     bool hideCurrent = true,
     SnackBarBehavior behavior = SnackBarBehavior.floating,
+    bool? showCloseIcon,
   }) {
     _showChatPageSnackBar(
       content: Text(message),
@@ -1195,6 +1207,7 @@ class _ChatPageState extends State<ChatPage>
       duration: duration,
       hideCurrent: hideCurrent,
       behavior: behavior,
+      showCloseIcon: showCloseIcon,
     );
   }
 
