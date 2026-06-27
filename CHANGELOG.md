@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.154.0 - 2026-06-27
+
+- fix(sidebar): combine session filter controls (#79)
+
 ## v1.153.0 - 2026-06-26
 
 - feat(composer): add native spell check toggle (#74)
