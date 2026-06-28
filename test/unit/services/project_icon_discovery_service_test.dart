@@ -4,6 +4,7 @@ import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/presentation/services/project_icon_discovery_service_io.dart';
 import 'package:codewalk/presentation/services/project_icon_models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,201 @@ void main() {
     expect(result.status, ProjectIconDiscoveryStatus.found);
     expect(result.candidate?.sourcePath, endsWith('/public/favicon.png'));
     expect(result.candidate?.sourceFormat, ProjectIconFormat.png);
+  });
+
+  test('prefers Flutter Apple app icons over web favicons', () async {
+    await Directory(
+      '${root.path}/ios/Runner/Assets.xcassets/AppIcon.appiconset',
+    ).create(recursive: true);
+    await Directory('${root.path}/web').create(recursive: true);
+    await File('${root.path}/web/favicon.png').writeAsBytes(<int>[1, 2, 3]);
+    await File(
+      '${root.path}/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png',
+    ).writeAsBytes(<int>[4, 5, 6]);
+    await File(
+      '${root.path}/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
+    ).writeAsBytes(<int>[7, 8, 9]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, contains('AppIcon.appiconset'));
+    expect(result.candidate?.sourcePath, contains('1024x1024'));
+  });
+
+  test('prefers Android launcher icons by density', () async {
+    await Directory(
+      '${root.path}/android/app/src/main/res/mipmap-mdpi',
+    ).create(recursive: true);
+    await Directory(
+      '${root.path}/android/app/src/main/res/mipmap-xxxhdpi',
+    ).create(recursive: true);
+    await File(
+      '${root.path}/android/app/src/main/res/mipmap-mdpi/ic_launcher.png',
+    ).writeAsBytes(<int>[1, 2, 3]);
+    await File(
+      '${root.path}/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+    ).writeAsBytes(<int>[4, 5, 6]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, contains('mipmap-xxxhdpi'));
+  });
+
+  test('prefers Tauri app icons over root favicons', () async {
+    await Directory('${root.path}/src-tauri/icons').create(recursive: true);
+    await File('${root.path}/favicon.png').writeAsBytes(<int>[1, 2, 3]);
+    await File(
+      '${root.path}/src-tauri/icons/StoreLogo.png',
+    ).writeAsBytes(<int>[4, 5, 6]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(
+      result.candidate?.sourcePath,
+      contains('src-tauri/icons/StoreLogo.png'),
+    );
+  });
+
+  test('keeps deep canonical favicons as fallback candidates', () async {
+    await Directory('${root.path}/packages/app/assets').create(recursive: true);
+    await File(
+      '${root.path}/packages/app/assets/favicon.png',
+    ).writeAsBytes(<int>[1, 2, 3]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(
+      result.candidate?.sourcePath,
+      contains('packages/app/assets/favicon.png'),
+    );
+  });
+
+  test('does not treat generic assets as Electron priority', () async {
+    await Directory('${root.path}/assets').create(recursive: true);
+    await Directory(
+      '${root.path}/android/app/src/main/res/mipmap-xxxhdpi',
+    ).create(recursive: true);
+    await File(
+      '${root.path}/assets/icon-72x72.png',
+    ).writeAsBytes(<int>[1, 2, 3]);
+    await File(
+      '${root.path}/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+    ).writeAsBytes(<int>[4, 5, 6]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, contains('mipmap-xxxhdpi'));
+  });
+
+  test('does not let numeric directory names affect quality ranking', () async {
+    await Directory('${root.path}/web/v2024').create(recursive: true);
+    await File('${root.path}/web/favicon.png').writeAsBytes(<int>[1, 2, 3]);
+    await File(
+      '${root.path}/web/v2024/favicon.png',
+    ).writeAsBytes(<int>[4, 5, 6]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, endsWith('/web/favicon.png'));
+  });
+
+  test('discovers Flutter Linux app icons', () async {
+    await Directory(
+      '${root.path}/linux/runner/resources',
+    ).create(recursive: true);
+    await File(
+      '${root.path}/linux/runner/resources/app_icon.png',
+    ).writeAsBytes(<int>[1, 2, 3]);
+    await File('${root.path}/favicon.png').writeAsBytes(<int>[4, 5, 6]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(
+      result.candidate?.sourcePath,
+      contains('linux/runner/resources/app_icon.png'),
+    );
+  });
+
+  test('discovers nested common app icon variants', () async {
+    await Directory('${root.path}/assets/resources').create(recursive: true);
+    await File(
+      '${root.path}/assets/resources/logo.256.png',
+    ).writeAsBytes(<int>[1, 2, 3]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(
+      result.candidate?.sourcePath,
+      contains('assets/resources/logo.256.png'),
+    );
+  });
+
+  test('discovers sized icon variants in common asset roots', () async {
+    await Directory('${root.path}/assets').create(recursive: true);
+    await File('${root.path}/assets/icon-512.png').writeAsBytes(<int>[1, 2, 3]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, contains('assets/icon-512.png'));
+  });
+
+  test('normalizes discovered ico icons to png storage', () async {
+    await Directory('${root.path}/build').create(recursive: true);
+    final icoBytes = img.encodeIco(
+      img.Image(width: 1, height: 1)..setPixelRgba(0, 0, 255, 0, 0, 255),
+    );
+    await File('${root.path}/build/icon.ico').writeAsBytes(icoBytes);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourceFormat, ProjectIconFormat.ico);
+    expect(result.candidate?.storedFormat, ProjectIconFormat.png);
+  });
+
+  test('ignores intentionally unsupported icns app icons', () async {
+    await Directory('${root.path}/src-tauri/icons').create(recursive: true);
+    await File(
+      '${root.path}/src-tauri/icons/icon.icns',
+    ).writeAsBytes(<int>[1, 2, 3]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.notFound);
+  });
+
+  test('checks Electron build icon without traversing build output', () async {
+    await Directory('${root.path}/build/deep').create(recursive: true);
+    await File('${root.path}/build/icon.png').writeAsBytes(<int>[1, 2, 3]);
+    await File(
+      '${root.path}/build/deep/favicon.png',
+    ).writeAsBytes(<int>[4, 5, 6]);
+
+    const service = ProjectIconDiscoveryServiceIo();
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, endsWith('/build/icon.png'));
   });
 
   test('ignores non-canonical favicon suffixes', () async {

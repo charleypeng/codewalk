@@ -2204,7 +2204,7 @@ Build on top of ADR-038 (still the runtime contract) and add the parts of the fi
 
 ---
 
-## ADR-040: Client-Owned Per-Project Icon Discovery (2026-06-19)
+## ADR-040: Client-Owned Per-Project Icon Discovery (2026-06-19, updated 2026-06-28)
 
 **Status**: Accepted
 
@@ -2220,37 +2220,42 @@ Official OpenCode docs expose project list and project lookup endpoints, but the
 
 Implement project icons as local CodeWalk metadata, not as OpenCode project state:
 
-1. **Discovery is user-initiated**: the first implementation uses an explicit action, not automatic background scanning on project add or file-watch events.
-2. **Discovery scope matches the conservative OpenChamber slice**: search only for `favicon.{ico,png,svg,jpg,jpeg,webp}`, case-insensitive, and rank by shortest path so root favicons win over deeply nested files.
+1. **Discovery is user-initiated**: the icon is fetched only via an explicit user action, not automatic background scanning on project add or file-watch events.
+2. **Discovery scope is universal local app-icon discovery with a web favicon fallback**: known app-icon locations are checked first — Tauri `src-tauri/icons/*`, Electron direct `build/icon.*`, Flutter / React Native / native Apple `AppIcon.appiconset/*.png`, Flutter Windows `windows/runner/resources/app_icon.ico`, Flutter Linux `linux/runner/resources/app_icon.png`, Android `mipmap-*/ic_launcher*.png`, and common `icon.*` / `app_icon.*` / `logo.*` assets — then fall back to `favicon.{ico,png,svg,jpg,jpeg,webp}` and other sized web icons. Discovery reads the local project filesystem only; no network favicon services. `build/icon.*` is probed directly so the generated `build` directory stays excluded from traversal. `.icns` and XML-style app icons are intentionally not rendered; supported formats remain PNG/JPEG/SVG/WebP/ICO with ICO normalized to PNG. Ranking is app-icon priority first, then quality/density, then shortest relative path so root-folder favicons win over deeply nested files.
 3. **No network favicon services**: discovery reads the local project filesystem only. It does not call external services, parse remotes, or fetch GitHub/raw assets.
 4. **Client-owned storage**: icon bytes and metadata live under CodeWalk app support storage, keyed by a stable project identity hash. OpenCode project responses remain unchanged.
-5. **Supported formats and cap**: PNG, JPEG, SVG, WebP, and ICO are accepted with a 5 MB maximum. Empty, oversized, unreadable, or unsupported files fall back to the default icon.
+5. **Supported formats and cap**: PNG, JPEG, SVG, WebP, and ICO are accepted with a 5 MB maximum. Empty, oversized, unreadable, or unsupported files (including `.icns` and XML-style app icons) fall back to the default icon. ICO is normalized to PNG at decode time.
 6. **Flutter-native rendering**: CodeWalk should use a shared `ProjectIcon` widget backed by `ImageProvider`/local file bytes rather than adding an embedded HTTP route or custom URL scheme.
-7. **Fallback first**: if no icon is configured or loading fails, render `Symbols.folder_open`. Preset icons, custom uploads, SVG recoloring, manifest parsing, and `apple-touch-icon` are follow-ups, not v1 scope.
-8. **Search exclusions**: the walker must skip heavy/generated directories such as `.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `ios/Pods`, and platform build output folders.
+7. **Fallback first**: if no icon is configured or loading fails, render `Symbols.folder_open`. Preset icons, custom uploads, SVG recoloring, and `apple-touch-icon`/manifest parsing remain follow-ups.
+8. **Search exclusions**: the walker must skip heavy/generated directories such as `.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `ios/Pods`, and platform build output folders. The direct probe of `build/icon.*` is the only exception to the `build` exclusion.
 
 ### Rationale
 
 - Keeping icon metadata local preserves the official OpenCode project contract and avoids an ADR-023 exception.
 - On-demand scanning avoids surprising mobile users and avoids background filesystem work on remote or cloud-mounted directories.
-- Restricting v1 to `favicon.*` keeps the matching rule predictable and close to the validated OpenChamber behavior.
+- App-icon-first discovery (Tauri / Electron / Flutter / RN / native Apple / Android / common `icon.*` / `app_icon.*` / `logo.*`) makes the feature useful across desktop, mobile, and cross-platform projects where no web favicon exists, while the favicon fallback preserves validated OpenChamber behavior for web projects.
 - A Flutter-native image path is simpler than an app-local HTTP route and works across desktop/mobile without an extra serving layer.
-- Deferring uploads and presets keeps the first implementation testable and easy to roll back.
+- Skipping `.icns` and XML-style app icons keeps the renderer surface bounded to the already-supported PNG/JPEG/SVG/WebP/ICO set, avoiding a custom decoder and keeping ICO normalization simple.
+- Deferring uploads and presets keeps the feature testable and easy to roll back.
 
 ### Consequences
 
 - ✅ Project identity in the sidebar can become more scannable without server support.
 - ✅ The feature remains additive and local; OpenCode project APIs stay authoritative for project path/name/lifecycle only.
 - ✅ Backward compatibility is straightforward because existing `Project` JSON does not need new server-originated fields.
+- ✅ App-icon-first discovery makes icons useful for desktop, mobile, and cross-platform projects where no web favicon exists, while the favicon fallback still covers web projects.
 - ⚠ Icon storage must be pruned when projects are forgotten/closed permanently or when metadata no longer points at a valid project identity.
 - ⚠ Local filesystem traversal must stay off the UI isolate and must enforce depth/entry/byte limits to avoid jank.
-- ❌ Automatic discovery, custom upload, icon presets, SVG recoloring, manifest parsing, and external favicon services are intentionally out of scope for the first implementation.
+- ⚠ Adding a new app-icon location requires updating the discovery priority list so app-icon matches keep winning over web favicons; ad-hoc per-file probes outside that list are discouraged.
+- ❌ Automatic discovery, custom upload, icon presets, SVG recoloring, manifest parsing, and external favicon services remain intentionally out of scope; the patch only broadens the local search surface (favicon → app-icon + favicon), not the trigger model or storage layer.
 
 **Note** (issue #73): The ADR-023-compliant client-owned implementation is in place. Discovery is user-initiated, icon bytes and metadata live under app support storage, OpenCode project payloads remain unchanged, and no network favicon services were introduced.
 
+**Note** (2026-06-28): Project icon discovery was expanded from web/favicon-only to universal local app-icon discovery while preserving the ADR-023 contract. Discovery priority now checks known app-icon locations before web favicons: Tauri `src-tauri/icons/*`, Electron direct `build/icon.*`, Flutter / React Native / native Apple `AppIcon.appiconset/*.png`, Flutter Windows `windows/runner/resources/app_icon.ico`, Flutter Linux `linux/runner/resources/app_icon.png`, Android `mipmap-*/ic_launcher*.png`, common `icon.*` / `app_icon.*` / `logo.*` assets, then `favicon.*` and sized web icons. `build/icon.*` is probed directly without traversing the generated `build` directory. `.icns` and XML-style app icons are intentionally not rendered; supported formats remain PNG/JPEG/SVG/WebP/ICO with ICO normalized to PNG. Ranking is app-icon priority first, then quality/density, then shortest relative path. User-initiated trigger model, local-only filesystem scope, app-support storage, OpenCode payload immunity, and the no-network-services / no-custom-uploads invariants are preserved.
+
 ### Key Files
 
-- **Project icon models / store / discovery service** — local CodeWalk-owned models, icon byte + metadata persistence under app support storage, and bounded `favicon.*` filesystem discovery (no OpenCode payload coupling, no network services).
+- **Project icon models / store / discovery service** — local CodeWalk-owned models, icon byte + metadata persistence under app support storage, and bounded app-icon + favicon filesystem discovery (no OpenCode payload coupling, no network services).
 - **`ProjectIconProvider`** — state owner orchestrating discovery and storage for the chat sidebar and selector surfaces.
 - **`ProjectIcon` / `ProjectIconDiscoveryButton`** — shared renderer with `Symbols.folder_open` fallback and the explicit user-initiated discovery affordance.
 - **Chat sidebar / selector integration** — sidebar group entries and project selector surfaces consume `ProjectIconProvider` to render per-project icons.
