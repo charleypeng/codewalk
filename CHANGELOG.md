@@ -2,6 +2,11 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.159.1 - 2026-06-28
+
+- feat(projects): discover app icons
+- docs(agent): tune validation gates
+
 ## v1.159.0 - 2026-06-28
 
 - feat(projects): discover per-project icons
