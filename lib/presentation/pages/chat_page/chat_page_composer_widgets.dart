@@ -86,7 +86,7 @@ extension _ChatPageComposerWidgets on _ChatPageState {
               ),
               diffs: chatProvider.currentSessionDiff,
               compact: true,
-              initiallyExpanded: true,
+              initiallyExpanded: false,
               onFileTap: (path, line) =>
                   unawaited(_onFilePathTap(path, line, null)),
             ),

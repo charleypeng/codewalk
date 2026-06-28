@@ -310,6 +310,46 @@ void main() {
     );
   });
 
+  testWidgets('updates floating badge when only attention changes', (
+    tester,
+  ) async {
+    var attention = const SessionAttentionState();
+
+    Widget buildList() {
+      return localizedMaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            sessionAttentionFor: (_) => attention,
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildList());
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'chat_session_attention_badge_pendingInteraction_ses_1',
+        ),
+      ),
+      findsNothing,
+    );
+
+    attention = const SessionAttentionState(hasPendingInteraction: true);
+    await tester.pumpWidget(buildList());
+    await tester.pump();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'chat_session_attention_badge_pendingInteraction_ses_1',
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('ignores repeated taps while session selection is in flight', (
     tester,
   ) async {

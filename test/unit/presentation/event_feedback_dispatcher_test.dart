@@ -21,6 +21,7 @@ class _FakeNotificationService extends NotificationService {
   SoundOption? lastSoundOption;
   String? lastSoundSource;
   String? clearedSessionId;
+  int notifyCalls = 0;
 
   @override
   Future<bool> notify({
@@ -33,6 +34,7 @@ class _FakeNotificationService extends NotificationService {
     SoundOption soundOption = SoundOption.systemDefault,
     String? soundSource,
   }) async {
+    notifyCalls += 1;
     lastTitle = title;
     lastBody = body;
     lastCategory = category;
@@ -301,6 +303,41 @@ void main() {
     expect(notificationService.lastCategory, 'permissions');
     expect(notificationService.lastSessionId, 'ses_v2');
     expect(notificationService.lastTitle, 'Background task');
+  });
+
+  test('does not throttle different sessions in the same category', () async {
+    final settingsProvider = SettingsProvider(
+      localDataSource: InMemoryAppLocalDataSource(),
+      dioClient: DioClient(),
+      soundService: _FakeSoundService(),
+    );
+    await settingsProvider.initialize();
+    final notificationService = _FakeNotificationService();
+    final dispatcher = EventFeedbackDispatcher(
+      settingsProvider: settingsProvider,
+      notificationService: notificationService,
+      soundService: _FakeSoundService(),
+    );
+
+    await dispatcher.handle(
+      const ChatEvent(
+        type: 'session.idle',
+        properties: <String, dynamic>{'sessionID': 'ses_1'},
+      ),
+      sessionTitleHint: 'Session 1',
+      currentSessionId: 'current',
+    );
+    await dispatcher.handle(
+      const ChatEvent(
+        type: 'session.idle',
+        properties: <String, dynamic>{'sessionID': 'ses_2'},
+      ),
+      sessionTitleHint: 'Session 2',
+      currentSessionId: 'current',
+    );
+
+    expect(notificationService.notifyCalls, 2);
+    expect(notificationService.lastSessionId, 'ses_2');
   });
 
   test(

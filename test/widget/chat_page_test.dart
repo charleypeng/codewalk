@@ -16424,6 +16424,18 @@ void main() {
       find.byKey(
         const ValueKey<String>('session_diff_preview_list_0_lib/main.dart'),
       ),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('session_diff_viewer_compact_tile')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_0_lib/main.dart'),
+      ),
       findsOneWidget,
     );
 

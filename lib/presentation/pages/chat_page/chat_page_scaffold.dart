@@ -812,6 +812,9 @@ extension _ChatPageScaffold on _ChatPageState {
     final highlighted = attention.hasRecentUnreadCompletion;
     final isBusy = attention.isActive;
     final showBusySweep = isBusy && !isCurrentSession;
+    final attentionKind = isCurrentSession
+        ? SessionAttentionKind.none
+        : attention.primaryKind;
     final menuActions = _sessionContextMenuActions(
       chatProvider: chatProvider,
       closeOnSelect: closeOnSelect,
@@ -916,6 +919,14 @@ extension _ChatPageScaffold on _ChatPageState {
                             ),
                           ),
                           const SizedBox(width: 8),
+                          if (attentionKind != SessionAttentionKind.none) ...[
+                            _buildRecentSessionAttentionBadge(
+                              sessionId: session.id,
+                              colorScheme: colorScheme,
+                              kind: attentionKind,
+                            ),
+                            const SizedBox(width: 6),
+                          ],
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 96),
                             child: Ink(
@@ -964,6 +975,56 @@ extension _ChatPageScaffold on _ChatPageState {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildRecentSessionAttentionBadge({
+    required String sessionId,
+    required ColorScheme colorScheme,
+    required SessionAttentionKind kind,
+  }) {
+    final badgeColor = switch (kind) {
+      SessionAttentionKind.error => colorScheme.error,
+      SessionAttentionKind.pendingInteraction => colorScheme.tertiary,
+      SessionAttentionKind.unreadCompletion => colorScheme.primary,
+      SessionAttentionKind.active => colorScheme.primary,
+      SessionAttentionKind.none => colorScheme.outline,
+    };
+    final iconColor = switch (kind) {
+      SessionAttentionKind.error => colorScheme.onError,
+      SessionAttentionKind.pendingInteraction => colorScheme.onTertiary,
+      SessionAttentionKind.active => colorScheme.onPrimary,
+      SessionAttentionKind.unreadCompletion ||
+      SessionAttentionKind.none => colorScheme.onSurface,
+    };
+    final icon = switch (kind) {
+      SessionAttentionKind.error => Symbols.error,
+      SessionAttentionKind.pendingInteraction => Symbols.help,
+      SessionAttentionKind.active => Symbols.sync_rounded,
+      SessionAttentionKind.unreadCompletion => Symbols.circle,
+      SessionAttentionKind.none => Symbols.circle,
+    };
+    if (kind == SessionAttentionKind.unreadCompletion) {
+      return Container(
+        key: ValueKey<String>(
+          'recent_session_attention_badge_${kind.name}_$sessionId',
+        ),
+        width: 9,
+        height: 9,
+        decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+      );
+    }
+    return Container(
+      key: ValueKey<String>(
+        'recent_session_attention_badge_${kind.name}_$sessionId',
+      ),
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Icon(icon, size: 11, color: iconColor),
     );
   }
 

@@ -282,6 +282,14 @@ class _ChatSessionListState extends State<ChatSessionList> {
         ..write(':')
         ..write(attention?.unreadCompletionAt?.millisecondsSinceEpoch ?? 0)
         ..write(':')
+        ..write(attention?.isActive == true)
+        ..write(':')
+        ..write(attention?.hasPendingInteraction == true)
+        ..write(':')
+        ..write(attention?.hasError == true)
+        ..write(':')
+        ..write(attention?.hasUnreadCompletion == true)
+        ..write(':')
         ..write(pinnedSessionIds.contains(session.id))
         ..write(';');
     }

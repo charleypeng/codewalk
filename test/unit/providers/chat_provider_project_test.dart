@@ -38,6 +38,9 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
+import 'package:codewalk/presentation/services/event_feedback_dispatcher.dart';
+import 'package:codewalk/presentation/services/notification_service.dart';
+import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -604,12 +607,11 @@ void main() {
 
         await provider.submitQuestionAnswers(
           requestId: 'q_orphan_1',
-          answers: <List<String>>[<String>['A']],
+          answers: <List<String>>[
+            <String>['A'],
+          ],
         );
-        expect(
-          provider.questionSubmitFailedRequestIds,
-          contains('q_orphan_1'),
-        );
+        expect(provider.questionSubmitFailedRequestIds, contains('q_orphan_1'));
 
         // Now the server list no longer includes the request; the
         // reload prunes the orphan failure marker.
@@ -1679,6 +1681,9 @@ void main() {
         );
         final scopedLocal = InMemoryAppLocalDataSource()
           ..activeServerId = 'srv_test';
+        final feedbackDispatcher = _RecordingEventFeedbackDispatcher(
+          settingsProvider: defaultSettingsProvider,
+        );
         final scopedProvider = ChatProvider(
           sendChatMessage: SendChatMessage(scopedRepository),
           getChatSessions: GetChatSessions(scopedRepository),
@@ -1729,6 +1734,7 @@ void main() {
             localDataSource: scopedLocal,
           ),
           localDataSource: scopedLocal,
+          eventFeedbackDispatcher: feedbackDispatcher,
         );
 
         await scopedProvider.projectProvider.initializeProject();
@@ -1784,6 +1790,9 @@ void main() {
         expect(unreadAttentionAfterStatus.isActive, isFalse);
         expect(unreadAttentionAfterStatus.hasUnreadCompletion, isTrue);
         expect(unreadAttentionAfterStatus.unreadCompletionAt, isNotNull);
+        expect(feedbackDispatcher.handledTypes, contains('session.idle'));
+        expect(feedbackDispatcher.lastCurrentSessionId, 'ses_b');
+        feedbackDispatcher.clear();
 
         scopedRepository.emitGlobalEvent(
           const ChatEvent(
@@ -1803,6 +1812,7 @@ void main() {
         expect(unreadAttention.isActive, isFalse);
         expect(unreadAttention.hasUnreadCompletion, isTrue);
         expect(unreadAttention.unreadCompletionAt, isNotNull);
+        expect(feedbackDispatcher.handledTypes, isEmpty);
 
         scopedRepository.emitGlobalEvent(
           const ChatEvent(
@@ -1833,6 +1843,7 @@ void main() {
           scopeId: '/repo/a',
         );
         expect(pendingAttention.hasPendingInteraction, isTrue);
+        expect(feedbackDispatcher.handledTypes, contains('question.asked'));
 
         scopedRepository.emitGlobalEvent(
           const ChatEvent(
@@ -1851,6 +1862,7 @@ void main() {
           scopeId: '/repo/a',
         );
         expect(clearedAttention.hasPendingInteraction, isFalse);
+        expect(feedbackDispatcher.dismissedSessionIds, contains('ses_a_old'));
       },
     );
 
@@ -2440,4 +2452,41 @@ void main() {
       },
     );
   });
+}
+
+class _RecordingEventFeedbackDispatcher extends EventFeedbackDispatcher {
+  _RecordingEventFeedbackDispatcher({
+    required SettingsProvider settingsProvider,
+  }) : super(
+         settingsProvider: settingsProvider,
+         notificationService: NotificationService(assumeInitialized: true),
+         soundService: SoundService(),
+       );
+
+  final List<String> handledTypes = <String>[];
+  final List<String> dismissedSessionIds = <String>[];
+  String? lastCurrentSessionId;
+
+  void clear() {
+    handledTypes.clear();
+    dismissedSessionIds.clear();
+    lastCurrentSessionId = null;
+  }
+
+  @override
+  Future<void> handle(
+    ChatEvent event, {
+    String? sessionTitleHint,
+    bool isRootSession = true,
+    bool isAppInForeground = true,
+    String? currentSessionId,
+  }) async {
+    handledTypes.add(event.type);
+    lastCurrentSessionId = currentSessionId;
+  }
+
+  @override
+  Future<void> dismissForSession(String sessionId) async {
+    dismissedSessionIds.add(sessionId);
+  }
 }

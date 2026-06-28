@@ -174,6 +174,64 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     return false;
   }
 
+  ChatEvent? _feedbackEventForCurrentContext(ChatEvent event) {
+    if (event.type == 'session.status') {
+      final sessionId = event.properties['sessionID'] as String?;
+      final statusMap = event.properties['status'];
+      if (sessionId == null || statusMap is! Map<String, dynamic>) {
+        return null;
+      }
+      final status = _parseStatusForFeedback(statusMap);
+      if (status?.type != SessionStatusType.idle) {
+        return null;
+      }
+      final isVisibleCurrentSession =
+          sessionId == _currentSession?.id && _isChatRouteActive;
+      if (isVisibleCurrentSession) {
+        return null;
+      }
+      final previousStatusType = _sessionStatusById[sessionId]?.type;
+      final completedFromActiveTurn =
+          previousStatusType == null ||
+          previousStatusType == SessionStatusType.busy ||
+          previousStatusType == SessionStatusType.retry;
+      if (!completedFromActiveTurn) {
+        return null;
+      }
+      return _sessionIdleFeedbackEventFromStatus(event);
+    }
+
+    if (event.type == 'session.idle') {
+      final sessionId = event.properties['sessionID'] as String?;
+      if (sessionId != null &&
+          _sessionStatusById[sessionId]?.type == SessionStatusType.idle &&
+          !_sessionErrorAttentionIds.contains(sessionId)) {
+        return null;
+      }
+    }
+
+    return _shouldHandleFeedbackForEvent(event) ? event : null;
+  }
+
+  SessionStatusInfo? _parseStatusForFeedback(Map<String, dynamic> statusMap) {
+    try {
+      return SessionStatusModel.fromJson(statusMap).toDomain();
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to parse session.status feedback event',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  ChatEvent _sessionIdleFeedbackEventFromStatus(ChatEvent event) {
+    final properties = Map<String, dynamic>.from(event.properties)
+      ..remove('status');
+    return ChatEvent(type: 'session.idle', properties: properties);
+  }
+
   ({String message, String? code}) _extractSessionErrorMessageAndCode(
     Map<String, dynamic> properties,
   ) {
@@ -208,45 +266,61 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       }
     }
     final eventSessionId = _extractEventSessionId(event.properties);
+    final feedbackEvent = _feedbackEventForCurrentContext(event);
+    final feedbackSessionId = feedbackEvent == null
+        ? null
+        : _extractEventSessionId(feedbackEvent.properties);
+    final visibleCurrentSessionId = _isChatRouteActive
+        ? _currentSession?.id
+        : null;
     final suppressCurrentIdleFeedback =
+        feedbackEvent != null &&
+        feedbackEvent.type == 'session.idle' &&
         event.type == 'session.idle' &&
-        eventSessionId != null &&
-        _hasInFlightSendTurnForSession(eventSessionId);
+        feedbackSessionId != null &&
+        _isChatRouteActive &&
+        _hasInFlightSendTurnForSession(feedbackSessionId);
     final suppressCurrentErrorFeedback =
-        event.type == 'session.error' &&
-        eventSessionId != null &&
+        feedbackEvent != null &&
+        feedbackEvent.type == 'session.error' &&
+        feedbackSessionId != null &&
         (() {
-          final payload = _extractSessionErrorMessageAndCode(event.properties);
+          final payload = _extractSessionErrorMessageAndCode(
+            feedbackEvent.properties,
+          );
           if (_shouldSuppressAbortError(
-            sessionId: eventSessionId,
+            sessionId: feedbackSessionId,
             message: payload.message,
             code: payload.code,
           )) {
             return true;
           }
-          return _hasInFlightSendTurnForSession(eventSessionId) &&
+          return _isChatRouteActive &&
+              _hasInFlightSendTurnForSession(feedbackSessionId) &&
               _isRemoteAbortError(message: payload.message, code: payload.code);
         })();
-    if (_shouldHandleFeedbackForEvent(event)) {
+    if (feedbackEvent != null) {
       if (suppressCurrentIdleFeedback) {
         _traceFinal(
           'event-session-idle-feedback-suppressed-active-send',
-          sessionId: eventSessionId,
+          sessionId: feedbackSessionId,
         );
       } else if (suppressCurrentErrorFeedback) {
         _traceFinal(
           'event-session-error-feedback-suppressed-expected-abort',
-          sessionId: eventSessionId,
+          sessionId: feedbackSessionId,
         );
       } else {
-        final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
+        final sessionTitleHint = _sessionTitleForNotification(
+          feedbackSessionId,
+        );
         unawaited(
           eventFeedbackDispatcher?.handle(
-            event,
+            feedbackEvent,
             sessionTitleHint: sessionTitleHint,
-            isRootSession: _isRootSessionId(eventSessionId),
+            isRootSession: _isRootSessionId(feedbackSessionId),
             isAppInForeground: _isAppInForeground,
-            currentSessionId: _currentSession?.id,
+            currentSessionId: visibleCurrentSessionId,
           ),
         );
       }
@@ -354,6 +428,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           final previousStatus = _sessionStatusById[sessionId];
           final previousStatusType = previousStatus?.type;
           final isNonCurrent = _isNonCurrentSessionEvent(sessionId);
+          final isCurrentSession = sessionId == _currentSession?.id;
+          final isVisibleCurrentSession =
+              isCurrentSession && _isChatRouteActive;
           final changed = isNonCurrent
               ? previousStatusType != status.type
               : previousStatus != status;
@@ -365,12 +442,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               status.type == SessionStatusType.retry) {
             _sessionUnreadCompletionIds.remove(sessionId);
           } else if (status.type == SessionStatusType.idle &&
-              sessionId != _currentSession?.id &&
+              !isVisibleCurrentSession &&
               (previousStatusType == SessionStatusType.busy ||
                   previousStatusType == SessionStatusType.retry)) {
             _markSessionUnreadCompletion(sessionId);
           }
-          if (sessionId == _currentSession?.id) {
+          if (isVisibleCurrentSession) {
             _clearSessionAttentionForSession(sessionId);
           }
           _notifyListeners();
@@ -460,10 +537,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         if (sessionId != null) {
           _flushDeltaNotification(reason: 'event-session.idle');
           final isCurrentSession = sessionId == _currentSession?.id;
+          final isVisibleCurrentSession =
+              isCurrentSession && _isChatRouteActive;
           final hasActiveCurrentSendTurn = _hasInFlightSendTurnForSession(
             sessionId,
           );
           final previousStatusType = _sessionStatusById[sessionId]?.type;
+          final wasBusyBeforeIdle =
+              previousStatusType == SessionStatusType.busy ||
+              previousStatusType == SessionStatusType.retry;
           final hadErrorAttention = _sessionErrorAttentionIds.contains(
             sessionId,
           );
@@ -489,11 +571,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           }
           _sessionErrorAttentionIds.remove(sessionId);
           if (isCurrentSession) {
-            _clearSessionAttentionForSession(sessionId);
-            // Reactive dismiss: the user is already viewing this session, so
-            // any lingering notification (completion, error, permission) is
-            // stale and should be removed immediately.
-            unawaited(eventFeedbackDispatcher?.dismissForSession(sessionId));
+            if (isVisibleCurrentSession) {
+              _clearSessionAttentionForSession(sessionId);
+              // Reactive dismiss: the user is already viewing this session, so
+              // any lingering notification (completion, error, permission) is
+              // stale and should be removed immediately.
+              unawaited(eventFeedbackDispatcher?.dismissForSession(sessionId));
+            } else if (wasBusyBeforeIdle || previousStatusType == null) {
+              _markSessionUnreadCompletion(sessionId);
+            }
             _clearActiveSendDraft();
             // OpenCode's session.idle is the terminal lifecycle signal for a
             // turn. End the active-send UI immediately even if CodeWalk's
@@ -521,10 +607,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               _notifyListeners();
             }
           } else {
-            final wasBusyBeforeIdle =
-                previousStatusType == SessionStatusType.busy ||
-                previousStatusType == SessionStatusType.retry;
-            if (wasBusyBeforeIdle) {
+            if (wasBusyBeforeIdle || previousStatusType == null) {
               _markSessionUnreadCompletion(sessionId);
             }
             _notifyListeners();
@@ -1027,7 +1110,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       if (_tryApplyGlobalEventIncremental(event)) {
         return;
       }
-      final currentSessionId = _currentSession?.id?.trim();
+      final currentSessionId = _currentSession?.id.trim();
       final eventSessionId = _extractEventSessionId(event.properties)?.trim();
       final refreshVisibleSession =
           event.type.startsWith('message.') &&
@@ -1109,7 +1192,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
 
   void _scheduleGlobalFallbackReconcile(ChatEvent event) {
     final type = event.type;
-    final currentSessionId = _currentSession?.id?.trim();
+    final currentSessionId = _currentSession?.id.trim();
     final eventSessionId = _extractEventSessionId(event.properties)?.trim();
     final refreshSessions =
         type.startsWith('session.') ||
@@ -1247,7 +1330,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final wasBusyBeforeIdle =
             previousStatusType == SessionStatusType.busy ||
             previousStatusType == SessionStatusType.retry;
-        if (wasBusyBeforeIdle &&
+        if ((wasBusyBeforeIdle || previousStatusType == null) &&
             _isRootSessionInList(sessionId, snapshot.sessions)) {
           nextUnreadCompletionIds = Set<String>.from(
             snapshot.sessionUnreadCompletionIds,
@@ -1479,7 +1562,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       return false;
     }
 
-    _contextSnapshots[contextKey] = _ChatContextSnapshot(
+    final nextSnapshot = _ChatContextSnapshot(
       sessions: effectiveSessions,
       currentSession: snapshot.currentSession,
       messages: snapshot.messages,
@@ -1502,9 +1585,136 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       rejectedDraft: snapshot.rejectedDraft,
       questionSubmitFailedRequestIds: snapshot.questionSubmitFailedRequestIds,
     );
+    _contextSnapshots[contextKey] = nextSnapshot;
+    final feedbackEvent = _feedbackEventForInactiveContext(
+      event,
+      previousSnapshot: snapshot,
+    );
+    if (feedbackEvent != null) {
+      _dispatchFeedbackForInactiveContextEvent(
+        feedbackEvent,
+        snapshot: nextSnapshot,
+      );
+    }
+    _dismissResolvedInactiveInteractionFeedback(event, snapshot: nextSnapshot);
     _scheduleSessionUnreadHighlightTimer();
     _notifyListeners();
     return true;
+  }
+
+  ChatEvent? _feedbackEventForInactiveContext(
+    ChatEvent event, {
+    required _ChatContextSnapshot previousSnapshot,
+  }) {
+    if (_shouldHandleFeedbackForEvent(event)) {
+      return event;
+    }
+    if (event.type != 'session.status') {
+      return null;
+    }
+    final sessionId = event.properties['sessionID'] as String?;
+    final statusMap = event.properties['status'];
+    if (sessionId == null || statusMap is! Map<String, dynamic>) {
+      return null;
+    }
+    final status = _parseStatusForFeedback(statusMap);
+    if (status?.type != SessionStatusType.idle) {
+      return null;
+    }
+    final previousStatusType =
+        previousSnapshot.sessionStatusById[sessionId]?.type;
+    final completedFromActiveTurn =
+        previousStatusType == null ||
+        previousStatusType == SessionStatusType.busy ||
+        previousStatusType == SessionStatusType.retry;
+    if (!completedFromActiveTurn) {
+      return null;
+    }
+    return _sessionIdleFeedbackEventFromStatus(event);
+  }
+
+  void _dispatchFeedbackForInactiveContextEvent(
+    ChatEvent event, {
+    required _ChatContextSnapshot snapshot,
+  }) {
+    if (!_shouldHandleFeedbackForEvent(event)) {
+      return;
+    }
+    final eventSessionId = _extractEventSessionId(event.properties);
+    unawaited(
+      eventFeedbackDispatcher?.handle(
+        event,
+        sessionTitleHint: _sessionTitleForNotificationInList(
+          eventSessionId,
+          snapshot.sessions,
+        ),
+        isRootSession:
+            eventSessionId == null ||
+            _isRootSessionInList(eventSessionId, snapshot.sessions),
+        isAppInForeground: _isAppInForeground,
+        currentSessionId: _isChatRouteActive ? _currentSession?.id : null,
+      ),
+    );
+  }
+
+  String? _sessionTitleForNotificationInList(
+    String? sessionId,
+    List<ChatSession> sessions,
+  ) {
+    final normalizedSessionId = sessionId?.trim();
+    if (normalizedSessionId == null || normalizedSessionId.isEmpty) {
+      return null;
+    }
+    for (final session in sessions) {
+      if (session.id != normalizedSessionId) {
+        continue;
+      }
+      return SessionTitleFormatter.displayTitle(
+        time: session.time,
+        title: session.title,
+      );
+    }
+    return null;
+  }
+
+  void _dismissResolvedInactiveInteractionFeedback(
+    ChatEvent event, {
+    required _ChatContextSnapshot snapshot,
+  }) {
+    switch (event.type) {
+      case 'permission.replied':
+      case 'permission.v2.replied':
+      case 'question.replied':
+      case 'question.rejected':
+      case 'question.v2.replied':
+      case 'question.v2.rejected':
+        final replyPayload = _eventPayloadOrNested(
+          event.properties,
+          const <String>['permission', 'question', 'request', 'info'],
+        );
+        final sessionId =
+            _extractEventSessionId(replyPayload) ??
+            _extractEventSessionId(event.properties);
+        final normalizedSessionId = sessionId?.trim();
+        if (normalizedSessionId == null || normalizedSessionId.isEmpty) {
+          return;
+        }
+        final hasRemainingPermissions =
+            snapshot
+                .pendingPermissionsBySession[normalizedSessionId]
+                ?.isNotEmpty ??
+            false;
+        final hasRemainingQuestions =
+            snapshot
+                .pendingQuestionsBySession[normalizedSessionId]
+                ?.isNotEmpty ??
+            false;
+        if (!hasRemainingPermissions && !hasRemainingQuestions) {
+          unawaited(
+            eventFeedbackDispatcher?.dismissForSession(normalizedSessionId),
+          );
+        }
+    }
   }
 
   void _scheduleCurrentContextRefresh({

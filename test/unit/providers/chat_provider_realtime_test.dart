@@ -41,6 +41,9 @@ import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
+import 'package:codewalk/presentation/services/event_feedback_dispatcher.dart';
+import 'package:codewalk/presentation/services/notification_service.dart';
+import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -62,6 +65,7 @@ void main() {
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
       SettingsProvider? settingsProvider,
       CellularDataSaverService? cellularDataSaverService,
+      EventFeedbackDispatcher? eventFeedbackDispatcher,
     }) {
       return buildChatProvider(
         chatRepository: chatRepository,
@@ -74,6 +78,7 @@ void main() {
         abortSuppressionWindow: abortSuppressionWindow,
         settingsProvider: settingsProvider,
         cellularDataSaverService: cellularDataSaverService,
+        eventFeedbackDispatcher: eventFeedbackDispatcher,
       );
     }
 
@@ -1662,7 +1667,7 @@ void main() {
     );
 
     test(
-      'session.idle from non-current session updates only that status',
+      'session.idle from non-current session marks unread completion',
       () async {
         chatRepository.sessions.add(
           ChatSession(
@@ -1693,6 +1698,68 @@ void main() {
           provider.sessionStatusById['ses_2']?.type,
           SessionStatusType.idle,
         );
+        final attention = provider.sessionAttentionFor('ses_2');
+        expect(attention.hasUnreadCompletion, isTrue);
+        expect(attention.unreadCompletionAt, isNotNull);
+      },
+    );
+
+    test(
+      'session.status idle for selected session not on chat route notifies once',
+      () async {
+        final feedbackDispatcher = _RecordingEventFeedbackDispatcher(
+          settingsProvider: defaultSettingsProvider,
+        );
+        provider = buildProvider(eventFeedbackDispatcher: feedbackDispatcher);
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+        provider.setChatRouteActive(false);
+        feedbackDispatcher.clear();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        var attention = provider.sessionAttentionFor('ses_1');
+        expect(attention.hasUnreadCompletion, isTrue);
+        expect(feedbackDispatcher.handledTypes, contains('session.idle'));
+        expect(feedbackDispatcher.lastCurrentSessionId, isNull);
+        feedbackDispatcher.clear();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(feedbackDispatcher.handledTypes, isEmpty);
+        expect(feedbackDispatcher.dismissedSessionIds, isEmpty);
+        attention = provider.sessionAttentionFor('ses_1');
+        expect(attention.hasUnreadCompletion, isTrue);
+        expect(attention.unreadCompletionAt, isNotNull);
       },
     );
 
@@ -4246,6 +4313,43 @@ void main() {
       },
     );
   });
+}
+
+class _RecordingEventFeedbackDispatcher extends EventFeedbackDispatcher {
+  _RecordingEventFeedbackDispatcher({
+    required SettingsProvider settingsProvider,
+  }) : super(
+         settingsProvider: settingsProvider,
+         notificationService: NotificationService(assumeInitialized: true),
+         soundService: SoundService(),
+       );
+
+  final List<String> handledTypes = <String>[];
+  final List<String> dismissedSessionIds = <String>[];
+  String? lastCurrentSessionId;
+
+  void clear() {
+    handledTypes.clear();
+    dismissedSessionIds.clear();
+    lastCurrentSessionId = null;
+  }
+
+  @override
+  Future<void> handle(
+    ChatEvent event, {
+    String? sessionTitleHint,
+    bool isRootSession = true,
+    bool isAppInForeground = true,
+    String? currentSessionId,
+  }) async {
+    handledTypes.add(event.type);
+    lastCurrentSessionId = currentSessionId;
+  }
+
+  @override
+  Future<void> dismissForSession(String sessionId) async {
+    dismissedSessionIds.add(sessionId);
+  }
 }
 
 class _ThrowingPersistenceLocalDataSource extends InMemoryAppLocalDataSource {

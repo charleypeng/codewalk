@@ -79,11 +79,16 @@ class EventFeedbackDispatcher {
     }
 
     final now = DateTime.now();
-    final last = _lastDispatchByCategory[signal.categoryKey];
+    _lastDispatchByCategory.removeWhere(
+      (_, dispatchedAt) =>
+          now.difference(dispatchedAt) >= const Duration(seconds: 1),
+    );
+    final dispatchKey = '${signal.categoryKey}:${signal.sessionId ?? '-'}';
+    final last = _lastDispatchByCategory[dispatchKey];
     if (last != null && now.difference(last) < const Duration(seconds: 1)) {
       return;
     }
-    _lastDispatchByCategory[signal.categoryKey] = now;
+    _lastDispatchByCategory[dispatchKey] = now;
 
     final soundOption = _settingsProvider.soundFor(signal.soundCategory);
     final soundSource = _settingsProvider.soundSourceFor(signal.soundCategory);

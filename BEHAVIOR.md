@@ -518,11 +518,14 @@
 - **Given** realtime events are connected for the current server and project context
 - **When** an event targets the active/open session
 - **Then** the active session receives the full realtime path, including message snapshots, part deltas, diffs, todos, status, permissions, questions, errors, and final idle signals
+- **When** the selected session is not actually visible because the chat route is inactive
+- **Then** final-completion feedback is treated like background attention instead of being cleared as if the user were viewing the chat
 - **When** an event targets another session in the same project context
 - **Then** CodeWalk keeps only summarized/alertable state hot for that session: deduplicated busy/retry/idle status by type, pending permission/question prompts (including v2 aliases), critical error attention, and root-session final-completion unread attention
 - **Then** non-active sessions do not trigger realtime fallback fetches for full message payloads, and `session.diff` / `todo.updated` payloads are deferred until the session becomes active
 - **When** a global event targets a cached but inactive project context
 - **Then** the cached project snapshot is patched only for session list/status/error/final-completion attention and pending permission/question state
+- **Then** a `session.status` transition to idle may surface the same client-side completion feedback as terminal `session.idle`, while later no-op idle replays do not re-alert that same completed turn
 - **Then** unsupported or detailed inactive-context events only mark that context dirty, so returning to the project renders cache immediately and revalidates through SWR instead of reconciling every background event live
 - **When** the user opens a non-active session
 - **Then** cached content appears first when available, followed by active-session revalidation and session insights loading for authoritative messages, diffs, todos, and status
@@ -792,7 +795,8 @@
 
 - **Given** the active session has changed files available for review
 - **When** `Review changes` is enabled in `Display toggles`
-- **Then** the timeline or desktop utility pane shows the review-changes file list opened on the changed files when that surface is otherwise eligible to render it
+- **Then** the timeline or desktop utility pane shows the review-changes file list when that surface is otherwise eligible to render it
+- **Then** the inline compact/mobile review block starts collapsed and expands only after the user taps it
 - **Then** refreshes and passive session updates preserve the selected file and manually expanded/collapsed diff hunks whenever their file/hunk identity still exists
 - **When** the user disables `Review changes` in `Display toggles`
 - **Then** the review-changes file list block is hidden without clearing or mutating the session diff data
@@ -1601,6 +1605,7 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **When** the app goes to background with a known active response
 - **Then** the app may keep realtime alive briefly, schedule low-data probes every 3 minutes, and run one 5-minute tail probe after the active work settles
 - **Then** the worker fetches only the minimum data needed for completion, error, permission, and question alerts; session metadata is fetched only when needed to label a notification or suppress child-session completion alerts
+- **Then** completion, error, permission, and question alerts are scoped per session so one recently-alerted session does not suppress a different session in the same category
 - **When** `Cellular data saver` is active on mobile data
 - **Then** Android background network checks are suppressed entirely, including periodic probes, active-response probes, and tail probes
 - **When** the user disables Android background alerts in Settings
