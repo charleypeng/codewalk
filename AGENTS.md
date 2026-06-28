@@ -33,7 +33,9 @@
 ## Commands
 
 - Do not use `make precommit` directly for normal CodeWalk validation. Prefer `make check` and `make android` separately.
-- After meaningful code changes, run `make check` before docs-only cleanup or commit.
+- During implementation, prefer the narrowest useful validation: focused unit/widget tests, targeted `flutter analyze <paths>`, or package-specific checks for the files changed.
+- Run `make check` only at validation gates: after the code is stable and before the first code commit, before release/push when no current passing `make check` covers the final code state, or after broad/cross-cutting changes that targeted checks cannot cover.
+- After reviewer-requested micro-fixes, do not automatically rerun `make check`; run focused validation for the touched area, and rerun `make check` only when the fix changes shared infrastructure, dependencies, generated files, l10n, build configuration, or otherwise invalidates the prior full check.
 - If only static text/docs changed, `make check` and `make android` are not required unless the edit affects build/release instructions.
 - When the user needs a testable Android build, run `HEY_CAPTION="specific caption" make android` after checks pass.
 - Use a specific upload caption. Avoid generic captions like `Latest adjustments made`.
@@ -44,10 +46,10 @@
 When the user explicitly asks for `flow`, follow this order:
 
 1. Implement the change.
-2. Run `make check`.
+2. Run focused validation while iterating, then run `make check` once when the code is stable.
 3. Commit if committing was requested or project policy requires it.
 4. Run the reviewer loop for the commit.
-5. Apply only judge-approved fixes and repeat review when warranted.
+5. Apply only judge-approved fixes, validate them with focused checks by default, and repeat review when warranted.
 6. Run `HEY_CAPTION="specific caption" make android` when an APK is useful and supported.
 7. Notify and send the final report.
 8. Suggest the next task from GitHub Issues when useful.
