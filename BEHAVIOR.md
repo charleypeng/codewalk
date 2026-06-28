@@ -329,6 +329,18 @@
 - **Then** removing a closed project from history hides that exact project path from the closed-project history across reloads until the user explicitly reopens or re-enters that path again
 - **Then** selector actions are serialized so repeated rapid taps do not trigger overlapping switch/reopen/close/archive operations
 
+### Per-project icons are local and user-discovered
+
+- **Given** the user has an open or closed project row in the sidebar or project context picker
+- **When** the user taps `Find project icon`
+- **Then** CodeWalk scans that project's local directory tree for `favicon.ico`, `favicon.png`, `favicon.svg`, `favicon.jpg`, `favicon.jpeg`, or `favicon.webp`
+- **Then** generated/heavy folders such as `.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `Pods`, and platform build output folders are skipped
+- **Then** if multiple favicons are found, the shortest relative path wins so root-level favicons are preferred over deeply nested ones
+- **Then** supported icons up to 5 MB are copied into CodeWalk app support storage and rendered in project rows, recent-session project chips, and the project-context header
+- **Then** ICO files are stored as PNG after local decoding; PNG, JPEG, SVG, and WebP bytes are stored as local app data without external network calls
+- **Then** when no supported icon is found, the icon is unreadable/oversized, discovery is unavailable on the platform, or rendering fails, CodeWalk keeps the default `Symbols.folder_open` fallback
+- **Then** OpenCode project payloads remain unchanged; icon metadata is CodeWalk-local personalization only
+
 ### Quick Open searches names and contents
 
 - **Given** a connected server and an active project context

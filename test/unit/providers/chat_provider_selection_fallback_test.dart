@@ -5,7 +5,6 @@ import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
-import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';

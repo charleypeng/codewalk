@@ -49,6 +49,7 @@ import '../../domain/usecases/watch_global_chat_events.dart';
 import '../../presentation/providers/app_provider.dart';
 import '../../presentation/providers/chat_provider.dart';
 import '../../presentation/providers/locale_provider.dart';
+import '../../presentation/providers/project_icon_provider.dart';
 import '../../presentation/providers/project_provider.dart';
 import '../../presentation/providers/quota_provider.dart';
 import '../../presentation/providers/settings_provider.dart';
@@ -58,6 +59,8 @@ import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/moonshine_model_manager.dart';
 import '../../presentation/services/notification_service.dart';
 import '../../presentation/services/parakeet_model_manager.dart';
+import '../../presentation/services/project_icon_discovery_service.dart';
+import '../../presentation/services/project_icon_store.dart';
 import '../../presentation/services/read_aloud_service.dart';
 import '../../presentation/services/sensevoice_model_manager.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
@@ -145,6 +148,8 @@ Future<void> init() async {
     () => OpenCodeTitleGenerator(dio: sl<DioClient>().dio),
   );
   sl.registerLazySingleton(UpdateCheckService.new);
+  sl.registerLazySingleton(createProjectIconStore);
+  sl.registerLazySingleton(createProjectIconDiscoveryService);
 
   // Repositories
   sl.registerLazySingleton<AppRepository>(
@@ -248,6 +253,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<ProjectProvider>(
     () => ProjectProvider(projectRepository: sl(), localDataSource: sl()),
+  );
+
+  sl.registerLazySingleton<ProjectIconProvider>(
+    () => ProjectIconProvider(store: sl(), discoveryService: sl()),
   );
 
   sl.registerLazySingleton<SettingsProvider>(

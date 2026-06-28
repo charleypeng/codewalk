@@ -156,7 +156,9 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 Text(
                   currentProject == null
                       ? 'No active context'
-                      : context.l10n.workspaceCurrentDirectory(currentDirectoryFull),
+                      : context.l10n.workspaceCurrentDirectory(
+                          currentDirectoryFull,
+                        ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -199,7 +201,10 @@ extension _ChatPageSelectorFlow on _ChatPageState {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
               children: [
-                _buildSelectorSectionHeader(dialogContext, context.l10n.workspaceOpenProjects),
+                _buildSelectorSectionHeader(
+                  dialogContext,
+                  context.l10n.workspaceOpenProjects,
+                ),
                 for (final project in projectProvider.openProjects)
                   _buildOpenProjectTile(
                     dialogContext: dialogContext,
@@ -223,7 +228,10 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                   ),
                 if (projectProvider.closedProjects.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  _buildSelectorSectionHeader(dialogContext, context.l10n.workspaceClosedProjects),
+                  _buildSelectorSectionHeader(
+                    dialogContext,
+                    context.l10n.workspaceClosedProjects,
+                  ),
                   for (final project in projectProvider.closedProjects)
                     Builder(
                       builder: (_) {
@@ -241,7 +249,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                                     project.id,
                                   ),
                                 ),
-                          leading: const Icon(Symbols.folder_off, size: 20),
+                          leading: ProjectIcon(project: project, size: 20),
                           title: Text(
                             displayName,
                             overflow: TextOverflow.ellipsis,
@@ -250,16 +258,33 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                             _directoryLabel(project.path),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Symbols.delete_outline_rounded),
-                            tooltip: context.l10n.chatRemoveDisplayNameHistory(displayName),
-                            onPressed: selectorActionInFlight
-                                ? null
-                                : () => unawaited(
-                                    _archiveClosedProjectFromSelector(
-                                      project.id,
-                                    ),
-                                  ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ProjectIconDiscoveryButton(
+                                key: ValueKey<String>(
+                                  'selector_closed_project_icon_find_${project.id}',
+                                ),
+                                project: project,
+                                tooltip: 'Find project icon',
+                                enabled: !selectorActionInFlight,
+                                onResult: _showProjectIconDiscoveryResult,
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Symbols.delete_outline_rounded,
+                                ),
+                                tooltip: context.l10n
+                                    .chatRemoveDisplayNameHistory(displayName),
+                                onPressed: selectorActionInFlight
+                                    ? null
+                                    : () => unawaited(
+                                        _archiveClosedProjectFromSelector(
+                                          project.id,
+                                        ),
+                                      ),
+                              ),
+                            ],
                           ),
                         );
                       },

@@ -2206,9 +2206,9 @@ Build on top of ADR-038 (still the runtime contract) and add the parts of the fi
 
 ## ADR-040: Client-Owned Per-Project Icon Discovery (2026-06-19)
 
-**Status**: Accepted for implementation planning.
+**Status**: Accepted
 
-**Related**: ADR-002 (Context Isolation), ADR-022 (Unified Project Context Controls), ADR-023 (Official OpenCode contract-first compatibility), issue #68, follow-up issue #73.
+**Related**: ADR-002 (Context Isolation), ADR-022 (Unified Project Context Controls), ADR-023 (Official OpenCode contract-first compatibility), issue #68, issue #73 (implemented).
 
 ### Context
 
@@ -2246,16 +2246,17 @@ Implement project icons as local CodeWalk metadata, not as OpenCode project stat
 - ⚠ Local filesystem traversal must stay off the UI isolate and must enforce depth/entry/byte limits to avoid jank.
 - ❌ Automatic discovery, custom upload, icon presets, SVG recoloring, manifest parsing, and external favicon services are intentionally out of scope for the first implementation.
 
-### Key Files Planned
+**Note** (issue #73): The ADR-023-compliant client-owned implementation is in place. Discovery is user-initiated, icon bytes and metadata live under app support storage, OpenCode project payloads remain unchanged, and no network favicon services were introduced.
 
-- `lib/presentation/services/project_icon_store.dart` — local icon metadata and byte storage.
-- `lib/presentation/services/project_icon_discovery_service.dart` — bounded local filesystem discovery.
-- `lib/presentation/widgets/project_icon.dart` — shared rendering and fallback widget.
-- `lib/domain/entities/project.dart` and `lib/data/models/project_model.dart` — remain server-contract compatible; any icon metadata must be local and optional.
-- `lib/presentation/pages/chat_page/chat_page_scaffold.dart` — project group and recent-session project affordances.
-- `lib/presentation/pages/chat_page/chat_page_chrome.dart` and `chat_page_workspace_controller.dart` — project selector/workspace controls.
-- `CODEBASE.md` — map the local project icon subsystem after implementation.
-- Ref: issue #68, follow-up issue #73, OpenChamber `project-icon-routes.js`, OpenChamber `fs/search.js`, OpenChamber `projectMeta.ts`.
+### Key Files
+
+- **Project icon models / store / discovery service** — local CodeWalk-owned models, icon byte + metadata persistence under app support storage, and bounded `favicon.*` filesystem discovery (no OpenCode payload coupling, no network services).
+- **`ProjectIconProvider`** — state owner orchestrating discovery and storage for the chat sidebar and selector surfaces.
+- **`ProjectIcon` / `ProjectIconDiscoveryButton`** — shared renderer with `Symbols.folder_open` fallback and the explicit user-initiated discovery affordance.
+- **Chat sidebar / selector integration** — sidebar group entries and project selector surfaces consume `ProjectIconProvider` to render per-project icons.
+- **Tests**: `test/unit/services/project_icon_*_test.dart`, `test/widget/project_icon_test.dart`.
+- **CODEBASE.md** — maps the local project icon subsystem.
+- Ref: issue #68, issue #73, OpenChamber `project-icon-routes.js`, OpenChamber `fs/search.js`, OpenChamber `projectMeta.ts`.
 
 ---
 

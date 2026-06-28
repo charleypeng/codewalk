@@ -262,7 +262,18 @@ extension _ChatPageScaffold on _ChatPageState {
                                         key: const ValueKey<String>(
                                           'conversations_project_context_button',
                                         ),
-                                        icon: const Icon(Symbols.folder_open),
+                                        icon:
+                                            projectProvider.currentProject ==
+                                                null
+                                            ? const Icon(Symbols.folder_open)
+                                            : ProjectIcon(
+                                                project: projectProvider
+                                                    .currentProject!,
+                                                size: 20,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
                                         onPressed: () => unawaited(
                                           _openProjectSelectorDialog(),
                                         ),
@@ -922,8 +933,8 @@ extension _ChatPageScaffold on _ChatPageState {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Symbols.folder_open,
+                                  ProjectIcon(
+                                    project: project,
                                     size: 13,
                                     color: projectLabelColor,
                                   ),
@@ -1053,8 +1064,8 @@ extension _ChatPageScaffold on _ChatPageState {
               contentPadding: EdgeInsets.symmetric(
                 horizontal: isMobileLayout ? 6 : 8,
               ),
-              leading: Icon(
-                Symbols.folder_open,
+              leading: ProjectIcon(
+                project: project,
                 size: 20,
                 color: selected ? selectedForeground : secondaryForeground,
               ),
@@ -1107,6 +1118,13 @@ extension _ChatPageScaffold on _ChatPageState {
                         color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
+                  ProjectIconDiscoveryButton(
+                    key: ValueKey<String>('project_icon_find_${project.id}'),
+                    project: project,
+                    tooltip: 'Find project icon',
+                    color: selected ? selectedForeground : secondaryForeground,
+                    onResult: _showProjectIconDiscoveryResult,
+                  ),
                   const SizedBox(width: 6),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),

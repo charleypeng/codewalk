@@ -19,6 +19,7 @@ import 'presentation/pages/app_shell_page.dart';
 import 'presentation/providers/app_provider.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/locale_provider.dart';
+import 'presentation/providers/project_icon_provider.dart';
 import 'presentation/providers/project_provider.dart';
 import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
@@ -75,6 +76,7 @@ class MyApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => di.sl<ProjectProvider>()),
+        ChangeNotifierProvider(create: (_) => di.sl<ProjectIconProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<ChatProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<QuotaProvider>()),
         ChangeNotifierProvider(
