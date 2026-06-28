@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.159.0 - 2026-06-28
+
+- feat(projects): discover per-project icons
+
 ## v1.158.0 - 2026-06-28
 
 - fix(projects): clarify open folder flow
