@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.158.0 - 2026-06-28
+
+- fix(projects): clarify open folder flow
+
 ## v1.157.0 - 2026-06-27
 
 - docs(web): document Cloudflare Pages deploy
