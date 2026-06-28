@@ -4756,9 +4756,36 @@ void main() {
     await tester.tap(find.text('Open project folder...'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Browse directories'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('workspace_selected_directory_preview'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey<String>('workspace_selected_directory_preview'),
+        ),
+        matching: find.text('/repo/a'),
+      ),
+      findsOneWidget,
+    );
+
     await tester.enterText(
       find.byKey(const ValueKey<String>('workspace_base_directory_input')),
       '/repo/custom',
+    );
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey<String>('workspace_selected_directory_preview'),
+        ),
+        matching: find.text('/repo/custom'),
+      ),
+      findsOneWidget,
     );
     await tester.tap(find.text('Open folder'));
     await tester.pumpAndSettle();
@@ -5034,12 +5061,98 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('/repo/a/feature-search'), findsOneWidget);
+    final directoryField = tester.widget<TextField>(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+    );
+    expect(directoryField.controller?.text, '/repo/a/feature-search');
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey<String>('workspace_selected_directory_preview'),
+        ),
+        matching: find.text('/repo/a/feature-search'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Open folder'));
     await tester.pumpAndSettle();
 
     expect(provider.projectProvider.currentDirectory, '/repo/a/feature-search');
+  });
+
+  testWidgets('open project folder ignores stale suggestion responses', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final suggestionCompleter = Completer<void>();
+    final projectRepository =
+        FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+            ],
+          )
+          ..searchResultsByQuery['feature'] = <FileNode>[
+            const FileNode(
+              path: '/repo/a/feature-search',
+              name: 'feature-search',
+              type: FileNodeType.directory,
+            ),
+          ]
+          ..findFilesDelay = (_) => suggestionCompleter.future;
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open project folder...'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+      'feature',
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+      '',
+    );
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey<String>('workspace_directory_suggestions')),
+      findsNothing,
+    );
+
+    suggestionCompleter.complete();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('workspace_directory_suggestions')),
+      findsNothing,
+    );
+    expect(find.text('/repo/a/feature-search'), findsNothing);
   });
 
   testWidgets('open project folder supports browsing directories dynamically', (

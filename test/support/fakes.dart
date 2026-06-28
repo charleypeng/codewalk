@@ -2203,6 +2203,7 @@ class FakeProjectRepository implements ProjectRepository {
   Failure? directoryFailure;
   Failure? fileContentFailure;
   Future<void> Function(String path)? listFilesDelay;
+  Future<void> Function(String query)? findFilesDelay;
   String? lastCreatedWorktreeName;
   String? lastCreatedWorktreeDirectory;
   final Set<String> gitDirectories = <String>{};
@@ -2387,6 +2388,9 @@ class FakeProjectRepository implements ProjectRepository {
     String? type,
     int limit = 50,
   }) async {
+    if (findFilesDelay != null) {
+      await findFilesDelay!(query);
+    }
     if (directoryFailure != null) {
       return Left(directoryFailure!);
     }

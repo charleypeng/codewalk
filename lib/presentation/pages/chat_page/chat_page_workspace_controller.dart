@@ -156,6 +156,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
             void scheduleDirectorySuggestions() {
               final rawInput = baseDirectoryController.text.trim();
               suggestionDebounce?.cancel();
+              final requestId = ++suggestionRequestId;
               if (rawInput.isEmpty) {
                 setDialogState(() {
                   loadingSuggestions = false;
@@ -164,9 +165,9 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                 return;
               }
 
-              final requestId = ++suggestionRequestId;
               setDialogState(() {
                 loadingSuggestions = true;
+                directorySuggestions = const <FileNode>[];
               });
 
               suggestionDebounce = Timer(
@@ -213,116 +214,164 @@ extension _ChatPageWorkspaceController on _ChatPageState {
               );
             }
 
-            void submitSelectedDirectory() {
-              final baseDirectory = baseDirectoryController.text.trim();
-              if (!dialogContext.mounted || baseDirectory.isEmpty) {
+            String selectedDirectoryPreview() {
+              final typed = baseDirectoryController.text.trim();
+              return typed.isEmpty ? defaultDirectory : typed;
+            }
+
+            void setDirectoryText(String value) {
+              baseDirectoryController.value = TextEditingValue(
+                text: value,
+                selection: TextSelection.collapsed(offset: value.length),
+              );
+            }
+
+            Future<void> browseDirectories() async {
+              final picked = await _openDirectoryPicker(
+                initialDirectory: selectedDirectoryPreview(),
+              );
+              if (!dialogContext.mounted || picked == null) {
                 return;
               }
-              Navigator.of(dialogContext).pop(baseDirectory);
+              setDirectoryText(picked);
+              scheduleDirectorySuggestions();
+            }
+
+            void submitSelectedDirectory() {
+              final selectedDirectory = selectedDirectoryPreview().trim();
+              if (!dialogContext.mounted || selectedDirectory.isEmpty) {
+                return;
+              }
+              Navigator.of(dialogContext).pop(selectedDirectory);
             }
 
             return ModalPrimaryActionShortcuts(
               onPrimaryAction: submitSelectedDirectory,
               child: AlertDialog(
-                title: const Text('Open project folder'),
+                title: Text(context.l10n.workspaceOpenProjectFolder),
                 content: SizedBox(
                   width: 420,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        key: const ValueKey<String>(
-                          'workspace_base_directory_input',
-                        ),
-                        controller: baseDirectoryController,
-                        autofocus: true,
-                        onChanged: (_) => scheduleDirectorySuggestions(),
-                        decoration: InputDecoration(
-                          labelText: context.l10n.workspaceProjectDirectory,
-                          hintText: context.l10n.workspaceProjectHint,
-                          helperText:
-                              'Choose any folder to open as project context.',
-                          suffixIcon: IconButton(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
                             key: const ValueKey<String>(
                               'workspace_open_directory_picker_button',
                             ),
-                            tooltip: context.l10n.workspaceBrowseDirs,
-                            onPressed: () async {
-                              final picked = await _openDirectoryPicker(
-                                initialDirectory:
-                                    baseDirectoryController.text.trim().isEmpty
-                                    ? defaultDirectory
-                                    : baseDirectoryController.text.trim(),
-                              );
-                              if (!dialogContext.mounted || picked == null) {
-                                return;
-                              }
-                              baseDirectoryController.text = picked;
-                              scheduleDirectorySuggestions();
-                            },
+                            onPressed: browseDirectories,
                             icon: const Icon(Symbols.folder_open),
+                            label: Text(context.l10n.workspaceBrowseDirs),
                           ),
                         ),
-                      ),
-                      if (loadingSuggestions) ...[
-                        const SizedBox(height: 8),
-                        const LinearProgressIndicator(
-                          key: ValueKey<String>(
-                            'workspace_directory_suggestions_loading',
-                          ),
-                        ),
-                      ],
-                      if (directorySuggestions.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        Text(
-                          'Suggestions',
-                          style: Theme.of(dialogContext).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 220),
-                          child: Material(
-                            key: const ValueKey<String>(
-                              'workspace_directory_suggestions',
-                            ),
+                        Container(
+                          key: const ValueKey<String>(
+                            'workspace_selected_directory_preview',
+                          ),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
                             color: Theme.of(
                               dialogContext,
-                            ).colorScheme.surfaceContainerLow,
+                            ).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: directorySuggestions.length,
-                              separatorBuilder: (_, _) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final suggestion = directorySuggestions[index];
-                                return ListTile(
-                                  key: ValueKey<String>(
-                                    'workspace_directory_suggestion_${suggestion.path}',
-                                  ),
-                                  dense: true,
-                                  leading: const Icon(Symbols.folder),
-                                  title: Text(fileBasename(suggestion.path)),
-                                  subtitle: Text(
-                                    suggestion.path,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  onTap: () {
-                                    baseDirectoryController.text =
-                                        suggestion.path;
-                                    setDialogState(() {
-                                      directorySuggestions = const <FileNode>[];
-                                    });
-                                  },
-                                );
-                              },
-                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                context.l10n.workspaceProjectDirectory,
+                                style: Theme.of(
+                                  dialogContext,
+                                ).textTheme.labelMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                selectedDirectoryPreview(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          key: const ValueKey<String>(
+                            'workspace_base_directory_input',
+                          ),
+                          controller: baseDirectoryController,
+                          autofocus: true,
+                          onChanged: (_) => scheduleDirectorySuggestions(),
+                          decoration: InputDecoration(
+                            labelText: context.l10n.workspaceProjectDirectory,
+                            hintText: context.l10n.workspaceProjectHint,
+                            helperText: context.l10n.workspaceChooseFolderOpen,
+                          ),
+                        ),
+                        if (loadingSuggestions) ...[
+                          const SizedBox(height: 8),
+                          const LinearProgressIndicator(
+                            key: ValueKey<String>(
+                              'workspace_directory_suggestions_loading',
+                            ),
+                          ),
+                        ],
+                        if (directorySuggestions.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            context.l10n.workspaceSuggestions,
+                            style: Theme.of(dialogContext).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 220),
+                            child: Material(
+                              key: const ValueKey<String>(
+                                'workspace_directory_suggestions',
+                              ),
+                              color: Theme.of(
+                                dialogContext,
+                              ).colorScheme.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(12),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                itemCount: directorySuggestions.length,
+                                separatorBuilder: (_, _) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final suggestion =
+                                      directorySuggestions[index];
+                                  return ListTile(
+                                    key: ValueKey<String>(
+                                      'workspace_directory_suggestion_${suggestion.path}',
+                                    ),
+                                    dense: true,
+                                    leading: const Icon(Symbols.folder),
+                                    title: Text(fileBasename(suggestion.path)),
+                                    subtitle: Text(
+                                      suggestion.path,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    onTap: () {
+                                      setDirectoryText(suggestion.path);
+                                      setDialogState(() {
+                                        directorySuggestions =
+                                            const <FileNode>[];
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
                 actions: [
@@ -332,7 +381,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                   ),
                   FilledButton(
                     onPressed: submitSelectedDirectory,
-                    child: const Text('Open folder'),
+                    child: Text(context.l10n.workspaceOpenFolder),
                   ),
                 ],
               ),
