@@ -32,9 +32,18 @@ class EventFeedbackDispatcher {
   /// called via `unawaited()` from the event reducer, so a notification-layer
   /// failure must not crash the app or leave an unhandled async error.
   Future<void> dismissForSession(String sessionId) async {
+    final task = AppLogger.beginTask(
+      'notification_dismiss',
+      tags: const <String>{'notification:dismiss'},
+      context: <String, Object?>{
+        'sessionId': AppLogger.safeContextId(sessionId),
+      },
+    );
     try {
       await _notificationService.clearNotificationsForSession(sessionId);
+      task.end();
     } catch (error, stackTrace) {
+      task.end(status: 'error', error: error, stackTrace: stackTrace);
       AppLogger.warn(
         'dismissForSession failed',
         error: error,

@@ -1812,6 +1812,49 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **When** the user opens `Slowest performance logs`
 - **Then** CodeWalk shows matching performance entries ordered from slowest to fastest using the active log filters
 
+### Debug log entries carry tags and metrics
+
+- **Given** app logging is enabled
+- **When** the code calls `AppLogger.debug/info/warn/error(...)` with optional `tags:` and `metrics:` arguments
+- **Then** every captured `LogEntry` stores `tags` as an immutable `Set<String>` and `metrics` as an immutable `Map<String, Object?>` alongside the existing level, message, error, and stack trace
+- **Then** sensitive metric keys (`authorization`, `token`, `password`, `secret`, `cookie`, `apikey`, `api_key`) are redacted to `***` and arbitrary text metric values flow through the same Basic/Bearer sanitizer used for messages
+- **Then** the rendered log tile surfaces the sorted tag list and the optional `context` sub-map from `metrics` so producers can group entries without changing the message format
+- **Then** the underlying `developer.log` message is prefixed with `[tag1 tag2] ` so `flutter logs` / `adb logcat` can also filter by tag
+
+### Task timing emits start and end events with shared taskId
+
+- **Given** app logging is enabled
+- **When** the code calls `AppLogger.beginTask(name, {tags, context})` and then `task.end()` (directly or via `runTask` / `runPerformanceTask` / `measurePerformance` / `recordPerformanceTask`)
+- **Then** a `phase:start` debug entry is recorded at `beginTask` time carrying the auto-generated `taskId`, the normalized `task:<name>` tag, the producer-supplied tags, and an immutable `context` map merged into `metrics`
+- **Then** a matching `phase:end` entry is recorded at `end` time carrying the same `taskId`, a `status:<status>` tag, the `elapsedMs` metric, the merged context, and a level that escalates with status (`debug` for `ok`, `warn` for `canceled`, `error` for `error`)
+- **Then** the same `taskId` appears on both start and end entries so the logs page and exports can correlate them even when other entries interleave
+- **Then** `runPerformanceTask` and `measurePerformance` capture a single end entry under the `performance` tag with `elapsedMs`, `operation`, and `status` metrics, and only emit when `Measure performance` is enabled
+- **Then** tasks started inside another task's zone inherit a `parent:<taskId>` tag in their entry tags so nested instrumentation can be traced
+
+### Logs page can filter by tag, including custom tags
+
+- **Given** app logging is enabled and tags are present in captured entries
+- **When** the user opens `App Logs`
+- **Then** the toolbar exposes a third filter row labelled with the localized tag-filter text containing `FilterChip`s for the built-in tags `task:select_session`, `task:load_messages`, `task:load_sessions`, `task:hydrate_cache`, `task:realtime_event`, `network:http`, `network:sse`, `cache:read`, `cache:write`
+- **Then** a custom-tag action chip opens a dialog whose submitted text is added to the active tag set so the user can filter by any tag a producer emitted (`task:custom_name`, `chat:settlement`, `notification:tap`, etc.)
+- **Then** entries are kept when any of their tags intersect the active set, the level and time filters still apply, and the search box also matches against the rendered tag list and the serialized metrics payload
+
+### Logs page shows slowest tasks for selected task tags
+
+- **Given** the user has selected at least one tag starting with `task:` in the logs toolbar
+- **When** the user opens the timer action in the app bar
+- **Then** a bottom sheet lists every captured `phase:end` entry (non-performance) whose tags intersect the selected task tags and that has an `elapsedMs` metric, ordered from slowest to fastest
+- **Then** each row shows the normalized task name, the localized duration label, and the localized task status (`ok` / `canceled` / `error`)
+- **Then** when no `task:` tag is selected but performance entries exist, the same timer action opens the slowest-performance sheet; the action stays disabled while logging is disabled or when the buffer holds no qualifying entries for the active filters
+
+### Exported logs include tags and metrics
+
+- **Given** the user has applied (or left default) filters on `App Logs`
+- **When** the user triggers the export action in the toolbar
+- **Then** each exported line includes the entry's sorted tags and a JSON-encoded `Metrics` block alongside the timestamp, level, message, error, and stack trace
+- **When** an exported entry is restored through `LogEntry.fromJson`
+- **Then** the original `tags` set and `metrics` map are restored so round-tripping between exports and offline analysis preserves the task timing payload (`taskId`, `status`, `elapsedMs`, `operation`, `parentTaskId`, `context`)
+
 ---
 
 ## Anti-behaviors

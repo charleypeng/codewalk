@@ -1811,6 +1811,9 @@ class AppLocalizationsBn extends AppLocalizations {
   String get logsFilterAll => 'সব';
 
   @override
+  String get logsFilterByTag => 'ট্যাগ';
+
+  @override
   String get logsLevel => 'স্তর';
 
   @override
@@ -1839,6 +1842,9 @@ class AppLocalizationsBn extends AppLocalizations {
       'বর্তমান ফিল্টারের সাথে কোনো পারফরম্যান্স লগ মেলে না।';
 
   @override
+  String get logsNoTaskData => 'বর্তমান ফিল্টারের সাথে কোনো কাজ মেলে না।';
+
+  @override
   String logsPerformanceDuration(int elapsedMs) {
     return '$elapsedMs ms';
   }
@@ -1865,6 +1871,29 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => 'সবচেয়ে ধীর পারফরম্যান্স লগ';
+
+  @override
+  String get logsSlowestTasks => 'সবচেয়ে ধীর কাজ';
+
+  @override
+  String get logsTagCustomHint => 'ট্যাগের নাম (যেমন: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => 'কাস্টম...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs ms';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'বাতিল';
+
+  @override
+  String get logsTaskStatusError => 'ত্রুটি';
+
+  @override
+  String get logsTaskStatusOk => 'ঠিক আছে';
 
   @override
   String get logsTimeRange => 'সময় পরিসীমা';

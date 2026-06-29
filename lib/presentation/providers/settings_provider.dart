@@ -1224,11 +1224,21 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
+    final task = AppLogger.beginTask(
+      'settings_persist',
+      tags: const <String>{'settings:persist'},
+      context: <String, Object?>{
+        'loggingEnabled': _settings.loggingEnabled,
+        'performanceLoggingEnabled': _settings.performanceLoggingEnabled,
+      },
+    );
     try {
       await _localDataSource.saveExperienceSettingsJson(
         jsonEncode(_settings.toJson()),
       );
+      task.end();
     } catch (error, stackTrace) {
+      task.end(status: 'error', error: error, stackTrace: stackTrace);
       AppLogger.warn(
         'Failed to persist experience settings',
         error: error,

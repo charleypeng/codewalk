@@ -23,6 +23,26 @@ enum _LogTimeRange {
   final String? label;
 }
 
+const List<String> _commonLogTags = <String>[
+  'task:select_session',
+  'task:load_messages',
+  'task:load_sessions',
+  'task:hydrate_cache',
+  'task:realtime_event',
+  'network:http',
+  'network:sse',
+  'cache:read',
+  'cache:write',
+];
+
+String _taskStatusLabel(BuildContext context, String? status) {
+  return switch (status) {
+    'error' => context.l10n.logsTaskStatusError,
+    'canceled' || 'cancelled' => context.l10n.logsTaskStatusCanceled,
+    _ => context.l10n.logsTaskStatusOk,
+  };
+}
+
 class LogsPage extends StatefulWidget {
   const LogsPage({super.key});
 
@@ -34,6 +54,7 @@ class _LogsPageState extends State<LogsPage> {
   final TextEditingController _searchController = TextEditingController();
   _LogTimeRange _timeRange = _LogTimeRange.fifteenMinutes;
   Set<LogLevel> _levels = LogLevel.values.toSet();
+  Set<String> _tags = const <String>{};
   bool _searchEnabled = false;
   bool _performanceOnly = false;
 
@@ -44,15 +65,21 @@ class _LogsPageState extends State<LogsPage> {
   }
 
   List<LogEntry> _filteredEntries({bool forcePerformance = false}) {
-    return AppLogger.filteredEntries(
+    final entries = AppLogger.filteredEntries(
       timeRange: _timeRange.duration,
       levels: _levels,
-      tags: _performanceOnly || forcePerformance
-          ? const <String>{AppLogger.performanceTag}
-          : null,
+      tags: _tags.isEmpty ? null : _tags,
       query: _searchController.text,
     );
+    if (!_performanceOnly && !forcePerformance) {
+      return entries;
+    }
+    return entries
+        .where((entry) => entry.isPerformance)
+        .toList(growable: false);
   }
+
+  bool get _hasSelectedTaskTag => _tags.any((tag) => tag.startsWith('task:'));
 
   List<LogEntry> _slowestPerformanceEntries() {
     final entries = _filteredEntries(
@@ -66,6 +93,28 @@ class _LogsPageState extends State<LogsPage> {
     return _filteredEntries(
       forcePerformance: true,
     ).any((entry) => entry.elapsedMs != null);
+  }
+
+  List<LogEntry> _slowestTaskEntries() {
+    final selectedTaskTags = _tags
+        .where((tag) => tag.startsWith('task:'))
+        .toSet();
+    final entries = _filteredEntries()
+        .where(
+          (entry) =>
+              entry.isTaskEnd &&
+              !entry.isPerformance &&
+              entry.elapsedMs != null &&
+              (selectedTaskTags.isEmpty ||
+                  entry.tags.intersection(selectedTaskTags).isNotEmpty),
+        )
+        .toList(growable: false);
+    entries.sort((a, b) => b.elapsedMs!.compareTo(a.elapsedMs!));
+    return entries;
+  }
+
+  bool _hasTaskEntries() {
+    return _slowestTaskEntries().isNotEmpty;
   }
 
   void _showSlowestPerformance(BuildContext context) {
@@ -133,6 +182,115 @@ class _LogsPageState extends State<LogsPage> {
     );
   }
 
+  void _showSlowestTasks(BuildContext context) {
+    final entries = _slowestTaskEntries();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.logsSlowestTasks,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    if (entries.isEmpty)
+                      Expanded(
+                        child: Center(child: Text(context.l10n.logsNoTaskData)),
+                      )
+                    else
+                      Expanded(
+                        child: ListView.separated(
+                          controller: scrollController,
+                          itemCount: entries.length,
+                          separatorBuilder: (_, _) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            final elapsedMs = entry.elapsedMs ?? 0;
+                            final operation =
+                                entry.taskOperation ?? entry.message;
+                            final status = _taskStatusLabel(
+                              context,
+                              entry.taskStatus,
+                            );
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                context.l10n.logsTaskDuration(
+                                  elapsedMs,
+                                  operation,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${entry.timestamp.toIso8601String()} • $status',
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showCustomTagDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final tag = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(context.l10n.logsFilterByTag),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: context.l10n.logsTagCustomHint,
+            ),
+            onSubmitted: (value) => Navigator.of(context).pop(value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: Text(context.l10n.commonSave),
+            ),
+          ],
+        );
+      },
+    );
+    if (context.mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    } else {
+      controller.dispose();
+    }
+    final normalized = tag?.trim();
+    if (normalized == null || normalized.isEmpty || !context.mounted) {
+      return;
+    }
+    setState(() {
+      _tags = Set<String>.from(_tags)..add(normalized);
+    });
+  }
+
   Future<void> _copyLogs(BuildContext context, List<LogEntry> entries) async {
     final text = AppLogger.exportEntries(entries: entries);
     await Clipboard.setData(ClipboardData(text: text));
@@ -188,12 +346,19 @@ class _LogsPageState extends State<LogsPage> {
           ValueListenableBuilder<UnmodifiableListView<LogEntry>>(
             valueListenable: AppLogger.entries,
             builder: (context, _, _) {
-              final hasPerformanceData = _hasPerformanceEntries();
+              final showTasks = _hasSelectedTaskTag;
+              final hasData = showTasks
+                  ? _hasTaskEntries()
+                  : _hasPerformanceEntries();
               return IconButton(
                 icon: const Icon(Symbols.timer),
-                tooltip: context.l10n.logsSlowestPerformance,
-                onPressed: loggingEnabled && hasPerformanceData
-                    ? () => _showSlowestPerformance(context)
+                tooltip: showTasks
+                    ? context.l10n.logsSlowestTasks
+                    : context.l10n.logsSlowestPerformance,
+                onPressed: loggingEnabled && hasData
+                    ? () => showTasks
+                          ? _showSlowestTasks(context)
+                          : _showSlowestPerformance(context)
                     : null,
               );
             },
@@ -226,49 +391,73 @@ class _LogsPageState extends State<LogsPage> {
               : const <LogEntry>[];
           final ordered = filtered.reversed.toList(growable: false);
           final totalEntries = loggingEnabled ? entries.length : 0;
+          final toolbarMaxHeight = (MediaQuery.sizeOf(context).height * 0.55)
+              .clamp(220.0, 360.0)
+              .toDouble();
 
           return Column(
             children: [
-              _LogsToolbar(
-                loggingEnabled: loggingEnabled,
-                selectedRange: _timeRange,
-                selectedLevels: _levels,
-                performanceLoggingEnabled:
-                    settingsProvider.performanceLoggingEnabled,
-                performanceFilterOnly: _performanceOnly,
-                onRangeChanged: (value) {
-                  setState(() {
-                    _timeRange = value;
-                  });
-                },
-                onLevelToggled: (level) {
-                  setState(() {
-                    if (_levels.contains(level)) {
-                      if (_levels.length > 1) {
-                        _levels = Set<LogLevel>.from(_levels)..remove(level);
-                      }
-                    } else {
-                      _levels = Set<LogLevel>.from(_levels)..add(level);
-                    }
-                  });
-                },
-                onLoggingChanged: (enabled) {
-                  unawaited(
-                    context.read<SettingsProvider>().setLoggingEnabled(enabled),
-                  );
-                },
-                onPerformanceLoggingChanged: (enabled) {
-                  unawaited(
-                    context
-                        .read<SettingsProvider>()
-                        .setPerformanceLoggingEnabled(enabled),
-                  );
-                },
-                onPerformanceFilterToggled: () {
-                  setState(() {
-                    _performanceOnly = !_performanceOnly;
-                  });
-                },
+              SizedBox(
+                height: toolbarMaxHeight,
+                child: SingleChildScrollView(
+                  child: _LogsToolbar(
+                    loggingEnabled: loggingEnabled,
+                    selectedRange: _timeRange,
+                    selectedLevels: _levels,
+                    selectedTags: _tags,
+                    performanceLoggingEnabled:
+                        settingsProvider.performanceLoggingEnabled,
+                    performanceFilterOnly: _performanceOnly,
+                    onRangeChanged: (value) {
+                      setState(() {
+                        _timeRange = value;
+                      });
+                    },
+                    onLevelToggled: (level) {
+                      setState(() {
+                        if (_levels.contains(level)) {
+                          if (_levels.length > 1) {
+                            _levels = Set<LogLevel>.from(_levels)
+                              ..remove(level);
+                          }
+                        } else {
+                          _levels = Set<LogLevel>.from(_levels)..add(level);
+                        }
+                      });
+                    },
+                    onTagToggled: (tag) {
+                      setState(() {
+                        final next = Set<String>.from(_tags);
+                        if (next.contains(tag)) {
+                          next.remove(tag);
+                        } else {
+                          next.add(tag);
+                        }
+                        _tags = next;
+                      });
+                    },
+                    onCustomTagRequested: () => _showCustomTagDialog(context),
+                    onLoggingChanged: (enabled) {
+                      unawaited(
+                        context.read<SettingsProvider>().setLoggingEnabled(
+                          enabled,
+                        ),
+                      );
+                    },
+                    onPerformanceLoggingChanged: (enabled) {
+                      unawaited(
+                        context
+                            .read<SettingsProvider>()
+                            .setPerformanceLoggingEnabled(enabled),
+                      );
+                    },
+                    onPerformanceFilterToggled: () {
+                      setState(() {
+                        _performanceOnly = !_performanceOnly;
+                      });
+                    },
+                  ),
+                ),
               ),
               const Divider(height: 1),
               Expanded(
@@ -333,10 +522,13 @@ class _LogsToolbar extends StatelessWidget {
     required this.loggingEnabled,
     required this.selectedRange,
     required this.selectedLevels,
+    required this.selectedTags,
     required this.performanceLoggingEnabled,
     required this.performanceFilterOnly,
     required this.onRangeChanged,
     required this.onLevelToggled,
+    required this.onTagToggled,
+    required this.onCustomTagRequested,
     required this.onLoggingChanged,
     required this.onPerformanceLoggingChanged,
     required this.onPerformanceFilterToggled,
@@ -345,16 +537,24 @@ class _LogsToolbar extends StatelessWidget {
   final bool loggingEnabled;
   final _LogTimeRange selectedRange;
   final Set<LogLevel> selectedLevels;
+  final Set<String> selectedTags;
   final bool performanceLoggingEnabled;
   final bool performanceFilterOnly;
   final ValueChanged<_LogTimeRange> onRangeChanged;
   final ValueChanged<LogLevel> onLevelToggled;
+  final ValueChanged<String> onTagToggled;
+  final VoidCallback onCustomTagRequested;
   final ValueChanged<bool> onLoggingChanged;
   final ValueChanged<bool> onPerformanceLoggingChanged;
   final VoidCallback onPerformanceFilterToggled;
 
   @override
   Widget build(BuildContext context) {
+    final customTags =
+        selectedTags
+            .where((tag) => !_commonLogTags.contains(tag))
+            .toList(growable: false)
+          ..sort();
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -396,6 +596,38 @@ class _LogsToolbar extends StatelessWidget {
                   ),
                 )
                 .toList(growable: false),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.l10n.logsFilterByTag,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final tag in _commonLogTags)
+                FilterChip(
+                  label: Text(tag),
+                  selected: selectedTags.contains(tag),
+                  onSelected: loggingEnabled ? (_) => onTagToggled(tag) : null,
+                ),
+              for (final tag in customTags)
+                FilterChip(
+                  label: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    child: Text(tag, overflow: TextOverflow.ellipsis),
+                  ),
+                  selected: true,
+                  onSelected: loggingEnabled ? (_) => onTagToggled(tag) : null,
+                ),
+              ActionChip(
+                avatar: const Icon(Symbols.add, size: 18),
+                label: Text(context.l10n.logsTagCustomAction),
+                onPressed: loggingEnabled ? onCustomTagRequested : null,
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           SwitchListTile(
@@ -502,9 +734,18 @@ class _LogTile extends StatelessWidget {
     };
 
     final elapsedMs = entry.elapsedMs;
+    final taskOperation = entry.taskOperation;
+    final taskStatus = entry.taskStatus;
+    final isTaskEnd =
+        entry.isTaskEnd &&
+        !entry.isPerformance &&
+        elapsedMs != null &&
+        taskOperation != null;
     final operation = entry.performanceOperation;
     final status = entry.performanceStatus;
-    final title = entry.isPerformance
+    final title = isTaskEnd
+        ? 'TASK ${context.l10n.logsTaskDuration(elapsedMs, taskOperation)} | ${_taskStatusLabel(context, taskStatus)}'
+        : entry.isPerformance
         ? context.l10n.logsPerformanceTileTitle(
             elapsedMs ?? 0,
             operation ?? entry.message,
@@ -532,17 +773,21 @@ class _LogTile extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        color: isTaskEnd
+            ? colorScheme.tertiaryContainer.withValues(alpha: 0.24)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: isTaskEnd
+              ? colorScheme.tertiary.withValues(alpha: 0.55)
+              : color.withValues(alpha: 0.45),
+        ),
       ),
       child: ListTile(
         title: Text(
           title,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: color,
+            color: isTaskEnd ? colorScheme.tertiary : color,
             fontWeight: FontWeight.w700,
           ),
         ),

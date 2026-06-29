@@ -3257,6 +3257,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get logsFilterAll;
 
+  /// CodeWalk UI string — logsFilterByTag
+  ///
+  /// In en, this message translates to:
+  /// **'Tag'**
+  String get logsFilterByTag;
+
   /// CodeWalk UI string — logsLevel
   ///
   /// In en, this message translates to:
@@ -3305,6 +3311,12 @@ abstract class AppLocalizations {
   /// **'No performance logs match the current filters.'**
   String get logsNoPerformanceData;
 
+  /// CodeWalk UI string — logsNoTaskData
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks match the current filters.'**
+  String get logsNoTaskData;
+
   /// CodeWalk UI string — logsPerformanceDuration
   ///
   /// In en, this message translates to:
@@ -3344,6 +3356,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Slowest performance logs'**
   String get logsSlowestPerformance;
+
+  /// CodeWalk UI string — logsSlowestTasks
+  ///
+  /// In en, this message translates to:
+  /// **'Slowest tasks'**
+  String get logsSlowestTasks;
+
+  /// CodeWalk UI string — logsTagCustomHint
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name (for example: task:select_session)'**
+  String get logsTagCustomHint;
+
+  /// CodeWalk UI string — logsTagCustomAction
+  ///
+  /// In en, this message translates to:
+  /// **'Custom...'**
+  String get logsTagCustomAction;
+
+  /// CodeWalk UI string — logsTaskDuration
+  ///
+  /// In en, this message translates to:
+  /// **'{operation} — {elapsedMs} ms'**
+  String logsTaskDuration(int elapsedMs, String operation);
+
+  /// CodeWalk UI string — logsTaskStatusCanceled
+  ///
+  /// In en, this message translates to:
+  /// **'canceled'**
+  String get logsTaskStatusCanceled;
+
+  /// CodeWalk UI string — logsTaskStatusError
+  ///
+  /// In en, this message translates to:
+  /// **'error'**
+  String get logsTaskStatusError;
+
+  /// CodeWalk UI string — logsTaskStatusOk
+  ///
+  /// In en, this message translates to:
+  /// **'ok'**
+  String get logsTaskStatusOk;
 
   /// CodeWalk UI string — logsTimeRange
   ///

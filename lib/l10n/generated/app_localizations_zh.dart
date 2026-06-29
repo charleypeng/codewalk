@@ -1691,6 +1691,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsFilterAll => '全部';
 
   @override
+  String get logsFilterByTag => '标签';
+
+  @override
   String get logsLevel => '级别';
 
   @override
@@ -1714,6 +1717,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logsNoPerformanceData => '没有符合当前筛选条件的性能日志。';
+
+  @override
+  String get logsNoTaskData => '没有符合当前筛选条件的任务。';
 
   @override
   String logsPerformanceDuration(int elapsedMs) {
@@ -1742,6 +1748,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => '最慢的性能日志';
+
+  @override
+  String get logsSlowestTasks => '最慢的任务';
+
+  @override
+  String get logsTagCustomHint => '标签名称（例如：task:select_session）';
+
+  @override
+  String get logsTagCustomAction => '自定义...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs 毫秒';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => '已取消';
+
+  @override
+  String get logsTaskStatusError => '错误';
+
+  @override
+  String get logsTaskStatusOk => '正常';
 
   @override
   String get logsTimeRange => '时间范围';

@@ -273,6 +273,25 @@ class NotificationService {
       return;
     }
 
+    final task = AppLogger.beginTask(
+      'notification_clear',
+      tags: const <String>{'notification:clear'},
+      context: <String, Object?>{
+        'sessionId': AppLogger.safeContextId(normalizedSessionId),
+      },
+    );
+    try {
+      await _clearNotificationsForSessionNormalized(normalizedSessionId);
+      task.end();
+    } catch (error, stackTrace) {
+      task.end(status: 'error', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> _clearNotificationsForSessionNormalized(
+    String normalizedSessionId,
+  ) async {
     if (kIsWeb) {
       _notificationIdsBySession.remove(normalizedSessionId);
       return;

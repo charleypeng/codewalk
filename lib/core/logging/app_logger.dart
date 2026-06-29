@@ -13,15 +13,19 @@ class AppLogger {
   static const String _name = 'CodeWalk';
   static const int _maxEntries = 1000;
   static const String performanceTag = 'performance';
+  static const String phaseStartTag = 'phase:start';
+  static const String phaseEndTag = 'phase:end';
   static final ValueNotifier<UnmodifiableListView<LogEntry>> _entries =
       ValueNotifier<UnmodifiableListView<LogEntry>>(
         UnmodifiableListView<LogEntry>(const <LogEntry>[]),
       );
   static final List<LogEntry> _buffer = <LogEntry>[];
+  static final Object _taskZoneKey = Object();
   static DateTime _sessionStartedAt = DateTime.now();
   static bool _globalHandlersInstalled = false;
   static bool _loggingEnabled = false;
   static bool _performanceLoggingEnabled = false;
+  static int _taskSequence = 0;
 
   static DateTime get sessionStartedAt => _sessionStartedAt;
   static bool get loggingEnabled => _loggingEnabled;
@@ -206,6 +210,75 @@ class AppLogger {
     );
   }
 
+  static TaskHandle beginTask(
+    String name, {
+    Set<String>? tags,
+    Map<String, Object?>? context,
+  }) {
+    if (kReleaseMode || !_canRecordLogs) {
+      return TaskHandle._disabled(name: name, tags: tags, context: context);
+    }
+
+    final zoneParent = Zone.current[_taskZoneKey];
+    final parent = zoneParent is TaskHandle && !zoneParent.isClosed
+        ? zoneParent
+        : null;
+    final taskId = _nextTaskId();
+    final normalizedName = _normalizeTagValue(name);
+    final handle = TaskHandle._(
+      name: name,
+      normalizedName: normalizedName,
+      taskId: taskId,
+      parentTaskId: parent?.taskId,
+      tags: <String>{
+        'task:$normalizedName',
+        ...?tags,
+        if (parent != null) 'parent:${parent.taskId}',
+      },
+      context: context,
+    );
+    _recordTaskPhase(
+      handle: handle,
+      phase: 'start',
+      status: 'started',
+      elapsed: Duration.zero,
+    );
+    return handle;
+  }
+
+  static T runTask<T>(
+    String name,
+    T Function(TaskHandle task) body, {
+    Set<String>? tags,
+    Map<String, Object?>? context,
+  }) {
+    final task = beginTask(name, tags: tags, context: context);
+    try {
+      final result = runZoned(
+        () => body(task),
+        zoneValues: <Object, Object>{_taskZoneKey: task},
+      );
+      if (result is Future) {
+        return result.then(
+              (value) {
+                task.end();
+                return value;
+              },
+              onError: (Object error, StackTrace stackTrace) {
+                task.end(status: 'error', error: error, stackTrace: stackTrace);
+                Error.throwWithStackTrace(error, stackTrace);
+              },
+            )
+            as T;
+      }
+      task.end();
+      return result;
+    } catch (error, stackTrace) {
+      task.end(status: 'error', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
   static Future<T> runPerformanceTask<T>(
     String operation,
     Future<T> Function() body, {
@@ -303,13 +376,16 @@ class AppLogger {
       return;
     }
     final normalizedOperation = _normalizeTagValue(operation);
+    final taskId = _nextTaskId();
     final entryTags = <String>{
       performanceTag,
       'task:$normalizedOperation',
+      phaseEndTag,
       'status:$status',
       ...?tags,
     };
     final metrics = <String, Object?>{
+      'taskId': taskId,
       'operation': operation,
       'elapsedMs': elapsed.inMilliseconds,
       'status': status,
@@ -341,6 +417,105 @@ class AppLogger {
     return input
         .replaceAllMapped(basicAuth, (m) => '${m.group(1)}***')
         .replaceAllMapped(bearerAuth, (m) => '${m.group(1)}***');
+  }
+
+  static String _nextTaskId() {
+    final sequence = (_taskSequence = (_taskSequence + 1) & 0xfffff);
+    final micros = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+    return '${micros}_${sequence.toRadixString(16)}';
+  }
+
+  static void _endTask(
+    TaskHandle handle, {
+    required String status,
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, Object?>? extraContext,
+  }) {
+    if (handle._closed) {
+      return;
+    }
+    handle._closed = true;
+    handle._stopwatch.stop();
+    if (!handle._enabled || kReleaseMode || !_canRecordLogs) {
+      return;
+    }
+    _recordTaskPhase(
+      handle: handle,
+      phase: 'end',
+      status: _normalizeTaskStatus(status),
+      elapsed: handle._stopwatch.elapsed,
+      error: error,
+      stackTrace: stackTrace,
+      extraContext: extraContext,
+    );
+  }
+
+  static String _normalizeTaskStatus(String status) {
+    final normalized = _normalizeTagValue(status);
+    return switch (normalized) {
+      'error' => 'error',
+      'canceled' || 'cancelled' => 'canceled',
+      _ => 'ok',
+    };
+  }
+
+  static void _recordTaskPhase({
+    required TaskHandle handle,
+    required String phase,
+    required String status,
+    required Duration elapsed,
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, Object?>? extraContext,
+  }) {
+    final isEnd = phase == 'end';
+    final entryTags = <String>{
+      ...handle.tags,
+      isEnd ? phaseEndTag : phaseStartTag,
+      if (isEnd) 'status:$status',
+    };
+    final mergedContext = <String, Object?>{
+      ...?handle.context,
+      ...?extraContext,
+    };
+    final metrics = <String, Object?>{
+      'taskId': handle.taskId,
+      if (handle.parentTaskId != null) 'parentTaskId': handle.parentTaskId,
+      'operation': handle.name,
+      'phase': phase,
+      if (isEnd) 'elapsedMs': elapsed.inMilliseconds,
+      if (isEnd) 'status': status,
+      if (mergedContext.isNotEmpty) 'context': mergedContext,
+    };
+    final message = isEnd
+        ? 'task=${handle.name} status=$status elapsed=${elapsed.inMilliseconds}ms taskId=${handle.taskId}'
+        : 'task=${handle.name} phase=start taskId=${handle.taskId}';
+    final level = switch (status) {
+      'error' => LogLevel.error,
+      'canceled' => LogLevel.warn,
+      _ => LogLevel.debug,
+    };
+    _record(
+      level: level,
+      message: message,
+      error: error,
+      stackTrace: stackTrace,
+      tags: entryTags,
+      metrics: metrics,
+    );
+    developer.log(
+      _formatDeveloperMessage(_sanitize(message), entryTags),
+      name: _name,
+      level: switch (level) {
+        LogLevel.error => 1000,
+        LogLevel.warn => 900,
+        LogLevel.info => 800,
+        LogLevel.debug => 500,
+      },
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   static Map<String, Object?>? _buildPerformanceContext(
@@ -437,9 +612,7 @@ class AppLogger {
       };
     }
     if (value is Iterable) {
-      return value
-          .map((item) => _sanitizeMetricValue(item))
-          .toList(growable: false);
+      return value.map(_sanitizeMetricValue).toList(growable: false);
     }
     return _sanitize(value.toString());
   }
@@ -576,6 +749,74 @@ class AppLogger {
 
 enum LogLevel { debug, info, warn, error }
 
+class TaskHandle {
+  TaskHandle._({
+    required this.name,
+    required this.normalizedName,
+    required this.taskId,
+    required this.parentTaskId,
+    required Set<String> tags,
+    required Map<String, Object?>? context,
+  }) : _enabled = true,
+       tags = Set<String>.unmodifiable(tags),
+       context = context == null
+           ? null
+           : Map<String, Object?>.unmodifiable(context),
+       _stopwatch = Stopwatch()..start();
+
+  TaskHandle._disabled({
+    required String name,
+    Set<String>? tags,
+    Map<String, Object?>? context,
+  }) : name = name,
+       normalizedName = AppLogger._normalizeTagValue(name),
+       taskId = 'disabled',
+       parentTaskId = null,
+       tags = Set<String>.unmodifiable(tags ?? const <String>{}),
+       context = context == null
+           ? null
+           : Map<String, Object?>.unmodifiable(context),
+       _enabled = false,
+       _stopwatch = Stopwatch()..start();
+
+  final String name;
+  final String normalizedName;
+  final String taskId;
+  final String? parentTaskId;
+  final Set<String> tags;
+  final Map<String, Object?>? context;
+  final bool _enabled;
+  final Stopwatch _stopwatch;
+  bool _closed = false;
+
+  Duration get elapsed => _stopwatch.elapsed;
+  bool get isClosed => _closed;
+
+  void end({
+    String status = 'ok',
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, Object?>? extraContext,
+  }) {
+    AppLogger._endTask(
+      this,
+      status: status,
+      error: error,
+      stackTrace: stackTrace,
+      extraContext: extraContext,
+    );
+  }
+
+  void cancel({String? reason}) {
+    end(
+      status: 'canceled',
+      extraContext: reason == null || reason.trim().isEmpty
+          ? null
+          : <String, Object?>{'reason': reason},
+    );
+  }
+}
+
 class LogEntry {
   const LogEntry({
     required this.timestamp,
@@ -595,6 +836,9 @@ class LogEntry {
   final Map<String, Object?>? metrics;
 
   bool get isPerformance => tags.contains(AppLogger.performanceTag);
+  bool get isTask => tags.any((tag) => tag.startsWith('task:'));
+  bool get isTaskStart => tags.contains(AppLogger.phaseStartTag);
+  bool get isTaskEnd => tags.contains(AppLogger.phaseEndTag);
 
   int? get elapsedMs {
     final value = metrics?['elapsedMs'];
@@ -609,6 +853,20 @@ class LogEntry {
 
   String? get performanceOperation => metrics?['operation']?.toString();
   String? get performanceStatus => metrics?['status']?.toString();
+  String? get taskOperation =>
+      metrics?['operation']?.toString() ?? _taskTagName;
+  String? get taskStatus => metrics?['status']?.toString();
+  String? get taskId => metrics?['taskId']?.toString();
+  String? get parentTaskId => metrics?['parentTaskId']?.toString();
+
+  String? get _taskTagName {
+    for (final tag in tags) {
+      if (tag.startsWith('task:')) {
+        return tag.substring('task:'.length);
+      }
+    }
+    return null;
+  }
 
   Map<String, Object?> toJson() {
     final sortedTags = tags.toList(growable: false)..sort();

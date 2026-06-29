@@ -1719,6 +1719,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsFilterAll => 'すべて';
 
   @override
+  String get logsFilterByTag => 'タグ';
+
+  @override
   String get logsLevel => 'レベル';
 
   @override
@@ -1743,6 +1746,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get logsNoPerformanceData => '現在のフィルターに一致するパフォーマンスログはありません。';
+
+  @override
+  String get logsNoTaskData => '現在のフィルターに一致するタスクはありません。';
 
   @override
   String logsPerformanceDuration(int elapsedMs) {
@@ -1771,6 +1777,29 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => '最も遅いパフォーマンスログ';
+
+  @override
+  String get logsSlowestTasks => '最も遅いタスク';
+
+  @override
+  String get logsTagCustomHint => 'タグ名（例: task:select_session）';
+
+  @override
+  String get logsTagCustomAction => 'カスタム...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs ms';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'キャンセル済み';
+
+  @override
+  String get logsTaskStatusError => 'エラー';
+
+  @override
+  String get logsTaskStatusOk => 'ok';
 
   @override
   String get logsTimeRange => '時間範囲';

@@ -1807,6 +1807,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get logsFilterAll => 'تمام';
 
   @override
+  String get logsFilterByTag => 'ٹیگ';
+
+  @override
   String get logsLevel => 'سطح';
 
   @override
@@ -1835,6 +1838,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'موجودہ فلٹرز سے کوئی کارکردگی لاگ نہیں ملتا۔';
 
   @override
+  String get logsNoTaskData => 'موجودہ فلٹرز سے کوئی ٹاسک نہیں ملتا۔';
+
+  @override
   String logsPerformanceDuration(int elapsedMs) {
     return '$elapsedMs ms';
   }
@@ -1861,6 +1867,29 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => 'سب سے سست کارکردگی لاگز';
+
+  @override
+  String get logsSlowestTasks => 'سب سے سست ٹاسکس';
+
+  @override
+  String get logsTagCustomHint => 'ٹیگ کا نام (مثلاً: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => 'حسب ضرورت...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs ms';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'منسوخ';
+
+  @override
+  String get logsTaskStatusError => 'خرابی';
+
+  @override
+  String get logsTaskStatusOk => 'ٹھیک';
 
   @override
   String get logsTimeRange => 'وقت کی حد';

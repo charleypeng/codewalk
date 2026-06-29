@@ -256,6 +256,26 @@ extension _ChatProviderEventReducerOps on ChatProvider {
   }
 
   void _applyChatEvent(ChatEvent event) {
+    final eventSessionId = _extractEventSessionId(event.properties);
+    final task = AppLogger.beginTask(
+      'realtime_event',
+      tags: const <String>{'chat:realtime'},
+      context: <String, Object?>{
+        'eventType': event.type,
+        if (eventSessionId != null)
+          'sessionId': AppLogger.safeContextId(eventSessionId),
+      },
+    );
+    try {
+      _applyChatEventInner(event);
+      task.end();
+    } catch (error, stackTrace) {
+      task.end(status: 'error', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  void _applyChatEventInner(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
     // Register event in dedup buffer so the global stream skips duplicates.
     final dedupKey = _composeEventDeduplicationKey(event);

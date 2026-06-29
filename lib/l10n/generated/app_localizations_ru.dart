@@ -1830,6 +1830,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logsFilterAll => 'Все';
 
   @override
+  String get logsFilterByTag => 'Тег';
+
+  @override
   String get logsLevel => 'Уровень';
 
   @override
@@ -1856,6 +1859,9 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get logsNoPerformanceData =>
       'Нет журналов производительности для текущих фильтров.';
+
+  @override
+  String get logsNoTaskData => 'Нет задач для текущих фильтров.';
 
   @override
   String logsPerformanceDuration(int elapsedMs) {
@@ -1885,6 +1891,29 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get logsSlowestPerformance =>
       'Самые медленные журналы производительности';
+
+  @override
+  String get logsSlowestTasks => 'Самые медленные задачи';
+
+  @override
+  String get logsTagCustomHint => 'Имя тега (например: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => 'Своя...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs мс';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'отменено';
+
+  @override
+  String get logsTaskStatusError => 'ошибка';
+
+  @override
+  String get logsTaskStatusOk => 'ok';
 
   @override
   String get logsTimeRange => 'Временной диапазон';

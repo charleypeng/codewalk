@@ -2392,6 +2392,13 @@ Historically, a `performanceLoggingEnabled` flag existed in `ExperienceSettings`
 
 This ADR is fully compliant with ADR-023. It introduces no OpenCode server contract change, no new endpoints, and no modification to existing request/response schemas or lifecycle semantics. The toggle, the migration, the buffer-clear behavior, and the lazy performance instrumentation are all client-side concerns operating on local preference state. Server-authoritative behavior and event semantics are unchanged.
 
+**Note** (issue #71): Extends the default-off app logging surface introduced in this ADR with structured task timing and aggregation — strictly client-side, no OpenCode contract change, fully ADR-023 compliant:
+1. **`TaskHandle` abstraction** — a typed wrapper for instrumentation sites to start/finish structured task timings when app logging is enabled, capturing duration, status, tags, and metrics in the in-memory log buffer.
+2. **Tags / phase metrics** — task timings emit structured tags such as `task:<name>`, `phase:start`, `phase:end`, and `status:<status>` plus metrics such as `taskId`, `parentTaskId`, `operation`, `elapsedMs`, and `context`.
+3. **Tag filtering** — the App Logs surface gains a tag-based filter so users can narrow the view to a single category (e.g. `task:load_sessions`, `network:sse`, `cache:read`) without touching settings or restarting the session.
+4. **Slowest tasks** — the existing bounded in-memory buffer powers a "slowest tasks" view for selected `task:*` tag scopes, kept coherent with `loggingEnabled` and cleared on disable alongside the existing buffer-clear behavior.
+5. **Local-only, ADR-023 compliant** — `TaskHandle`, tags, tag filtering, and the slowest-tasks view are entirely client-side. No new endpoints, request/response schemas, payload fields, or lifecycle semantics on the OpenCode server. Preserves ADR-023 without requiring an exception.
+
 ### Key Files
 
 - `lib/core/logging/app_logger.dart` — in-memory app log buffer, global emission gate, effective performance gate, clear-on-disable, and lazy `contextBuilder` support

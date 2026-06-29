@@ -52,14 +52,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('App Logs'), findsOneWidget);
-    expect(find.textContaining('Showing 2 of 2 entries'), findsOneWidget);
+    expect(find.textContaining('Showing 4 of 4 entries'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Search logs'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'beta');
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Showing 1 of 2 entries'), findsOneWidget);
+    expect(find.textContaining('Showing 1 of 4 entries'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Clear logs'));
     await tester.pumpAndSettle();
@@ -99,6 +99,7 @@ void main() {
 
     expect(find.textContaining('visible message'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Enable app logging'));
     await tester.tap(find.text('Enable app logging'));
     await tester.pumpAndSettle();
 
@@ -130,6 +131,7 @@ void main() {
     expect(AppLogger.loggingEnabled, isFalse);
     expect(find.text('Logging is disabled'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Enable app logging'));
     await tester.tap(find.text('Enable app logging'));
     await tester.pumpAndSettle();
 
@@ -139,6 +141,7 @@ void main() {
     expect(provider.performanceLoggingEnabled, isFalse);
     expect(AppLogger.performanceLoggingEnabled, isFalse);
 
+    await tester.ensureVisible(find.text('Measure performance'));
     await tester.tap(find.text('Measure performance'));
     await tester.pumpAndSettle();
 
@@ -159,6 +162,7 @@ void main() {
     );
     expect(find.textContaining('regular message'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Performance'));
     await tester.tap(find.text('Performance'));
     await tester.pumpAndSettle();
 
@@ -170,5 +174,65 @@ void main() {
 
     expect(find.text('Slowest performance logs'), findsOneWidget);
     expect(find.text('load_messages'), findsOneWidget);
+  });
+
+  testWidgets('filters by task tag and opens slowest tasks', (tester) async {
+    final provider = buildSettingsProvider(InMemoryAppLocalDataSource());
+    await provider.setLoggingEnabled(true);
+
+    AppLogger.info('regular message');
+    final task = AppLogger.beginTask('select_session');
+    task.end();
+
+    await tester.pumpWidget(
+      localizedMaterialApp(home: logsPageWithProvider(provider)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.textContaining('regular message'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.textContaining('regular message'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('task:select_session'));
+    await tester.tap(find.text('task:select_session'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('regular message'), findsNothing);
+    expect(find.textContaining('TASK select_session'), findsOneWidget);
+    expect(find.textContaining('Showing 2 of 5 entries'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Slowest tasks'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Slowest tasks'), findsOneWidget);
+    expect(find.textContaining('select_session'), findsWidgets);
+  });
+
+  testWidgets('adds and displays a custom tag filter', (tester) async {
+    final provider = buildSettingsProvider(InMemoryAppLocalDataSource());
+    await provider.setLoggingEnabled(true);
+
+    AppLogger.info('custom tagged message', tags: const <String>{'custom:tag'});
+    AppLogger.info('plain message');
+
+    await tester.pumpWidget(
+      localizedMaterialApp(home: logsPageWithProvider(provider)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Custom...'));
+    await tester.tap(find.text('Custom...'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).last, 'custom:tag');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('custom:tag'), findsOneWidget);
+    expect(find.textContaining('custom tagged message'), findsOneWidget);
+    expect(find.textContaining('plain message'), findsNothing);
   });
 }

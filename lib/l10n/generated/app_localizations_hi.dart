@@ -1814,6 +1814,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get logsFilterAll => 'सभी';
 
   @override
+  String get logsFilterByTag => 'टैग';
+
+  @override
   String get logsLevel => 'स्तर (Level)';
 
   @override
@@ -1842,6 +1845,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'मौजूदा फ़िल्टर से कोई प्रदर्शन लॉग मेल नहीं खाता।';
 
   @override
+  String get logsNoTaskData => 'मौजूदा फ़िल्टर से कोई कार्य मेल नहीं खाता।';
+
+  @override
   String logsPerformanceDuration(int elapsedMs) {
     return '$elapsedMs ms';
   }
@@ -1868,6 +1874,29 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => 'सबसे धीमे प्रदर्शन लॉग';
+
+  @override
+  String get logsSlowestTasks => 'सबसे धीमे कार्य';
+
+  @override
+  String get logsTagCustomHint => 'टैग नाम (उदा.: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => 'कस्टम...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs ms';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'रद्द';
+
+  @override
+  String get logsTaskStatusError => 'त्रुटि';
+
+  @override
+  String get logsTaskStatusOk => 'ठीक';
 
   @override
   String get logsTimeRange => 'समय सीमा (Time range)';

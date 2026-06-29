@@ -236,6 +236,7 @@ class DioClient {
     int? statusCode,
     Object? error,
     StackTrace? stackTrace,
+    Set<String> tags = const <String>{'network:http'},
   }) {
     if (!AppLogger.loggingEnabled || !AppLogger.performanceLoggingEnabled) {
       return;
@@ -249,7 +250,7 @@ class DioClient {
       operation: 'network_request',
       elapsed: Duration(milliseconds: elapsedMs),
       status: status,
-      tags: const <String>{'network:http'},
+      tags: tags,
       context: <String, Object?>{
         'method': options.method.toUpperCase(),
         'hostHash': AppLogger.safeContextId(options.uri.host),
@@ -278,6 +279,12 @@ class DioClient {
 
           _applyStickySessionHeader(options);
 
+          if (AppLogger.loggingEnabled &&
+              (AppLogger.performanceLoggingEnabled || !kReleaseMode)) {
+            options.extra[_performanceRequestStartMsKey] =
+                DateTime.now().millisecondsSinceEpoch;
+          }
+
           if (!kReleaseMode && AppLogger.loggingEnabled) {
             final uri = options.uri.toString();
             AppLogger.debug('[SSE] --> ${options.method.toUpperCase()} $uri');
@@ -287,6 +294,12 @@ class DioClient {
         onResponse: (response, handler) {
           _rememberStickySessionId(
             response.headers.value(_stickySessionIdHeader),
+          );
+          _recordHttpPerformance(
+            response.requestOptions,
+            status: 'ok',
+            statusCode: response.statusCode,
+            tags: const <String>{'network:sse'},
           );
           handler.next(response);
         },
@@ -302,6 +315,14 @@ class DioClient {
               '[SSE] xx> ${status ?? 'ERR'} $method $uri: ${error.type.name}',
             );
           }
+          _recordHttpPerformance(
+            error.requestOptions,
+            status: 'error',
+            statusCode: error.response?.statusCode,
+            error: error,
+            stackTrace: error.stackTrace,
+            tags: const <String>{'network:sse'},
+          );
           handler.next(error);
         },
       ),

@@ -1722,6 +1722,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsFilterAll => '전체';
 
   @override
+  String get logsFilterByTag => '태그';
+
+  @override
   String get logsLevel => '로그 레벨';
 
   @override
@@ -1746,6 +1749,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get logsNoPerformanceData => '현재 필터와 일치하는 성능 로그가 없습니다.';
+
+  @override
+  String get logsNoTaskData => '현재 필터와 일치하는 작업이 없습니다.';
 
   @override
   String logsPerformanceDuration(int elapsedMs) {
@@ -1774,6 +1780,29 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => '가장 느린 성능 로그';
+
+  @override
+  String get logsSlowestTasks => '가장 느린 작업';
+
+  @override
+  String get logsTagCustomHint => '태그 이름(예: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => '사용자 지정...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs ms';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => '취소됨';
+
+  @override
+  String get logsTaskStatusError => '오류';
+
+  @override
+  String get logsTaskStatusOk => '정상';
 
   @override
   String get logsTimeRange => '시간 범위';

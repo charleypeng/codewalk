@@ -2242,6 +2242,10 @@
   "@logsFilterAll": {
     "description": "CodeWalk UI string — logsFilterAll"
   },
+  "logsFilterByTag": "Tag",
+  "@logsFilterByTag": {
+    "description": "CodeWalk UI string — logsFilterByTag"
+  },
   "logsLevel": "Level",
   "@logsLevel": {
     "description": "CodeWalk UI string — logsLevel"
@@ -2273,6 +2277,10 @@
   "logsNoPerformanceData": "No performance logs match the current filters.",
   "@logsNoPerformanceData": {
     "description": "CodeWalk UI string — logsNoPerformanceData"
+  },
+  "logsNoTaskData": "No tasks match the current filters.",
+  "@logsNoTaskData": {
+    "description": "CodeWalk UI string — logsNoTaskData"
   },
   "logsPerformanceDuration": "{elapsedMs} ms",
   "@logsPerformanceDuration": {
@@ -2309,6 +2317,38 @@
   "logsSlowestPerformance": "Slowest performance logs",
   "@logsSlowestPerformance": {
     "description": "CodeWalk UI string — logsSlowestPerformance"
+  },
+  "logsSlowestTasks": "Slowest tasks",
+  "@logsSlowestTasks": {
+    "description": "CodeWalk UI string — logsSlowestTasks"
+  },
+  "logsTagCustomHint": "Tag name (for example: task:select_session)",
+  "@logsTagCustomHint": {
+    "description": "CodeWalk UI string — logsTagCustomHint"
+  },
+  "logsTagCustomAction": "Custom...",
+  "@logsTagCustomAction": {
+    "description": "CodeWalk UI string — logsTagCustomAction"
+  },
+  "logsTaskDuration": "{operation} — {elapsedMs} ms",
+  "@logsTaskDuration": {
+    "description": "CodeWalk UI string — logsTaskDuration"
+,
+    "placeholders": {
+      "elapsedMs": { "type": "int" },
+      "operation": { "type": "String" }
+    }  },
+  "logsTaskStatusCanceled": "canceled",
+  "@logsTaskStatusCanceled": {
+    "description": "CodeWalk UI string — logsTaskStatusCanceled"
+  },
+  "logsTaskStatusError": "error",
+  "@logsTaskStatusError": {
+    "description": "CodeWalk UI string — logsTaskStatusError"
+  },
+  "logsTaskStatusOk": "ok",
+  "@logsTaskStatusOk": {
+    "description": "CodeWalk UI string — logsTaskStatusOk"
   },
   "logsTimeRange": "Time range",
   "@logsTimeRange": {

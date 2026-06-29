@@ -74,16 +74,31 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     if (normalized.isEmpty || projectProvider.currentDirectory == normalized) {
       return;
     }
+    final task = AppLogger.beginTask(
+      'directory_switch',
+      tags: const <String>{'project:switch'},
+      context: <String, Object?>{
+        if (projectProvider.currentDirectory != null)
+          'fromHash': AppLogger.safeContextId(projectProvider.currentDirectory),
+        'toHash': AppLogger.safeContextId(normalized),
+      },
+    );
     final chatProvider = context.read<ChatProvider>();
-    await _runProjectScopeTransition(() async {
-      final switched = await projectProvider.switchToDirectoryContext(
-        normalized,
-      );
-      if (!switched) {
-        return;
-      }
-      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
-    });
+    try {
+      await _runProjectScopeTransition(() async {
+        final switched = await projectProvider.switchToDirectoryContext(
+          normalized,
+        );
+        if (!switched) {
+          return;
+        }
+        await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+      });
+      task.end();
+    } catch (error, stackTrace) {
+      task.end(status: 'error', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<void> _closeProjectContext(String projectId) async {

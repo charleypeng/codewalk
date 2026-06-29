@@ -1782,6 +1782,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logsFilterAll => 'الكل';
 
   @override
+  String get logsFilterByTag => 'الوسم';
+
+  @override
   String get logsLevel => 'المستوى';
 
   @override
@@ -1807,6 +1810,9 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get logsNoPerformanceData =>
       'لا توجد سجلات أداء تطابق عوامل التصفية الحالية.';
+
+  @override
+  String get logsNoTaskData => 'لا توجد مهام تطابق عوامل التصفية الحالية.';
 
   @override
   String logsPerformanceDuration(int elapsedMs) {
@@ -1835,6 +1841,29 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => 'أبطأ سجلات الأداء';
+
+  @override
+  String get logsSlowestTasks => 'أبطأ المهام';
+
+  @override
+  String get logsTagCustomHint => 'اسم الوسم (مثال: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => 'مخصص...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs مللي ثانية';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'ملغاة';
+
+  @override
+  String get logsTaskStatusError => 'خطأ';
+
+  @override
+  String get logsTaskStatusOk => 'حسنًا';
 
   @override
   String get logsTimeRange => 'النطاق الزمني';

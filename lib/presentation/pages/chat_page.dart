@@ -37,7 +37,6 @@ import '../../domain/entities/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
-import '../providers/project_icon_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/quota_provider.dart';
 import '../providers/settings_provider.dart';
@@ -1397,8 +1396,21 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _scheduleNotificationTap(NotificationTapPayload payload) {
-    _pendingNotificationTap = payload;
-    _notificationTapTask ??= _drainNotificationTapQueue();
+    AppLogger.runTask(
+      'notification_tap_schedule',
+      (_) {
+        _pendingNotificationTap = payload;
+        _notificationTapTask ??= _drainNotificationTapQueue();
+      },
+      tags: const <String>{'notification:tap'},
+      context: <String, Object?>{
+        'category': payload.category,
+        if (payload.sessionId != null)
+          'sessionId': AppLogger.safeContextId(payload.sessionId),
+        if (payload.directory != null)
+          'directoryHash': AppLogger.safeContextId(payload.directory),
+      },
+    );
   }
 
   Future<void> _drainNotificationTapQueue() async {

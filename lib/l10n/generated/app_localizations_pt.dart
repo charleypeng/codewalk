@@ -1827,6 +1827,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get logsFilterAll => 'Todos';
 
   @override
+  String get logsFilterByTag => 'Tag';
+
+  @override
   String get logsLevel => 'Nível';
 
   @override
@@ -1852,6 +1855,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get logsNoPerformanceData =>
       'Nenhum log de desempenho corresponde aos filtros atuais.';
+
+  @override
+  String get logsNoTaskData => 'Nenhuma tarefa corresponde aos filtros atuais.';
 
   @override
   String logsPerformanceDuration(int elapsedMs) {
@@ -1880,6 +1886,29 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get logsSlowestPerformance => 'Logs de desempenho mais lentos';
+
+  @override
+  String get logsSlowestTasks => 'Tarefas mais lentas';
+
+  @override
+  String get logsTagCustomHint => 'Nome da tag (ex.: task:select_session)';
+
+  @override
+  String get logsTagCustomAction => 'Personalizada...';
+
+  @override
+  String logsTaskDuration(int elapsedMs, String operation) {
+    return '$operation — $elapsedMs ms';
+  }
+
+  @override
+  String get logsTaskStatusCanceled => 'cancelada';
+
+  @override
+  String get logsTaskStatusError => 'erro';
+
+  @override
+  String get logsTaskStatusOk => 'ok';
 
   @override
   String get logsTimeRange => 'Intervalo de tempo';
