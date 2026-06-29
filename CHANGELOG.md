@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.160.0 - 2026-06-29
+
+- feat(logging): add tagged task timing
+
 ## v1.159.2 - 2026-06-28
 
 - fix(chat): restore session alerts and collapse review changes
