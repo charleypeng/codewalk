@@ -37,6 +37,7 @@
 - Run `make check` only at validation gates: after the code is stable and before the first code commit, before release/push when no current passing `make check` covers the final code state, or after broad/cross-cutting changes that targeted checks cannot cover.
 - After reviewer-requested micro-fixes, do not automatically rerun `make check`; run focused validation for the touched area, and rerun `make check` only when the fix changes shared infrastructure, dependencies, generated files, l10n, build configuration, or otherwise invalidates the prior full check.
 - If only static text/docs changed, `make check` and `make android` are not required unless the edit affects build/release instructions.
+- For Flutter/Dart commands in main-agent and subagent shells, prepend `export PATH="$HOME/flutter/bin:$PATH" && ...` because non-interactive shells may not have the Flutter SDK on `PATH`.
 - When the user needs a testable Android build, run `HEY_CAPTION="specific caption" make android` after checks pass.
 - Use a specific upload caption. Avoid generic captions like `Latest adjustments made`.
 - Android APK builds do not work reliably on ARM64 Linux hosts; use GitHub Actions for release APKs. `make check` works on ARM64.
@@ -66,4 +67,4 @@ When the user explicitly asks for `flow`, follow this order:
 
 - `dart tool/i18n/generate_arb.dart` is destructive to newer `.arb` keys. Never run it globally unless `arb_strings.dart` is synchronized with every existing key.
 - Safe translation workflow: generate missing-key payload, translate it, then merge back with `tool/i18n/merge_back_translations.py`.
-- Subagent shells do not source `.bashrc`/`.zshrc`; prepend `export PATH="$HOME/flutter/bin:$PATH"` before Flutter commands in subagent contexts.
+- Non-interactive shells do not always source `.bashrc`/`.zshrc`; prepend `export PATH="$HOME/flutter/bin:$PATH"` before Flutter commands in main-agent and subagent contexts.
