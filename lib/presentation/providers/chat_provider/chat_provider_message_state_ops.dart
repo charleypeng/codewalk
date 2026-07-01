@@ -724,7 +724,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         modelId != null &&
         modelId.isNotEmpty) {
       final provider = _providers.where((p) => p.id == providerId).firstOrNull;
-      if (provider != null && provider.models.containsKey(modelId)) {
+      if (provider != null && _isUserSelectableModelId(provider, modelId)) {
         final messageVariant = message.variant?.trim();
 
         // Update provider/model first so stored variant resolution

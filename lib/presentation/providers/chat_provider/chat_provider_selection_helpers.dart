@@ -21,6 +21,46 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     return modelKey.substring(separatorIndex + 1);
   }
 
+  bool _isUserSelectableModel(Provider provider, Model model) {
+    return isUserSelectableModel(
+      provider: provider,
+      model: model,
+      connectedProviderIds: _connectedProviderIds,
+    );
+  }
+
+  bool _isUserSelectableModelId(Provider provider, String modelId) {
+    final model = provider.models[modelId];
+    return model != null && _isUserSelectableModel(provider, model);
+  }
+
+  bool _hasUserSelectableModels(Provider provider) {
+    return provider.models.values.any(
+      (model) => _isUserSelectableModel(provider, model),
+    );
+  }
+
+  String? _firstUserSelectableModelId(Provider provider) {
+    for (final entry in provider.models.entries) {
+      if (_isUserSelectableModel(provider, entry.value)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  Provider? _userSelectableProviderById(String? providerId) {
+    final normalized = providerId?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    final provider = _providers.where((p) => p.id == normalized).firstOrNull;
+    if (provider == null || !_hasUserSelectableModels(provider)) {
+      return null;
+    }
+    return provider;
+  }
+
   Map<String, dynamic>? _configQueryParameters() {
     final directory = projectProvider.currentDirectory?.trim();
     if (directory == null || directory.isEmpty) {
@@ -232,7 +272,8 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       final provider = _providers
           .where((p) => p.id == remoteProviderId)
           .firstOrNull;
-      if (provider != null && provider.models.containsKey(remoteModelId)) {
+      if (provider != null &&
+          _isUserSelectableModelId(provider, remoteModelId)) {
         if (_selectedProviderId != remoteProviderId ||
             _selectedModelId != remoteModelId) {
           _selectedProviderId = remoteProviderId;
@@ -727,7 +768,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
 
     // Validate that the provider and model still exist in the catalog.
     final provider = _providers.where((p) => p.id == providerId).firstOrNull;
-    if (provider == null || !provider.models.containsKey(modelId)) {
+    if (provider == null || !_isUserSelectableModelId(provider, modelId)) {
       return false;
     }
 
@@ -744,7 +785,8 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
 
     // Resolve variant from the message variant if available, otherwise from the persisted per-model map.
     final messageVariant = lastMetadataMessage.variant?.trim();
-    final resolvedVariant = (messageVariant != null && messageVariant.isNotEmpty)
+    final resolvedVariant =
+        (messageVariant != null && messageVariant.isNotEmpty)
         ? messageVariant
         : _resolveStoredVariantForSelection();
     if (_selectedVariantId != resolvedVariant) {
@@ -770,7 +812,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       );
       // Persist as an explicit override so subsequent opens are fast
       // (cache-first, no message scan needed).
-        _storeCurrentSessionSelectionOverride(isExplicit: true);
+      _storeCurrentSessionSelectionOverride(isExplicit: true);
       unawaited(_persistSelection(syncRemote: false));
     }
 

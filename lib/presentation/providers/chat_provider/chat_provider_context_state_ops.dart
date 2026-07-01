@@ -98,7 +98,8 @@ extension _ChatProviderContextStateOps on ChatProvider {
     final provider = _providers
         .where((p) => p.id == override.providerId)
         .firstOrNull;
-    if (provider == null || !provider.models.containsKey(override.modelId)) {
+    if (provider == null ||
+        !_isUserSelectableModelId(provider, override.modelId)) {
       _removeSessionSelectionOverride(sessionId);
       // Override is stale — try the message fallback as a recovery path.
       return _restoreSelectionFromMessages(sessionId);
@@ -152,8 +153,7 @@ extension _ChatProviderContextStateOps on ChatProvider {
     // precedence over non-explicit overrides but not over explicit ones
     // (Feature 7).
     if (!override.isExplicit) {
-      final messageFallbackChanged =
-          _restoreSelectionFromMessages(sessionId);
+      final messageFallbackChanged = _restoreSelectionFromMessages(sessionId);
       if (messageFallbackChanged) {
         return true;
       }

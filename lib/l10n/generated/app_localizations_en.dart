@@ -1913,6 +1913,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelFavorites => 'Favorites';
 
   @override
+  String get modelFree => 'Free';
+
+  @override
   String get modelLabelBaseEnglish => 'Base (English)';
 
   @override

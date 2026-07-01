@@ -80,7 +80,7 @@ void main() {
             defaultModels: const <String, String>{
               'provider_a': 'model_reasoning',
             },
-            connected: const <String>['provider_a'],
+            connected: const <String>['provider_a', 'provider_b'],
           ),
         );
         appRepository.agentsResult = const Right(<Agent>[
@@ -1226,7 +1226,7 @@ void main() {
               ),
             ],
             defaultModels: const <String, String>{'provider_a': 'model_a'},
-            connected: const <String>['provider_a'],
+            connected: const <String>['provider_a', 'provider_b'],
           ),
         );
 
@@ -1455,7 +1455,7 @@ void main() {
               ),
             ],
             defaultModels: const <String, String>{'provider_a': 'model_a'},
-            connected: const <String>[],
+            connected: const <String>['provider_b'],
           ),
         );
 

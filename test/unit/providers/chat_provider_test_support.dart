@@ -177,6 +177,9 @@ String? variantPayloadValueFromPatch(
 Model testModel(
   String id, {
   Map<String, ModelVariant> variants = const <String, ModelVariant>{},
+  ModelCost cost = const ModelCost(input: 0.001, output: 0.002),
+  bool hidden = false,
+  String? status,
 }) {
   return Model(
     id: id,
@@ -186,10 +189,12 @@ Model testModel(
     reasoning: false,
     temperature: true,
     toolCall: false,
-    cost: const ModelCost(input: 0.001, output: 0.002),
+    cost: cost,
     limit: const ModelLimit(context: 1000, output: 100),
     options: const <String, dynamic>{},
     variants: variants,
+    hidden: hidden,
+    status: status,
   );
 }
 

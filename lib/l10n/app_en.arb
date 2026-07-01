@@ -2378,6 +2378,10 @@
   "@modelFavorites": {
     "description": "CodeWalk UI string — modelFavorites"
   },
+  "modelFree": "Free",
+  "@modelFree": {
+    "description": "CodeWalk UI string — modelFree"
+  },
   "modelLabelBaseEnglish": "Base (English)",
   "@modelLabelBaseEnglish": {
     "description": "CodeWalk UI string — modelLabelBaseEnglish"

@@ -92,6 +92,105 @@ void main() {
     );
 
     test(
+      'initializeProviders falls back to dynamic OpenCode Zen free models',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'openai',
+                name: 'OpenAI',
+                env: const <String>[],
+                models: <String, Model>{'gpt-4o': testModel('gpt-4o')},
+              ),
+              Provider(
+                id: 'opencode',
+                name: 'OpenCode',
+                env: const <String>[],
+                models: <String, Model>{
+                  'paid-zen': testModel('paid-zen'),
+                  'old-free': testModel(
+                    'old-free',
+                    cost: const ModelCost(input: 0, output: 0),
+                    status: 'deprecated',
+                  ),
+                  'big-pickle': testModel(
+                    'big-pickle',
+                    cost: const ModelCost(input: 0, output: 0),
+                  ),
+                },
+              ),
+            ],
+            defaultModels: const <String, String>{
+              'openai': 'gpt-4o',
+              'opencode': 'paid-zen',
+            },
+            connected: const <String>[],
+          ),
+        );
+
+        await provider.initializeProviders();
+
+        expect(provider.selectedProviderId, 'opencode');
+        expect(provider.selectedModelId, 'big-pickle');
+
+        await provider.setSelectedModelByProvider(
+          providerId: 'openai',
+          modelId: 'gpt-4o',
+        );
+        expect(provider.selectedProviderId, 'opencode');
+        expect(provider.selectedModelId, 'big-pickle');
+
+        await provider.setSelectedModelByProvider(
+          providerId: 'opencode',
+          modelId: 'paid-zen',
+        );
+        expect(provider.selectedModelId, 'big-pickle');
+
+        await provider.setSelectedModelByProvider(
+          providerId: 'opencode',
+          modelId: 'old-free',
+        );
+        expect(provider.selectedModelId, 'big-pickle');
+      },
+    );
+
+    test('provider catalog cache preserves model hidden and status', () async {
+      appRepository.providersResult = Right(
+        ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'provider_a',
+              name: 'Provider A',
+              env: const <String>[],
+              models: <String, Model>{
+                'visible': testModel('visible'),
+                'hidden': testModel('hidden', hidden: true),
+                'deprecated': testModel('deprecated', status: 'deprecated'),
+              },
+            ),
+          ],
+          defaultModels: const <String, String>{'provider_a': 'visible'},
+          connected: const <String>['provider_a'],
+        ),
+      );
+
+      await provider.initializeProviders();
+
+      final cachedProvider = buildProvider();
+      appRepository.providersResult = const Left(
+        NetworkFailure('provider refresh failed'),
+      );
+
+      await cachedProvider.initializeProviders();
+
+      final models = cachedProvider.providers.single.models;
+      expect(models['hidden']?.hidden, isTrue);
+      expect(models['deprecated']?.status, 'deprecated');
+      expect(cachedProvider.selectedModelId, 'visible');
+    });
+
+    test(
       'initializeProviders restores cached provider catalog before revalidation',
       () async {
         appRepository.providersResult = Right(
@@ -112,7 +211,7 @@ void main() {
         await provider.initializeProviders();
 
         final cachedProvider = buildProvider();
-        appRepository.providersResult = Left(
+        appRepository.providersResult = const Left(
           NetworkFailure('provider refresh failed'),
         );
 
@@ -159,7 +258,7 @@ void main() {
               ),
             ],
             defaultModels: const <String, String>{'provider_a': 'model_a'},
-            connected: const <String>['provider_a'],
+            connected: const <String>['provider_a', 'provider_b'],
           ),
         );
 
@@ -253,7 +352,7 @@ void main() {
               ),
             ],
             defaultModels: const <String, String>{'provider_a': 'model_a'},
-            connected: const <String>['provider_a'],
+            connected: const <String>['provider_a', 'provider_b'],
           ),
         );
 
@@ -301,7 +400,7 @@ void main() {
               ),
             ],
             defaultModels: const <String, String>{'provider_a': 'model_a'},
-            connected: const <String>['provider_a'],
+            connected: const <String>['provider_a', 'provider_b'],
           ),
         );
 

@@ -1961,6 +1961,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get modelFavorites => 'Favoris';
 
   @override
+  String get modelFree => 'Gratuit';
+
+  @override
   String get modelLabelBaseEnglish => 'Base (Anglais)';
 
   @override

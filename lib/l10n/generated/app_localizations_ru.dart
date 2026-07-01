@@ -1937,6 +1937,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get modelFavorites => 'Избранное';
 
   @override
+  String get modelFree => 'Бесплатно';
+
+  @override
   String get modelLabelBaseEnglish => 'Base (английский)';
 
   @override

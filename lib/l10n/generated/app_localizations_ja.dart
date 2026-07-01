@@ -1823,6 +1823,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modelFavorites => 'お気に入り';
 
   @override
+  String get modelFree => '無料';
+
+  @override
   String get modelLabelBaseEnglish => 'ベース (英語)';
 
   @override

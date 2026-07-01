@@ -40,6 +40,7 @@ class Model extends Equatable {
     this.modalities,
     this.openWeights,
     this.hidden = false,
+    this.status,
   });
   final String id;
   final String name;
@@ -57,6 +58,7 @@ class Model extends Equatable {
   final Map<String, dynamic>? modalities;
   final bool? openWeights;
   final bool hidden;
+  final String? status;
 
   @override
   List<Object?> get props => [
@@ -76,7 +78,31 @@ class Model extends Equatable {
     modalities,
     openWeights,
     hidden,
+    status,
   ];
+}
+
+const String openCodeZenProviderId = 'opencode';
+
+bool isOpenCodeZenFreeModel({
+  required String providerId,
+  required Model model,
+}) {
+  return providerId == openCodeZenProviderId && model.cost.input == 0;
+}
+
+bool isUserSelectableModel({
+  required Provider provider,
+  required Model model,
+  required Iterable<String> connectedProviderIds,
+}) {
+  if (model.hidden || model.status == 'deprecated') {
+    return false;
+  }
+  if (connectedProviderIds.contains(provider.id)) {
+    return true;
+  }
+  return isOpenCodeZenFreeModel(providerId: provider.id, model: model);
 }
 
 /// Technical comment translated to English.

@@ -251,15 +251,36 @@ void main() {
               'claude-hidden': <String, dynamic>{
                 'id': 'claude-hidden',
                 'hidden': true,
+                'status': 'deprecated',
               },
-              'claude-visible': <String, dynamic>{'id': 'claude-visible'},
+              'claude-visible': <String, dynamic>{
+                'id': 'claude-visible',
+                'status': 'beta',
+              },
             },
           },
         ],
       }).providers.single;
 
       expect(hiddenModel.models['claude-hidden']?.hidden, isTrue);
+      expect(hiddenModel.models['claude-hidden']?.status, 'deprecated');
       expect(hiddenModel.models['claude-visible']?.hidden, isFalse);
+      expect(hiddenModel.models['claude-visible']?.status, 'beta');
+
+      final domainProvider = ProvidersResponseModel.fromJson(<String, dynamic>{
+        'providers': <dynamic>[
+          <String, dynamic>{
+            'id': 'anthropic',
+            'models': <String, dynamic>{
+              'claude-beta': <String, dynamic>{
+                'id': 'claude-beta',
+                'status': 'beta',
+              },
+            },
+          },
+        ],
+      }).toDomain().providers.single;
+      expect(domainProvider.models['claude-beta']?.status, 'beta');
     });
   });
 }

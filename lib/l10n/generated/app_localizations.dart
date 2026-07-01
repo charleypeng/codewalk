@@ -3441,6 +3441,12 @@ abstract class AppLocalizations {
   /// **'Favorites'**
   String get modelFavorites;
 
+  /// CodeWalk UI string — modelFree
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get modelFree;
+
   /// CodeWalk UI string — modelLabelBaseEnglish
   ///
   /// In en, this message translates to:

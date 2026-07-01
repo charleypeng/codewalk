@@ -905,7 +905,13 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     for (final provider in providers) {
       final models =
           provider.models.values
-              .where((model) => !model.hidden)
+              .where(
+                (model) => isUserSelectableModel(
+                  provider: provider,
+                  model: model,
+                  connectedProviderIds: chatProvider.connectedProviderIds,
+                ),
+              )
               .toList(growable: false)
             ..sort((a, b) {
               final byName = a.name.toLowerCase().compareTo(
@@ -923,6 +929,10 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             providerName: provider.name,
             modelId: model.id,
             modelName: model.name,
+            isOpenCodeZenFree: isOpenCodeZenFreeModel(
+              providerId: provider.id,
+              model: model,
+            ),
           ),
         );
       }
@@ -1056,6 +1066,45 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             size: 18,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _modelSelectorTitle(_ModelSelectorEntry entry) {
+    return Row(
+      children: [
+        Expanded(
+          child: Tooltip(
+            message: entry.modelName,
+            child: Text(
+              entry.modelName,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ),
+        if (entry.isOpenCodeZenFree) ...[
+          const SizedBox(width: 8),
+          _modelSelectorFreeBadge(),
+        ],
+      ],
+    );
+  }
+
+  Widget _modelSelectorFreeBadge() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        context.l10n.modelFree,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: colorScheme.onSecondaryContainer,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -1257,14 +1306,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                 entry.modelId,
                                               ),
                                         ),
-                                        title: Tooltip(
-                                          message: entry.modelName,
-                                          child: Text(
-                                            entry.modelName,
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ),
+                                        title: _modelSelectorTitle(entry),
                                         subtitle: Tooltip(
                                           message: entry.providerName,
                                           child: Text(
@@ -1341,14 +1383,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                 entry.modelId,
                                               ),
                                         ),
-                                        title: Tooltip(
-                                          message: entry.modelName,
-                                          child: Text(
-                                            entry.modelName,
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ),
+                                        title: _modelSelectorTitle(entry),
                                         subtitle: Tooltip(
                                           message: entry.providerName,
                                           child: Text(
@@ -1429,14 +1464,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                   entry.modelId,
                                                 ),
                                           ),
-                                          title: Tooltip(
-                                            message: entry.modelName,
-                                            child: Text(
-                                              entry.modelName,
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ),
-                                          ),
+                                          title: _modelSelectorTitle(entry),
                                           subtitle:
                                               entry.modelName == entry.modelId
                                               ? null

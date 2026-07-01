@@ -1887,6 +1887,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get modelFavorites => 'المفضلة';
 
   @override
+  String get modelFree => 'مجاني';
+
+  @override
   String get modelLabelBaseEnglish => 'أساسي (إنجليزي)';
 
   @override

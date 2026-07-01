@@ -1932,6 +1932,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get modelFavorites => 'Favoritos';
 
   @override
+  String get modelFree => 'Grátis';
+
+  @override
   String get modelLabelBaseEnglish => 'Base (Inglês)';
 
   @override

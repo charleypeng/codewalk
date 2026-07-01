@@ -50,12 +50,14 @@ class _ModelSelectorEntry {
     required this.providerName,
     required this.modelId,
     required this.modelName,
+    required this.isOpenCodeZenFree,
   });
 
   final String providerId;
   final String providerName;
   final String modelId;
   final String modelName;
+  final bool isOpenCodeZenFree;
 }
 
 class _SessionContextUsageSnapshot {

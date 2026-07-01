@@ -1920,6 +1920,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get modelFavorites => 'पसंदीदा';
 
   @override
+  String get modelFree => 'मुफ़्त';
+
+  @override
   String get modelLabelBaseEnglish => 'बेस (अंग्रेजी)';
 
   @override

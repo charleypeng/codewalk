@@ -219,6 +219,7 @@ class ModelModel {
       modalities: modalities,
       openWeights: json['open_weights'] as bool?,
       hidden: json['hidden'] as bool? ?? false,
+      status: ProviderModel._safeString(json['status']),
     );
   }
   const ModelModel({
@@ -238,6 +239,7 @@ class ModelModel {
     this.modalities,
     this.openWeights,
     this.hidden = false,
+    this.status,
   });
 
   final String id;
@@ -256,6 +258,7 @@ class ModelModel {
   final Map<String, dynamic>? modalities;
   final bool? openWeights;
   final bool hidden;
+  final String? status;
 
   static bool _coerceBool(dynamic value) {
     if (value is bool) return value;
@@ -340,6 +343,7 @@ class ModelModel {
     'modalities': modalities,
     'open_weights': openWeights,
     'hidden': hidden,
+    'status': status,
   };
 
   Model toDomain() {
@@ -360,6 +364,7 @@ class ModelModel {
       modalities: modalities,
       openWeights: openWeights,
       hidden: hidden,
+      status: status,
     );
   }
 }

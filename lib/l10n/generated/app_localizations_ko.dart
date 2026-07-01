@@ -1826,6 +1826,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get modelFavorites => '즐겨찾기';
 
   @override
+  String get modelFree => '무료';
+
+  @override
   String get modelLabelBaseEnglish => '기본 (영어)';
 
   @override

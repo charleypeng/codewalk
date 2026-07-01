@@ -1794,6 +1794,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelFavorites => '收藏夹';
 
   @override
+  String get modelFree => '免费';
+
+  @override
   String get modelLabelBaseEnglish => '基础 (英语)';
 
   @override

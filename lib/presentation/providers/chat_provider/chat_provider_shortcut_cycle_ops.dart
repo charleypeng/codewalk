@@ -98,7 +98,7 @@ extension _ChatProviderShortcutCycleOps on ChatProvider {
       final provider = _providers
           .where((entry) => entry.id == providerId)
           .firstOrNull;
-      if (provider == null || !provider.models.containsKey(modelId)) {
+      if (provider == null || !_isUserSelectableModelId(provider, modelId)) {
         return;
       }
       candidates.add(normalized);
@@ -113,8 +113,12 @@ extension _ChatProviderShortcutCycleOps on ChatProvider {
 
     final provider = selectedProvider;
     if (provider != null) {
-      final modelIds = provider.models.keys.toList(growable: false)
-        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      final modelIds =
+          provider.models.entries
+              .where((entry) => _isUserSelectableModel(provider, entry.value))
+              .map((entry) => entry.key)
+              .toList(growable: false)
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       for (final modelId in modelIds) {
         addModelKey(_modelKey(provider.id, modelId));
       }

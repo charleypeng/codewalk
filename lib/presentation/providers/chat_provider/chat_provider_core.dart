@@ -68,6 +68,8 @@ extension _ChatProviderCorePart on ChatProvider {
       'last_updated': model.lastUpdated,
       'modalities': model.modalities,
       'open_weights': model.openWeights,
+      'hidden': model.hidden,
+      'status': model.status,
     };
   }
 
@@ -221,27 +223,21 @@ extension _ChatProviderCorePart on ChatProvider {
 
         if (remoteSelection != null && remoteSelection.hasModel) {
           final remote = remoteSelection;
-          selectedProvider = _providers
-              .where((p) => p.id == remote.providerId)
-              .firstOrNull;
-          if (selectedProvider != null &&
-              !selectedProvider.models.containsKey(remote.modelId)) {
-            selectedProvider = null;
+          final candidateProvider = _userSelectableProviderById(
+            remote.providerId,
+          );
+          if (candidateProvider != null &&
+              _isUserSelectableModelId(candidateProvider, remote.modelId!)) {
+            selectedProvider = candidateProvider;
           }
         }
 
-        if (selectedProvider == null && persistedProvider != null) {
-          selectedProvider = _providers
-              .where((p) => p.id == persistedProvider)
-              .firstOrNull;
-        }
+        selectedProvider ??= _userSelectableProviderById(persistedProvider);
 
         // Try connected providers first
         if (selectedProvider == null) {
           for (final connectedId in connected) {
-            selectedProvider = _providers
-                .where((p) => p.id == connectedId)
-                .firstOrNull;
+            selectedProvider = _userSelectableProviderById(connectedId);
             if (selectedProvider != null) break;
           }
         }
@@ -253,76 +249,91 @@ extension _ChatProviderCorePart on ChatProvider {
             if (providerId == null) {
               continue;
             }
-            selectedProvider = _providers
-                .where((p) => p.id == providerId)
-                .firstOrNull;
-            if (selectedProvider != null) {
+            final modelId = _modelFromModelKey(recentModelKey);
+            final candidateProvider = _userSelectableProviderById(providerId);
+            if (candidateProvider != null &&
+                modelId != null &&
+                _isUserSelectableModelId(candidateProvider, modelId)) {
+              selectedProvider = candidateProvider;
               break;
             }
           }
         }
 
         // Fall back to first available provider
-        selectedProvider ??= _providers.first;
-        _selectedProviderId = selectedProvider.id;
+        selectedProvider ??= _providers
+            .where(_hasUserSelectableModels)
+            .firstOrNull;
 
-        if (remoteSelection != null &&
-            remoteSelection.hasModel &&
-            remoteSelection.providerId == selectedProvider.id &&
-            selectedProvider.models.containsKey(remoteSelection.modelId)) {
-          _selectedModelId = remoteSelection.modelId;
-        } else if (persistedModel != null &&
-            selectedProvider.models.containsKey(persistedModel)) {
-          _selectedModelId = persistedModel;
+        if (selectedProvider == null) {
+          _selectedProviderId = null;
+          _selectedModelId = null;
         } else {
-          for (final recentModelKey in _recentModelKeys) {
-            final providerId = _providerFromModelKey(recentModelKey);
-            final modelId = _modelFromModelKey(recentModelKey);
-            if (providerId != selectedProvider.id || modelId == null) {
-              continue;
+          _selectedProviderId = selectedProvider.id;
+          _selectedModelId = null;
+
+          if (remoteSelection != null &&
+              remoteSelection.hasModel &&
+              remoteSelection.providerId == selectedProvider.id &&
+              _isUserSelectableModelId(
+                selectedProvider,
+                remoteSelection.modelId!,
+              )) {
+            _selectedModelId = remoteSelection.modelId;
+          } else if (persistedModel != null &&
+              _isUserSelectableModelId(selectedProvider, persistedModel)) {
+            _selectedModelId = persistedModel;
+          } else {
+            for (final recentModelKey in _recentModelKeys) {
+              final providerId = _providerFromModelKey(recentModelKey);
+              final modelId = _modelFromModelKey(recentModelKey);
+              if (providerId != selectedProvider.id || modelId == null) {
+                continue;
+              }
+              if (_isUserSelectableModelId(selectedProvider, modelId)) {
+                _selectedModelId = modelId;
+                break;
+              }
             }
-            if (selectedProvider.models.containsKey(modelId)) {
-              _selectedModelId = modelId;
-              break;
+          }
+
+          if (_selectedModelId == null && _modelUsageCounts.isNotEmpty) {
+            String? mostUsedModelId;
+            var mostUsedCount = -1;
+            for (final entry in selectedProvider.models.entries) {
+              if (!_isUserSelectableModel(selectedProvider, entry.value)) {
+                continue;
+              }
+              final modelId = entry.key;
+              final usage =
+                  _modelUsageCounts[_modelKey(selectedProvider.id, modelId)] ??
+                  0;
+              if (usage > mostUsedCount) {
+                mostUsedCount = usage;
+                mostUsedModelId = modelId;
+              }
+            }
+            if (mostUsedModelId != null && mostUsedCount > 0) {
+              _selectedModelId = mostUsedModelId;
             }
           }
-        }
 
-        if (_selectedModelId == null &&
-            selectedProvider.models.isNotEmpty &&
-            _modelUsageCounts.isNotEmpty) {
-          String? mostUsedModelId;
-          var mostUsedCount = -1;
-          for (final modelId in selectedProvider.models.keys) {
-            final usage =
-                _modelUsageCounts[_modelKey(selectedProvider.id, modelId)] ?? 0;
-            if (usage > mostUsedCount) {
-              mostUsedCount = usage;
-              mostUsedModelId = modelId;
+          if (_selectedModelId == null &&
+              selectedProvider.id == openCodeZenProviderId &&
+              _isUserSelectableModelId(selectedProvider, 'big-pickle')) {
+            _selectedModelId = 'big-pickle';
+          }
+
+          if (_selectedModelId == null &&
+              _defaultModels.containsKey(selectedProvider.id)) {
+            final defaultModelId = _defaultModels[selectedProvider.id];
+            if (defaultModelId != null &&
+                _isUserSelectableModelId(selectedProvider, defaultModelId)) {
+              _selectedModelId = defaultModelId;
             }
           }
-          if (mostUsedModelId != null && mostUsedCount > 0) {
-            _selectedModelId = mostUsedModelId;
-          }
-        }
 
-        if (_selectedModelId == null &&
-            selectedProvider.id == 'opencode' &&
-            selectedProvider.models.containsKey('big-pickle')) {
-          _selectedModelId = 'big-pickle';
-        }
-
-        if (_selectedModelId == null &&
-            _defaultModels.containsKey(selectedProvider.id)) {
-          final defaultModelId = _defaultModels[selectedProvider.id];
-          if (defaultModelId != null &&
-              selectedProvider.models.containsKey(defaultModelId)) {
-            _selectedModelId = defaultModelId;
-          }
-        }
-
-        if (_selectedModelId == null && selectedProvider.models.isNotEmpty) {
-          _selectedModelId = selectedProvider.models.keys.first;
+          _selectedModelId ??= _firstUserSelectableModelId(selectedProvider);
         }
 
         final remoteAgentName = remoteSelection?.agentName;

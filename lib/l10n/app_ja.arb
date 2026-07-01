@@ -552,6 +552,7 @@
   "modelAuto": "自動",
   "modelChooseAgent": "エージェントを選択",
   "modelFavorites": "お気に入り",
+  "modelFree": "無料",
   "modelLabelBaseEnglish": "ベース (英語)",
   "modelLabelParakeet": "Parakeet V3 (欧州25言語)",
   "modelLabelSenseVoice": "SenseVoice (zh/en/ja/ko/yue)",

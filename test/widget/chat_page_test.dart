@@ -8210,6 +8210,113 @@ void main() {
   });
 
   testWidgets(
+    'model selector shows connected providers and dynamic OpenCode Zen free models',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_models_connected_zen',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Models',
+          ),
+        ],
+      );
+      const freeCost = ModelCost(input: 0, output: 0);
+      final providersResponse = ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'anthropic',
+            name: 'Anthropic',
+            env: const <String>[],
+            models: <String, Model>{
+              'claude-sonnet': _model('claude-sonnet', name: 'Claude Sonnet'),
+            },
+          ),
+          Provider(
+            id: 'openai',
+            name: 'OpenAI',
+            env: const <String>[],
+            models: <String, Model>{'gpt-4o': _model('gpt-4o', name: 'GPT-4o')},
+          ),
+          Provider(
+            id: 'opencode',
+            name: 'OpenCode',
+            env: const <String>[],
+            models: <String, Model>{
+              'big-pickle': _model(
+                'big-pickle',
+                name: 'Big Pickle',
+                cost: freeCost,
+              ),
+              'old-free': _model(
+                'old-free',
+                name: 'Old Free',
+                cost: freeCost,
+                status: 'deprecated',
+              ),
+              'paid-zen': _model('paid-zen', name: 'Paid Zen'),
+            },
+          ),
+          Provider(
+            id: 'opencode-go',
+            name: 'OpenCode Go',
+            env: const <String>[],
+            models: <String, Model>{
+              'go-free': _model('go-free', name: 'Go Free', cost: freeCost),
+            },
+          ),
+        ],
+        defaultModels: const <String, String>{'anthropic': 'claude-sonnet'},
+        connected: const <String>['anthropic'],
+      );
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        providersResponse: providersResponse,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('model_selector_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('model_selector_item_anthropic_claude-sonnet'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('model_selector_item_opencode_big-pickle'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Free'), findsOneWidget);
+      expect(find.text('GPT-4o'), findsNothing);
+      expect(find.text('Old Free'), findsNothing);
+      expect(find.text('Paid Zen'), findsNothing);
+      expect(find.text('Go Free'), findsNothing);
+      expect(find.text('OpenCode Go'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'long model name keeps variant chip reachable on compact viewport (issue #39)',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(360, 800));
@@ -17882,6 +17989,9 @@ Model _model(
   bool attachment = false,
   Map<String, dynamic>? modalities,
   Map<String, ModelVariant> variants = const <String, ModelVariant>{},
+  ModelCost cost = const ModelCost(input: 0.001, output: 0.002),
+  bool hidden = false,
+  String? status,
 }) {
   return Model(
     id: id,
@@ -17891,11 +18001,13 @@ Model _model(
     reasoning: false,
     temperature: true,
     toolCall: false,
-    cost: const ModelCost(input: 0.001, output: 0.002),
+    cost: cost,
     limit: const ModelLimit(context: 1000, output: 100),
     options: const <String, dynamic>{},
     modalities: modalities,
     variants: variants,
+    hidden: hidden,
+    status: status,
   );
 }
 

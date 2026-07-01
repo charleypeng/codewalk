@@ -1913,6 +1913,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get modelFavorites => 'پسندیدہ';
 
   @override
+  String get modelFree => 'مفت';
+
+  @override
   String get modelLabelBaseEnglish => 'بنیادی (انگریزی)';
 
   @override

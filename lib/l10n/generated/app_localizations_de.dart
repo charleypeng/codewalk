@@ -1943,6 +1943,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get modelFavorites => 'Favoriten';
 
   @override
+  String get modelFree => 'Kostenlos';
+
+  @override
   String get modelLabelBaseEnglish => 'Basis (Englisch)';
 
   @override

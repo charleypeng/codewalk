@@ -371,7 +371,8 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     final provider = _providers
         .where((item) => item.id == memory.providerId)
         .firstOrNull;
-    if (provider == null || !provider.models.containsKey(memory.modelId)) {
+    if (provider == null ||
+        !_isUserSelectableModelId(provider, memory.modelId)) {
       return false;
     }
     _selectedProviderId = provider.id;

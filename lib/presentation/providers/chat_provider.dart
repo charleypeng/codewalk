@@ -806,6 +806,8 @@ class ChatProvider extends ChangeNotifier {
   ChatUiNotice? get pendingUiNotice => _pendingUiNotice;
   String? get currentProjectId => _currentProjectId;
   List<Provider> get providers => _providers;
+  List<String> get connectedProviderIds =>
+      List<String>.unmodifiable(_connectedProviderIds);
   Map<String, String> get defaultModels => _defaultModels;
   List<Agent> get agents => List<Agent>.unmodifiable(_agents);
   List<Agent> get selectableAgents =>
@@ -2541,7 +2543,7 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> _setSelectedProvider(String providerId) async {
     final provider = _providers.where((p) => p.id == providerId).firstOrNull;
-    if (provider == null) {
+    if (provider == null || !_hasUserSelectableModels(provider)) {
       return;
     }
     final previousModelKey = _currentModelKey();
@@ -2549,7 +2551,7 @@ class ChatProvider extends ChangeNotifier {
 
     String? nextModelId;
     if (_selectedModelId != null &&
-        provider.models.containsKey(_selectedModelId)) {
+        _isUserSelectableModelId(provider, _selectedModelId!)) {
       nextModelId = _selectedModelId;
     }
 
@@ -2559,7 +2561,7 @@ class ChatProvider extends ChangeNotifier {
         final recentModelId = _modelFromModelKey(recentModelKey);
         if (recentProviderId == provider.id &&
             recentModelId != null &&
-            provider.models.containsKey(recentModelId)) {
+            _isUserSelectableModelId(provider, recentModelId)) {
           nextModelId = recentModelId;
           break;
         }
@@ -2569,12 +2571,12 @@ class ChatProvider extends ChangeNotifier {
     if (nextModelId == null) {
       final defaultModelId = _defaultModels[provider.id];
       if (defaultModelId != null &&
-          provider.models.containsKey(defaultModelId)) {
+          _isUserSelectableModelId(provider, defaultModelId)) {
         nextModelId = defaultModelId;
       }
     }
 
-    nextModelId ??= provider.models.keys.firstOrNull;
+    nextModelId ??= _firstUserSelectableModelId(provider);
     _selectedModelId = nextModelId;
     _selectedVariantId = _resolveStoredVariantForSelection();
     _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
@@ -2608,7 +2610,7 @@ class ChatProvider extends ChangeNotifier {
     required String modelId,
   }) async {
     final provider = _providers.where((p) => p.id == providerId).firstOrNull;
-    if (provider == null || !provider.models.containsKey(modelId)) {
+    if (provider == null || !_isUserSelectableModelId(provider, modelId)) {
       return;
     }
     final previousModelKey = _currentModelKey();
@@ -2625,7 +2627,7 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> setSelectedModel(String modelId) async {
     final provider = selectedProvider;
-    if (provider == null || !provider.models.containsKey(modelId)) {
+    if (provider == null || !_isUserSelectableModelId(provider, modelId)) {
       return;
     }
     await setSelectedModelByProvider(providerId: provider.id, modelId: modelId);

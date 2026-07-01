@@ -1917,6 +1917,9 @@ class AppLocalizationsBn extends AppLocalizations {
   String get modelFavorites => 'প্রিয়';
 
   @override
+  String get modelFree => 'বিনামূল্যে';
+
+  @override
   String get modelLabelBaseEnglish => 'বেস (ইংরেজি)';
 
   @override
