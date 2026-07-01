@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.161.0 - 2026-07-01
+
+- docs(agent): clarify Flutter PATH setup
+- feat(data-saver): scope aggressive cellular sync
+- plan: aggressive cellular data saver
+
 ## v1.160.0 - 2026-06-29
 
 - feat(logging): add tagged task timing
