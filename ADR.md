@@ -892,7 +892,9 @@ Adopt a cache-first SWR policy per session:
 
 - `lib/presentation/providers/chat_provider.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart`
-- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_helpers.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_session_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_global_ops.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart`
 - `lib/presentation/pages/chat_page/chat_page_scroll_coordinator.dart`
 - `lib/data/datasources/app_local_datasource.dart`
@@ -1081,7 +1083,7 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **Code locations**:
 - `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` → `_updateOrAddMessage()` monotonic completion guard
-- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart` → `session.idle` handler debounced timer cleanup
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_session_ops.dart` → `session.idle` handler debounced timer cleanup
 - `test/unit/providers/chat_provider_realtime_test.dart` → regression tests
 
 **See also**: BEHAVIOR.md § "Post-completion reading remains stable", ADR-028 (scroll ownership).
@@ -2328,7 +2330,7 @@ This ADR is fully compliant with ADR-023. No OpenCode server contract is changed
 ### Key Files
 
 - `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart` — monotonic delta-version tiebreaker, completion guard, non-regressive part reorder
-- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart` — 16ms delta batching window, in-flight batch bound
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_session_ops.dart` — 16ms delta batching window, in-flight batch bound
 - `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` — sticky terminal part state, local delta-version counters
 - `lib/presentation/providers/chat_provider/chat_provider_compaction_ops.dart` — value-equality compaction decision `==`/`hashCode`
 - `lib/presentation/pages/chat_page/chat_page_runtime_support.dart` — 220ms final reveal, 3-pass cap, viewport-measured FAB hiding
