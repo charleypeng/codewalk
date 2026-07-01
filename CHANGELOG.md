@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.162.0 - 2026-07-01
+
+- docs(chat): map split reducer parts
+- refactor(chat): split event reducer parts
+- plan: split oversized Dart files
+
 ## v1.161.0 - 2026-07-01
 
 - docs(agent): clarify Flutter PATH setup
