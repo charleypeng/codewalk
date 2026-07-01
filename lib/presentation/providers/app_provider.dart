@@ -200,6 +200,10 @@ class AppProvider extends ChangeNotifier {
     return _serverHealthById[serverId] ?? ServerHealthStatus.unknown;
   }
 
+  @visibleForTesting
+  Duration get debugCurrentHealthPollingInterval =>
+      _currentHealthPollingInterval;
+
   Duration get _effectiveHealthPollingInterval {
     if (_cellularDataSaverService.shouldThrottleAutomaticForegroundSync) {
       return _cellularDataSaverService.automaticSyncInterval;

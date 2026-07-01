@@ -100,7 +100,12 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
     final shouldKeepActive =
         _cellularDataSaverService.isAggressiveDataSaverActive
-        ? _currentSession != null
+        ? _hasVisibleAggressiveDataSaverSession &&
+              (forceBurst ||
+                  _cellularDataSaverService.hasInteractiveBurst ||
+                  _state == ChatState.sending ||
+                  isCurrentSessionActivelyResponding ||
+                  _hasPendingVisibleAggressiveThreadInteractions)
         : (forceBurst || _shouldKeepRealtimeActiveForDataSaver);
     if (!shouldKeepActive) {
       if (_idleRealtimePausedForDataSaver &&
@@ -188,15 +193,33 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   Future<void> _runAutomaticForegroundSyncForDataSaver({
     required String reason,
+    bool force = false,
   }) async {
-    if (!_cellularDataSaverService.allowAutomaticForegroundSync(
-      reason: reason,
-    )) {
+    if (!force &&
+        !_cellularDataSaverService.allowAutomaticForegroundSync(
+          reason: reason,
+        )) {
       return;
     }
-    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
-      await loadSessions(preserveVisibleState: true);
+    if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+      if (!_hasVisibleAggressiveDataSaverSession) {
+        await _syncCellularDataSaverRealtimePolicy(
+          reason: '$reason:not-visible',
+        );
+        return;
+      }
+      await refreshActiveSessionView(
+        reason: 'data-saver:$reason',
+        includeStatus: false,
+      );
+      await _loadPendingInteractions(visibleSessionOnly: true);
+      await _syncCellularDataSaverRealtimePolicy(
+        reason: '$reason:post-sync',
+        forceBurst: force,
+      );
+      return;
     }
+    await loadSessions(preserveVisibleState: true);
     await refreshActiveSessionView(
       reason: 'data-saver:$reason',
       includeStatus: true,
@@ -340,6 +363,32 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   /// The OpenCode server does NOT support Last-Event-ID replay.
   Future<void> _runPostReconnectRecovery() async {
     try {
+      if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+        AppLogger.info(
+          'post_reconnect_recovery_start mode=aggressive-data-saver',
+        );
+        if (!_hasVisibleAggressiveDataSaverSession) {
+          await _syncCellularDataSaverRealtimePolicy(
+            reason: 'post-reconnect-aggressive-data-saver:not-visible',
+          );
+          AppLogger.info(
+            'post_reconnect_recovery_complete mode=aggressive-data-saver visible=false',
+          );
+          return;
+        }
+        await _loadPendingInteractions(visibleSessionOnly: true);
+        await refreshActiveSessionView(
+          reason: 'post-reconnect-aggressive-data-saver',
+          includeStatus: false,
+        );
+        await _syncCellularDataSaverRealtimePolicy(
+          reason: 'post-reconnect-aggressive-data-saver',
+        );
+        AppLogger.info(
+          'post_reconnect_recovery_complete mode=aggressive-data-saver',
+        );
+        return;
+      }
       AppLogger.info('post_reconnect_recovery_start');
       await _loadPendingInteractions();
       await refreshActiveSessionView(includeStatus: true);
@@ -389,7 +438,22 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     );
   }
 
-  Future<void> _loadPendingInteractions() async {
+  Future<void> _loadPendingInteractions({
+    bool visibleSessionOnly = false,
+  }) async {
+    final restrictToVisible =
+        visibleSessionOnly ||
+        _cellularDataSaverService.isAggressiveDataSaverActive;
+    if (restrictToVisible && !_hasVisibleAggressiveDataSaverSession) {
+      _pendingPermissionsBySession = <String, List<ChatPermissionRequest>>{};
+      _pendingQuestionsBySession = <String, List<ChatQuestionRequest>>{};
+      _threadPermissionsVersion++;
+      _notifyListeners();
+      await _syncCellularDataSaverRealtimePolicy(
+        reason: 'pending-interactions:not-visible',
+      );
+      return;
+    }
     final directory = projectProvider.currentDirectory;
 
     final permissionsResult = await listPendingPermissions(
@@ -405,6 +469,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       (permissions) {
         final grouped = <String, List<ChatPermissionRequest>>{};
         for (final item in permissions) {
+          if (restrictToVisible &&
+              !_isVisibleAggressiveSessionId(item.sessionId)) {
+            continue;
+          }
           if (_dismissedInteractionTombstones.contains(
             _permissionInteractionKey(item.id),
           )) {
@@ -414,9 +482,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
               .putIfAbsent(item.sessionId, () => <ChatPermissionRequest>[])
               .add(item);
         }
-        _pendingPermissionsBySession = _mergePendingPermissionsBySession(
-          grouped,
-        );
+        _pendingPermissionsBySession = restrictToVisible
+            ? grouped
+            : _mergePendingPermissionsBySession(grouped);
         _threadPermissionsVersion++;
       },
     );
@@ -432,6 +500,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       (questions) {
         final grouped = <String, List<ChatQuestionRequest>>{};
         for (final item in questions) {
+          if (restrictToVisible &&
+              !_isVisibleAggressiveSessionId(item.sessionId)) {
+            continue;
+          }
           if (_dismissedInteractionTombstones.contains(
             _questionInteractionKey(item.id),
           )) {
@@ -453,7 +525,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
         _questionSubmitFailedRequestIds.removeWhere(
           (id) => !serverPendingIds.contains(id),
         );
-        _pendingQuestionsBySession = _mergePendingQuestionsBySession(grouped);
+        _pendingQuestionsBySession = restrictToVisible
+            ? grouped
+            : _mergePendingQuestionsBySession(grouped);
         _threadPermissionsVersion++;
       },
     );

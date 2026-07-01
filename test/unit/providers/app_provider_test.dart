@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/core/tailscale/tailscale_service.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
+import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
@@ -236,6 +238,34 @@ void main() {
       expect(ok, isFalse);
       expect(provider.errorMessage, 'Cannot activate an unhealthy server');
     });
+
+    test(
+      'aggressive cellular data saver health polling uses 30 seconds',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        final testedProvider = AppProvider(
+          getAppInfo: GetAppInfo(repository),
+          checkConnection: CheckConnection(repository),
+          localDataSource: localDataSource,
+          dioClient: DioClient(),
+          cellularDataSaverService: dataSaverService,
+          localServerRuntime: localServerRuntime,
+          enableHealthPolling: true,
+        );
+        addTearDown(testedProvider.dispose);
+
+        await testedProvider.initialize();
+        await testedProvider.addServerProfile(url: 'http://127.0.0.1:5001');
+
+        expect(
+          testedProvider.debugCurrentHealthPollingInterval,
+          const Duration(seconds: 30),
+        );
+      },
+    );
 
     test('persists AI-generated-title toggle in server profiles', () async {
       await provider.initialize();

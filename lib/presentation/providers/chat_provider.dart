@@ -605,6 +605,47 @@ class ChatProvider extends ChangeNotifier {
     return false;
   }
 
+  bool get _hasVisibleAggressiveDataSaverSession {
+    final sessionId = _currentSession?.id.trim();
+    return _cellularDataSaverService.isAggressiveDataSaverActive &&
+        _isForegroundActive &&
+        _isChatRouteActive &&
+        sessionId != null &&
+        sessionId.isNotEmpty;
+  }
+
+  bool _isVisibleAggressiveSessionId(String? sessionId) {
+    final normalizedSessionId = sessionId?.trim();
+    final currentSessionId = _currentSession?.id.trim();
+    if (normalizedSessionId == null ||
+        normalizedSessionId.isEmpty ||
+        currentSessionId == null ||
+        currentSessionId.isEmpty) {
+      return false;
+    }
+    if (normalizedSessionId == currentSessionId) {
+      return true;
+    }
+    final parentId = _sessionById(normalizedSessionId)?.parentId?.trim();
+    return parentId != null &&
+        parentId.isNotEmpty &&
+        parentId == currentSessionId;
+  }
+
+  bool get _hasPendingVisibleAggressiveThreadInteractions {
+    for (final entry in _pendingPermissionsBySession.entries) {
+      if (_isVisibleAggressiveSessionId(entry.key) && entry.value.isNotEmpty) {
+        return true;
+      }
+    }
+    for (final entry in _pendingQuestionsBySession.entries) {
+      if (_isVisibleAggressiveSessionId(entry.key) && entry.value.isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool get _shouldKeepRealtimeActiveForDataSaver {
     if (!_refreshlessRealtimeEnabled ||
         !_cellularDataSaverService.isDataSaverActive) {
@@ -612,6 +653,18 @@ class ChatProvider extends ChangeNotifier {
     }
     if (!_isForegroundActive) {
       return false;
+    }
+    if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+      if (!_hasVisibleAggressiveDataSaverSession) {
+        return false;
+      }
+      if (_cellularDataSaverService.hasInteractiveBurst) {
+        return true;
+      }
+      if (_state == ChatState.sending || isCurrentSessionActivelyResponding) {
+        return true;
+      }
+      return _hasPendingVisibleAggressiveThreadInteractions;
     }
     if (_cellularDataSaverService.hasInteractiveBurst) {
       return true;
@@ -2065,6 +2118,9 @@ class ChatProvider extends ChangeNotifier {
         !_guardTransportForAction(actionLabel: 'reply to permission')) {
       return;
     }
+    _cellularDataSaverService.noteExplicitUserAction(
+      reason: 'reply-permission',
+    );
     final tombstoneKey = _permissionInteractionKey(requestId);
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
@@ -2104,22 +2160,6 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  String? _sessionIdForPendingQuestion(String requestId) {
-    final normalizedRequestId = requestId.trim();
-    if (normalizedRequestId.isEmpty) {
-      return null;
-    }
-    for (final entry in _pendingQuestionsBySession.entries) {
-      final ownsQuestion = entry.value.any(
-        (question) => question.id == normalizedRequestId,
-      );
-      if (ownsQuestion) {
-        return entry.key;
-      }
-    }
-    return null;
-  }
-
   Future<void> submitQuestionAnswers({
     required String requestId,
     required List<List<String>> answers,
@@ -2128,8 +2168,8 @@ class ChatProvider extends ChangeNotifier {
         !_guardTransportForAction(actionLabel: 'reply to question')) {
       return;
     }
+    _cellularDataSaverService.noteExplicitUserAction(reason: 'reply-question');
     final tombstoneKey = _questionInteractionKey(requestId);
-    final owningSessionId = _sessionIdForPendingQuestion(requestId);
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
@@ -2175,8 +2215,8 @@ class ChatProvider extends ChangeNotifier {
         !_guardTransportForAction(actionLabel: 'reject question')) {
       return;
     }
+    _cellularDataSaverService.noteExplicitUserAction(reason: 'reject-question');
     final tombstoneKey = _questionInteractionKey(requestId);
-    final owningSessionId = _sessionIdForPendingQuestion(requestId);
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
@@ -3283,6 +3323,17 @@ class ChatProvider extends ChangeNotifier {
         _clearSessionAttentionForSession(session.id);
         _threadPermissionsVersion++;
         _applySelectionPriorityForCurrentSession();
+        if (_cellularDataSaverService.isDataSaverActive) {
+          unawaited(
+            _syncCellularDataSaverRealtimePolicy(
+              reason: 'select-session-visible',
+              forceBurst: true,
+            ),
+          );
+          if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+            unawaited(_loadPendingInteractions(visibleSessionOnly: true));
+          }
+        }
 
         final warmCachedMessages = _cachedSessionMessages(session.id);
         final hasWarmCachedMessages =
@@ -3742,6 +3793,14 @@ class ChatProvider extends ChangeNotifier {
     _preserveBusyStatusOnNextStreamDoneSessionId = null;
     _setState(ChatState.sending);
     _traceFinal('send-state-sending', sessionId: sendSessionId);
+    if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+      unawaited(
+        _syncCellularDataSaverRealtimePolicy(
+          reason: 'send-message-visible',
+          forceBurst: true,
+        ),
+      );
+    }
 
     try {
       // Sync project ID from ProjectProvider

@@ -63,19 +63,19 @@ class CellularDataSaverService extends ChangeNotifier
   DateTime? _lastAutomaticSyncAt;
   DateTime? _interactiveBurstUntil;
 
-  static const Duration aggressiveAutomaticSyncInterval = Duration(minutes: 5);
+  static const Duration aggressivePollingCadence = Duration(seconds: 30);
+  static const Duration aggressiveAutomaticSyncInterval =
+      aggressivePollingCadence;
   static const Duration aggressiveInteractiveBurstDuration = Duration(
     seconds: 45,
   );
-  static const Duration aggressiveSyncHealthCheckInterval = Duration(
-    seconds: 60,
-  );
+  static const Duration aggressiveSyncHealthCheckInterval =
+      aggressivePollingCadence;
   static const Duration aggressiveSyncSignalStaleThreshold = Duration(
-    minutes: 3,
-  );
-  static const Duration aggressiveDegradedPollingInterval = Duration(
     seconds: 90,
   );
+  static const Duration aggressiveDegradedPollingInterval =
+      aggressivePollingCadence;
 
   DataSaverLevel get dataSaverLevel => _dataSaverLevel;
   bool get dataSaverEnabled => _dataSaverLevel != DataSaverLevel.off;

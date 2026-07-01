@@ -70,7 +70,28 @@ extension ChatProviderLifecycleOps on ChatProvider {
 
   // Chat route state setter.
   void setChatRouteActive(bool isActive) {
+    if (_isChatRouteActive == isActive) {
+      return;
+    }
     _isChatRouteActive = isActive;
+    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
+      return;
+    }
+    final reason = isActive ? 'chat-route-active' : 'chat-route-inactive';
+    if (isActive) {
+      _cellularDataSaverService.noteExplicitUserAction(reason: reason);
+    }
+    unawaited(
+      _syncCellularDataSaverRealtimePolicy(
+        reason: reason,
+        forceBurst: isActive,
+      ),
+    );
+    if (isActive) {
+      unawaited(
+        _runAutomaticForegroundSyncForDataSaver(reason: reason, force: true),
+      );
+    }
   }
 
   // Refresh the active session view (messages, status, todo).

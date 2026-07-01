@@ -27,7 +27,7 @@ void main() {
       },
     );
 
-    test('aggressive tier stretches sync and burst intervals', () async {
+    test('aggressive tier uses 30 second cadence and keeps burst', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final prefs = await SharedPreferences.getInstance();
       final service = CellularDataSaverService(
@@ -41,12 +41,58 @@ void main() {
 
       expect(service.isDataSaverActive, isTrue);
       expect(service.isAggressiveDataSaverActive, isTrue);
-      expect(service.automaticSyncInterval, const Duration(minutes: 5));
+      expect(service.automaticSyncInterval, const Duration(seconds: 30));
+      expect(
+        CellularDataSaverService.aggressivePollingCadence,
+        const Duration(seconds: 30),
+      );
+      expect(
+        CellularDataSaverService.aggressiveSyncHealthCheckInterval,
+        const Duration(seconds: 30),
+      );
+      expect(
+        CellularDataSaverService.aggressiveSyncSignalStaleThreshold,
+        const Duration(seconds: 90),
+      );
+      expect(
+        CellularDataSaverService.aggressiveDegradedPollingInterval,
+        const Duration(seconds: 30),
+      );
 
       service.noteExplicitUserAction(reason: 'manual-refresh');
 
       expect(service.hasInteractiveBurst, isTrue);
+      expect(
+        CellularDataSaverService.aggressiveInteractiveBurstDuration,
+        const Duration(seconds: 45),
+      );
     });
+
+    test(
+      'aggressive automatic sync cooldown blocks immediate repeats',
+      () async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final prefs = await SharedPreferences.getInstance();
+        final service = CellularDataSaverService(
+          sharedPreferences: prefs,
+          startMonitoring: false,
+        );
+        addTearDown(service.dispose);
+
+        service.debugSetDataSaverLevel(DataSaverLevel.aggressive);
+        service.debugSetTransport(DataSaverTransport.cellular);
+
+        expect(service.automaticSyncInterval, const Duration(seconds: 30));
+        expect(
+          service.allowAutomaticForegroundSync(reason: 'first-tick'),
+          isTrue,
+        );
+        expect(
+          service.allowAutomaticForegroundSync(reason: 'second-tick'),
+          isFalse,
+        );
+      },
+    );
 
     test(
       'blocks automatic foreground syncs inside the cooldown window',

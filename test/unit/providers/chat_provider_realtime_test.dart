@@ -129,7 +129,7 @@ void main() {
     }
 
     test(
-      'aggressive data saver keeps local realtime open and pauses global stream',
+      'aggressive data saver keeps burst realtime and pauses idle streams',
       () async {
         final dataSaverService = CellularDataSaverService.disabled()
           ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
@@ -139,7 +139,9 @@ void main() {
 
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+        await provider.selectSession(
+          provider.sessions.firstWhere((session) => session.id == 'ses_1'),
+        );
         await provider.refresh();
         for (var tick = 0; tick < 20; tick += 1) {
           if (provider.debugHasRealtimeEventSubscription) {
@@ -170,13 +172,13 @@ void main() {
         dataSaverService.debugSetDataSaverLevel(DataSaverLevel.aggressive);
         await settleUntil(
           () =>
-              provider.debugHasRealtimeEventSubscription &&
+              !provider.debugHasRealtimeEventSubscription &&
               !provider.debugHasGlobalEventSubscription,
           reason:
-              'Expected aggressive data saver to pause global realtime again.',
+              'Expected aggressive idle data saver to pause all realtime streams.',
         );
 
-        expect(provider.debugHasRealtimeEventSubscription, isTrue);
+        expect(provider.debugHasRealtimeEventSubscription, isFalse);
         expect(provider.debugHasGlobalEventSubscription, isFalse);
 
         dataSaverService.debugSetDataSaverLevel(DataSaverLevel.off);
@@ -202,7 +204,9 @@ void main() {
 
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+        await provider.selectSession(
+          provider.sessions.firstWhere((session) => session.id == 'ses_1'),
+        );
         chatRepository.pendingPermissions = const <ChatPermissionRequest>[
           ChatPermissionRequest(
             id: 'perm_aggressive_resume',
@@ -228,6 +232,207 @@ void main() {
         );
       },
     );
+
+    test(
+      'aggressive data saver stops realtime while chat route is hidden',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason:
+              'Expected aggressive visible session burst to start realtime.',
+        );
+        expect(provider.debugHasGlobalEventSubscription, isFalse);
+
+        provider.setChatRouteActive(false);
+        await settleUntil(
+          () =>
+              !provider.debugHasRealtimeEventSubscription &&
+              !provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected aggressive data saver to stop realtime off the chat route.',
+        );
+
+        provider.setChatRouteActive(true);
+        await settleUntil(
+          () =>
+              provider.debugHasRealtimeEventSubscription &&
+              !provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected returning to chat to restart only the local event stream.',
+        );
+      },
+    );
+
+    test(
+      'aggressive foreground sync filters pending interactions to active session',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        final dioClient = RecordingDioClient();
+        provider = buildProvider(
+          dioClient: dioClient,
+          cellularDataSaverService: dataSaverService,
+        );
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Session 2',
+          ),
+        );
+        chatRepository.messagesBySession['ses_2'] = <ChatMessage>[];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.firstWhere((session) => session.id == 'ses_1'),
+        );
+        await settleUntil(
+          () => chatRepository.getSessionStatusCallCount > 0,
+          reason: 'Expected initial session insights to settle before reset.',
+        );
+        await pumpEventQueue();
+        await pumpEventQueue();
+        chatRepository.getSessionsCallCount = 0;
+        chatRepository.getMessagesCallCount = 0;
+        chatRepository.getSessionStatusCallCount = 0;
+        dioClient.getQueries.clear();
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_visible',
+            sessionId: 'ses_1',
+            permission: 'bash',
+            patterns: <String>['git status'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+          ChatPermissionRequest(
+            id: 'perm_inactive',
+            sessionId: 'ses_2',
+            permission: 'bash',
+            patterns: <String>['git diff'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+        chatRepository.pendingQuestions = const <ChatQuestionRequest>[
+          ChatQuestionRequest(
+            id: 'question_visible',
+            sessionId: 'ses_1',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Proceed?',
+                header: 'Confirm',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'Yes', description: 'Continue'),
+                ],
+              ),
+            ],
+          ),
+          ChatQuestionRequest(
+            id: 'question_inactive',
+            sessionId: 'ses_2',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Proceed elsewhere?',
+                header: 'Other',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'No', description: 'Skip'),
+                ],
+              ),
+            ],
+          ),
+        ];
+
+        await provider.setForegroundActive(false);
+        await provider.setForegroundActive(true);
+        await settleUntil(
+          () =>
+              provider.currentSessionPermissions.length == 1 &&
+              provider.currentSessionQuestions.length == 1,
+          reason:
+              'Expected aggressive foreground sync to keep only visible interactions.',
+        );
+
+        expect(provider.currentSessionPermissions.single.id, 'perm_visible');
+        expect(provider.currentSessionQuestions.single.id, 'question_visible');
+        expect(chatRepository.getMessagesCallCount, greaterThan(0));
+        expect(chatRepository.getSessionsCallCount, 0);
+        expect(chatRepository.getSessionStatusCallCount, 0);
+        expect(dioClient.getQueries, isEmpty);
+
+        final inactiveSession = provider.sessions.firstWhere(
+          (session) => session.id == 'ses_2',
+        );
+        await provider.selectSession(inactiveSession);
+        await settleUntil(
+          () =>
+              provider.currentSessionPermissions.singleOrNull?.id ==
+                  'perm_inactive' &&
+              provider.currentSessionQuestions.singleOrNull?.id ==
+                  'question_inactive',
+          reason:
+              'Expected manual session selection to load that session interactions immediately.',
+        );
+      },
+    );
+
+    test('aggressive data saver suppresses inactive session events', () async {
+      final dataSaverService = CellularDataSaverService.disabled()
+        ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+        ..debugSetTransport(DataSaverTransport.cellular);
+      addTearDown(dataSaverService.dispose);
+      provider = buildProvider(cellularDataSaverService: dataSaverService);
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.refresh();
+      await settleUntil(
+        () => provider.debugHasRealtimeEventSubscription,
+        reason: 'Expected aggressive visible session burst to start realtime.',
+      );
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_2',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'permission.asked',
+          properties: <String, dynamic>{
+            'id': 'perm_inactive_event',
+            'sessionID': 'ses_2',
+            'permission': 'bash',
+            'patterns': <String>['git log'],
+            'always': <String>[],
+            'metadata': <String, dynamic>{},
+          },
+        ),
+      );
+      await pumpEventQueue();
+
+      expect(provider.sessionStatusById['ses_2'], isNull);
+      expect(provider.currentSessionPermissions, isEmpty);
+    });
 
     test(
       'foreground resume grace suppresses stale-signal delayed state until reconnect signal arrives',

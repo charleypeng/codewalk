@@ -175,7 +175,8 @@
 - **Given** server profiles are configured
 - **When** the app is active
 - **Then** by default the app checks each server's health every 10 seconds and shows a visual online/offline indicator
-- **Then** when `Cellular data saver` is active on mobile data, automatic foreground health checks slow to one burst every 1 minute and prioritize the active server only
+- **Then** when standard `Cellular data saver` is active on mobile data, automatic foreground health checks slow to one burst every 1 minute and prioritize the active server only
+- **Then** when aggressive `Cellular data saver` is active on mobile data, automatic foreground health checks use the aggressive 30-second cadence and still prioritize the active server only
 
 ### Cellular data saver indicator
 
@@ -1548,7 +1549,9 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Given** the user opens `Behavior` settings
 - **When** the cellular data saver card is visible
 - **Then** the app exposes a `CodeWalk exception` toggle that defaults to enabled
-- **Then** the card explains that mobile/cellular connections suppress automatic background network work and throttle automatic foreground refreshes to one burst every 1 minute
+- **Then** the card explains that mobile/cellular connections suppress automatic background network work and throttle automatic foreground refreshes
+- **Then** standard cellular saver uses the 1-minute foreground cadence
+- **Then** aggressive cellular saver keeps automatic work scoped to the visible chat session, skips inactive session/context refreshes, does not subscribe to `/global/event`, pauses the project event stream while the visible session is idle, and uses a 30-second retained automatic cadence while manual actions remain immediate
 
 ### Keyboard shortcuts are CodeWalk-local
 
@@ -1664,7 +1667,8 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Then** the app automatically reconnects to the server and resynchronizes state (missed messages, updated sessions, etc.)
 - **Then** transient resume-time probe failures use a short confirmation window before unhealthy/disconnected warning UI is shown, so false alerts do not flash while connectivity is still settling
 - **Then** pending question and permission refreshes merge with live SSE updates during reconnect/resume instead of wiping newer in-memory prompts that arrived while the HTTP refresh was in flight
-- **Then** when `Cellular data saver` is active on mobile data, resume-time automatic sync is limited to one immediate foreground burst and idle realtime may stay paused afterward until the next 1-minute window or an explicit user action
+- **Then** when standard `Cellular data saver` is active on mobile data, resume-time automatic sync is limited to one immediate foreground burst and idle realtime may stay paused afterward until the next 1-minute window or an explicit user action
+- **Then** when aggressive `Cellular data saver` is active on mobile data, resume-time automatic sync refreshes only the visible session and visible pending interactions, skips inactive session/context refreshes, and idle realtime may stay paused afterward until the next 30-second automatic tick or an explicit user action
 
 ### No duplicate refresh on resume
 

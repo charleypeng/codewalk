@@ -60,8 +60,10 @@ extension _ChatProviderRealtimeOps on ChatProvider {
       );
       return;
     }
-    unawaited(_syncSelectionFromRemote(reason: 'sync-health-tick'));
-    _attemptPendingRemoteSelectionSync(reason: 'sync-health-tick');
+    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
+      unawaited(_syncSelectionFromRemote(reason: 'sync-health-tick'));
+      _attemptPendingRemoteSelectionSync(reason: 'sync-health-tick');
+    }
     if (!_refreshlessRealtimeEnabled) {
       return;
     }
@@ -105,6 +107,7 @@ extension _ChatProviderRealtimeOps on ChatProvider {
       await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-resume');
       await _runAutomaticForegroundSyncForDataSaver(
         reason: 'foreground-resume',
+        force: true,
       );
       return;
     }

@@ -163,6 +163,34 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     }
   }
 
+  bool _shouldSuppressAggressiveDataSaverEvent(
+    ChatEvent event,
+    String? sessionId,
+  ) {
+    if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
+      return false;
+    }
+    if (event.type == 'server.connected' || event.type == 'server.heartbeat') {
+      return false;
+    }
+    final affectsSession =
+        event.type.startsWith('session.') ||
+        event.type.startsWith('message.') ||
+        event.type.startsWith('todo.') ||
+        event.type.startsWith('permission.') ||
+        event.type.startsWith('question.');
+    if (!affectsSession) {
+      return false;
+    }
+    if (!_hasVisibleAggressiveDataSaverSession) {
+      return true;
+    }
+    if (sessionId == null || sessionId.trim().isEmpty) {
+      return false;
+    }
+    return !_isVisibleAggressiveSessionId(sessionId);
+  }
+
   bool _isRootSessionInList(String sessionId, List<ChatSession> sessions) {
     for (final session in sessions) {
       if (session.id != sessionId) {
@@ -286,6 +314,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       }
     }
     final eventSessionId = _extractEventSessionId(event.properties);
+    if (_shouldSuppressAggressiveDataSaverEvent(event, eventSessionId)) {
+      _dirtyContextKeys.add(_activeContextKey);
+      AppLogger.info(
+        'data_saver_aggressive_event_suppressed type=${event.type} session=${eventSessionId ?? "-"}',
+      );
+      return;
+    }
     final feedbackEvent = _feedbackEventForCurrentContext(event);
     final feedbackSessionId = feedbackEvent == null
         ? null
@@ -352,6 +387,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         (currentSessionId == null || eventSessionId == currentSessionId);
     if (event.type != 'server.connected' &&
         eventTargetsCurrentSession &&
+        !_cellularDataSaverService.isAggressiveDataSaverActive &&
         (event.type == 'session.status' ||
             event.type == 'message.created' ||
             event.type == 'message.updated' ||
@@ -363,15 +399,26 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       case 'server.heartbeat':
         break;
       case 'server.connected':
-        unawaited(
-          refreshActiveSessionView(reason: 'realtime-server-connected'),
-        );
-        unawaited(
-          _syncSelectionFromRemote(
-            reason: 'event-server-connected',
-            force: true,
-          ),
-        );
+        if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+          if (_hasVisibleAggressiveDataSaverSession) {
+            unawaited(
+              refreshActiveSessionView(
+                reason: 'realtime-server-connected',
+                includeStatus: false,
+              ),
+            );
+          }
+        } else {
+          unawaited(
+            refreshActiveSessionView(reason: 'realtime-server-connected'),
+          );
+          unawaited(
+            _syncSelectionFromRemote(
+              reason: 'event-server-connected',
+              force: true,
+            ),
+          );
+        }
         break;
       case 'session.created':
       case 'session.updated':
@@ -1127,6 +1174,18 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     final directory = _extractDirectoryFromEvent(event);
     if (directory == null || directory.trim().isEmpty) {
       _dirtyContextKeys.add(_activeContextKey);
+      if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+        final eventSessionId = _extractEventSessionId(event.properties);
+        if (_hasVisibleAggressiveDataSaverSession &&
+            _isVisibleAggressiveSessionId(eventSessionId) &&
+            _tryApplyGlobalEventIncremental(event)) {
+          return;
+        }
+        AppLogger.debug(
+          'Suppressed aggressive data saver global event without directory type=$type',
+        );
+        return;
+      }
       if (_tryApplyGlobalEventIncremental(event)) {
         return;
       }
@@ -1148,6 +1207,20 @@ extension _ChatProviderEventReducerOps on ChatProvider {
 
     final targetContextKey = _composeContextKey(_activeServerId, directory);
     _dirtyContextKeys.add(targetContextKey);
+
+    if (_cellularDataSaverService.isAggressiveDataSaverActive) {
+      final eventSessionId = _extractEventSessionId(event.properties);
+      if (targetContextKey == _activeContextKey &&
+          _hasVisibleAggressiveDataSaverSession &&
+          _isVisibleAggressiveSessionId(eventSessionId) &&
+          _tryApplyGlobalEventIncremental(event)) {
+        return;
+      }
+      AppLogger.debug(
+        'Marked aggressive data saver context dirty without global reconcile context=$targetContextKey event=$type',
+      );
+      return;
+    }
 
     if (targetContextKey == _activeContextKey) {
       if (_tryApplyGlobalEventIncremental(event)) {
@@ -1760,7 +1833,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         'scoped_reconcile_triggered reason=$reason sessions=$shouldRefreshSessions active=$shouldRefreshActiveSession status=$shouldRefreshStatus',
       );
 
-      if (shouldRefreshSessions) {
+      final isAggressiveDataSaver =
+          _cellularDataSaverService.isAggressiveDataSaverActive;
+
+      if (shouldRefreshSessions && !isAggressiveDataSaver) {
         unawaited(loadSessions());
       }
 
@@ -1768,13 +1844,18 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         unawaited(
           refreshActiveSessionView(
             reason: 'scoped-reconcile:$reason',
-            includeStatus: !shouldRefreshSessions && shouldRefreshStatus,
+            includeStatus:
+                !isAggressiveDataSaver &&
+                !shouldRefreshSessions &&
+                shouldRefreshStatus,
           ),
         );
         return;
       }
 
-      if (!shouldRefreshSessions && shouldRefreshStatus) {
+      if (!shouldRefreshSessions &&
+          shouldRefreshStatus &&
+          !isAggressiveDataSaver) {
         unawaited(refreshSessionStatusSnapshot());
       }
     });
