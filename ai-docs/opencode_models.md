@@ -1,6 +1,6 @@
 # Models | OpenCode Compatibility Notes
 
-Last reviewed: 2026-06-13
+Last reviewed: 2026-07-02
 
 This local anchor summarizes the model/provider compatibility details CodeWalk
 needs when following ADR-023. The official OpenCode server remains the source of
@@ -15,6 +15,13 @@ spec exposed at `/doc`.
 - `/config/providers` returns configured providers and default models.
 - CodeWalk must keep provider/model identifiers untranslated and preserve their
   exact wire values.
+- Composer model selection follows the official connected/free model contract:
+  list non-hidden, non-deprecated models from `/provider.connected`, plus dynamic
+  free Zen models from provider id `opencode` where `cost.input == 0`.
+- Do not hardcode CodeWalk-side model allowlists for Zen/free models; rely on the
+  `/provider` payload refreshed by OpenCode from models.dev.
+- Do not treat similarly named providers such as `opencode-go` as Zen/free unless
+  they are reported as connected.
 
 ## Recent OpenCode Additions
 
@@ -27,7 +34,7 @@ spec exposed at `/doc`.
 ## Client Requirements
 
 - Parse model capabilities defensively. Upstream may send booleans, structured
-  objects, variant maps, or new capability fields.
+  objects, variant maps, model `status`, or new capability fields.
 - Treat unknown providers and models as valid catalog entries when OpenCode
   returns them.
 - Do not infer provider availability from static CodeWalk metadata alone.

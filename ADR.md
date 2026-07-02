@@ -1044,6 +1044,17 @@ These references are the first source of truth before implementing client behavi
 
 Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
+### Composer Model Selection Contract
+
+**Note**: Composer model selection follows the official OpenCode connected/free model contract — no CodeWalk-specific model allowlist.
+
+- **Source of truth**: User-selectable models come from `/provider.connected`, filtered to models that are neither hidden nor deprecated.
+- **Dynamic free Zen models**: In addition, dynamic free Zen models are pulled from provider id `opencode` where `cost.input == 0`. These are included regardless of the connected model list, since free Zen availability is a server-discovered property, not a CodeWalk policy.
+- **No hardcoded allowlist**: CodeWalk intentionally does not hardcode any model allowlist. Selection is driven entirely by the server's authoritative provider/model responses, keeping the client aligned with whatever the connected OpenCode server exposes.
+- **`opencode-go` is not auto-classified as Zen**: The `opencode-go` provider is treated as Zen only when it is connected (i.e., appears in `/provider.connected`). Otherwise, it is excluded from free Zen selection even if its cost matches, since unconnected providers must not be offered to the user.
+
+This contract is a direct application of the ADR-023 contract-first policy: the composer never invents or restricts model availability beyond what the official OpenCode server reports.
+
 ### Known Pitfalls
 
 #### Pitfall P-001: Optimistic user message ID format (regression `b0660a2`, 2026-03-02)

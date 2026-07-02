@@ -1421,9 +1421,11 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 - **Given** the connected OpenCode server has providers configured (e.g., Claude, OpenAI, Gemini)
 - **When** the user opens the model selector
-- **Then** all available providers and their models are listed, sourced directly from the server
+- **Then** selectable entries are sourced directly from the server `/provider` catalog and limited to non-hidden, non-deprecated models from connected providers
+- **Then** dynamic free OpenCode Zen models from provider `opencode` with zero input cost are also listed even when no provider credentials are configured, and they are marked as free
+- **Then** similarly named providers such as `opencode-go` are listed only when the server reports them as connected
 - **Then** the app restores the last successful provider/model catalog snapshot for the active server immediately and revalidates it in the background, so same-server project switches avoid showing an empty selector whenever possible
-- **Then** the user can select any model to use for the current session
+- **Then** the user can select any listed model to use for the current session; stale persisted, favorite, recent, remote, or message-derived selections outside this rule are ignored
 
 ### Model variants and reasoning effort
 
