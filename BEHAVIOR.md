@@ -1230,13 +1230,19 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 
 ## File Explorer
 
-### Read-only project tree
+### Project tree file management
 
 - **Given** the user opens the file explorer panel
 - **When** the project tree loads
-- **Then** the user sees the file/folder structure of the current project in read-only mode (no create, edit, or delete)
+- **Then** the user sees the file/folder structure of the current project
 - **Then** slow root and directory loads show inline skeleton rows instead of a blocking centered spinner
 - **Then** per-directory load failures stay localized to the expanded directory and expose a retry action without replacing the whole tree
+- **When** the active server and project directory support shell-backed file operations
+- **Then** desktop secondary-click and mobile long-press open row actions for `New file`, `New folder`, `Rename`, `Delete`, `Copy path`, and `Refresh files` as applicable
+- **Then** the file explorer header exposes a root-level `New` menu for creating files or folders at the project root
+- **Then** create, rename, and delete operations run in hidden ephemeral OpenCode shell sessions scoped to the active project root, validate leaf names, parse only the `CW_FILE_OP_JSON:` sentinel result, refresh affected tree caches, and reconcile open file tabs
+- **Then** delete requires confirmation before mutating the server filesystem
+- **Then** mutating actions are hidden when the shell probe is unavailable, the current directory is missing, or the project root is `/`; read-only actions remain available
 
 ### File preview
 

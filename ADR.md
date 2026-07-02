@@ -46,6 +46,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-040: Client-Owned Per-Project Icon Discovery
 - ADR-041: Chat Stability Invariants for Delta Reconciliation and Final Reveal
 - ADR-042: Global App Logs Toggle with Default-Off and Lazy Performance Instrumentation
+- ADR-043: Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations (ADR-023 Exception)
 
 ---
 
@@ -2425,3 +2426,141 @@ This ADR is fully compliant with ADR-023. It introduces no OpenCode server contr
 - `test/unit/domain/experience_settings_test.dart` — default-off, explicit preservation, and legacy migration coverage
 - `test/widget/logs_page_test.dart` — LogsPage disabled/default/toggle behavior and performance filter coverage
 - Ref: issue #91
+
+---
+
+## ADR-043: Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations (ADR-023 Exception) (2026-07-02)
+
+**Status**: Accepted
+
+**Related**: ADR-008 (Context-Scoped File Explorer and Viewer with Quick Open and Diff-Aware Refresh), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-027 (Server-Hosted PTY Terminal with Embedded Client Rendering), ADR-029 (Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity), ADR-002 (Context Isolation), ADR-040 (Client-Owned Per-Project Icon Discovery). Ref: issue #89.
+
+### Context
+
+ADR-008 established the file explorer as a read/navigation/diff-refresh surface over the official OpenCode read-only file API: the tree, quick open, viewer, and diff-aware refresh are all purely observational. Issue #89 extends the same surface with a micro file manager: create file, create folder, rename, delete, copy path, and explicit refresh, exposed through file-tree context menus and a root "New" menu. Together they turn the explorer into a lightweight, scoped file manager that lives next to the chat conversation.
+
+The official OpenCode server file API is read/search only — it has no first-class mutation endpoints. At the same time, mutations (especially deletes) are destructive and must be safely contained. Three constraints define the design space:
+
+1. **No invented server contract.** CodeWalk must not synthesize a new mutation endpoint or call non-Official OpenCode routes as if they were official (ADR-023, §3 "Explicit Divergence"). All existing read paths and event semantics must continue to be authoritative.
+2. **No local `dart:io` mutation.** The client cannot write to the project filesystem on its own; the server host owns the workspace, environment, and toolchain (ADR-027, ADR-029). A local mutation would also defeat the cross-platform, server-hosted model that ADR-027 already settled on for shell access.
+3. **Strict containment.** Mutations must be confined to the active project root, must refuse the canonical filesystem root, must refuse unsafe leaf names, and must require an explicit delete confirmation. The capability to mutate must be probed and cached, and a safe read-only fallback must be the default when the probe fails.
+
+ADR-029 already established a hidden ephemeral OpenCode shell session as a server-side execution channel for host-discovered quota probes. The same transport — `POST /session`, `POST /session/:id/shell`, and `DELETE /session/:id` — can host a small POSIX shell MVP for the four destructive operations, with a single-line sentinel payload that the client parses. The terminal in ADR-027 stays separate: file mutations are one-shot scripted calls with no PTY, no streaming shell, and no terminal UI.
+
+### Decision
+
+1. **Mutation layer is `WorkspaceFileOperationsServiceImpl`.** All four mutations (create file, create folder, rename, delete) plus a `getCapabilities` / `invalidateCapabilities` pair are exposed as an abstract `WorkspaceFileOperationsService` so the UI can be wired against a fake in tests (`FakeWorkspaceFileOperationsService` in `test/widget/chat_page_test.dart`). The impl is injected through DI and the file-tree context menu actions and the root "New" menu are gated on its capability result, not on raw feature flags.
+
+2. **Hidden ephemeral OpenCode shell session per call.** Each mutation opens a fresh ephemeral session via `POST /session` (title: `ChatTitleGenerator.ephemeralSessionTitle`, which the realtime layer already filters out — ADR-009), executes a small POSIX shell script via `POST /session/:id/shell` with `queryParameters: { 'directory': <rootDirectory> }` and `data: { 'agent': 'build', 'command': <script> }`, and tears the session down with `DELETE /session/:id` in a `finally` block. The session id is also added to `ChatTitleGenerator.ephemeralSessionIds` so the chat provider can ignore the session in the realtime stream and the title generator's 5-second delayed prune keeps the id out of leak paths. There is no PTY, no terminal endpoint, and no streaming output — this is one-shot command execution, not a shell session.
+
+3. **`CW_FILE_OP_JSON:` sentinel protocol.** The shell script ends with a single `printf '%s\n' "CW_FILE_OP_JSON:$1"` line. The client walks the response envelope (the OpenCode shell payload is a `parts`/`text` map; the helper `_searchStringValues` scans the last line of every string value in reverse to find the sentinel) and parses the trailing JSON object. The payload schema is `{ok: bool, code: <WorkspaceFileOperationCode>, message: string, path?: string, newPath?: string}`. Wire codes are `ok | unavailable | invalidName | outsideRoot | rootDeleteBlocked | missing | alreadyExists | permissionDenied | notDirectory | failed | malformedResponse`. Anything that does not contain a parseable sentinel is mapped to `malformedResponse` and clears the capability cache for the next call.
+
+4. **Cached capability probe keyed by `serverScopeKey` + directory.** The first mutation or explicit capability lookup runs a probe script in the requested `directory` query, resolves the server-side working directory with `pwd -P`, and returns `outsideRoot` when that canonical path is `/`. The result is cached in `_capabilityCache` keyed by `'$serverScopeKey::${normalizeFilePath(directory)}'` and re-used for the lifetime of the service. `invalidateCapabilities` is called on `unavailable` / `malformedResponse` mutation results so a transient shell/transport failure does not pin the UI to a stale "available" state. The probe also doubles as a `/` check: the client-side `_isUnsafeRoot` short-circuits to `outsideRoot` before any shell call when the directory is empty or `/`, so literal and canonical root paths are blocked at both layers.
+
+5. **POSIX shell MVP, no PTY.** The four shell scripts are pure POSIX `sh` — `set -u`, `cw_validate_name`, `cw_prepare_parent`, `cw_emit`/`cw_ok`/`cw_fail` helpers, and the body (`:` for create-file, `mkdir --`, `mv --`, `rm` / `rm -r`). No ANSI-C quoting issues, no multi-line heredocs (the ADR-029 Base64 detour is not needed because the scripts are short and structured), no streaming, no signal handling. The root is resolved with `pwd -P` (canonical, symlink-resolved) and the parent must satisfy `case "$parent" in "$root"|"$root"/*) ;; *) cw_fail outsideRoot ;; esac`. This is intentionally minimal and easy to audit: it is the MVP and any richer operation (move-across-directories, permissions editor, bulk operations) requires a future ADR.
+
+6. **Strict project-root containment.** Every mutation:
+   - Normalizes and trims the leaf name; rejects empty, `.`, `..`, anything containing `/`, `\`, NUL, LF, or CR (`invalidName`).
+   - Resolves both `rootDirectory` and `parentDirectory` with `normalizeFilePath`; rejects empty or `/` roots (`outsideRoot`); rejects any parent that is not the root or under the root (`outsideRoot`).
+   - Refuses to delete or rename the project root itself (`rootDeleteBlocked`) if a generated target/source ever equals the canonical root; invalid leaf-name validation blocks the ordinary direct-root cases before any shell call.
+   - Quotes every interpolated path with the project's `_shQuote` (single-quote with `'\''` escapes) so names with spaces, quotes, or unicode never break the script.
+
+7. **Invalid leaf names blocked at the client boundary.** `_normalizeLeafName` runs in the same `_prepareLeafOperation` (or its rename-specific path) before any shell call, so a bad name never produces a network request. The same rule applies in both client-side and server-side (`cw_validate_name` in the shell) — defense in depth, since the shell runs on the host.
+
+8. **Delete confirmation.** `delete` shows an `AlertDialog` (`filesDeleteTitle(name)` + `filesDeleteConfirm(name)`) with explicit Cancel and Delete actions before the service is called. The action is also flagged `destructive: true` in the file-tree context menu (`FileTreeContextMenuAction.destructive`) so the renderer can apply a danger color and the menu item does not adopt the modal-Enter policy from ADR-024. Copy path and refresh are always available even when mutations are not, because they are pure read-side affordances.
+
+9. **Open-tab / tree reconciliation after rename and delete.** After a successful rename, `_reconcileRenamedFileTreePath` rewrites every key in `tabsByPath`, `tabSelection.openPaths`, `tabSelection.activePath`, `selectedLinesByPath`, and `lastSelectedLineByPath` from the old path prefix to the new one, and prunes the old directory subtree from the tree cache. After a successful delete, `_reconcileDeletedFileTreePath` closes any open tab whose path matches the deleted entry and prunes the subtree from the tree cache. New file / new folder reuses the existing `_refreshFileTreeDirectory(force: true)` to refetch the parent directory, and the `onUpdated` callback drives a `setState` so the tree, the tabs, and the quick-open dialog all observe the change without an extra round-trip.
+
+10. **Read-only fallback is the default.** The file-tree context menu only shows the four mutation actions when `_fileMutationsSupported(fileState)` is true, i.e. when `fileState.fileOperationCapabilities?.shellFileOpsSupported == true`. The root "New" menu (the `PopupMenuButton` with `file_tree_menu_new_file` / `file_tree_menu_new_folder` items) is hidden in the same condition. If the capability probe returns `unavailable` or `outsideRoot`, the UI stays exactly as it was under ADR-008: tree, quick open, viewer, diff-aware refresh, copy path, and explicit refresh all work, but no mutation affordance is exposed. There is no client-side fallback path that bypasses the shell.
+
+### Rationale
+
+- **Server-hosted, no client mutation.** The project directory lives on the OpenCode server host; running `dart:io` writes on the client would either silently fail (remote/dev/staging) or corrupt cross-device state. Routing mutations through a hidden shell session is the same architectural decision ADR-027 took for the terminal: keep the host authoritative.
+- **Reuse the ADR-029 transport.** The quota monitoring work already proved the `POST /session` → `POST /session/:id/shell` → `DELETE /session/:id` pattern is reliable enough to host code that runs on the host. File operations are simpler (no external HTTP calls, no fetch, no base64 payload) and inherit the same ephemeral-session hygiene (realtime filter, 5s prune) for free.
+- **Sentinel protocol matches existing patterns.** The `CW_FILE_OP_JSON:` prefix is the structural mirror of `CW_QUOTA_JSON:` in ADR-029 and the `_title_gen` ephemeral title from ADR-009. The client only needs to know the last line of a string value is the contract; everything before it is noise. Parsing is defensive (`_searchStringValues` walks the envelope, JSON parse failures map to `malformedResponse`).
+- **Capability probe keeps the UI honest.** A server that does not support ephemeral shell sessions (older OpenCode, hardened deployments, missing `/session/:id/shell`) returns 404 — the service maps that to `unavailable`, the cache drops, and the UI stays read-only. There is no silent "this button does nothing" state and no invented success path.
+- **Strict containment matches the blast radius.** Project-root containment, root delete blocking, and invalid leaf-name rejection are tested at both the client (`_normalizeLeafName`, `_isPathUnderRoot`, `_isUnsafeRoot`) and the shell (`cw_validate_name`, `cw_prepare_parent`). A bad name never produces a network call; a path outside the root never reaches the shell.
+- **No PTY keeps the blast radius small.** A one-shot `POST /session/:id/shell` with a single short POSIX script is auditable, has no terminal UX, and never lingers — the `finally` block always calls `DELETE /session/:id`. This is deliberately a different feature from the terminal in ADR-027; the two share the ephemeral shell transport but not the lifecycle, UI, or session model.
+- **Read-only fallback is non-disruptive.** If the probe is unavailable, the user keeps the full ADR-008 surface — tree, viewer, diff-aware refresh, copy path, manual refresh — and only loses the four mutation affordances. There is no upgrade path that breaks an existing user.
+- **Open-tab and tree reconciliation preserve the existing context.** Renaming or deleting a path while a tab is open would otherwise leave the viewer pointing at a stale path; the reconciliation helpers guarantee the tabs, the tree, the selected lines, and the quick-open cache stay coherent without forcing the user to re-open the file manually.
+
+### Consequences
+
+- ✅ File explorer becomes a usable micro file manager: create file/folder, rename, delete, copy path, and explicit refresh are all reachable from the file-tree context menu and the root "New" menu.
+- ✅ Mutations run on the OpenCode host, so the active project's environment, permissions, and toolchain stay authoritative — same model as ADR-027.
+- ✅ No invented server contract: the implementation reuses `POST /session`, `POST /session/:id/shell`, and `DELETE /session/:id`. No new endpoints, no modified request/response schemas, no event semantic changes.
+- ✅ Strict containment at both layers: bad leaf names are rejected before any network call; bad parents are rejected by the shell script via `pwd -P` + case check; the project root itself cannot be deleted.
+- ✅ Capability probe + cache keeps the UI honest: servers without ephemeral shell support stay read-only without inventing a fake success path.
+- ✅ Open-tab and tree reconciliation preserve viewer state across rename and delete.
+- ✅ Read-only fallback is the default — users on servers without the shell endpoint keep every ADR-008 capability.
+- ✅ Posix shell MVP is auditable (one short script per operation) and easy to extend with a future ADR for richer operations.
+- ⚠ Adds a second consumer of the ephemeral shell transport alongside ADR-029 — the realtime filter and 5s prune in `ChatTitleGenerator` are now load-bearing for both features. A regression in that filter would leak ephemeral sessions into the chat timeline.
+- ⚠ The shell scripts are POSIX `sh` only; Windows hosts that route through `bash`/WSL are covered, but exotic shells (fish, nushell) are not validated. The MVP is intentionally minimal.
+- ⚠ Each mutation is a full round-trip (`POST /session` → `POST /session/:id/shell` → `DELETE /session/:id`), which is slower than a hypothetical native mutation endpoint. Acceptable for the four operations, but bulk operations (move many files, large refactors) would need a different transport.
+- ⚠ The capability cache is in-memory only; a process restart re-probes every directory. This is the correct behavior for a probe that may have changed server-side, but it does mean a fresh launch on a slow host pays a one-shot latency cost.
+- ❌ Servers without ephemeral shell support cannot enable file mutations. This is the intentional safe fallback; no client-side bypass path is provided.
+- ❌ No move-across-directories, no permissions editor, no bulk operations, no multi-select, no undo. These are follow-ups behind a future ADR.
+- ❌ No local `dart:io` mutation path. The client never writes to the project filesystem directly — the host is always authoritative.
+
+### ADR-023 Exception Declaration
+
+This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Divergence") of ADR-023.
+
+**Deviation from official behavior**: Official OpenCode defines the file API as read/search only. There is no first-class mutation endpoint. CodeWalk performs file mutations by reusing the official ephemeral shell transport (`POST /session`, `POST /session/:id/shell`, `DELETE /session/:id`) with a structured `CW_FILE_OP_JSON:` sentinel payload. This is a server-side shell-backed mutation that lives outside the official file API surface.
+
+**Why this is acceptable**:
+- The OpenCode file API is unchanged — CodeWalk still uses the official endpoints for every read, navigation, search, and diff path. No new mutation endpoints are invented, and no read payload is reinterpreted.
+- The ephemeral shell transport is the same `POST /session` → `POST /session/:id/shell` → `DELETE /session/:id` pattern ADR-029 already uses for host-discovered quota probes. It is a documented, server-supported surface, not a custom OpenCode extension.
+- The feature is capability-gated: `getCapabilities` runs a probe and the UI only exposes mutation affordances when the server reports `shellFileOpsSupported = true`. A server that does not support the transport stays read-only.
+- The probe uses canonical `pwd -P` and the strict `case "$parent" in "$root"|"$root"/*) ;; *) cw_fail outsideRoot ;; esac` containment so the server-side script enforces the same project-root boundary the client checks. The script is auditable, single-purpose, and short.
+- The implementation never writes to the project filesystem on the client; the host is always authoritative.
+
+**Why this is not a free pass for additional divergences**: The exception is scoped to the four mutation operations and the capability probe. Any new mutation, any cross-directory move, any bulk operation, or any read-side change must be evaluated against ADR-023 on its own merits. Future shell-script growth must be reviewed the same way ADR-029 was reviewed (and the ADR-029 truncation post-mortem still applies: keep scripts short, avoid heredocs, prefer structured one-liners).
+
+### Risks
+
+- **Medium shell-sandbox risk.** The shell script runs as the OpenCode server process and inherits its filesystem permissions. A future code change that loosens `cw_prepare_parent`, weakens `_isPathUnderRoot`, or interpolates untrusted input without `_shQuote` could let a malformed parent path escape the project root. Mitigation: the project-root check is in **two** places (client `_validateRootParent` and shell `cw_prepare_parent`), the leaf-name check is in two places (`_normalizeLeafName` and `cw_validate_name`), and `_shQuote` is the only path-interpolation helper — there is no `+` concatenation on the wire.
+- **Low transport risk.** A 404 from `POST /session/:id/shell` is mapped to `unavailable` and clears the capability cache. A 5xx, a network error, or a malformed sentinel is mapped to `failed` / `malformedResponse` and surfaced to the user as a non-blocking error. The user can retry; the cache drop ensures the next attempt re-probes.
+- **Low lifecycle risk.** The `finally` block always calls `DELETE /session/:id`. A regression that removes the `finally` would leak ephemeral sessions into the chat timeline; the realtime filter in `ChatTitleGenerator.ephemeralSessionIds` and the 5-second delayed prune are the second line of defense. The 5s prune is the load-bearing piece for both this ADR and ADR-029 — any change to that helper must be reviewed against both features.
+- **Low capability-staleness risk.** The capability cache is per-process and per-`serverScopeKey::directory`. A server that silently loses shell support between two mutations would still report `shellFileOpsSupported = true` until `invalidateCapabilities` is called (which happens on `unavailable` / `malformedResponse`). A `failed` result that is actually a server regression would be reported to the user but the cache would stay "available". The user can trigger a manual refresh by switching project and back, which changes the scope key; this is an acceptable MVP trade-off.
+- **Low UX risk.** A successful mutation that the user did not see (e.g. a delete that returns `ok` because the script ran but the file was already gone) is unlikely because the script checks existence / writability before acting. The reconciliation helpers make sure a deleted file no longer appears in tabs or the tree. A failed delete leaves the tree untouched.
+
+### Rollback / Fallback Plan
+
+- **User-visible rollback (per server)**: disable the per-server file mutations by clearing the `fileOperationCapabilities` cache and re-probing — the simplest user action is to switch projects and switch back. There is no per-server toggle in v1; the probe result is the toggle.
+- **Product rollback (per profile / global)**: revert the commit that wires the file-tree context menu items and the root "New" menu. The service stays in the codebase, but the UI falls back to the ADR-008 read-only surface. No data loss: no persisted state is added by this ADR.
+- **Service-level fallback**: when the probe returns `unavailable` or `outsideRoot`, the UI never wires the mutation actions and the four operations are unreachable. The `getCapabilities` call is idempotent and the cache drops on `unavailable` / `malformedResponse`, so transient failures auto-recover.
+- **Server-level fallback**: if the OpenCode server later exposes an official mutation endpoint, the service can be re-pointed at it without UI changes — the abstract `WorkspaceFileOperationsService` interface is the seam. The capability probe becomes a check for the new endpoint and the sentinel protocol is retired.
+- **Feature flag**: there is no global feature flag; the per-directory capability probe is the de facto flag. A future product-level kill switch (per profile or per server) can be added without API changes.
+
+### Regression Tests
+
+Unit / widget coverage under `test/unit/presentation/workspace_file_operations_service_test.dart` and `test/widget/chat_page_test.dart`:
+
+- **Sentinel extraction**: the `extractSentinelPayload` helper returns the last `CW_FILE_OP_JSON:…` line from a nested `parts`/`state.output` envelope, even when it is not the last line of the payload.
+- **Malformed payload**: non-JSON or non-`Map` sentinel payloads map to `WorkspaceFileOperationCode.malformedResponse`; mutation results with malformed payloads clear the capability cache so the next operation re-probes.
+- **Shell quoting**: `_shQuote` escapes single quotes (`'\''`), preserves spaces, and is the only path used for interpolation in the generated scripts.
+- **Capability probe**: the first call hits the shell exactly once; the second call with the same `serverScopeKey` and directory re-uses the cached result and does not hit the shell again.
+- **Invalid leaf names fail before any shell call**: `..`, names containing `/` or `\`, and NUL/newline-bearing names all return `invalidName` with `shellCallCount == 0`.
+- **Root directory is unsafe**: `getCapabilities(directory: '/')` returns `shellFileOpsSupported: false`; `createFile(rootDirectory: '/', …)` returns `outsideRoot`; the canonical `pwd -P` `/` check inside the script also returns `outsideRoot`.
+- **Ephemeral session teardown**: the service always calls `DELETE /session/:id` in a `finally` block; the deleted-session list in the fake server confirms every shell call is paired with a delete.
+- **Project-root containment**: literal `/` roots are refused without a shell call, non-literal directories that canonicalize to `/` are refused by the probe/helper scripts, and paths outside the project root return `outsideRoot`.
+- **UI wiring (widget)**: the file-tree context menu shows all four mutation actions when `shellFileOpsSupported == true`; shows only `copyPath` and `refresh` otherwise; the root "New" menu is hidden when the capability is missing.
+- **Delete confirmation**: the destructive action is gated by the `filesDeleteTitle` / `filesDeleteConfirm` dialog; the menu item is flagged `destructive: true` and is excluded from the modal-Enter policy (ADR-024).
+- **Open-tab / tree reconciliation**: a successful rename/delete reconciles path-keyed file viewer state, prunes stale tree cache entries, refreshes the affected directory, and covers absolute/relative tree path cases.
+- **Realtime filter**: ephemeral session ids registered with `ChatTitleGenerator.ephemeralSessionIds` are filtered out of the chat timeline and pruned after 5s (existing ADR-009 coverage extended to this ADR's call sites).
+- **Read-only fallback**: when the probe is unavailable, the file-tree context menu still exposes `copyPath` and `refresh` and the rest of the ADR-008 surface keeps working unchanged.
+
+### Key Files
+
+- `lib/presentation/services/workspace_file_operations_service.dart` — `WorkspaceFileOperationsService` interface, `WorkspaceFileOperationsServiceImpl` (Dio + ephemeral shell + sentinel protocol), `WorkspaceFileOperationsCapabilities`, `WorkspaceFileOperationResult`, `WorkspaceFileOperationCode` enum
+- `lib/presentation/services/chat_title_generator.dart` — `ephemeralSessionIds` set, `ephemeralSessionTitle` constant, 5-second delayed prune (reused from ADR-009)
+- `lib/presentation/pages/chat_page/chat_page_file_runtime.dart` — file-tree context menu actions (`_fileTreeActionsForNode`, `_handleFileTreeAction`, `_handleRootFileTreeAction`), root "New" menu plumbing, mutation dispatch, delete confirmation dialog, post-mutation reconciliation (`_reconcileRenamedFileTreePath`, `_reconcileDeletedFileTreePath`)
+- `lib/presentation/pages/chat_page/chat_page_file_explorer_controller.dart` — root "New" `PopupMenuButton` with `file_tree_menu_new_file` / `file_tree_menu_new_folder` keys, `file_tree_refresh_button`
+- `lib/presentation/widgets/file_tree_context_menu.dart` — `FileTreeContextMenuAction`, `FileTreeContextMenuActionType` enum, `fileTreeActionIcon`, destructive-action marker
+- `lib/core/utils/path_utils.dart` — `normalizeFilePath`, `joinParentPath` (used by the service for path normalization)
+- `lib/core/di/injection_container.dart` — DI wiring for `WorkspaceFileOperationsServiceImpl`
+- `lib/l10n/app_en.arb` + locale ARBs — `filesNewFile`, `filesNewFolder`, `filesRename`, `filesDelete`, `filesDeleteTitle`, `filesDeleteConfirm`, `filesCopyPath`, `filesRefresh` keys
+- `test/unit/presentation/workspace_file_operations_service_test.dart` — sentinel extraction, malformed payload, shell quoting, capability probe + cache, invalid leaf names, root-directory refusal, ephemeral session teardown
+- `test/widget/chat_page_test.dart` — file-tree context menu wiring for create/rename/delete, root "New" menu visibility, destructive-action flag, `FakeWorkspaceFileOperationsService` plumbing
+- Ref: issue #89
