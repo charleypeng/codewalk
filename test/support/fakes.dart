@@ -18,6 +18,7 @@ import 'package:codewalk/domain/repositories/app_repository.dart';
 import 'package:codewalk/domain/repositories/chat_repository.dart';
 import 'package:codewalk/domain/repositories/project_repository.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
+import 'package:codewalk/presentation/services/workspace_file_operations_service.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 
@@ -2465,6 +2466,178 @@ class FakeProjectRepository implements ProjectRepository {
       return Right(seeded);
     }
     return Right(FileContent(path: normalized, content: '', isBinary: false));
+  }
+}
+
+class FakeWorkspaceFileOperationsService
+    implements WorkspaceFileOperationsService {
+  FakeWorkspaceFileOperationsService({
+    this.capabilities = const WorkspaceFileOperationsCapabilities(
+      shellFileOpsSupported: false,
+      message: 'unsupported',
+    ),
+  });
+
+  WorkspaceFileOperationsCapabilities capabilities;
+  WorkspaceFileOperationResult? createFileResult;
+  WorkspaceFileOperationResult? createFolderResult;
+  WorkspaceFileOperationResult? renameResult;
+  WorkspaceFileOperationResult? deleteResult;
+  Future<void> Function({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  })?
+  onCreateFile;
+  Future<void> Function({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  })?
+  onCreateFolder;
+  Future<void> Function({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String oldName,
+    required String newName,
+  })?
+  onRename;
+  Future<void> Function({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  })?
+  onDelete;
+
+  int capabilitiesCallCount = 0;
+  int createFileCallCount = 0;
+  int createFolderCallCount = 0;
+  int renameCallCount = 0;
+  int deleteCallCount = 0;
+  String? lastParentDirectory;
+  String? lastName;
+  String? lastNewName;
+
+  @override
+  Future<WorkspaceFileOperationsCapabilities> getCapabilities({
+    required String serverScopeKey,
+    required String directory,
+  }) async {
+    capabilitiesCallCount += 1;
+    return capabilities;
+  }
+
+  @override
+  Future<void> invalidateCapabilities({
+    required String serverScopeKey,
+    required String directory,
+  }) async {}
+
+  @override
+  Future<WorkspaceFileOperationResult> createFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  }) async {
+    createFileCallCount += 1;
+    lastParentDirectory = parentDirectory;
+    lastName = name;
+    await onCreateFile?.call(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+    );
+    return createFileResult ??
+        WorkspaceFileOperationResult(
+          ok: true,
+          code: WorkspaceFileOperationCode.ok,
+          message: 'ok',
+          path: _joinPath(parentDirectory, name),
+        );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> createFolder({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  }) async {
+    createFolderCallCount += 1;
+    lastParentDirectory = parentDirectory;
+    lastName = name;
+    await onCreateFolder?.call(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+    );
+    return createFolderResult ??
+        WorkspaceFileOperationResult(
+          ok: true,
+          code: WorkspaceFileOperationCode.ok,
+          message: 'ok',
+          path: _joinPath(parentDirectory, name),
+        );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> rename({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String oldName,
+    required String newName,
+  }) async {
+    renameCallCount += 1;
+    lastParentDirectory = parentDirectory;
+    lastName = oldName;
+    lastNewName = newName;
+    await onRename?.call(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      oldName: oldName,
+      newName: newName,
+    );
+    return renameResult ??
+        WorkspaceFileOperationResult(
+          ok: true,
+          code: WorkspaceFileOperationCode.ok,
+          message: 'ok',
+          path: _joinPath(parentDirectory, oldName),
+          newPath: _joinPath(parentDirectory, newName),
+        );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> delete({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  }) async {
+    deleteCallCount += 1;
+    lastParentDirectory = parentDirectory;
+    lastName = name;
+    await onDelete?.call(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+    );
+    return deleteResult ??
+        WorkspaceFileOperationResult(
+          ok: true,
+          code: WorkspaceFileOperationCode.ok,
+          message: 'ok',
+          path: _joinPath(parentDirectory, name),
+        );
+  }
+
+  String _joinPath(String parent, String name) {
+    if (parent == '/') {
+      return '/$name';
+    }
+    return '$parent/$name';
   }
 }
 

@@ -1725,10 +1725,57 @@ class AppLocalizationsFr extends AppLocalizations {
   String get filesFileEmpty => 'Le fichier est vide.';
 
   @override
+  String get filesAlreadyExists =>
+      'A file or folder with that name already exists.';
+
+  @override
+  String get filesCopyPath => 'Copy path';
+
+  @override
+  String get filesCreateFileTitle => 'Create file';
+
+  @override
+  String get filesCreateFolderTitle => 'Create folder';
+
+  @override
+  String get filesDelete => 'Delete';
+
+  @override
+  String filesDeleteConfirm(String name) {
+    return 'Delete $name? This cannot be undone. Folders and their contents will be deleted.';
+  }
+
+  @override
+  String filesDeleteTitle(String name) {
+    return 'Delete $name';
+  }
+
+  @override
   String get filesFilesFound => 'Aucun fichier trouvé';
 
   @override
+  String get filesFileCreated => 'File created.';
+
+  @override
+  String get filesFolderCreated => 'Folder created.';
+
+  @override
   String get filesHideSidebar => 'Masquer la barre latérale des fichiers';
+
+  @override
+  String get filesInvalidName => 'Enter a valid name without path separators.';
+
+  @override
+  String get filesNameHint => 'Name';
+
+  @override
+  String get filesNew => 'New';
+
+  @override
+  String get filesNewFile => 'New file';
+
+  @override
+  String get filesNewFolder => 'New folder';
 
   @override
   String get filesNames => 'Noms';
@@ -1745,10 +1792,46 @@ class AppLocalizationsFr extends AppLocalizations {
   String get filesQuickOpenFile => 'Ouverture rapide de fichier';
 
   @override
+  String get filesOperationFailed => 'File operation failed.';
+
+  @override
+  String get filesOperationUnavailable =>
+      'File operations are not available for this server.';
+
+  @override
+  String get filesOutsideRoot => 'The path is outside the project root.';
+
+  @override
+  String get filesPathCopied => 'Path copied.';
+
+  @override
+  String get filesPathMissing => 'Path does not exist.';
+
+  @override
+  String get filesPermissionDenied => 'Permission denied.';
+
+  @override
   String get filesRefresh => 'Actualiser les fichiers';
 
   @override
+  String get filesRename => 'Rename';
+
+  @override
+  String filesRenameTitle(String name) {
+    return 'Rename $name';
+  }
+
+  @override
+  String get filesRenamed => 'Renamed.';
+
+  @override
+  String get filesRootDeleteBlocked => 'The project root cannot be deleted.';
+
+  @override
   String get filesSearchHint => 'Rechercher des fichiers par nom ou chemin';
+
+  @override
+  String get filesDeleted => 'Deleted.';
 
   @override
   String get filesTitle => 'Fichiers';

@@ -55,6 +55,7 @@ import 'package:codewalk/presentation/providers/quota_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/services/workspace_file_operations_service.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
@@ -6003,6 +6004,243 @@ void main() {
           const ValueKey<String>('file_viewer_tab_/repo/a/lib/main.dart'),
         ),
       ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('file tree right-click opens read-only context menu', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_menu',
+        name: 'Project Files Menu',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_menu',
+          name: 'Project Files Menu',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void main() {}',
+          isBinary: false,
+        );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Copy path'), findsOneWidget);
+    expect(find.text('Refresh files'), findsOneWidget);
+    expect(find.text('Rename'), findsNothing);
+    expect(find.text('Delete'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('file tree root new file action refreshes root nodes', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_new',
+        name: 'Project Files New',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_new',
+          name: 'Project Files New',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: '/repo/a/lib', name: 'lib', type: FileNodeType.directory),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onCreateFile =
+              ({
+                required rootDirectory,
+                required parentDirectory,
+                required name,
+              }) async {
+                projectRepository.filesByPath['.'] = <FileNode>[
+                  ...projectRepository.filesByPath['.']!,
+                  FileNode(
+                    path: '$parentDirectory/$name',
+                    name: name,
+                    type: FileNodeType.file,
+                  ),
+                ];
+              };
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_new_button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_new_file')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'new.dart');
+    await tester.tap(find.widgetWithText(TextButton, 'New file'));
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.createFileCallCount, 1);
+    expect(fileOperations.lastParentDirectory, '/repo/a');
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/new.dart')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('file tree rename action refreshes the renamed row', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_rename',
+        name: 'Project Files Rename',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_rename',
+          name: 'Project Files Rename',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onRename =
+              ({
+                required rootDirectory,
+                required parentDirectory,
+                required oldName,
+                required newName,
+              }) async {
+                projectRepository.filesByPath['.'] = <FileNode>[
+                  FileNode(
+                    path: '$parentDirectory/$newName',
+                    name: newName,
+                    type: FileNodeType.file,
+                  ),
+                ];
+              };
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/main.dart')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_rename')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'renamed.dart');
+    await tester.tap(find.widgetWithText(TextButton, 'Rename'));
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.renameCallCount, 1);
+    expect(fileOperations.lastName, 'main.dart');
+    expect(fileOperations.lastNewName, 'renamed.dart');
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/main.dart')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/renamed.dart')),
       findsOneWidget,
     );
   });
@@ -17854,12 +18092,19 @@ Widget _testApp(
   QuotaProvider? quotaProvider,
   QuotaRemoteDataSource? quotaRemoteDataSource,
   CellularDataSaverService? cellularDataSaverService,
+  WorkspaceFileOperationsService? fileOperationsService,
   MediaQueryData? mediaQueryData,
 }) {
   if (di.sl.isRegistered<AppLocalDataSource>()) {
     di.sl.unregister<AppLocalDataSource>();
   }
   di.sl.registerSingleton<AppLocalDataSource>(provider.localDataSource);
+  if (di.sl.isRegistered<WorkspaceFileOperationsService>()) {
+    di.sl.unregister<WorkspaceFileOperationsService>();
+  }
+  di.sl.registerSingleton<WorkspaceFileOperationsService>(
+    fileOperationsService ?? FakeWorkspaceFileOperationsService(),
+  );
 
   final effectiveSettingsProvider =
       settingsProvider ??

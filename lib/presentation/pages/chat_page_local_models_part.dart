@@ -13,6 +13,8 @@ class _FileExplorerContextState {
   final Map<String, _FileTabViewState> tabsByPath =
       <String, _FileTabViewState>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
+  WorkspaceFileOperationsCapabilities? fileOperationCapabilities;
+  bool fileOperationCapabilitiesLoading = false;
   // Line selection state for "add to chat" feature (1-based line numbers).
   final Map<String, Set<int>> selectedLinesByPath = <String, Set<int>>{};
   final Map<String, int> lastSelectedLineByPath = <String, int>{};
@@ -31,6 +33,8 @@ class _FileExplorerContextState {
     expandedDirectories.clear();
     loadingDirectories.clear();
     directoryErrors.clear();
+    fileOperationCapabilities = null;
+    fileOperationCapabilitiesLoading = false;
     selectedLinesByPath.clear();
     lastSelectedLineByPath.clear();
     pendingScrollToLine = null;

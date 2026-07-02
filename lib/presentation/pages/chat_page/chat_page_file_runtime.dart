@@ -54,6 +54,48 @@ extension _ChatPageFileRuntime on _ChatPageState {
     });
   }
 
+  void _ensureFileOperationCapabilities({
+    required _FileExplorerContextState state,
+    required ProjectProvider projectProvider,
+  }) {
+    if (state.fileOperationCapabilities != null ||
+        state.fileOperationCapabilitiesLoading) {
+      return;
+    }
+    final rootDirectory = state.rootDirectory;
+    state.fileOperationCapabilitiesLoading = true;
+    unawaited(
+      di
+          .sl<WorkspaceFileOperationsService>()
+          .getCapabilities(
+            serverScopeKey: projectProvider.contextKey,
+            directory: rootDirectory,
+          )
+          .then((capabilities) {
+            if (!mounted || state.rootDirectory != rootDirectory) {
+              return;
+            }
+            _setState(() {
+              state.fileOperationCapabilities = capabilities;
+              state.fileOperationCapabilitiesLoading = false;
+            });
+          })
+          .catchError((_) {
+            if (!mounted || state.rootDirectory != rootDirectory) {
+              return;
+            }
+            _setState(() {
+              state.fileOperationCapabilities =
+                  const WorkspaceFileOperationsCapabilities(
+                    shellFileOpsSupported: false,
+                    message: 'File operations are not available.',
+                  );
+              state.fileOperationCapabilitiesLoading = false;
+            });
+          }),
+    );
+  }
+
   void _reconcileFileContextWithSessionDiff({
     required String contextKey,
     required _FileExplorerContextState fileState,
@@ -559,6 +601,540 @@ extension _ChatPageFileRuntime on _ChatPageState {
     );
   }
 
+  bool _fileMutationsSupported(_FileExplorerContextState fileState) {
+    return fileState.fileOperationCapabilities?.shellFileOpsSupported == true;
+  }
+
+  List<FileTreeContextMenuAction> _fileTreeActionsForNode({
+    required _FileExplorerContextState fileState,
+    required FileNode node,
+  }) {
+    final actions = <FileTreeContextMenuAction>[];
+    if (_fileMutationsSupported(fileState)) {
+      if (node.isDirectory) {
+        actions
+          ..add(_fileTreeAction(FileTreeContextMenuActionType.newFile))
+          ..add(_fileTreeAction(FileTreeContextMenuActionType.newFolder));
+      }
+      actions
+        ..add(_fileTreeAction(FileTreeContextMenuActionType.rename))
+        ..add(_fileTreeAction(FileTreeContextMenuActionType.delete));
+    }
+    actions
+      ..add(_fileTreeAction(FileTreeContextMenuActionType.copyPath))
+      ..add(_fileTreeAction(FileTreeContextMenuActionType.refresh));
+    return actions;
+  }
+
+  FileTreeContextMenuAction _fileTreeAction(
+    FileTreeContextMenuActionType type,
+  ) {
+    return FileTreeContextMenuAction(
+      type: type,
+      label: _fileTreeActionLabel(type),
+      icon: fileTreeActionIcon(type),
+      destructive: type == FileTreeContextMenuActionType.delete,
+    );
+  }
+
+  String _fileTreeActionLabel(FileTreeContextMenuActionType type) {
+    switch (type) {
+      case FileTreeContextMenuActionType.newFile:
+        return context.l10n.filesNewFile;
+      case FileTreeContextMenuActionType.newFolder:
+        return context.l10n.filesNewFolder;
+      case FileTreeContextMenuActionType.rename:
+        return context.l10n.filesRename;
+      case FileTreeContextMenuActionType.delete:
+        return context.l10n.filesDelete;
+      case FileTreeContextMenuActionType.copyPath:
+        return context.l10n.filesCopyPath;
+      case FileTreeContextMenuActionType.refresh:
+        return context.l10n.filesRefresh;
+    }
+  }
+
+  Future<void> _handleRootFileTreeAction({
+    required FileTreeContextMenuActionType action,
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    VoidCallback? onUpdated,
+  }) async {
+    switch (action) {
+      case FileTreeContextMenuActionType.newFile:
+        await _createFileTreeEntry(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          parentDirectory: fileState.rootDirectory,
+          createFolder: false,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.newFolder:
+        await _createFileTreeEntry(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          parentDirectory: fileState.rootDirectory,
+          createFolder: true,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.rename:
+      case FileTreeContextMenuActionType.delete:
+      case FileTreeContextMenuActionType.copyPath:
+      case FileTreeContextMenuActionType.refresh:
+        return;
+    }
+  }
+
+  Future<void> _handleFileTreeAction({
+    required FileTreeContextMenuActionType action,
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required FileNode node,
+    VoidCallback? onUpdated,
+  }) async {
+    final parentDirectory = node.isDirectory
+        ? _normalizeFilePath(node.path)
+        : _parentDirectoryForFilePath(node.path);
+    switch (action) {
+      case FileTreeContextMenuActionType.newFile:
+        await _createFileTreeEntry(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          parentDirectory: parentDirectory,
+          createFolder: false,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.newFolder:
+        await _createFileTreeEntry(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          parentDirectory: parentDirectory,
+          createFolder: true,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.rename:
+        await _renameFileTreeNode(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          node: node,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.delete:
+        await _deleteFileTreeNode(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          node: node,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.copyPath:
+        final copiedMessage = context.l10n.filesPathCopied;
+        await Clipboard.setData(ClipboardData(text: node.path));
+        if (!mounted) {
+          return;
+        }
+        _showFileOperationSnackBar(copiedMessage);
+        return;
+      case FileTreeContextMenuActionType.refresh:
+        await _refreshFileTreeDirectory(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          directory: parentDirectory,
+          onUpdated: onUpdated,
+        );
+        return;
+    }
+  }
+
+  Future<void> _createFileTreeEntry({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String parentDirectory,
+    required bool createFolder,
+    VoidCallback? onUpdated,
+  }) async {
+    final successMessage = createFolder
+        ? context.l10n.filesFolderCreated
+        : context.l10n.filesFileCreated;
+    final name = await _showFileNameDialog(
+      title: createFolder
+          ? context.l10n.filesCreateFolderTitle
+          : context.l10n.filesCreateFileTitle,
+      actionLabel: createFolder
+          ? context.l10n.filesNewFolder
+          : context.l10n.filesNewFile,
+    );
+    if (name == null || !mounted) {
+      return;
+    }
+    final service = di.sl<WorkspaceFileOperationsService>();
+    final result = createFolder
+        ? await service.createFolder(
+            serverScopeKey: projectProvider.contextKey,
+            rootDirectory: fileState.rootDirectory,
+            parentDirectory: parentDirectory,
+            name: name,
+          )
+        : await service.createFile(
+            serverScopeKey: projectProvider.contextKey,
+            rootDirectory: fileState.rootDirectory,
+            parentDirectory: parentDirectory,
+            name: name,
+          );
+    if (!mounted) {
+      return;
+    }
+    if (!result.ok) {
+      _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
+      return;
+    }
+    await _refreshFileTreeDirectory(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      directory: parentDirectory,
+      onUpdated: onUpdated,
+    );
+    _showFileOperationSnackBar(successMessage);
+  }
+
+  Future<void> _renameFileTreeNode({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required FileNode node,
+    VoidCallback? onUpdated,
+  }) async {
+    final successMessage = context.l10n.filesRenamed;
+    final parentDirectory = _parentDirectoryForFilePath(node.path);
+    final nextName = await _showFileNameDialog(
+      title: context.l10n.filesRenameTitle(node.name),
+      actionLabel: context.l10n.filesRename,
+      initialName: node.name,
+    );
+    if (nextName == null || !mounted || nextName == node.name) {
+      return;
+    }
+    final result = await di.sl<WorkspaceFileOperationsService>().rename(
+      serverScopeKey: projectProvider.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      parentDirectory: parentDirectory,
+      oldName: node.name,
+      newName: nextName,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (!result.ok) {
+      _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
+      return;
+    }
+    final oldPath = _normalizeFilePath(result.path ?? node.path);
+    final newPath = _normalizeFilePath(
+      result.newPath ?? _joinFilePath(parentDirectory, nextName),
+    );
+    _reconcileRenamedFileTreePath(
+      fileState: fileState,
+      oldPath: oldPath,
+      newPath: newPath,
+    );
+    await _refreshFileTreeDirectory(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      directory: parentDirectory,
+      onUpdated: onUpdated,
+    );
+    _showFileOperationSnackBar(successMessage);
+  }
+
+  Future<void> _deleteFileTreeNode({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required FileNode node,
+    VoidCallback? onUpdated,
+  }) async {
+    final successMessage = context.l10n.filesDeleted;
+    final confirmed = await _confirmDeleteFileTreeNode(node);
+    if (!confirmed || !mounted) {
+      return;
+    }
+    final parentDirectory = _parentDirectoryForFilePath(node.path);
+    final result = await di.sl<WorkspaceFileOperationsService>().delete(
+      serverScopeKey: projectProvider.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      parentDirectory: parentDirectory,
+      name: node.name,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (!result.ok) {
+      _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
+      return;
+    }
+    _reconcileDeletedFileTreePath(fileState: fileState, path: node.path);
+    await _refreshFileTreeDirectory(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      directory: parentDirectory,
+      onUpdated: onUpdated,
+    );
+    _showFileOperationSnackBar(successMessage);
+  }
+
+  Future<String?> _showFileNameDialog({
+    required String title,
+    required String actionLabel,
+    String initialName = '',
+  }) {
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _FileNameDialog(
+        title: title,
+        actionLabel: actionLabel,
+        initialName: initialName,
+      ),
+    );
+  }
+
+  Future<bool> _confirmDeleteFileTreeNode(FileNode node) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.filesDeleteTitle(node.name)),
+        content: Text(context.l10n.filesDeleteConfirm(node.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(context.l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(context.l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
+  Future<void> _refreshFileTreeDirectory({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String directory,
+    VoidCallback? onUpdated,
+  }) async {
+    final normalized = _normalizeFilePath(directory);
+    await _loadDirectoryNodes(
+      state: fileState,
+      projectProvider: projectProvider,
+      cacheKey: _directoryCacheKey(fileState, normalized),
+      requestPath: normalized,
+      force: true,
+    );
+    onUpdated?.call();
+  }
+
+  String _directoryCacheKey(
+    _FileExplorerContextState fileState,
+    String directory,
+  ) {
+    final normalized = _normalizeFilePath(directory);
+    return normalized == _normalizeFilePath(fileState.rootDirectory)
+        ? _ChatPageState._rootTreeCacheKey
+        : normalized;
+  }
+
+  String _parentDirectoryForFilePath(String path) {
+    final normalized = _normalizeFilePath(path);
+    if (normalized.isEmpty || normalized == '/') {
+      return '/';
+    }
+    final index = normalized.lastIndexOf('/');
+    if (index <= 0) {
+      return '/';
+    }
+    return normalized.substring(0, index);
+  }
+
+  String _joinFilePath(String parentDirectory, String name) {
+    final parent = _normalizeFilePath(parentDirectory);
+    if (parent == '/') {
+      return _normalizeFilePath('/$name');
+    }
+    return _normalizeFilePath('$parent/$name');
+  }
+
+  void _reconcileRenamedFileTreePath({
+    required _FileExplorerContextState fileState,
+    required String oldPath,
+    required String newPath,
+  }) {
+    _setState(() {
+      final renamedTabs = <String, _FileTabViewState>{};
+      for (final entry in fileState.tabsByPath.entries) {
+        renamedTabs[_replacePathPrefix(entry.key, oldPath, newPath)] =
+            entry.value;
+      }
+      fileState.tabsByPath
+        ..clear()
+        ..addAll(renamedTabs);
+      fileState.tabSelection = FileTabSelectionState(
+        openPaths: fileState.tabSelection.openPaths
+            .map((path) => _replacePathPrefix(path, oldPath, newPath))
+            .toList(growable: false),
+        activePath: fileState.tabSelection.activePath == null
+            ? null
+            : _replacePathPrefix(
+                fileState.tabSelection.activePath!,
+                oldPath,
+                newPath,
+              ),
+      );
+      _renamePathKeyedSetMap(fileState.selectedLinesByPath, oldPath, newPath);
+      _renamePathKeyedValueMap(
+        fileState.lastSelectedLineByPath,
+        oldPath,
+        newPath,
+      );
+      _removeDirectorySubtree(fileState, oldPath);
+    });
+  }
+
+  void _reconcileDeletedFileTreePath({
+    required _FileExplorerContextState fileState,
+    required String path,
+  }) {
+    final normalized = _normalizeFilePath(path);
+    _setState(() {
+      fileState.tabsByPath.removeWhere(
+        (path, _) => _pathEqualsOrIsChild(path, normalized),
+      );
+      final nextOpenPaths = fileState.tabSelection.openPaths
+          .where((path) => !_pathEqualsOrIsChild(path, normalized))
+          .toList(growable: false);
+      final currentActive = fileState.tabSelection.activePath;
+      fileState.tabSelection = FileTabSelectionState(
+        openPaths: nextOpenPaths,
+        activePath:
+            currentActive != null &&
+                !_pathEqualsOrIsChild(currentActive, normalized)
+            ? currentActive
+            : nextOpenPaths.lastOrNull,
+      );
+      fileState.selectedLinesByPath.removeWhere(
+        (path, _) => _pathEqualsOrIsChild(path, normalized),
+      );
+      fileState.lastSelectedLineByPath.removeWhere(
+        (path, _) => _pathEqualsOrIsChild(path, normalized),
+      );
+      if (currentActive != fileState.tabSelection.activePath) {
+        fileState.pendingScrollToLine = null;
+      }
+      _removeDirectorySubtree(fileState, normalized);
+    });
+  }
+
+  String _replacePathPrefix(String path, String oldPath, String newPath) {
+    final normalized = _normalizeFilePath(path);
+    final oldNormalized = _normalizeFilePath(oldPath);
+    final newNormalized = _normalizeFilePath(newPath);
+    if (normalized == oldNormalized) {
+      return newNormalized;
+    }
+    if (normalized.startsWith('$oldNormalized/')) {
+      return _normalizeFilePath(
+        '$newNormalized/${normalized.substring(oldNormalized.length + 1)}',
+      );
+    }
+    return normalized;
+  }
+
+  bool _pathEqualsOrIsChild(String path, String parent) {
+    final normalizedPath = _normalizeFilePath(path);
+    final normalizedParent = _normalizeFilePath(parent);
+    return normalizedPath == normalizedParent ||
+        normalizedPath.startsWith('$normalizedParent/');
+  }
+
+  void _renamePathKeyedSetMap(
+    Map<String, Set<int>> map,
+    String oldPath,
+    String newPath,
+  ) {
+    final entries = Map<String, Set<int>>.from(map);
+    map.clear();
+    for (final entry in entries.entries) {
+      map[_replacePathPrefix(entry.key, oldPath, newPath)] = entry.value;
+    }
+  }
+
+  void _renamePathKeyedValueMap(
+    Map<String, int> map,
+    String oldPath,
+    String newPath,
+  ) {
+    final entries = Map<String, int>.from(map);
+    map.clear();
+    for (final entry in entries.entries) {
+      map[_replacePathPrefix(entry.key, oldPath, newPath)] = entry.value;
+    }
+  }
+
+  void _removeDirectorySubtree(
+    _FileExplorerContextState fileState,
+    String path,
+  ) {
+    final normalized = _normalizeFilePath(path);
+    fileState.directoryChildren.removeWhere(
+      (key, _) =>
+          key != _ChatPageState._rootTreeCacheKey &&
+          _pathEqualsOrIsChild(key, normalized),
+    );
+    fileState.directoryErrors.removeWhere(
+      (key, _) => _pathEqualsOrIsChild(key, normalized),
+    );
+    fileState.loadingDirectories.removeWhere(
+      (key) => _pathEqualsOrIsChild(key, normalized),
+    );
+    fileState.expandedDirectories.removeWhere(
+      (key) => _pathEqualsOrIsChild(key, normalized),
+    );
+  }
+
+  String _fileOperationErrorLabel(WorkspaceFileOperationCode code) {
+    switch (code) {
+      case WorkspaceFileOperationCode.invalidName:
+        return context.l10n.filesInvalidName;
+      case WorkspaceFileOperationCode.outsideRoot:
+        return context.l10n.filesOutsideRoot;
+      case WorkspaceFileOperationCode.rootDeleteBlocked:
+        return context.l10n.filesRootDeleteBlocked;
+      case WorkspaceFileOperationCode.missing:
+        return context.l10n.filesPathMissing;
+      case WorkspaceFileOperationCode.alreadyExists:
+        return context.l10n.filesAlreadyExists;
+      case WorkspaceFileOperationCode.permissionDenied:
+        return context.l10n.filesPermissionDenied;
+      case WorkspaceFileOperationCode.unavailable:
+        return context.l10n.filesOperationUnavailable;
+      case WorkspaceFileOperationCode.notDirectory:
+      case WorkspaceFileOperationCode.failed:
+      case WorkspaceFileOperationCode.malformedResponse:
+      case WorkspaceFileOperationCode.ok:
+        return context.l10n.filesOperationFailed;
+    }
+  }
+
+  void _showFileOperationSnackBar(String message) {
+    ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(SnackBar(content: Text(message)));
+  }
+
   List<Widget> _buildFileTreeChildren({
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
@@ -576,79 +1152,95 @@ extension _ChatPageFileRuntime on _ChatPageState {
       final errorMessage = fileState.directoryErrors[node.path];
       final isActiveFile = fileState.tabSelection.activePath == node.path;
       rows.add(
-        InkWell(
-          key: ValueKey<String>(
-            'file_tree_item_${_normalizeFilePath(node.path)}',
-          ),
-          onTap: () {
-            if (node.isDirectory) {
-              if (isExpanded) {
-                _setState(() {
-                  fileState.expandedDirectories.remove(node.path);
-                });
-                return;
-              }
-              _setState(() {
-                fileState.expandedDirectories.add(node.path);
-              });
-              unawaited(
-                _loadDirectoryNodes(
-                  state: fileState,
-                  projectProvider: projectProvider,
-                  cacheKey: node.path,
-                  requestPath: node.path,
-                ),
-              );
-              return;
-            }
+        FileTreeContextMenuRegion(
+          actions: _fileTreeActionsForNode(fileState: fileState, node: node),
+          onSelected: (action) {
             unawaited(
-              _openFileAndFocusDialog(
+              _handleFileTreeAction(
+                action: action,
                 fileState: fileState,
                 projectProvider: projectProvider,
-                path: node.path,
-                dialogFullscreen: dialogFullscreen,
+                node: node,
                 onUpdated: onStateChanged,
               ),
             );
           },
-          child: Container(
-            color: isActiveFile
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
-                : null,
-            padding: EdgeInsets.fromLTRB(8 + (depth * 14), 6, 8, 6),
-            child: Row(
-              children: [
-                if (node.isDirectory)
+          child: InkWell(
+            key: ValueKey<String>(
+              'file_tree_item_${_normalizeFilePath(node.path)}',
+            ),
+            onTap: () {
+              if (node.isDirectory) {
+                if (isExpanded) {
+                  _setState(() {
+                    fileState.expandedDirectories.remove(node.path);
+                  });
+                  return;
+                }
+                _setState(() {
+                  fileState.expandedDirectories.add(node.path);
+                });
+                unawaited(
+                  _loadDirectoryNodes(
+                    state: fileState,
+                    projectProvider: projectProvider,
+                    cacheKey: node.path,
+                    requestPath: node.path,
+                  ),
+                );
+                return;
+              }
+              unawaited(
+                _openFileAndFocusDialog(
+                  fileState: fileState,
+                  projectProvider: projectProvider,
+                  path: node.path,
+                  dialogFullscreen: dialogFullscreen,
+                  onUpdated: onStateChanged,
+                ),
+              );
+            },
+            child: Container(
+              color: isActiveFile
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.12)
+                  : null,
+              padding: EdgeInsets.fromLTRB(8 + (depth * 14), 6, 8, 6),
+              child: Row(
+                children: [
+                  if (node.isDirectory)
+                    Icon(
+                      isExpanded ? Symbols.expand_more : Symbols.chevron_right,
+                      size: 16,
+                    )
+                  else
+                    const SizedBox(width: 16),
+                  const SizedBox(width: 2),
                   Icon(
-                    isExpanded ? Symbols.expand_more : Symbols.chevron_right,
+                    _fileIconForNode(node),
                     size: 16,
-                  )
-                else
-                  const SizedBox(width: 16),
-                const SizedBox(width: 2),
-                Icon(
-                  _fileIconForNode(node),
-                  size: 16,
-                  color: node.isDirectory
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    node.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    color: node.isDirectory
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
                   ),
-                ),
-                if (isLoading)
-                  const SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 1.6),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      node.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
-              ],
+                  if (isLoading)
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 1.6),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1192,5 +1784,71 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return '';
     }
     return fileName.substring(separator + 1);
+  }
+}
+
+class _FileNameDialog extends StatefulWidget {
+  const _FileNameDialog({
+    required this.title,
+    required this.actionLabel,
+    this.initialName = '',
+  });
+
+  final String title;
+  final String actionLabel;
+  final String initialName;
+
+  @override
+  State<_FileNameDialog> createState() => _FileNameDialogState();
+}
+
+class _FileNameDialogState extends State<_FileNameDialog> {
+  late final TextEditingController _controller;
+  var _submitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _controller.text.trim();
+    if (_submitted || value.isEmpty) {
+      return;
+    }
+    _submitted = true;
+    Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ModalPrimaryActionShortcuts(
+      onPrimaryAction: _submit,
+      child: AlertDialog(
+        title: Text(widget.title),
+        content: TextField(
+          controller: _controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: context.l10n.filesNameHint,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(context.l10n.commonCancel),
+          ),
+          TextButton(onPressed: _submit, child: Text(widget.actionLabel)),
+        ],
+      ),
+    );
   }
 }

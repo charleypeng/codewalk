@@ -1563,10 +1563,57 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filesFileEmpty => '文件为空。';
 
   @override
+  String get filesAlreadyExists =>
+      'A file or folder with that name already exists.';
+
+  @override
+  String get filesCopyPath => 'Copy path';
+
+  @override
+  String get filesCreateFileTitle => 'Create file';
+
+  @override
+  String get filesCreateFolderTitle => 'Create folder';
+
+  @override
+  String get filesDelete => 'Delete';
+
+  @override
+  String filesDeleteConfirm(String name) {
+    return 'Delete $name? This cannot be undone. Folders and their contents will be deleted.';
+  }
+
+  @override
+  String filesDeleteTitle(String name) {
+    return 'Delete $name';
+  }
+
+  @override
   String get filesFilesFound => '未找到文件';
 
   @override
+  String get filesFileCreated => 'File created.';
+
+  @override
+  String get filesFolderCreated => 'Folder created.';
+
+  @override
   String get filesHideSidebar => '隐藏文件侧边栏';
+
+  @override
+  String get filesInvalidName => 'Enter a valid name without path separators.';
+
+  @override
+  String get filesNameHint => 'Name';
+
+  @override
+  String get filesNew => 'New';
+
+  @override
+  String get filesNewFile => 'New file';
+
+  @override
+  String get filesNewFolder => 'New folder';
 
   @override
   String get filesNames => '名称';
@@ -1583,10 +1630,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filesQuickOpenFile => '快速打开文件';
 
   @override
+  String get filesOperationFailed => 'File operation failed.';
+
+  @override
+  String get filesOperationUnavailable =>
+      'File operations are not available for this server.';
+
+  @override
+  String get filesOutsideRoot => 'The path is outside the project root.';
+
+  @override
+  String get filesPathCopied => 'Path copied.';
+
+  @override
+  String get filesPathMissing => 'Path does not exist.';
+
+  @override
+  String get filesPermissionDenied => 'Permission denied.';
+
+  @override
   String get filesRefresh => '刷新文件';
 
   @override
+  String get filesRename => 'Rename';
+
+  @override
+  String filesRenameTitle(String name) {
+    return 'Rename $name';
+  }
+
+  @override
+  String get filesRenamed => 'Renamed.';
+
+  @override
+  String get filesRootDeleteBlocked => 'The project root cannot be deleted.';
+
+  @override
   String get filesSearchHint => '按名称或路径搜索文件';
+
+  @override
+  String get filesDeleted => 'Deleted.';
 
   @override
   String get filesTitle => '文件';

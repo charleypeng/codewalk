@@ -67,6 +67,10 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       state.resetForRoot(rootDirectory);
     }
     _ensureFileRootLoaded(state: state, projectProvider: projectProvider);
+    _ensureFileOperationCapabilities(
+      state: state,
+      projectProvider: projectProvider,
+    );
     return state;
   }
 
@@ -572,6 +576,60 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                     },
                     icon: const Icon(Symbols.search),
                   ),
+                  if (_fileMutationsSupported(fileState))
+                    PopupMenuButton<FileTreeContextMenuActionType>(
+                      key: const ValueKey<String>('file_tree_new_button'),
+                      tooltip: context.l10n.filesNew,
+                      icon: const Icon(Symbols.add),
+                      itemBuilder: (context) => [
+                        PopupMenuItem<FileTreeContextMenuActionType>(
+                          key: const ValueKey<String>(
+                            'file_tree_menu_new_file',
+                          ),
+                          value: FileTreeContextMenuActionType.newFile,
+                          child: Row(
+                            children: [
+                              Icon(
+                                fileTreeActionIcon(
+                                  FileTreeContextMenuActionType.newFile,
+                                ),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(context.l10n.filesNewFile),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<FileTreeContextMenuActionType>(
+                          key: const ValueKey<String>(
+                            'file_tree_menu_new_folder',
+                          ),
+                          value: FileTreeContextMenuActionType.newFolder,
+                          child: Row(
+                            children: [
+                              Icon(
+                                fileTreeActionIcon(
+                                  FileTreeContextMenuActionType.newFolder,
+                                ),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(context.l10n.filesNewFolder),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (action) {
+                        unawaited(
+                          _handleRootFileTreeAction(
+                            action: action,
+                            fileState: fileState,
+                            projectProvider: projectProvider,
+                            onUpdated: onStateChanged,
+                          ),
+                        );
+                      },
+                    ),
                   IconButton(
                     key: const ValueKey<String>('file_tree_refresh_button'),
                     tooltip: context.l10n.filesRefresh,

@@ -3023,17 +3023,101 @@ abstract class AppLocalizations {
   /// **'File is empty.'**
   String get filesFileEmpty;
 
+  /// CodeWalk UI string — filesAlreadyExists
+  ///
+  /// In en, this message translates to:
+  /// **'A file or folder with that name already exists.'**
+  String get filesAlreadyExists;
+
+  /// CodeWalk UI string — filesCopyPath
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get filesCopyPath;
+
+  /// CodeWalk UI string — filesCreateFileTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Create file'**
+  String get filesCreateFileTitle;
+
+  /// CodeWalk UI string — filesCreateFolderTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Create folder'**
+  String get filesCreateFolderTitle;
+
+  /// CodeWalk UI string — filesDelete
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get filesDelete;
+
+  /// CodeWalk UI string — filesDeleteConfirm
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}? This cannot be undone. Folders and their contents will be deleted.'**
+  String filesDeleteConfirm(String name);
+
+  /// CodeWalk UI string — filesDeleteTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}'**
+  String filesDeleteTitle(String name);
+
   /// CodeWalk UI string — filesFilesFound
   ///
   /// In en, this message translates to:
   /// **'No files found'**
   String get filesFilesFound;
 
+  /// CodeWalk UI string — filesFileCreated
+  ///
+  /// In en, this message translates to:
+  /// **'File created.'**
+  String get filesFileCreated;
+
+  /// CodeWalk UI string — filesFolderCreated
+  ///
+  /// In en, this message translates to:
+  /// **'Folder created.'**
+  String get filesFolderCreated;
+
   /// CodeWalk UI string — filesHideSidebar
   ///
   /// In en, this message translates to:
   /// **'Hide Files sidebar'**
   String get filesHideSidebar;
+
+  /// CodeWalk UI string — filesInvalidName
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid name without path separators.'**
+  String get filesInvalidName;
+
+  /// CodeWalk UI string — filesNameHint
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get filesNameHint;
+
+  /// CodeWalk UI string — filesNew
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get filesNew;
+
+  /// CodeWalk UI string — filesNewFile
+  ///
+  /// In en, this message translates to:
+  /// **'New file'**
+  String get filesNewFile;
+
+  /// CodeWalk UI string — filesNewFolder
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get filesNewFolder;
 
   /// CodeWalk UI string — filesNames
   ///
@@ -3059,17 +3143,83 @@ abstract class AppLocalizations {
   /// **'Quick Open File'**
   String get filesQuickOpenFile;
 
+  /// CodeWalk UI string — filesOperationFailed
+  ///
+  /// In en, this message translates to:
+  /// **'File operation failed.'**
+  String get filesOperationFailed;
+
+  /// CodeWalk UI string — filesOperationUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'File operations are not available for this server.'**
+  String get filesOperationUnavailable;
+
+  /// CodeWalk UI string — filesOutsideRoot
+  ///
+  /// In en, this message translates to:
+  /// **'The path is outside the project root.'**
+  String get filesOutsideRoot;
+
+  /// CodeWalk UI string — filesPathCopied
+  ///
+  /// In en, this message translates to:
+  /// **'Path copied.'**
+  String get filesPathCopied;
+
+  /// CodeWalk UI string — filesPathMissing
+  ///
+  /// In en, this message translates to:
+  /// **'Path does not exist.'**
+  String get filesPathMissing;
+
+  /// CodeWalk UI string — filesPermissionDenied
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied.'**
+  String get filesPermissionDenied;
+
   /// CodeWalk UI string — filesRefresh
   ///
   /// In en, this message translates to:
   /// **'Refresh files'**
   String get filesRefresh;
 
+  /// CodeWalk UI string — filesRename
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get filesRename;
+
+  /// CodeWalk UI string — filesRenameTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Rename {name}'**
+  String filesRenameTitle(String name);
+
+  /// CodeWalk UI string — filesRenamed
+  ///
+  /// In en, this message translates to:
+  /// **'Renamed.'**
+  String get filesRenamed;
+
+  /// CodeWalk UI string — filesRootDeleteBlocked
+  ///
+  /// In en, this message translates to:
+  /// **'The project root cannot be deleted.'**
+  String get filesRootDeleteBlocked;
+
   /// CodeWalk UI string — filesSearchHint
   ///
   /// In en, this message translates to:
   /// **'Search files by name or path'**
   String get filesSearchHint;
+
+  /// CodeWalk UI string — filesDeleted
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted.'**
+  String get filesDeleted;
 
   /// CodeWalk UI string — filesTitle
   ///

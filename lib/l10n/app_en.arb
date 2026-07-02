@@ -2070,13 +2070,75 @@
   "@filesFileEmpty": {
     "description": "CodeWalk UI string — filesFileEmpty"
   },
+  "filesAlreadyExists": "A file or folder with that name already exists.",
+  "@filesAlreadyExists": {
+    "description": "CodeWalk UI string — filesAlreadyExists"
+  },
+  "filesCopyPath": "Copy path",
+  "@filesCopyPath": {
+    "description": "CodeWalk UI string — filesCopyPath"
+  },
+  "filesCreateFileTitle": "Create file",
+  "@filesCreateFileTitle": {
+    "description": "CodeWalk UI string — filesCreateFileTitle"
+  },
+  "filesCreateFolderTitle": "Create folder",
+  "@filesCreateFolderTitle": {
+    "description": "CodeWalk UI string — filesCreateFolderTitle"
+  },
+  "filesDelete": "Delete",
+  "@filesDelete": {
+    "description": "CodeWalk UI string — filesDelete"
+  },
+  "filesDeleteConfirm": "Delete {name}? This cannot be undone. Folders and their contents will be deleted.",
+  "@filesDeleteConfirm": {
+    "description": "CodeWalk UI string — filesDeleteConfirm",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "filesDeleteTitle": "Delete {name}",
+  "@filesDeleteTitle": {
+    "description": "CodeWalk UI string — filesDeleteTitle",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "filesFilesFound": "No files found",
   "@filesFilesFound": {
     "description": "CodeWalk UI string — filesFilesFound"
   },
+  "filesFileCreated": "File created.",
+  "@filesFileCreated": {
+    "description": "CodeWalk UI string — filesFileCreated"
+  },
+  "filesFolderCreated": "Folder created.",
+  "@filesFolderCreated": {
+    "description": "CodeWalk UI string — filesFolderCreated"
+  },
   "filesHideSidebar": "Hide Files sidebar",
   "@filesHideSidebar": {
     "description": "CodeWalk UI string — filesHideSidebar"
+  },
+  "filesInvalidName": "Enter a valid name without path separators.",
+  "@filesInvalidName": {
+    "description": "CodeWalk UI string — filesInvalidName"
+  },
+  "filesNameHint": "Name",
+  "@filesNameHint": {
+    "description": "CodeWalk UI string — filesNameHint"
+  },
+  "filesNew": "New",
+  "@filesNew": {
+    "description": "CodeWalk UI string — filesNew"
+  },
+  "filesNewFile": "New file",
+  "@filesNewFile": {
+    "description": "CodeWalk UI string — filesNewFile"
+  },
+  "filesNewFolder": "New folder",
+  "@filesNewFolder": {
+    "description": "CodeWalk UI string — filesNewFolder"
   },
   "filesNames": "Names",
   "@filesNames": {
@@ -2097,13 +2159,60 @@
   "@filesQuickOpenFile": {
     "description": "CodeWalk UI string — filesQuickOpenFile"
   },
+  "filesOperationFailed": "File operation failed.",
+  "@filesOperationFailed": {
+    "description": "CodeWalk UI string — filesOperationFailed"
+  },
+  "filesOperationUnavailable": "File operations are not available for this server.",
+  "@filesOperationUnavailable": {
+    "description": "CodeWalk UI string — filesOperationUnavailable"
+  },
+  "filesOutsideRoot": "The path is outside the project root.",
+  "@filesOutsideRoot": {
+    "description": "CodeWalk UI string — filesOutsideRoot"
+  },
+  "filesPathCopied": "Path copied.",
+  "@filesPathCopied": {
+    "description": "CodeWalk UI string — filesPathCopied"
+  },
+  "filesPathMissing": "Path does not exist.",
+  "@filesPathMissing": {
+    "description": "CodeWalk UI string — filesPathMissing"
+  },
+  "filesPermissionDenied": "Permission denied.",
+  "@filesPermissionDenied": {
+    "description": "CodeWalk UI string — filesPermissionDenied"
+  },
   "filesRefresh": "Refresh files",
   "@filesRefresh": {
     "description": "CodeWalk UI string — filesRefresh"
   },
+  "filesRename": "Rename",
+  "@filesRename": {
+    "description": "CodeWalk UI string — filesRename"
+  },
+  "filesRenameTitle": "Rename {name}",
+  "@filesRenameTitle": {
+    "description": "CodeWalk UI string — filesRenameTitle",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "filesRenamed": "Renamed.",
+  "@filesRenamed": {
+    "description": "CodeWalk UI string — filesRenamed"
+  },
+  "filesRootDeleteBlocked": "The project root cannot be deleted.",
+  "@filesRootDeleteBlocked": {
+    "description": "CodeWalk UI string — filesRootDeleteBlocked"
+  },
   "filesSearchHint": "Search files by name or path",
   "@filesSearchHint": {
     "description": "CodeWalk UI string — filesSearchHint"
+  },
+  "filesDeleted": "Deleted.",
+  "@filesDeleted": {
+    "description": "CodeWalk UI string — filesDeleted"
   },
   "filesTitle": "Files",
   "@filesTitle": {
