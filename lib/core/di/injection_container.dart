@@ -34,9 +34,9 @@ import '../../domain/usecases/get_session_todo.dart';
 import '../../domain/usecases/list_pending_permissions.dart';
 import '../../domain/usecases/list_pending_questions.dart';
 import '../../domain/usecases/reject_question.dart';
-import '../../domain/usecases/revert_chat_message.dart';
 import '../../domain/usecases/reply_permission.dart';
 import '../../domain/usecases/reply_question.dart';
+import '../../domain/usecases/revert_chat_message.dart';
 import '../../domain/usecases/send_chat_message.dart';
 import '../../domain/usecases/share_chat_session.dart';
 import '../../domain/usecases/summarize_chat_session.dart';
@@ -53,8 +53,8 @@ import '../../presentation/providers/project_icon_provider.dart';
 import '../../presentation/providers/project_provider.dart';
 import '../../presentation/providers/quota_provider.dart';
 import '../../presentation/providers/settings_provider.dart';
-import '../../presentation/services/chat_title_generator.dart';
 import '../../presentation/services/cellular_data_saver_service.dart';
+import '../../presentation/services/chat_title_generator.dart';
 import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/moonshine_model_manager.dart';
 import '../../presentation/services/notification_service.dart';
@@ -71,6 +71,7 @@ import '../../presentation/services/speech_input_service_sensevoice.dart';
 import '../../presentation/services/speech_input_service_sherpa.dart';
 import '../../presentation/services/speech_input_service_stt.dart';
 import '../../presentation/services/update_check_service.dart';
+import '../../presentation/services/workspace_file_operations_service.dart';
 import '../network/dio_client.dart';
 import '../tailscale/tailscale_service.dart';
 
@@ -107,6 +108,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<QuotaRemoteDataSource>(
     () => QuotaRemoteDataSourceImpl(dio: sl<DioClient>().dio),
+  );
+
+  sl.registerLazySingleton<WorkspaceFileOperationsService>(
+    () => WorkspaceFileOperationsServiceImpl(dio: sl<DioClient>().dio),
   );
 
   sl.registerLazySingleton<TerminalRemoteDataSource>(
