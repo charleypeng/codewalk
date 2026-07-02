@@ -710,6 +710,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required FileNode node,
+    required String parentCacheKey,
     VoidCallback? onUpdated,
   }) async {
     final nodePath = _absoluteFileTreePath(fileState, node.path);
@@ -723,6 +724,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
           projectProvider: projectProvider,
           parentDirectory: parentDirectory,
           createFolder: false,
+          refreshCacheKey: node.path,
+          refreshRequestPath: node.path,
           onUpdated: onUpdated,
         );
         return;
@@ -732,6 +735,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
           projectProvider: projectProvider,
           parentDirectory: parentDirectory,
           createFolder: true,
+          refreshCacheKey: node.path,
+          refreshRequestPath: node.path,
           onUpdated: onUpdated,
         );
         return;
@@ -740,6 +745,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
           fileState: fileState,
           projectProvider: projectProvider,
           node: node,
+          parentCacheKey: parentCacheKey,
           onUpdated: onUpdated,
         );
         return;
@@ -748,6 +754,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
           fileState: fileState,
           projectProvider: projectProvider,
           node: node,
+          parentCacheKey: parentCacheKey,
           onUpdated: onUpdated,
         );
         return;
@@ -764,6 +771,14 @@ extension _ChatPageFileRuntime on _ChatPageState {
           fileState: fileState,
           projectProvider: projectProvider,
           directory: parentDirectory,
+          cacheKey: node.isDirectory ? node.path : parentCacheKey,
+          requestPath: node.isDirectory
+              ? node.path
+              : _requestPathForFileTreeCacheKey(
+                  fileState: fileState,
+                  cacheKey: parentCacheKey,
+                  fallbackDirectory: parentDirectory,
+                ),
           onUpdated: onUpdated,
         );
         return;
@@ -775,6 +790,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required ProjectProvider projectProvider,
     required String parentDirectory,
     required bool createFolder,
+    String? refreshCacheKey,
+    String? refreshRequestPath,
     VoidCallback? onUpdated,
   }) async {
     final successMessage = createFolder
@@ -816,6 +833,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
       fileState: fileState,
       projectProvider: projectProvider,
       directory: parentDirectory,
+      cacheKey: refreshCacheKey,
+      requestPath: refreshRequestPath,
       onUpdated: onUpdated,
     );
     _showFileOperationSnackBar(successMessage);
@@ -825,9 +844,11 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required FileNode node,
+    required String parentCacheKey,
     VoidCallback? onUpdated,
   }) async {
     final successMessage = context.l10n.filesRenamed;
+    final originalNodePath = _normalizeFilePath(node.path);
     final nodePath = _absoluteFileTreePath(fileState, node.path);
     final parentDirectory = _parentDirectoryForFilePath(nodePath);
     final nextName = await _showFileNameDialog(
@@ -861,10 +882,23 @@ extension _ChatPageFileRuntime on _ChatPageState {
       oldPath: oldPath,
       newPath: newPath,
     );
+    if (originalNodePath != oldPath) {
+      _reconcileRenamedFileTreePath(
+        fileState: fileState,
+        oldPath: originalNodePath,
+        newPath: _siblingFileTreePath(originalNodePath, nextName),
+      );
+    }
     await _refreshFileTreeDirectory(
       fileState: fileState,
       projectProvider: projectProvider,
       directory: parentDirectory,
+      cacheKey: parentCacheKey,
+      requestPath: _requestPathForFileTreeCacheKey(
+        fileState: fileState,
+        cacheKey: parentCacheKey,
+        fallbackDirectory: parentDirectory,
+      ),
       onUpdated: onUpdated,
     );
     _showFileOperationSnackBar(successMessage);
@@ -874,6 +908,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required FileNode node,
+    required String parentCacheKey,
     VoidCallback? onUpdated,
   }) async {
     final successMessage = context.l10n.filesDeleted;
@@ -897,10 +932,23 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     _reconcileDeletedFileTreePath(fileState: fileState, path: nodePath);
+    final originalNodePath = _normalizeFilePath(node.path);
+    if (originalNodePath != nodePath) {
+      _reconcileDeletedFileTreePath(
+        fileState: fileState,
+        path: originalNodePath,
+      );
+    }
     await _refreshFileTreeDirectory(
       fileState: fileState,
       projectProvider: projectProvider,
       directory: parentDirectory,
+      cacheKey: parentCacheKey,
+      requestPath: _requestPathForFileTreeCacheKey(
+        fileState: fileState,
+        cacheKey: parentCacheKey,
+        fallbackDirectory: parentDirectory,
+      ),
       onUpdated: onUpdated,
     );
     _showFileOperationSnackBar(successMessage);
@@ -946,14 +994,22 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required String directory,
+    String? cacheKey,
+    String? requestPath,
     VoidCallback? onUpdated,
   }) async {
     final normalized = _normalizeFilePath(directory);
+    final normalizedRequestPath = _normalizeFilePath(requestPath ?? directory);
+    final normalizedCacheKey = cacheKey == null
+        ? _directoryCacheKey(fileState, normalized)
+        : cacheKey == _ChatPageState._rootTreeCacheKey
+        ? _ChatPageState._rootTreeCacheKey
+        : _normalizeFilePath(cacheKey);
     await _loadDirectoryNodes(
       state: fileState,
       projectProvider: projectProvider,
-      cacheKey: _directoryCacheKey(fileState, normalized),
-      requestPath: normalized,
+      cacheKey: normalizedCacheKey,
+      requestPath: normalizedRequestPath,
       force: true,
     );
     onUpdated?.call();
@@ -1002,6 +1058,32 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return _normalizeFilePath('/$name');
     }
     return _normalizeFilePath('$parent/$name');
+  }
+
+  String _requestPathForFileTreeCacheKey({
+    required _FileExplorerContextState fileState,
+    required String cacheKey,
+    required String fallbackDirectory,
+  }) {
+    if (cacheKey == _ChatPageState._rootTreeCacheKey) {
+      return fileState.rootDirectory;
+    }
+    final normalized = _normalizeFilePath(cacheKey);
+    return normalized.isEmpty
+        ? _normalizeFilePath(fallbackDirectory)
+        : normalized;
+  }
+
+  String _siblingFileTreePath(String path, String name) {
+    final normalized = _normalizeFilePath(path);
+    final separator = normalized.lastIndexOf('/');
+    if (separator < 0) {
+      return _normalizeFilePath(name);
+    }
+    if (separator == 0 && normalized.startsWith('/')) {
+      return _normalizeFilePath('/$name');
+    }
+    return _normalizeFilePath('${normalized.substring(0, separator)}/$name');
   }
 
   void _reconcileRenamedFileTreePath({
@@ -1197,6 +1279,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
                 fileState: fileState,
                 projectProvider: projectProvider,
                 node: node,
+                parentCacheKey: parentCacheKey,
                 onUpdated: onStateChanged,
               ),
             );

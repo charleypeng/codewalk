@@ -6397,9 +6397,17 @@ void main() {
     expect(fileOperations.lastParentDirectory, '/repo/a/lib');
     expect(fileOperations.lastName, 'main.dart');
     expect(fileOperations.lastNewName, 'renamed.dart');
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_lib/renamed.dart')),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('file tree delete action confirms and refreshes the row', (
+  testWidgets('file tree delete action confirms and refreshes a relative row', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1300, 900));
@@ -6425,7 +6433,7 @@ void main() {
     );
     projectRepository.filesByPath['.'] = const <FileNode>[
       FileNode(
-        path: '/repo/a/main.dart',
+        path: 'lib/main.dart',
         name: 'main.dart',
         type: FileNodeType.file,
       ),
@@ -6458,7 +6466,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/main.dart')),
+      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
       buttons: kSecondaryMouseButton,
     );
     await tester.pumpAndSettle();
@@ -6470,10 +6478,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fileOperations.deleteCallCount, 1);
-    expect(fileOperations.lastParentDirectory, '/repo/a');
+    expect(fileOperations.lastParentDirectory, '/repo/a/lib');
     expect(fileOperations.lastName, 'main.dart');
     expect(
-      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/main.dart')),
+      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
       findsNothing,
     );
   });

@@ -621,7 +621,7 @@ class WorkspaceFileOperationsServiceImpl
   static String buildProbeCommandForTest() => _buildProbeCommand();
 
   static String _buildProbeCommand() {
-    return "printf '%s\\n' '$_shellPrefix{\"ok\":true,\"code\":\"ok\",\"message\":\"shell file operations available\"}'";
+    return "root=\$(pwd -P 2>/dev/null || printf /); if [ \"\$root\" = / ]; then printf '%s\\n' '$_shellPrefix{\"ok\":false,\"code\":\"outsideRoot\",\"message\":\"Path is outside the project root.\"}'; else printf '%s\\n' '$_shellPrefix{\"ok\":true,\"code\":\"ok\",\"message\":\"shell file operations available\"}'; fi";
   }
 
   @visibleForTesting
@@ -771,14 +771,13 @@ cw_validate_name() {
 }
 cw_prepare_parent() {
   root=$(cd -- "$CW_ROOT_INPUT" 2>/dev/null && pwd -P) || cw_fail missing
+  if [ "$root" = "/" ]; then cw_fail outsideRoot; fi
   parent=$(cd -- "$CW_PARENT_INPUT" 2>/dev/null && pwd -P) || cw_fail missing
   if ! [ -d "$parent" ]; then cw_fail notDirectory; fi
-  if [ "$root" != "/" ]; then
-    case "$parent" in
-      "$root"|"$root"/*) ;;
-      *) cw_fail outsideRoot ;;
-    esac
-  fi
+  case "$parent" in
+    "$root"|"$root"/*) ;;
+    *) cw_fail outsideRoot ;;
+  esac
 }
 ''';
   }

@@ -102,6 +102,56 @@ void main() {
     });
 
     test(
+      'probe fails closed when the server canonicalizes directory to root',
+      () async {
+        final fakeServer = _FakeShellServer(
+          shellPayloads: <String>[
+            '{"ok":false,"code":"outsideRoot","message":"Path is outside the project root."}',
+          ],
+        );
+        final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+        final capabilities = await service.getCapabilities(
+          serverScopeKey: 'srv',
+          directory: '/tmp/link-to-root',
+        );
+
+        expect(capabilities.shellFileOpsSupported, isFalse);
+        expect(fakeServer.shellCallCount, 1);
+        expect(fakeServer.commands.single, contains('pwd -P'));
+        expect(fakeServer.commands.single, contains(r'if [ "$root" = / ]'));
+      },
+    );
+
+    test(
+      'mutation script rejects canonical root even for non-literal roots',
+      () async {
+        final fakeServer = _FakeShellServer(
+          shellPayloads: <String>[
+            '{"ok":true,"code":"ok","message":"available"}',
+            '{"ok":false,"code":"outsideRoot","message":"Path is outside the project root."}',
+          ],
+        );
+        final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+        final result = await service.createFile(
+          serverScopeKey: 'srv',
+          rootDirectory: '/tmp/link-to-root',
+          parentDirectory: '/tmp/link-to-root',
+          name: 'unsafe.txt',
+        );
+
+        expect(result.ok, isFalse);
+        expect(result.code, WorkspaceFileOperationCode.outsideRoot);
+        expect(fakeServer.shellCallCount, 2);
+        expect(
+          fakeServer.commands.last,
+          contains(r'if [ "$root" = "/" ]; then cw_fail outsideRoot; fi'),
+        );
+      },
+    );
+
+    test(
       'create file uses probe then operation and returns target path',
       () async {
         final fakeServer = _FakeShellServer(
