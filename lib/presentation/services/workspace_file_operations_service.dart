@@ -113,6 +113,12 @@ class WorkspaceFileOperationsServiceImpl
     required String serverScopeKey,
     required String directory,
   }) async {
+    if (_isUnsafeRoot(directory)) {
+      return const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: false,
+        message: 'File operations require an active project directory.',
+      );
+    }
     final key = _capabilityKey(serverScopeKey, directory);
     final cached = _capabilityCache[key];
     if (cached != null) {
@@ -387,6 +393,9 @@ class WorkspaceFileOperationsServiceImpl
     if (rootDirectory.isEmpty || parent.isEmpty) {
       return _result(WorkspaceFileOperationCode.missing);
     }
+    if (_isUnsafeRoot(rootDirectory)) {
+      return _result(WorkspaceFileOperationCode.outsideRoot);
+    }
     if (!_isPathUnderRoot(rootDirectory, parent)) {
       return _result(WorkspaceFileOperationCode.outsideRoot);
     }
@@ -396,10 +405,12 @@ class WorkspaceFileOperationsServiceImpl
   bool _isPathUnderRoot(String rootDirectory, String candidate) {
     final root = normalizeFilePath(rootDirectory);
     final value = normalizeFilePath(candidate);
-    if (root == '/') {
-      return value.startsWith('/');
-    }
     return value == root || value.startsWith('$root/');
+  }
+
+  bool _isUnsafeRoot(String directory) {
+    final normalized = normalizeFilePath(directory);
+    return normalized.isEmpty || normalized == '/';
   }
 
   String _joinPath(String parent, String name) {

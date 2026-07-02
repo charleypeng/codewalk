@@ -62,6 +62,16 @@ extension _ChatPageFileRuntime on _ChatPageState {
         state.fileOperationCapabilitiesLoading) {
       return;
     }
+    if (projectProvider.currentDirectory == null ||
+        state.rootDirectory == '/' ||
+        state.rootDirectory.trim().isEmpty) {
+      state.fileOperationCapabilities =
+          const WorkspaceFileOperationsCapabilities(
+            shellFileOpsSupported: false,
+            message: 'File operations require an active project directory.',
+          );
+      return;
+    }
     if (!di.sl.isRegistered<WorkspaceFileOperationsService>()) {
       state.fileOperationCapabilities =
           const WorkspaceFileOperationsCapabilities(
@@ -702,9 +712,10 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required FileNode node,
     VoidCallback? onUpdated,
   }) async {
+    final nodePath = _absoluteFileTreePath(fileState, node.path);
     final parentDirectory = node.isDirectory
-        ? _normalizeFilePath(node.path)
-        : _parentDirectoryForFilePath(node.path);
+        ? nodePath
+        : _parentDirectoryForFilePath(nodePath);
     switch (action) {
       case FileTreeContextMenuActionType.newFile:
         await _createFileTreeEntry(
@@ -742,7 +753,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return;
       case FileTreeContextMenuActionType.copyPath:
         final copiedMessage = context.l10n.filesPathCopied;
-        await Clipboard.setData(ClipboardData(text: node.path));
+        await Clipboard.setData(ClipboardData(text: nodePath));
         if (!mounted) {
           return;
         }
@@ -817,7 +828,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
     VoidCallback? onUpdated,
   }) async {
     final successMessage = context.l10n.filesRenamed;
-    final parentDirectory = _parentDirectoryForFilePath(node.path);
+    final nodePath = _absoluteFileTreePath(fileState, node.path);
+    final parentDirectory = _parentDirectoryForFilePath(nodePath);
     final nextName = await _showFileNameDialog(
       title: context.l10n.filesRenameTitle(node.name),
       actionLabel: context.l10n.filesRename,
@@ -840,7 +852,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
       return;
     }
-    final oldPath = _normalizeFilePath(result.path ?? node.path);
+    final oldPath = _normalizeFilePath(result.path ?? nodePath);
     final newPath = _normalizeFilePath(
       result.newPath ?? _joinFilePath(parentDirectory, nextName),
     );
@@ -869,7 +881,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
     if (!confirmed || !mounted) {
       return;
     }
-    final parentDirectory = _parentDirectoryForFilePath(node.path);
+    final nodePath = _absoluteFileTreePath(fileState, node.path);
+    final parentDirectory = _parentDirectoryForFilePath(nodePath);
     final result = await di.sl<WorkspaceFileOperationsService>().delete(
       serverScopeKey: projectProvider.contextKey,
       rootDirectory: fileState.rootDirectory,
@@ -883,7 +896,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
       return;
     }
-    _reconcileDeletedFileTreePath(fileState: fileState, path: node.path);
+    _reconcileDeletedFileTreePath(fileState: fileState, path: nodePath);
     await _refreshFileTreeDirectory(
       fileState: fileState,
       projectProvider: projectProvider,
@@ -966,6 +979,21 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return '/';
     }
     return normalized.substring(0, index);
+  }
+
+  String _absoluteFileTreePath(
+    _FileExplorerContextState fileState,
+    String path,
+  ) {
+    final normalized = _normalizeFilePath(path);
+    if (normalized.startsWith('/')) {
+      return normalized;
+    }
+    final root = _normalizeFilePath(fileState.rootDirectory);
+    if (root.isEmpty || root == '/') {
+      return _normalizeFilePath('/$normalized');
+    }
+    return _normalizeFilePath('$root/$normalized');
   }
 
   String _joinFilePath(String parentDirectory, String name) {

@@ -6068,7 +6068,77 @@ void main() {
     expect(find.text('Rename'), findsNothing);
     expect(find.text('Delete'), findsNothing);
     expect(
+      find.byKey(const ValueKey<String>('file_tree_new_button')),
+      findsNothing,
+    );
+    expect(
       find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('file tree long-press opens menu without expanding directory', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_long_press',
+        name: 'Project Files Long Press',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_long_press',
+          name: 'Project Files Long Press',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: '/repo/a/lib', name: 'lib', type: FileNodeType.directory),
+    ];
+    projectRepository.filesByPath['/repo/a/lib'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.longPress(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/lib')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('New file'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
       findsNothing,
     );
   });
@@ -6242,6 +6312,169 @@ void main() {
     expect(
       find.byKey(const ValueKey<String>('file_tree_item_/repo/a/renamed.dart')),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('file tree rename resolves relative node paths against root', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_relative_rename',
+        name: 'Project Files Relative Rename',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_relative_rename',
+          name: 'Project Files Relative Rename',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: 'lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onRename =
+              ({
+                required rootDirectory,
+                required parentDirectory,
+                required oldName,
+                required newName,
+              }) async {
+                projectRepository.filesByPath['.'] = <FileNode>[
+                  FileNode(
+                    path: 'lib/$newName',
+                    name: newName,
+                    type: FileNodeType.file,
+                  ),
+                ];
+              };
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_rename')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'renamed.dart');
+    await tester.tap(find.widgetWithText(TextButton, 'Rename'));
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.renameCallCount, 1);
+    expect(fileOperations.lastParentDirectory, '/repo/a/lib');
+    expect(fileOperations.lastName, 'main.dart');
+    expect(fileOperations.lastNewName, 'renamed.dart');
+  });
+
+  testWidgets('file tree delete action confirms and refreshes the row', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_delete',
+        name: 'Project Files Delete',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_delete',
+          name: 'Project Files Delete',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onDelete =
+              ({
+                required rootDirectory,
+                required parentDirectory,
+                required name,
+              }) async {
+                projectRepository.filesByPath['.'] = const <FileNode>[];
+              };
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/main.dart')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_delete')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.deleteCallCount, 1);
+    expect(fileOperations.lastParentDirectory, '/repo/a');
+    expect(fileOperations.lastName, 'main.dart');
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/main.dart')),
+      findsNothing,
     );
   });
 

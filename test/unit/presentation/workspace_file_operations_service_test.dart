@@ -80,6 +80,27 @@ void main() {
       expect(fakeServer.shellCallCount, 0);
     });
 
+    test('root directory keeps shell file operations unsupported', () async {
+      final fakeServer = _FakeShellServer(shellPayloads: const <String>[]);
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final capabilities = await service.getCapabilities(
+        serverScopeKey: 'srv',
+        directory: '/',
+      );
+      final result = await service.createFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/',
+        parentDirectory: '/',
+        name: 'unsafe.txt',
+      );
+
+      expect(capabilities.shellFileOpsSupported, isFalse);
+      expect(result.ok, isFalse);
+      expect(result.code, WorkspaceFileOperationCode.outsideRoot);
+      expect(fakeServer.shellCallCount, 0);
+    });
+
     test(
       'create file uses probe then operation and returns target path',
       () async {
