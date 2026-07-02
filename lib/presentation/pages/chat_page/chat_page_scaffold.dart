@@ -59,8 +59,12 @@ extension _ChatPageScaffold on _ChatPageState {
     required bool isMobileLayout,
     VoidCallback? onCollapseRequested,
   }) {
-    return Consumer2<ChatProvider, ProjectProvider>(
-      builder: (context, chatProvider, projectProvider, child) {
+    return Selector2<ChatProvider, ProjectProvider, _SessionPanelBuildKey>(
+      selector: (_, chatProvider, projectProvider) =>
+          _sessionPanelBuildKey(chatProvider, projectProvider),
+      builder: (context, _, _) {
+        final chatProvider = context.read<ChatProvider>();
+        final projectProvider = context.read<ProjectProvider>();
         if (_sessionSearchController.text != chatProvider.sessionSearchQuery) {
           _sessionSearchController.value = TextEditingValue(
             text: chatProvider.sessionSearchQuery,
@@ -1438,178 +1442,186 @@ extension _ChatPageScaffold on _ChatPageState {
     return path;
   }
 
-  Widget _buildDesktopUtilityPane(
-    ChatProvider chatProvider, {
-    required SettingsProvider settingsProvider,
-    VoidCallback? onCollapseRequested,
-  }) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          if (onCollapseRequested != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                key: const ValueKey<String>('hide_utility_sidebar_button'),
-                tooltip: context.l10n.chatHideUtilitySidebar,
-                onPressed: onCollapseRequested,
-                icon: const Icon(Symbols.right_panel_close_rounded),
-              ),
-            ),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.sessionKeyboardShortcuts,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+  Widget _buildDesktopUtilityPane({VoidCallback? onCollapseRequested}) {
+    return Selector2<
+      ChatProvider,
+      SettingsProvider,
+      _DesktopUtilityPaneBuildKey
+    >(
+      selector: (_, chatProvider, settingsProvider) =>
+          _desktopUtilityPaneBuildKey(chatProvider, settingsProvider),
+      builder: (context, _, _) {
+        final chatProvider = context.read<ChatProvider>();
+        final settingsProvider = context.read<SettingsProvider>();
+        return SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              if (onCollapseRequested != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    key: const ValueKey<String>('hide_utility_sidebar_button'),
+                    tooltip: context.l10n.chatHideUtilitySidebar,
+                    onPressed: onCollapseRequested,
+                    icon: const Icon(Symbols.right_panel_close_rounded),
                   ),
-                  const SizedBox(height: 12),
-                  for (final hint in _keyboardShortcutHints(settingsProvider))
-                    _buildShortcutHint(hint.shortcut, hint.description),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _createNewSession,
-            icon: const Icon(Symbols.add_comment),
-            label: Text(context.l10n.chatNewChat),
-          ),
-          if (!FeatureFlags.refreshlessRealtime) ...[
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _refreshData,
-              icon: const Icon(Symbols.refresh),
-              label: Text(context.l10n.chatRefresh),
-            ),
-          ],
-          const SizedBox(height: 12),
-          if (chatProvider.currentSession != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Builder(
-                            builder: (context) {
-                              final currentSession =
-                                  chatProvider.currentSession!;
-                              return SessionTitleInlineEditor(
-                                key: ValueKey<String>(
-                                  'desktop_session_title_editor_${currentSession.id}',
-                                ),
-                                title: _sessionDisplayTitle(currentSession),
-                                editingValue: _sessionEditingValue(
-                                  currentSession,
-                                ),
-                                textStyle: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                                onRename: (title) => chatProvider.renameSession(
-                                  currentSession,
-                                  title,
-                                ),
-                              );
-                            },
-                          ),
+                ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.sessionKeyboardShortcuts,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        if (!FeatureFlags.refreshlessRealtime)
-                          IconButton(
-                            onPressed: () {
-                              final session = chatProvider.currentSession;
-                              if (session != null) {
-                                unawaited(
-                                  chatProvider.loadSessionInsights(
-                                    session.id,
-                                    userInitiated: true,
+                      ),
+                      const SizedBox(height: 12),
+                      for (final hint in _keyboardShortcutHints(
+                        settingsProvider,
+                      ))
+                        _buildShortcutHint(hint.shortcut, hint.description),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: _createNewSession,
+                icon: const Icon(Symbols.add_comment),
+                label: Text(context.l10n.chatNewChat),
+              ),
+              if (!FeatureFlags.refreshlessRealtime) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _refreshData,
+                  icon: const Icon(Symbols.refresh),
+                  label: Text(context.l10n.chatRefresh),
+                ),
+              ],
+              const SizedBox(height: 12),
+              if (chatProvider.currentSession != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Builder(
+                                builder: (context) {
+                                  final currentSession =
+                                      chatProvider.currentSession!;
+                                  return SessionTitleInlineEditor(
+                                    key: ValueKey<String>(
+                                      'desktop_session_title_editor_${currentSession.id}',
+                                    ),
+                                    title: _sessionDisplayTitle(currentSession),
+                                    editingValue: _sessionEditingValue(
+                                      currentSession,
+                                    ),
+                                    textStyle: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                    onRename: (title) => chatProvider
+                                        .renameSession(currentSession, title),
+                                  );
+                                },
+                              ),
+                            ),
+                            if (!FeatureFlags.refreshlessRealtime)
+                              IconButton(
+                                onPressed: () {
+                                  final session = chatProvider.currentSession;
+                                  if (session != null) {
+                                    unawaited(
+                                      chatProvider.loadSessionInsights(
+                                        session.id,
+                                        userInitiated: true,
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Symbols.sync, size: 18),
+                                tooltip: context.l10n.chatRefreshSessionDetails,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _sessionStatusLabel(
+                            chatProvider.currentSessionStatus ??
+                                const SessionStatusInfo(
+                                  type: SessionStatusType.idle,
+                                ),
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          context.l10n.sessionChildrenCount(
+                            chatProvider.currentSessionChildren.length,
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        SessionTodoListWidget(
+                          todos: chatProvider.currentSessionTodo,
+                          collapsed: settingsProvider.taskListCollapsed,
+                          onToggleCollapsed: () => unawaited(
+                            settingsProvider.setTaskListCollapsed(
+                              !settingsProvider.taskListCollapsed,
+                            ),
+                          ),
+                          maxVisibleItems: 10,
+                        ),
+                        if (settingsProvider.showReviewChanges) ...[
+                          if (chatProvider.currentSessionDiff.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            SessionDiffViewer(
+                              key: ValueKey<String>(
+                                'desktop_session_diff_${chatProvider.currentSession?.id ?? 'none'}',
+                              ),
+                              diffs: chatProvider.currentSessionDiff,
+                              compact: false,
+                              onFileTap: (path, line) =>
+                                  unawaited(_onFilePathTap(path, line, null)),
+                            ),
+                          ] else if (chatProvider.isCurrentSessionDiffLoaded)
+                            Text(
+                              context.l10n.sessionDiffFilesCount(0),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                        ],
+                        if (chatProvider.isLoadingSessionInsights)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: LinearProgressIndicator(minHeight: 2),
+                          ),
+                        if (chatProvider.sessionInsightsError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              chatProvider.sessionInsightsError!,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
                                   ),
-                                );
-                              }
-                            },
-                            icon: const Icon(Symbols.sync, size: 18),
-                            tooltip: context.l10n.chatRefreshSessionDetails,
+                            ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _sessionStatusLabel(
-                        chatProvider.currentSessionStatus ??
-                            const SessionStatusInfo(
-                              type: SessionStatusType.idle,
-                            ),
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      context.l10n.sessionChildrenCount(
-                        chatProvider.currentSessionChildren.length,
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    SessionTodoListWidget(
-                      todos: chatProvider.currentSessionTodo,
-                      collapsed: settingsProvider.taskListCollapsed,
-                      onToggleCollapsed: () => unawaited(
-                        settingsProvider.setTaskListCollapsed(
-                          !settingsProvider.taskListCollapsed,
-                        ),
-                      ),
-                      maxVisibleItems: 10,
-                    ),
-                    if (settingsProvider.showReviewChanges) ...[
-                      if (chatProvider.currentSessionDiff.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        SessionDiffViewer(
-                          key: ValueKey<String>(
-                            'desktop_session_diff_${chatProvider.currentSession?.id ?? 'none'}',
-                          ),
-                          diffs: chatProvider.currentSessionDiff,
-                          compact: false,
-                          onFileTap: (path, line) =>
-                              unawaited(_onFilePathTap(path, line, null)),
-                        ),
-                      ] else if (chatProvider.isCurrentSessionDiffLoaded)
-                        Text(
-                          context.l10n.sessionDiffFilesCount(0),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                    ],
-                    if (chatProvider.isLoadingSessionInsights)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: LinearProgressIndicator(minHeight: 2),
-                      ),
-                    if (chatProvider.sessionInsightsError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          chatProvider.sessionInsightsError!,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 

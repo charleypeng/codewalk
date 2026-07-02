@@ -19,29 +19,32 @@ class _QuickOpenResult {
 const _fileExplorerMinimumLoaderDuration = Duration(milliseconds: 120);
 
 extension _ChatPageFileExplorerController on _ChatPageState {
-  Widget _buildDesktopFilePane(
-    ChatProvider chatProvider, {
-    VoidCallback? onCollapseRequested,
-  }) {
-    return Consumer2<ProjectProvider, AppProvider>(
-      builder: (context, projectProvider, appProvider, child) {
-        final fileState = _resolveFileContextState(
-          projectProvider: projectProvider,
-          appProvider: appProvider,
-        );
-        _reconcileFileContextWithSessionDiff(
-          contextKey: projectProvider.contextKey,
-          fileState: fileState,
-          chatProvider: chatProvider,
-          projectProvider: projectProvider,
-        );
-        return SafeArea(
-          child: _buildFileExplorerPanel(
-            fileState: fileState,
-            projectProvider: projectProvider,
-            isMobileLayout: false,
-            onCollapseRequested: onCollapseRequested,
-          ),
+  Widget _buildDesktopFilePane({VoidCallback? onCollapseRequested}) {
+    return Selector<ChatProvider, _FilePaneBuildKey>(
+      selector: (_, p) => _filePaneBuildKey(p),
+      builder: (context, _, _) {
+        final chatProvider = context.read<ChatProvider>();
+        return Consumer2<ProjectProvider, AppProvider>(
+          builder: (context, projectProvider, appProvider, child) {
+            final fileState = _resolveFileContextState(
+              projectProvider: projectProvider,
+              appProvider: appProvider,
+            );
+            _reconcileFileContextWithSessionDiff(
+              contextKey: projectProvider.contextKey,
+              fileState: fileState,
+              chatProvider: chatProvider,
+              projectProvider: projectProvider,
+            );
+            return SafeArea(
+              child: _buildFileExplorerPanel(
+                fileState: fileState,
+                projectProvider: projectProvider,
+                isMobileLayout: false,
+                onCollapseRequested: onCollapseRequested,
+              ),
+            );
+          },
         );
       },
     );

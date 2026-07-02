@@ -287,6 +287,24 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     );
   }
 
+  Widget _buildChatContentSelector({
+    required bool isKeyboardOpen,
+    required double maxContentWidth,
+    required double horizontalPadding,
+    required double verticalPadding,
+  }) {
+    return Selector<ChatProvider, _ChatContentBuildKey>(
+      selector: (_, p) => _chatContentBuildKey(p),
+      builder: (context, _, _) => _buildChatContent(
+        chatProvider: context.read<ChatProvider>(),
+        isKeyboardOpen: isKeyboardOpen,
+        maxContentWidth: maxContentWidth,
+        horizontalPadding: horizontalPadding,
+        verticalPadding: verticalPadding,
+      ),
+    );
+  }
+
   Widget _buildChatContent({
     required ChatProvider chatProvider,
     required bool isKeyboardOpen,
@@ -669,7 +687,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                             isActivelyResponding:
                                 p.isCurrentSessionActivelyResponding,
                           ),
-                          builder: (context, _, __) => _buildMessageViewport(
+                          builder: (context, _, _) => _buildMessageViewport(
                             context.read<ChatProvider>(),
                           ),
                         ),
@@ -682,9 +700,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                         _buildComposerReasoningStatusSlot(composerStatus),
 
                       if (!hideComposerForTerminal)
-                        Consumer<ChatProvider>(
-                          builder: (_, cp, __) => _buildModelControls(
-                            cp,
+                        Selector<ChatProvider, _ComposerSelectionBuildKey>(
+                          selector: (_, p) => _composerSelectionBuildKey(p),
+                          builder: (context, _, _) => _buildModelControls(
+                            context.read<ChatProvider>(),
                             isSubConversation: isSubConversation,
                           ),
                         ),

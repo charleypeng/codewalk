@@ -2027,12 +2027,11 @@ class _ChatPageState extends State<ChatPage>
                               (isMobile || (isMedium && !showConversationPane))
                               ? _buildSessionDrawer()
                               : null,
-                          body: Consumer<ChatProvider>(
-                            builder: (context, chatProvider, child) {
+                          body: Builder(
+                            builder: (context) {
                               late final Widget content;
                               if (isMobile) {
-                                content = _buildChatContent(
-                                  chatProvider: chatProvider,
+                                content = _buildChatContentSelector(
                                   isKeyboardOpen: keyboardOpen,
                                   maxContentWidth: double.infinity,
                                   horizontalPadding: 0,
@@ -2074,7 +2073,6 @@ class _ChatPageState extends State<ChatPage>
                                     SizedBox(
                                       width: filePaneWidth,
                                       child: _buildDesktopFilePane(
-                                        chatProvider,
                                         onCollapseRequested: () {
                                           unawaited(
                                             settingsProvider
@@ -2093,8 +2091,7 @@ class _ChatPageState extends State<ChatPage>
                                     ),
                                   ],
                                   Expanded(
-                                    child: _buildChatContent(
-                                      chatProvider: chatProvider,
+                                    child: _buildChatContentSelector(
                                       isKeyboardOpen: keyboardOpen,
                                       maxContentWidth: mainContentWidth,
                                       horizontalPadding: 12,
@@ -2110,8 +2107,6 @@ class _ChatPageState extends State<ChatPage>
                                     SizedBox(
                                       width: utilityPaneWidth,
                                       child: _buildDesktopUtilityPane(
-                                        chatProvider,
-                                        settingsProvider: settingsProvider,
                                         onCollapseRequested: () {
                                           unawaited(
                                             settingsProvider

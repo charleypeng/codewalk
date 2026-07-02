@@ -9893,10 +9893,29 @@ void main() {
       providerId: 'provider_1',
       modelId: 'model_1',
     );
+    await provider.setSelectedAgent('build');
     await tester.pumpAndSettle();
 
     expect(provider.selectedModelId, 'model_1');
     expect(provider.selectedVariantId, isNull);
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('model_selector_button')),
+        matching: find.text('model_1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('agent_selector_button')),
+        matching: find.text('Build'),
+      ),
+      findsOneWidget,
+    );
 
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
@@ -9908,6 +9927,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(provider.selectedModelId, 'model_2');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('model_selector_button')),
+        matching: find.text('model_2'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+      findsOneWidget,
+    );
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.keyM);
@@ -9916,6 +9946,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(provider.selectedModelId, 'model_1');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('model_selector_button')),
+        matching: find.text('model_1'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.keyT);
@@ -9924,6 +9961,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(provider.selectedVariantId, 'low');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('variant_selector_button')),
+        matching: find.text('Low'),
+      ),
+      findsOneWidget,
+    );
+
+    await provider.cycleAgent();
+    await tester.pumpAndSettle();
+
+    expect(provider.selectedAgentName, 'plan');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('agent_selector_button')),
+        matching: find.text('Plan'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
