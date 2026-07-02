@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.163.0 - 2026-07-02
+
+- docs: remove final plan artifact
+- docs(chat): document connected model selector contract
+- fix(chat): require selectable model before sending
+- feat(chat): filter model selector by connected providers
+- plan: dynamic connected model selector
+
 ## v1.162.0 - 2026-07-01
 
 - docs(chat): map split reducer parts
