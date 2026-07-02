@@ -83,7 +83,15 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     bool showLoader = true,
   }) async {
     if (state.loadingDirectories.contains(cacheKey)) {
-      return;
+      if (!force) {
+        return;
+      }
+      while (mounted && state.loadingDirectories.contains(cacheKey)) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      if (!mounted) {
+        return;
+      }
     }
     if (!force && state.directoryChildren.containsKey(cacheKey)) {
       return;

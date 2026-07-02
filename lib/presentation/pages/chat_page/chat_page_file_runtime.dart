@@ -143,15 +143,11 @@ extension _ChatPageFileRuntime on _ChatPageState {
           }
           final normalizedDirectory = _normalizeFilePath(key);
           return diffFiles.any((diffFile) {
-            final absoluteDiff = _resolveDiffAbsolutePath(
+            return _fileTreeDirectoryContainsDiff(
+              directory: normalizedDirectory,
               diffFile: diffFile,
               rootDirectory: projectProvider.currentDirectory,
             );
-            if (absoluteDiff == null) {
-              return false;
-            }
-            return absoluteDiff == normalizedDirectory ||
-                absoluteDiff.startsWith('$normalizedDirectory/');
           });
         })
         .toList(growable: false);
@@ -214,6 +210,34 @@ extension _ChatPageFileRuntime on _ChatPageState {
       }
     }
     return false;
+  }
+
+  bool _fileTreeDirectoryContainsDiff({
+    required String directory,
+    required String diffFile,
+    required String? rootDirectory,
+  }) {
+    final normalizedDirectory = _normalizeFilePath(directory);
+    final normalizedDiff = _normalizeFilePath(diffFile);
+    if (_pathEqualsOrIsChild(normalizedDiff, normalizedDirectory)) {
+      return true;
+    }
+    final absoluteDiff = _resolveDiffAbsolutePath(
+      diffFile: diffFile,
+      rootDirectory: rootDirectory,
+    );
+    if (absoluteDiff == null) {
+      return false;
+    }
+    if (_pathEqualsOrIsChild(absoluteDiff, normalizedDirectory)) {
+      return true;
+    }
+    final absoluteDirectory = _resolveDiffAbsolutePath(
+      diffFile: normalizedDirectory,
+      rootDirectory: rootDirectory,
+    );
+    return absoluteDirectory != null &&
+        _pathEqualsOrIsChild(absoluteDiff, absoluteDirectory);
   }
 
   String? _resolveDiffAbsolutePath({

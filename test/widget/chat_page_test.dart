@@ -6224,6 +6224,110 @@ void main() {
     );
   });
 
+  testWidgets('file tree forced refresh waits for in-flight directory load', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final firstLibLoad = Completer<void>();
+    var libLoadCount = 0;
+    final projectRepository =
+        FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_files_forced_refresh',
+              name: 'Project Files Forced Refresh',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_files_forced_refresh',
+                name: 'Project Files Forced Refresh',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+            ],
+          )
+          ..listFilesDelay = (path) async {
+            if (path != 'lib') {
+              return;
+            }
+            libLoadCount += 1;
+            if (libLoadCount == 1) {
+              await firstLibLoad.future;
+            }
+          };
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: 'lib', name: 'lib', type: FileNodeType.directory),
+    ];
+    projectRepository.queuedFilesByPath['lib'] = <List<FileNode>>[
+      const <FileNode>[
+        FileNode(
+          path: 'lib/old.dart',
+          name: 'old.dart',
+          type: FileNodeType.file,
+        ),
+      ],
+      const <FileNode>[
+        FileNode(
+          path: 'lib/old.dart',
+          name: 'old.dart',
+          type: FileNodeType.file,
+        ),
+        FileNode(
+          path: 'lib/created.dart',
+          name: 'created.dart',
+          type: FileNodeType.file,
+        ),
+      ],
+    ];
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('file_tree_item_lib')));
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_lib')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(find.byType(TextField).last, 'created.dart');
+    await tester.tap(find.widgetWithText(TextButton, 'New file'));
+    await tester.pump();
+
+    firstLibLoad.complete();
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.createFileCallCount, 1);
+    expect(fileOperations.lastParentDirectory, '/repo/a/lib');
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_lib/created.dart')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('file tree rename action refreshes the renamed row', (
     WidgetTester tester,
   ) async {

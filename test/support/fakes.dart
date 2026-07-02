@@ -2210,6 +2210,8 @@ class FakeProjectRepository implements ProjectRepository {
   final Set<String> gitDirectories = <String>{};
   final Map<String, List<String>> directoriesByPath = <String, List<String>>{};
   final Map<String, List<FileNode>> filesByPath = <String, List<FileNode>>{};
+  final Map<String, List<List<FileNode>>> queuedFilesByPath =
+      <String, List<List<FileNode>>>{};
   final Map<String, Failure> fileFailuresByPath = <String, Failure>{};
   final Map<String, FileContent> fileContentsByPath = <String, FileContent>{};
   final Map<String, List<FileNode>> searchResultsByQuery =
@@ -2374,6 +2376,10 @@ class FakeProjectRepository implements ProjectRepository {
     final pathFailure = fileFailuresByPath[key];
     if (pathFailure != null) {
       return Left(pathFailure);
+    }
+    final queued = queuedFilesByPath[key];
+    if (queued != null && queued.isNotEmpty) {
+      return Right(List<FileNode>.from(queued.removeAt(0)));
     }
     final seeded = filesByPath[key];
     if (seeded != null) {
