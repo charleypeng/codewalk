@@ -62,6 +62,14 @@ extension _ChatPageFileRuntime on _ChatPageState {
         state.fileOperationCapabilitiesLoading) {
       return;
     }
+    if (!di.sl.isRegistered<WorkspaceFileOperationsService>()) {
+      state.fileOperationCapabilities =
+          const WorkspaceFileOperationsCapabilities(
+            shellFileOpsSupported: false,
+            message: 'File operations are not available.',
+          );
+      return;
+    }
     final rootDirectory = state.rootDirectory;
     state.fileOperationCapabilitiesLoading = true;
     unawaited(
