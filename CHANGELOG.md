@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.164.0 - 2026-07-02
+
+- docs(chat): map scoped desktop rebuild selectors
+- fix(chat): narrow desktop composer selection rebuilds
+- plan: fix desktop composer selection stutter
+
 ## v1.163.0 - 2026-07-02
 
 - docs: remove final plan artifact
