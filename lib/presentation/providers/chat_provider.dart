@@ -3855,6 +3855,17 @@ class ChatProvider extends ChangeNotifier {
         );
       }
 
+      final providerIdForSend = _selectedProviderId;
+      final modelIdForSend = _selectedModelId;
+      if (providerIdForSend == null || modelIdForSend == null) {
+        _stashRejectedDraftForRetry(sessionId: sendSessionId);
+        _setError(
+          'Select a connected provider or free OpenCode model before sending',
+          sessionId: sendSessionId,
+        );
+        return false;
+      }
+
       _recordModelUsage();
       final selectedAgentForSend = _resolvePreferredAgentName(
         _agents,
@@ -3887,8 +3898,8 @@ class ChatProvider extends ChangeNotifier {
         ...effectiveAttachments,
       ];
       final input = ChatInput(
-        providerId: _selectedProviderId ?? 'anthropic',
-        modelId: _selectedModelId ?? 'claude-3-5-sonnet-20241022',
+        providerId: providerIdForSend,
+        modelId: modelIdForSend,
         variant: _selectedVariantId,
         mode: commandMode
             ? 'command'

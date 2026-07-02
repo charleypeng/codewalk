@@ -40,6 +40,7 @@ import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:codewalk/presentation/services/event_feedback_dispatcher.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 
 import '../../support/fakes.dart';
@@ -286,7 +287,21 @@ Future<ChatProviderTestFixtures> buildDefaultTestFixtures() async {
       ),
     ],
   );
-  final appRepository = FakeAppRepository();
+  final appRepository = FakeAppRepository()
+    ..providersResult = Right(
+      ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'provider_a',
+            name: 'Provider A',
+            env: const <String>[],
+            models: <String, Model>{'model_a': testModel('model_a')},
+          ),
+        ],
+        defaultModels: const <String, String>{'provider_a': 'model_a'},
+        connected: const <String>['provider_a'],
+      ),
+    );
   final localDataSource = InMemoryAppLocalDataSource();
   localDataSource.activeServerId = 'srv_test';
 

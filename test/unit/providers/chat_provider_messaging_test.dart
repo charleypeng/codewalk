@@ -621,6 +621,38 @@ void main() {
       },
     );
 
+    test(
+      'send does not fall back to hard-coded model when none is selectable',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'openai',
+                name: 'OpenAI',
+                env: const <String>[],
+                models: <String, Model>{'gpt-4o': testModel('gpt-4o')},
+              ),
+            ],
+            defaultModels: const <String, String>{'openai': 'gpt-4o'},
+            connected: const <String>[],
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final started = await provider.sendMessage('no selectable model');
+
+        expect(started, isFalse);
+        expect(chatRepository.lastSendInput, isNull);
+        final rejectedDraft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+        expect(rejectedDraft, isNotNull);
+        expect(rejectedDraft?.text, 'no selectable model');
+      },
+    );
+
     test('send failure in foreground queues draft restore for retry', () async {
       final sendStream = StreamController<Either<Failure, ChatMessage>>();
       addTearDown(() async {
