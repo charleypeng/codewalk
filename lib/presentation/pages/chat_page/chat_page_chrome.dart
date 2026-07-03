@@ -1474,26 +1474,6 @@ extension _ChatPageChrome on _ChatPageState {
     );
   }
 
-  void _showProjectIconDiscoveryResult(ProjectIconDiscoveryResult result) {
-    if (!mounted) {
-      return;
-    }
-    final message = switch (result.status) {
-      ProjectIconDiscoveryStatus.found => 'Project icon updated.',
-      ProjectIconDiscoveryStatus.notFound =>
-        'No favicon found in this project.',
-      ProjectIconDiscoveryStatus.unsupported =>
-        'No supported favicon format found.',
-      ProjectIconDiscoveryStatus.oversized =>
-        'Project icon is over the 5 MB limit.',
-      ProjectIconDiscoveryStatus.unsupportedPlatform =>
-        'Project icon discovery is not available on this platform.',
-      ProjectIconDiscoveryStatus.error =>
-        result.message ?? 'Project icon discovery failed.',
-    };
-    _showChatPageMessageSnackBar(message, hideCurrent: false);
-  }
-
   Widget _buildOpenProjectTile({
     required BuildContext dialogContext,
     required Project project,
@@ -1510,7 +1490,7 @@ extension _ChatPageChrome on _ChatPageState {
       contentPadding: AppDensitySpacing.listTileContentPadding(
         _settingsProvider?.appDensity ?? AppDensity.normal,
       ),
-      leading: ProjectIcon(project: project, size: 20),
+      leading: ProjectIcon(project: project, size: 20, autoDiscover: true),
       title: Text(displayName, overflow: TextOverflow.ellipsis),
       subtitle: path == displayName
           ? null
@@ -1525,15 +1505,6 @@ extension _ChatPageChrome on _ChatPageState {
               padding: EdgeInsets.symmetric(horizontal: 6),
               child: Icon(Symbols.radio_button_checked, size: 18),
             ),
-          ProjectIconDiscoveryButton(
-            key: ValueKey<String>(
-              'selector_open_project_icon_find_${project.id}',
-            ),
-            project: project,
-            tooltip: 'Find project icon',
-            enabled: !_isProjectSelectorActionInFlight,
-            onResult: _showProjectIconDiscoveryResult,
-          ),
           IconButton(
             icon: const Icon(Symbols.close_rounded),
             tooltip: 'Close ${_projectDisplayLabel(project)}',

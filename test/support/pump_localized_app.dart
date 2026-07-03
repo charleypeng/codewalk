@@ -16,6 +16,7 @@ Future<void> pumpLocalizedApp(
 
   final app = MaterialApp(
     locale: Locale(localeCode),
+    theme: _testSafeTheme(null),
     localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
@@ -43,7 +44,7 @@ Widget localizedMaterialApp({
 
   return MaterialApp(
     locale: const Locale('en'),
-    theme: theme,
+    theme: _testSafeTheme(theme),
     builder: (context, child) {
       final l10n = AppLocalizations.of(context);
       if (l10n != null) {
@@ -59,5 +60,11 @@ Widget localizedMaterialApp({
     ],
     supportedLocales: AppLocales.supported,
     home: home,
+  );
+}
+
+ThemeData _testSafeTheme(ThemeData? theme) {
+  return (theme ?? ThemeData()).copyWith(
+    splashFactory: InkRipple.splashFactory,
   );
 }

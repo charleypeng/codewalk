@@ -16,9 +16,12 @@ class ProjectIconProvider extends ChangeNotifier {
   final ProjectIconStore _store;
   final ProjectIconDiscoveryService _discoveryService;
   final Map<String, ProjectIconData> _iconsByKey = <String, ProjectIconData>{};
+  final Map<String, Future<ProjectIconData?>> _loadFuturesByKey =
+      <String, Future<ProjectIconData?>>{};
   final Set<String> _loadedKeys = <String>{};
   final Set<String> _loadingKeys = <String>{};
   final Set<String> _discoveringKeys = <String>{};
+  final Set<String> _autoDiscoveryAttemptedKeys = <String>{};
 
   bool get discoverySupported => _discoveryService.isSupported;
 
@@ -34,25 +37,51 @@ class ProjectIconProvider extends ChangeNotifier {
     return _discoveringKeys.contains(projectIconKeyFor(project));
   }
 
-  Future<void> loadStoredIcon(Project project) async {
+  Future<ProjectIconData?> loadStoredIcon(Project project) async {
     final key = projectIconKeyFor(project);
-    if (_iconsByKey.containsKey(key) ||
-        _loadedKeys.contains(key) ||
-        !_loadingKeys.add(key)) {
-      return;
+    final icon = _iconsByKey[key];
+    if (icon != null || _loadedKeys.contains(key)) {
+      return icon;
+    }
+    final existing = _loadFuturesByKey[key];
+    if (existing != null) {
+      return existing;
+    }
+    final future = _loadStoredIcon(key);
+    _loadFuturesByKey[key] = future;
+    return future.whenComplete(() => _loadFuturesByKey.remove(key));
+  }
+
+  Future<ProjectIconData?> _loadStoredIcon(String key) async {
+    if (!_loadingKeys.add(key)) {
+      return _iconsByKey[key];
     }
     try {
       final icon = await _store.readIcon(key);
       if (icon != null) {
         _iconsByKey[key] = icon;
       }
+      return icon;
     } catch (error) {
       AppLogger.warn('Project icon load failed', error: error);
+      return null;
     } finally {
       _loadedKeys.add(key);
       _loadingKeys.remove(key);
       notifyListeners();
     }
+  }
+
+  Future<void> autoDiscoverIcon(Project project) async {
+    if (!_discoveryService.isSupported) {
+      return;
+    }
+    final key = projectIconKeyFor(project);
+    if (!_autoDiscoveryAttemptedKeys.add(key)) {
+      return;
+    }
+    await loadStoredIcon(project);
+    await discoverIcon(project);
   }
 
   Future<ProjectIconDiscoveryResult> discoverIcon(Project project) async {

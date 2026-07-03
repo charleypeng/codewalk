@@ -880,6 +880,7 @@ DioClient _buildDioClient(_MockDioAdapter adapter) {
 MaterialApp _localizedMaterialApp({required Widget home}) {
   return MaterialApp(
     locale: const Locale('en'),
+    theme: ThemeData(splashFactory: InkRipple.splashFactory),
     localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,

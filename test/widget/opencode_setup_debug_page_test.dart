@@ -59,16 +59,17 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<AppProvider>.value(
         value: appProvider,
-        child: const MaterialApp(
-          locale: Locale('en'),
-          localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+        child: MaterialApp(
+          locale: const Locale('en'),
+          theme: ThemeData(splashFactory: InkRipple.splashFactory),
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocales.supported,
-          home: OpenCodeSetupDebugPage(),
+          home: const OpenCodeSetupDebugPage(),
         ),
       ),
     );

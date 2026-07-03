@@ -13,64 +13,23 @@ class ProjectIcon extends StatefulWidget {
     required this.project,
     this.size = 20,
     this.color,
+    this.autoDiscover = false,
   });
 
   final Project project;
   final double size;
   final Color? color;
+  final bool autoDiscover;
 
   @override
   State<ProjectIcon> createState() => _ProjectIconState();
-}
-
-class ProjectIconDiscoveryButton extends StatelessWidget {
-  const ProjectIconDiscoveryButton({
-    super.key,
-    required this.project,
-    required this.tooltip,
-    this.enabled = true,
-    this.color,
-    this.onResult,
-  });
-
-  final Project project;
-  final String tooltip;
-  final bool enabled;
-  final Color? color;
-  final ValueChanged<ProjectIconDiscoveryResult>? onResult;
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<ProjectIconProvider?>();
-    if (provider == null || !provider.discoverySupported) {
-      return const SizedBox.shrink();
-    }
-    final discovering = provider.isDiscovering(project);
-    return IconButton(
-      icon: discovering
-          ? SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2, color: color),
-            )
-          : Icon(Symbols.manage_search, size: 20, color: color),
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-      onPressed: enabled && !discovering
-          ? () async {
-              final result = await provider.discoverIcon(project);
-              onResult?.call(result);
-            }
-          : null,
-    );
-  }
 }
 
 class _ProjectIconState extends State<ProjectIcon> {
   ProjectIconProvider? _provider;
   ProjectIconProvider? _lastLoadProvider;
   String? _lastLoadKey;
+  bool? _lastLoadAutoDiscover;
 
   @override
   void didChangeDependencies() {
@@ -86,7 +45,8 @@ class _ProjectIconState extends State<ProjectIcon> {
   void didUpdateWidget(covariant ProjectIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.project.id != widget.project.id ||
-        oldWidget.project.path != widget.project.path) {
+        oldWidget.project.path != widget.project.path ||
+        oldWidget.autoDiscover != widget.autoDiscover) {
       _loadStoredIcon();
     }
   }
@@ -97,16 +57,23 @@ class _ProjectIconState extends State<ProjectIcon> {
       return;
     }
     final key = projectIconKeyFor(widget.project);
-    if (identical(_lastLoadProvider, provider) && _lastLoadKey == key) {
+    if (identical(_lastLoadProvider, provider) &&
+        _lastLoadKey == key &&
+        _lastLoadAutoDiscover == widget.autoDiscover) {
       return;
     }
     _lastLoadProvider = provider;
     _lastLoadKey = key;
+    _lastLoadAutoDiscover = widget.autoDiscover;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      provider.loadStoredIcon(widget.project);
+      if (widget.autoDiscover) {
+        provider.autoDiscoverIcon(widget.project);
+      } else {
+        provider.loadStoredIcon(widget.project);
+      }
     });
   }
 

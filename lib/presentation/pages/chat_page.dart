@@ -47,7 +47,6 @@ import '../services/codewalk_terminal_controller.dart';
 import '../services/forward_message_service.dart';
 import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
-import '../services/project_icon_models.dart';
 import '../services/read_aloud_service.dart';
 import '../services/session_export_service.dart';
 import '../services/workspace_file_operations_service.dart';

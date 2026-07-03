@@ -277,6 +277,7 @@ extension _ChatPageScaffold on _ChatPageState {
                                                 color: Theme.of(
                                                   context,
                                                 ).colorScheme.onSurfaceVariant,
+                                                autoDiscover: true,
                                               ),
                                         onPressed: () => unawaited(
                                           _openProjectSelectorDialog(),
@@ -952,6 +953,7 @@ extension _ChatPageScaffold on _ChatPageState {
                                     project: project,
                                     size: 13,
                                     color: projectLabelColor,
+                                    autoDiscover: true,
                                   ),
                                   const SizedBox(width: 4),
                                   Flexible(
@@ -1133,6 +1135,7 @@ extension _ChatPageScaffold on _ChatPageState {
                 project: project,
                 size: 20,
                 color: selected ? selectedForeground : secondaryForeground,
+                autoDiscover: true,
               ),
               title: Text(
                 displayName,
@@ -1183,14 +1186,6 @@ extension _ChatPageScaffold on _ChatPageState {
                         color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
-                  ProjectIconDiscoveryButton(
-                    key: ValueKey<String>('project_icon_find_${project.id}'),
-                    project: project,
-                    tooltip: 'Find project icon',
-                    color: selected ? selectedForeground : secondaryForeground,
-                    onResult: _showProjectIconDiscoveryResult,
-                  ),
-                  const SizedBox(width: 6),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(

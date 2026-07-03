@@ -421,7 +421,7 @@ Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
       supportedLocales: AppLocales.supported,
       theme: AppTheme.lightFrom(
         ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
-      ),
+      ).copyWith(splashFactory: InkRipple.splashFactory),
       home: const AppShellPage(),
     ),
   );
@@ -457,7 +457,7 @@ Widget _testAppWithSettings(
       supportedLocales: AppLocales.supported,
       theme: AppTheme.lightFrom(
         ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
-      ),
+      ).copyWith(splashFactory: InkRipple.splashFactory),
       home: const AppShellPage(),
     ),
   );

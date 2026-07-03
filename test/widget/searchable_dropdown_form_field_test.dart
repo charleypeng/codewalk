@@ -9,7 +9,7 @@ void main() {
     String? selectedValue = 'alpha';
 
     await tester.pumpWidget(
-      MaterialApp(
+      _testApp(
         home: StatefulBuilder(
           builder: (context, setState) {
             return Scaffold(
@@ -71,7 +71,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _testApp(
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(24),
@@ -107,7 +107,7 @@ void main() {
 
   testWidgets('stays closed when disabled', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _testApp(
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(24),
@@ -144,7 +144,7 @@ void main() {
     final fieldKey = GlobalKey<FormFieldState<String>>();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _testApp(
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(24),
@@ -182,3 +182,10 @@ void main() {
 }
 
 void _noop(String? _) {}
+
+Widget _testApp({required Widget home}) {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: InkRipple.splashFactory),
+    home: home,
+  );
+}

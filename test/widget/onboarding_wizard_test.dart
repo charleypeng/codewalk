@@ -86,6 +86,7 @@ void main() {
       ],
       child: MaterialApp(
         locale: const Locale('en'),
+        theme: ThemeData(splashFactory: InkRipple.splashFactory),
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,

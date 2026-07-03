@@ -93,9 +93,7 @@ void main() {
     expect(find.byIcon(Symbols.folder_open), findsOneWidget);
   });
 
-  testWidgets('discovery button stores found icons and reports the result', (
-    tester,
-  ) async {
+  testWidgets('auto-discovers a project icon when enabled', (tester) async {
     final candidate = projectIconCandidateForTest(
       sourcePath: '/repo/project/favicon.svg',
       bytes: Uint8List.fromList('<svg />'.codeUnits),
@@ -108,25 +106,94 @@ void main() {
         ProjectIconDiscoveryResult.found(candidate),
       ),
     );
-    ProjectIconDiscoveryResult? observed;
 
     await tester.pumpWidget(
       ChangeNotifierProvider<ProjectIconProvider>.value(
         value: provider,
         child: MaterialApp(
-          home: ProjectIconDiscoveryButton(
-            project: project,
-            tooltip: 'Find project icon',
-            onResult: (result) => observed = result,
+          home: Center(
+            child: ProjectIcon(project: project, autoDiscover: true),
           ),
         ),
       ),
     );
-
-    await tester.tap(find.byTooltip('Find project icon'));
     await tester.pumpAndSettle();
 
-    expect(observed?.status, ProjectIconDiscoveryStatus.found);
+    expect(store.saved?.metadata.sourcePath, '/repo/project/favicon.svg');
+  });
+
+  testWidgets('does not auto-discover a project icon by default', (
+    tester,
+  ) async {
+    final candidate = projectIconCandidateForTest(
+      sourcePath: '/repo/project/favicon.svg',
+      bytes: Uint8List.fromList('<svg />'.codeUnits),
+      format: ProjectIconFormat.svg,
+    );
+    final store = _MemoryProjectIconStore();
+    final discoveryService = _FakeDiscoveryService(
+      ProjectIconDiscoveryResult.found(candidate),
+    );
+    final provider = ProjectIconProvider(
+      store: store,
+      discoveryService: discoveryService,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ProjectIconProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: Center(child: ProjectIcon(project: project)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(discoveryService.discoverCount, 0);
+    expect(store.saved, isNull);
+  });
+
+  testWidgets('auto-discovers when the flag is enabled for the same project', (
+    tester,
+  ) async {
+    final candidate = projectIconCandidateForTest(
+      sourcePath: '/repo/project/favicon.svg',
+      bytes: Uint8List.fromList('<svg />'.codeUnits),
+      format: ProjectIconFormat.svg,
+    );
+    final store = _MemoryProjectIconStore();
+    final discoveryService = _FakeDiscoveryService(
+      ProjectIconDiscoveryResult.found(candidate),
+    );
+    final provider = ProjectIconProvider(
+      store: store,
+      discoveryService: discoveryService,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ProjectIconProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: Center(child: ProjectIcon(project: project)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(discoveryService.discoverCount, 0);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ProjectIconProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: Center(
+            child: ProjectIcon(project: project, autoDiscover: true),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(discoveryService.discoverCount, 1);
     expect(store.saved?.metadata.sourcePath, '/repo/project/favicon.svg');
   });
 }
@@ -213,13 +280,17 @@ class _UnsupportedDiscoveryService implements ProjectIconDiscoveryService {
 }
 
 class _FakeDiscoveryService implements ProjectIconDiscoveryService {
-  const _FakeDiscoveryService(this.result);
+  _FakeDiscoveryService(this.result);
 
   final ProjectIconDiscoveryResult result;
+  int discoverCount = 0;
 
   @override
   bool get isSupported => true;
 
   @override
-  Future<ProjectIconDiscoveryResult> discover(Project project) async => result;
+  Future<ProjectIconDiscoveryResult> discover(Project project) async {
+    discoverCount += 1;
+    return result;
+  }
 }

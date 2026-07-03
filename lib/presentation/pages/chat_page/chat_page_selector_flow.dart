@@ -261,15 +261,6 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              ProjectIconDiscoveryButton(
-                                key: ValueKey<String>(
-                                  'selector_closed_project_icon_find_${project.id}',
-                                ),
-                                project: project,
-                                tooltip: 'Find project icon',
-                                enabled: !selectorActionInFlight,
-                                onResult: _showProjectIconDiscoveryResult,
-                              ),
                               IconButton(
                                 icon: const Icon(
                                   Symbols.delete_outline_rounded,

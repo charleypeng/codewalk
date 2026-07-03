@@ -32,6 +32,7 @@ void main() {
     int maxVisibleItems = 5,
   }) {
     return MaterialApp(
+      theme: ThemeData(splashFactory: InkRipple.splashFactory),
       home: Scaffold(
         body: SessionTodoListWidget(
           todos: items,
