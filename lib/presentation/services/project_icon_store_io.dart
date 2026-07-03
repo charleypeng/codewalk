@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -104,10 +106,9 @@ class ProjectIconStoreIo implements ProjectIconStore {
       return null;
     }
     try {
-      return ProjectIconData(
-        metadata: metadata,
-        bytes: await file.readAsBytes(),
-      );
+      final bytes = await file.readAsBytes();
+      final repairedBytes = await _repairLegacyIcoPngIfNeeded(metadata, bytes);
+      return ProjectIconData(metadata: metadata, bytes: repairedBytes);
     } catch (error) {
       AppLogger.warn('Project icon read failed key=$key', error: error);
       return null;
@@ -168,5 +169,117 @@ class ProjectIconStoreIo implements ProjectIconStore {
     if (await file.exists()) {
       await file.delete();
     }
+  }
+
+  Future<Uint8List> _repairLegacyIcoPngIfNeeded(
+    ProjectIconMetadata metadata,
+    Uint8List bytes,
+  ) async {
+    if (metadata.sourceFormat != ProjectIconFormat.ico ||
+        metadata.storedFormat != ProjectIconFormat.png) {
+      return bytes;
+    }
+    final decoded = img.decodePng(bytes);
+    if (decoded == null || decoded.numFrames <= 1) {
+      return bytes;
+    }
+    late final Uint8List repaired;
+    try {
+      repaired =
+          await _repairLegacyIcoPngFromSource(metadata) ??
+          _repairLegacyAnimatedPng(decoded);
+    } catch (error) {
+      AppLogger.warn(
+        'Project icon legacy ico png repair encode failed key=${metadata.key}',
+        error: error,
+      );
+      return bytes;
+    }
+    if (repaired.length > projectIconMaxBytes) {
+      return bytes;
+    }
+    try {
+      await _writeRepairedIconIfCurrent(metadata, repaired);
+    } catch (error) {
+      AppLogger.warn(
+        'Project icon legacy ico png repair failed key=${metadata.key}',
+        error: error,
+      );
+    }
+    return repaired;
+  }
+
+  Future<Uint8List?> _repairLegacyIcoPngFromSource(
+    ProjectIconMetadata metadata,
+  ) async {
+    final sourcePath = metadata.sourcePath.trim();
+    if (sourcePath.isEmpty) {
+      return null;
+    }
+    final sourceFile = File(sourcePath);
+    if (!await sourceFile.exists()) {
+      return null;
+    }
+    try {
+      final length = await sourceFile.length();
+      if (length <= 0 || length > projectIconMaxBytes) {
+        return null;
+      }
+      final decoded = img.IcoDecoder().decodeImageLargest(
+        await sourceFile.readAsBytes(),
+      );
+      if (decoded == null) {
+        return null;
+      }
+      final repaired = Uint8List.fromList(
+        img.encodePng(decoded, singleFrame: true),
+      );
+      if (repaired.length > projectIconMaxBytes) {
+        return null;
+      }
+      return repaired;
+    } catch (error) {
+      AppLogger.warn(
+        'Project icon legacy ico source repair failed key=${metadata.key}',
+        error: error,
+      );
+      return null;
+    }
+  }
+
+  Uint8List _repairLegacyAnimatedPng(img.Image decoded) {
+    final frame = _largestFrame(decoded);
+    return Uint8List.fromList(img.encodePng(frame, singleFrame: true));
+  }
+
+  Future<void> _writeRepairedIconIfCurrent(
+    ProjectIconMetadata metadata,
+    Uint8List bytes,
+  ) async {
+    await _withMetadataQueue(() async {
+      final current = (await _readMetadataMap())[metadata.key];
+      if (current == null ||
+          current.storedPath != metadata.storedPath ||
+          current.sourcePath != metadata.sourcePath ||
+          current.sourceFormat != metadata.sourceFormat ||
+          current.storedFormat != metadata.storedFormat ||
+          current.updatedAt != metadata.updatedAt) {
+        return;
+      }
+      await File(metadata.storedPath).writeAsBytes(bytes, flush: true);
+    });
+  }
+
+  img.Image _largestFrame(img.Image image) {
+    var largest = image;
+    var largestArea = image.width * image.height;
+    for (final frame in image.frames) {
+      final area = frame.width * frame.height;
+      if (area > largestArea) {
+        largest = frame;
+        largestArea = area;
+      }
+    }
+    return largest;
   }
 }

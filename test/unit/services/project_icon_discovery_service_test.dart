@@ -217,6 +217,33 @@ void main() {
     expect(result.candidate?.storedFormat, ProjectIconFormat.png);
   });
 
+  test(
+    'normalizes multi-frame ico icons to a single largest png frame',
+    () async {
+      await Directory('${root.path}/build').create(recursive: true);
+      final small = img.Image(width: 16, height: 16)
+        ..setPixelRgba(0, 0, 255, 0, 0, 255)
+        ..frameType = img.FrameType.sequence;
+      final large = img.Image(width: 32, height: 32)
+        ..setPixelRgba(0, 0, 0, 255, 0, 255);
+      small.addFrame(large);
+      await File(
+        '${root.path}/build/icon.ico',
+      ).writeAsBytes(img.encodeIco(small));
+
+      const service = ProjectIconDiscoveryServiceIo();
+      final result = await service.discover(project());
+      final decoded = img.decodePng(result.candidate!.bytes);
+
+      expect(result.status, ProjectIconDiscoveryStatus.found);
+      expect(result.candidate?.sourceFormat, ProjectIconFormat.ico);
+      expect(result.candidate?.storedFormat, ProjectIconFormat.png);
+      expect(decoded?.numFrames, 1);
+      expect(decoded?.width, 32);
+      expect(decoded?.height, 32);
+    },
+  );
+
   test('ignores intentionally unsupported icns app icons', () async {
     await Directory('${root.path}/src-tauri/icons').create(recursive: true);
     await File(
@@ -347,6 +374,42 @@ void main() {
       'public/favicon-32x32.png',
     );
   });
+
+  test(
+    'prefers higher quality remote favicons over shorter ico paths',
+    () async {
+      final adapter = _ProjectIconDioAdapter()
+        ..enqueue(<_ProjectIconDioResponse>[
+          const _ProjectIconDioResponse(<Map<String, dynamic>>[]),
+          const _ProjectIconDioResponse(<String>[
+            'favicon.ico',
+            'public/favicon-32x32.png',
+          ]),
+          _ProjectIconDioResponse(<String, dynamic>{
+            'type': 'binary',
+            'content': base64Encode(<int>[13, 14, 15]),
+            'encoding': 'base64',
+            'mimeType': 'image/png',
+          }),
+        ]);
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:4096'));
+      dio.httpClientAdapter = adapter;
+
+      final service = ProjectIconDiscoveryServiceIo(dio: dio);
+      final result = await service.discover(project());
+
+      expect(result.status, ProjectIconDiscoveryStatus.found);
+      expect(
+        result.candidate?.sourcePath,
+        endsWith('/public/favicon-32x32.png'),
+      );
+      expect(result.candidate?.bytes, <int>[13, 14, 15]);
+      expect(
+        adapter.capturedRequests[2].queryParameters['path'],
+        'public/favicon-32x32.png',
+      );
+    },
+  );
 
   test('keeps local discovery when a local icon is available', () async {
     await File('${root.path}/favicon.png').writeAsBytes(<int>[4, 5, 6]);

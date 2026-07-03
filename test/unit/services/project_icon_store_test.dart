@@ -6,6 +6,7 @@ import 'package:codewalk/presentation/services/project_icon_models.dart';
 import 'package:codewalk/presentation/services/project_icon_store_base.dart';
 import 'package:codewalk/presentation/services/project_icon_store_io.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
   late Directory root;
@@ -80,6 +81,74 @@ void main() {
     expect(File(second.metadata.storedPath).existsSync(), isTrue);
     expect(second.metadata.storedFormat, ProjectIconFormat.png);
   });
+
+  test('repairs legacy animated ico png cache on read', () async {
+    final key = projectIconKeyFor(project);
+    await Directory('${root.path}/source').create(recursive: true);
+    final sourceIcoPath = '${root.path}/source/favicon.ico';
+    final small = img.Image(width: 16, height: 16)
+      ..setPixelRgba(0, 0, 255, 0, 0, 255)
+      ..frameType = img.FrameType.sequence;
+    final large = img.Image(width: 32, height: 32)
+      ..setPixelRgba(0, 0, 0, 255, 0, 255);
+    small.addFrame(large);
+    await File(sourceIcoPath).writeAsBytes(img.encodeIco(small));
+    final animatedPng = Uint8List.fromList(img.encodePng(small));
+
+    final saved = await store.saveIcon(
+      project: project,
+      key: key,
+      candidate: projectIconCandidateForTest(
+        sourcePath: sourceIcoPath,
+        bytes: animatedPng,
+        format: ProjectIconFormat.ico,
+      ),
+    );
+    final loaded = await store.readIcon(key);
+    final decoded = img.decodePng(loaded!.bytes);
+    final fileDecoded = img.decodePng(
+      await File(saved.metadata.storedPath).readAsBytes(),
+    );
+
+    expect(saved.metadata.sourceFormat, ProjectIconFormat.ico);
+    expect(saved.metadata.storedFormat, ProjectIconFormat.png);
+    expect(decoded?.numFrames, 1);
+    expect(decoded?.width, 32);
+    expect(decoded?.height, 32);
+    expect(fileDecoded?.numFrames, 1);
+  });
+
+  test(
+    'collapses legacy animated ico png cache when source is missing',
+    () async {
+      final key = projectIconKeyFor(project);
+      final first = img.Image(width: 16, height: 16)
+        ..setPixelRgba(0, 0, 255, 0, 0, 255)
+        ..frameType = img.FrameType.sequence;
+      final second = img.Image(width: 16, height: 16)
+        ..setPixelRgba(0, 0, 0, 255, 0, 255);
+      first.addFrame(second);
+      final animatedPng = Uint8List.fromList(img.encodePng(first));
+
+      final saved = await store.saveIcon(
+        project: project,
+        key: key,
+        candidate: projectIconCandidateForTest(
+          sourcePath: '${root.path}/missing/favicon.ico',
+          bytes: animatedPng,
+          format: ProjectIconFormat.ico,
+        ),
+      );
+      final loaded = await store.readIcon(key);
+      final decoded = img.decodePng(loaded!.bytes);
+      final fileDecoded = img.decodePng(
+        await File(saved.metadata.storedPath).readAsBytes(),
+      );
+
+      expect(decoded?.numFrames, 1);
+      expect(fileDecoded?.numFrames, 1);
+    },
+  );
 
   test('serializes concurrent metadata updates', () async {
     final projects = List<Project>.generate(4, (index) {

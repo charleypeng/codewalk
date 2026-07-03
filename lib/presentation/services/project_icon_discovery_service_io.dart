@@ -245,6 +245,10 @@ Future<ProjectIconDiscoveryResult?> _discoverRemoteProjectIcon({
   }
 
   final paths = SplayTreeSet<String>((left, right) {
+    final byQuality = _iconQualityRank(left).compareTo(_iconQualityRank(right));
+    if (byQuality != 0) {
+      return byQuality;
+    }
     final byLength = left.length.compareTo(right.length);
     if (byLength != 0) {
       return byLength;
@@ -595,13 +599,13 @@ ProjectIconCandidate? _candidateFromSource({
   required int sourceByteLength,
 }) {
   if (sourceFormat == ProjectIconFormat.ico) {
-    final decoded = img.decodeIco(sourceBytes);
+    final decoded = img.IcoDecoder().decodeImageLargest(sourceBytes);
     if (decoded == null) {
       return null;
     }
     return ProjectIconCandidate(
       sourcePath: path,
-      bytes: Uint8List.fromList(img.encodePng(decoded)),
+      bytes: Uint8List.fromList(img.encodePng(decoded, singleFrame: true)),
       sourceFormat: ProjectIconFormat.ico,
       storedFormat: ProjectIconFormat.png,
       sourceByteLength: sourceByteLength,
