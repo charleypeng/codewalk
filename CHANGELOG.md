@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.167.0 - 2026-07-03
+
+- feat(project): auto-discover project icons
+
 ## v1.166.2 - 2026-07-03
 
 - fix(project): stabilize ico project icons
