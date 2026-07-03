@@ -35,6 +35,8 @@ class SherpaSpeechInputService implements SpeechInputService {
   String? _activeModelDir;
   bool _isListening = false;
   bool _isAvailable = false;
+  String? _unavailableReason;
+  String? _unavailableReasonKey;
 
   @override
   bool get isListening => _isListening;
@@ -43,12 +45,17 @@ class SherpaSpeechInputService implements SpeechInputService {
   bool get isAvailable => _isAvailable;
 
   @override
-  String? get unavailableReason => null;
+  String? get unavailableReason => _unavailableReason;
+
+  @override
+  String? get unavailableReasonKey => _unavailableReasonKey;
 
   @override
   Future<bool> initialize() async {
     if (!SpeechEnginePlatformSupport.isSherpaSupported) {
       _isAvailable = false;
+      _unavailableReason = 'Sherpa is unavailable on this platform.';
+      _unavailableReasonKey = 'generic';
       return false;
     }
 
@@ -161,6 +168,9 @@ class SherpaSpeechInputService implements SpeechInputService {
     final hasPermission = await capture.hasPermission();
     if (!hasPermission) {
       _capture = null;
+      _applyCaptureFailure(
+        speechAudioCaptureFailureInfoForStatus(capture.lastWindowsAccessStatus),
+      );
       onError();
       return;
     }
@@ -232,6 +242,10 @@ class SherpaSpeechInputService implements SpeechInputService {
       _isListening = false;
       stream.free();
       _capture = null;
+      _applyCaptureFailure(
+        speechAudioCaptureFailureInfoForError(error),
+        fallback: 'Microphone recording failed.',
+      );
       onError();
       return;
     }
@@ -264,7 +278,7 @@ class SherpaSpeechInputService implements SpeechInputService {
           unawaited(completeListeningSession());
         }
       },
-      onError: (_) {
+      onError: (error) {
         silenceTimer?.cancel();
         freeStreamOnce();
         if (doneEmitted) {
@@ -273,6 +287,10 @@ class SherpaSpeechInputService implements SpeechInputService {
         doneEmitted = true;
         _isListening = false;
         AppLogger.warn('Sherpa audio stream reported an error');
+        _applyCaptureFailure(
+          speechAudioCaptureFailureInfoForError(error),
+          fallback: 'Microphone recording failed.',
+        );
         unawaited(stopListening());
         onError();
       },
@@ -302,7 +320,17 @@ class SherpaSpeechInputService implements SpeechInputService {
     _modelManager.setPreferredLanguage(lang);
     _activeLanguage = lang;
     _activeModelDir = await _modelManager.getModelDir(lang);
+    _unavailableReason = null;
+    _unavailableReasonKey = null;
     _isAvailable = true;
+  }
+
+  void _applyCaptureFailure(
+    SpeechAudioCaptureFailureInfo info, {
+    String fallback = 'Microphone permission is disabled.',
+  }) {
+    _unavailableReason = info.reason ?? fallback;
+    _unavailableReasonKey = info.reasonKey ?? 'generic';
   }
 
   Future<void> _recreateRecognizer({

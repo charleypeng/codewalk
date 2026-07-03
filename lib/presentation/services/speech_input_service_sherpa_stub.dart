@@ -30,4 +30,7 @@ class SherpaSpeechInputService implements SpeechInputService {
 
   @override
   String? get unavailableReason => null;
+
+  @override
+  String? get unavailableReasonKey => null;
 }

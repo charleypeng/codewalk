@@ -282,6 +282,14 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     _setState(() {
       _isListening = false;
     });
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    if (isWindows) {
+      _showVoiceInputUnavailableSnackbar(
+        context,
+        reasonService: _activeSpeechService,
+      );
+    }
   }
 
   Future<void> _showSherpaDownloadDialog() async {
@@ -361,9 +369,9 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
   // when the speech service is unavailable. On non-Windows targets this falls
   // back to the existing `msgVoiceInputUnavailable` copy. On Windows, the
   // action button label and target URI are picked from the typed
-  // [unavailableReasonKey] emitted by [SttSpeechInputService]. The caller can
+  // [unavailableReasonKey] emitted by the active speech service. The caller can
   // pass a [reasonService] (the just-attempted service) to override the
-  // default [SttSpeechInputService] lookup, which avoids stale
+  // default active-service lookup, which avoids stale
   // [unavailableReasonKey] values from a previous successful session.
   void _showVoiceInputUnavailableSnackbar(
     BuildContext context, {
@@ -382,11 +390,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       return;
     }
 
-    final service = reasonService is SttSpeechInputService
-        ? reasonService
-        : (_activeSpeechService is SttSpeechInputService
-              ? _activeSpeechService as SttSpeechInputService
-              : null);
+    final service = reasonService ?? _activeSpeechService;
     final reasonKey = service?.unavailableReasonKey;
     final (String label, Future<bool> Function() action) =
         _windowsActionForReason(reasonKey, l10n);
@@ -402,7 +406,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     messenger.showSnackBar(snack);
   }
 
-  // Map a [SttSpeechInputService.unavailableReasonKey] to the most relevant
+  // Map a [SpeechInputService.unavailableReasonKey] to the most relevant
   // Windows settings link. The mapping is intentionally narrow: every key
   // resolves to a single actionable link so the user is never sent to the
   // wrong page.
@@ -415,6 +419,8 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       case 'noInputDevice':
         return (l10n.speechOpenSpeechSettings, WindowsSettingsLinks.openSpeech);
       case 'deviceBusy':
+      case 'unsupportedFormat':
+      case 'backendUnavailable':
         return (
           l10n.speechOpenMicrophoneSettings,
           WindowsSettingsLinks.openMicrophonePrivacy,

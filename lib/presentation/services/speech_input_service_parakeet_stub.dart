@@ -30,4 +30,7 @@ class ParakeetSpeechInputService implements SpeechInputService {
   @override
   String? get unavailableReason =>
       'Parakeet speech is unavailable on this platform.';
+
+  @override
+  String? get unavailableReasonKey => 'generic';
 }

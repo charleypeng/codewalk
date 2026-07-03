@@ -134,18 +134,26 @@ double ClampSample(double value) {
 
 double ReadPcmSample(const BYTE* sample, int bits_per_sample) {
   if (bits_per_sample <= 16) {
-    int16_t value = static_cast<int16_t>(sample[0] | (sample[1] << 8));
+    const uint32_t raw = static_cast<uint32_t>(sample[0]) |
+                         (static_cast<uint32_t>(sample[1]) << 8);
+    const int16_t value = static_cast<int16_t>(raw);
     return static_cast<double>(value) / 32768.0;
   }
   if (bits_per_sample <= 24) {
-    int32_t value = sample[0] | (sample[1] << 8) | (sample[2] << 16);
-    if ((value & 0x00800000) != 0) {
-      value |= 0xFF000000;
+    uint32_t raw = static_cast<uint32_t>(sample[0]) |
+                   (static_cast<uint32_t>(sample[1]) << 8) |
+                   (static_cast<uint32_t>(sample[2]) << 16);
+    if ((raw & 0x00800000u) != 0) {
+      raw |= 0xFF000000u;
     }
+    const int32_t value = static_cast<int32_t>(raw);
     return static_cast<double>(value) / 8388608.0;
   }
-  int32_t value = static_cast<int32_t>(sample[0] | (sample[1] << 8) |
-                                      (sample[2] << 16) | (sample[3] << 24));
+  const uint32_t raw = static_cast<uint32_t>(sample[0]) |
+                       (static_cast<uint32_t>(sample[1]) << 8) |
+                       (static_cast<uint32_t>(sample[2]) << 16) |
+                       (static_cast<uint32_t>(sample[3]) << 24);
+  const int32_t value = static_cast<int32_t>(raw);
   return static_cast<double>(value) / 2147483648.0;
 }
 
@@ -160,8 +168,8 @@ std::vector<double> ConvertPacketToMono(const BYTE* data,
     return mono;
   }
 
-  const int bytes_per_sample = format.is_float ? 4
-      : std::max(1, format.bits_per_sample / 8);
+  const int bytes_per_sample =
+      format.is_float ? 4 : std::max(1, format.bits_per_sample / 8);
   for (UINT32 frame = 0; frame < frame_count; frame++) {
     const BYTE* frame_data = data + frame * format.block_align;
     double sum = 0.0;
@@ -200,13 +208,16 @@ class PcmResampler {
       const double sample = buffer_[index] * (1.0 - fraction) +
                             buffer_[index + 1] * fraction;
       const int16_t pcm = static_cast<int16_t>(std::round(
-          ClampSample(sample) * static_cast<double>(std::numeric_limits<int16_t>::max())));
+          ClampSample(sample) *
+          static_cast<double>(std::numeric_limits<int16_t>::max())));
       out.push_back(static_cast<uint8_t>(pcm & 0xFF));
       out.push_back(static_cast<uint8_t>((pcm >> 8) & 0xFF));
       position_ += ratio_;
     }
 
-    const size_t consumed = static_cast<size_t>(position_);
+    const size_t max_consumed = buffer_.empty() ? 0 : buffer_.size() - 1;
+    const size_t consumed =
+        std::min(static_cast<size_t>(position_), max_consumed);
     if (consumed > 0) {
       buffer_.erase(buffer_.begin(), buffer_.begin() + consumed);
       position_ -= static_cast<double>(consumed);

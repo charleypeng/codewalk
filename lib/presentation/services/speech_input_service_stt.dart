@@ -34,6 +34,7 @@ class SttSpeechInputService implements SpeechInputService {
 
   // Stable reason key for the most recent init failure. Used by the UI to
   // pick the right actionable Windows settings link without re-parsing text.
+  @override
   String? get unavailableReasonKey => _lastUnavailableReasonKey;
 
   @override

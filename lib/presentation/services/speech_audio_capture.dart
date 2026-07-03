@@ -24,6 +24,10 @@ class SpeechAudioCapture {
   // On non-Windows, the wrapper owns the AudioRecorder for the duration of
   // a single capture session.
   AudioRecorder? _activeRecorder;
+  WindowsMicrophoneAccessStatus? _lastWindowsAccessStatus;
+
+  WindowsMicrophoneAccessStatus? get lastWindowsAccessStatus =>
+      _lastWindowsAccessStatus;
 
   bool get isWindowsTarget {
     if (kIsWeb) {
@@ -35,8 +39,10 @@ class SpeechAudioCapture {
   Future<bool> hasPermission() async {
     if (isWindowsTarget) {
       final status = await _windowsMicrophoneService.probe();
+      _lastWindowsAccessStatus = status;
       return status == WindowsMicrophoneAccessStatus.allowed;
     }
+    _lastWindowsAccessStatus = null;
     final recorder = AudioRecorder();
     try {
       return await recorder.hasPermission();
@@ -115,4 +121,90 @@ class SpeechAudioCapture {
       // Ignore dispose errors.
     }
   }
+}
+
+class SpeechAudioCaptureFailureInfo {
+  const SpeechAudioCaptureFailureInfo({this.reason, this.reasonKey});
+
+  final String? reason;
+  final String? reasonKey;
+}
+
+SpeechAudioCaptureFailureInfo speechAudioCaptureFailureInfoForStatus(
+  WindowsMicrophoneAccessStatus? status,
+) {
+  switch (status) {
+    case WindowsMicrophoneAccessStatus.denied:
+      return const SpeechAudioCaptureFailureInfo(
+        reason: 'Microphone access is blocked by Windows privacy settings.',
+        reasonKey: 'microphoneDenied',
+      );
+    case WindowsMicrophoneAccessStatus.noInputDevice:
+      return const SpeechAudioCaptureFailureInfo(
+        reason: 'No microphone input device is available.',
+        reasonKey: 'noInputDevice',
+      );
+    case WindowsMicrophoneAccessStatus.deviceBusy:
+      return const SpeechAudioCaptureFailureInfo(
+        reason: 'The default microphone is currently in use by another app.',
+        reasonKey: 'deviceBusy',
+      );
+    case WindowsMicrophoneAccessStatus.unsupportedFormat:
+      return const SpeechAudioCaptureFailureInfo(
+        reason: 'The default microphone format is not supported.',
+        reasonKey: 'unsupportedFormat',
+      );
+    case WindowsMicrophoneAccessStatus.notSupported:
+      return const SpeechAudioCaptureFailureInfo(
+        reason:
+            'The Windows microphone backend is not available in this build.',
+        reasonKey: 'backendUnavailable',
+      );
+    case WindowsMicrophoneAccessStatus.unknown:
+      return const SpeechAudioCaptureFailureInfo(
+        reason: 'Windows microphone capture is unavailable.',
+        reasonKey: 'generic',
+      );
+    case WindowsMicrophoneAccessStatus.allowed:
+    case null:
+      return const SpeechAudioCaptureFailureInfo();
+  }
+}
+
+SpeechAudioCaptureFailureInfo speechAudioCaptureFailureInfoForError(
+  Object? error,
+) {
+  if (error is MicrophoneBackendUnavailableException) {
+    switch (error.code) {
+      case 'denied':
+        return speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.denied,
+        );
+      case 'noInputDevice':
+        return speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.noInputDevice,
+        );
+      case 'deviceBusy':
+        return speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.deviceBusy,
+        );
+      case 'unsupportedFormat':
+        return speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.unsupportedFormat,
+        );
+      case 'notSupported':
+        return speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.notSupported,
+        );
+      case 'unknown':
+      default:
+        return speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.unknown,
+        );
+    }
+  }
+  return const SpeechAudioCaptureFailureInfo(
+    reason: 'Windows microphone capture failed.',
+    reasonKey: 'generic',
+  );
 }

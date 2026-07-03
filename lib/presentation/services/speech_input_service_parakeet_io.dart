@@ -56,6 +56,7 @@ class ParakeetSpeechInputService implements SpeechInputService {
   bool _isListening = false;
   bool _isAvailable = false;
   String? _unavailableReason;
+  String? _unavailableReasonKey;
 
   @override
   bool get isListening => _isListening;
@@ -65,6 +66,9 @@ class ParakeetSpeechInputService implements SpeechInputService {
 
   @override
   String? get unavailableReason => _unavailableReason;
+
+  @override
+  String? get unavailableReasonKey => _unavailableReasonKey;
 
   bool get _isDesktopSupported {
     return SpeechEnginePlatformSupport.isParakeetSupported;
@@ -150,7 +154,9 @@ class ParakeetSpeechInputService implements SpeechInputService {
     final hasPermission = await capture.hasPermission();
     if (!hasPermission) {
       _capture = null;
-      _unavailableReason = 'Microphone permission is disabled.';
+      _applyCaptureFailure(
+        speechAudioCaptureFailureInfoForStatus(capture.lastWindowsAccessStatus),
+      );
       onError();
       return;
     }
@@ -222,6 +228,10 @@ class ParakeetSpeechInputService implements SpeechInputService {
       );
       _isListening = false;
       _capture = null;
+      _applyCaptureFailure(
+        speechAudioCaptureFailureInfoForError(error),
+        fallback: 'Microphone recording failed.',
+      );
       onError();
       return;
     }
@@ -245,7 +255,7 @@ class ParakeetSpeechInputService implements SpeechInputService {
           armSilenceTimer();
         }
       },
-      onError: (_) {
+      onError: (error) {
         silenceTimer?.cancel();
         maxDurationTimer?.cancel();
         if (completed) {
@@ -253,6 +263,10 @@ class ParakeetSpeechInputService implements SpeechInputService {
         }
         completed = true;
         _isListening = false;
+        _applyCaptureFailure(
+          speechAudioCaptureFailureInfoForError(error),
+          fallback: 'Microphone recording failed.',
+        );
         unawaited(stopListening());
         onError();
       },
@@ -268,7 +282,16 @@ class ParakeetSpeechInputService implements SpeechInputService {
     _modelManager.setPreferredModelId(modelId);
     _activeModelDir = await _modelManager.getModelDir(modelId);
     _unavailableReason = null;
+    _unavailableReasonKey = null;
     _isAvailable = true;
+  }
+
+  void _applyCaptureFailure(
+    SpeechAudioCaptureFailureInfo info, {
+    String fallback = 'Microphone permission is disabled.',
+  }) {
+    _unavailableReason = info.reason ?? fallback;
+    _unavailableReasonKey = info.reasonKey ?? 'generic';
   }
 
   void _recreateRecognizer(String modelDir) {

@@ -35,4 +35,7 @@ abstract class SpeechInputService {
   /// Optional human-readable hint describing why initialization is unavailable.
   /// Used by the UI to explain fallback decisions.
   String? get unavailableReason => null;
+
+  /// Optional stable reason key for UI actions such as Windows settings links.
+  String? get unavailableReasonKey => null;
 }
