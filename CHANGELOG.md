@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.166.1 - 2026-07-03
+
+- fix(project): discover server favicons
+
 ## v1.166.0 - 2026-07-03
 
 - docs(stt): document Windows WASAPI speech path
