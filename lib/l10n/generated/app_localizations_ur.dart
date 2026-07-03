@@ -4321,7 +4321,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.';
+      'اس ایپ میں لینکس پر مقامی STT غیر فعال ہے۔ پیراکیٹ نئے انسٹالز کے لیے ڈیفالٹ انجن ہے۔';
 
   @override
   String get speechNativeSTTWorks =>

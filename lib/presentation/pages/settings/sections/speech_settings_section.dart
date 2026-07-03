@@ -253,7 +253,9 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        context.l10n.speechNativeSTTDisabled,
+                        _isWindows
+                            ? context.l10n.speechNativeSTTWorks
+                            : context.l10n.speechNativeSTTDisabled,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),

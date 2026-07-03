@@ -78,6 +78,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
   Future<bool> initialize() async {
     if (!_isDesktopSupported) {
       _unavailableReason = 'Moonshine is available on desktop only.';
+      _unavailableReasonKey = 'generic';
       _isAvailable = false;
       return false;
     }
@@ -91,6 +92,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
         stackTrace: stackTrace,
       );
       _unavailableReason = 'Moonshine runtime failed to initialize.';
+      _unavailableReasonKey = 'generic';
       _isAvailable = false;
       return false;
     }
@@ -139,6 +141,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
       );
       _isAvailable = false;
       _unavailableReason = 'Moonshine model files are incomplete.';
+      _unavailableReasonKey = 'generic';
       onError();
       return;
     }

@@ -77,6 +77,7 @@ class SenseVoiceSpeechInputService implements SpeechInputService {
   Future<bool> initialize() async {
     if (!_isDesktopSupported) {
       _unavailableReason = 'SenseVoice is available on desktop only.';
+      _unavailableReasonKey = 'generic';
       _isAvailable = false;
       return false;
     }
@@ -90,6 +91,7 @@ class SenseVoiceSpeechInputService implements SpeechInputService {
         stackTrace: stackTrace,
       );
       _unavailableReason = 'SenseVoice runtime failed to initialize.';
+      _unavailableReasonKey = 'generic';
       _isAvailable = false;
       return false;
     }
@@ -138,6 +140,7 @@ class SenseVoiceSpeechInputService implements SpeechInputService {
       );
       _isAvailable = false;
       _unavailableReason = 'SenseVoice model files are incomplete.';
+      _unavailableReasonKey = 'generic';
       onError();
       return;
     }

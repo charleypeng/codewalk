@@ -1226,7 +1226,7 @@
   "speechMoonshineModelsDesktop": "Modelos Moonshine (desktop)",
   "speechMoonshineStaysDownloadable": "O Moonshine permanece disponível para download fora do pacote do app. Escolha um modelo para este dispositivo desktop e remova-o mais tarde se quiser recuperar o espaço.",
   "speechNative": "Nativo",
-  "speechNativeSTTDisabled": "Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.",
+  "speechNativeSTTDisabled": "O STT nativo está desabilitado no Linux neste app. O Parakeet é o mecanismo padrão para novas instalações.",
   "speechNativeSTTWorks": "On Windows, CodeWalk uses local on-device speech recognition through its WASAPI microphone backend. Native Windows speech recognition is disabled for stability.",
   "speechNativeStartsFaster": "O Nativo inicia mais rápido. O Sherpa é executado totalmente no dispositivo, com uma configuração mais pesada e maior controle do modelo.",
   "speechOpenMicrophoneSettings": "Open microphone settings",

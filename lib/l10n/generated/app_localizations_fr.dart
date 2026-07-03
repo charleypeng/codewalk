@@ -4432,7 +4432,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.';
+      'La transcription vocale native est désactivée sur Linux dans cette application. Parakeet est le moteur par défaut pour les nouvelles installations.';
 
   @override
   String get speechNativeSTTWorks =>

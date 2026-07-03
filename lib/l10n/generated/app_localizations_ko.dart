@@ -4156,7 +4156,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.';
+      '이 앱의 Linux 환경에서는 네이티브 STT 기능이 비활성화되어 있습니다. 신규 설치의 경우 Parakeet가 기본 엔진입니다.';
 
   @override
   String get speechNativeSTTWorks =>

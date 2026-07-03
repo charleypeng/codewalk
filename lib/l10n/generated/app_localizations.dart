@@ -7643,7 +7643,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — speechNativeSTTDisabled
   ///
   /// In en, this message translates to:
-  /// **'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.'**
+  /// **'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.'**
   String get speechNativeSTTDisabled;
 
   /// CodeWalk UI string — speechNativeSTTWorks

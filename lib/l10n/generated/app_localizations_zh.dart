@@ -4067,7 +4067,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.';
+      '在此应用的 Linux 系统上已禁用原生 STT。Parakeet 是新安装的默认引擎。';
 
   @override
   String get speechNativeSTTWorks =>

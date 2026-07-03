@@ -110,5 +110,77 @@ void main() {
 
       expect(service.stopCount, 1);
     });
+
+    test('maps Windows microphone statuses to stable reason keys', () {
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.denied,
+        ).reasonKey,
+        'microphoneDenied',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.noInputDevice,
+        ).reasonKey,
+        'noInputDevice',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.deviceBusy,
+        ).reasonKey,
+        'deviceBusy',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.unsupportedFormat,
+        ).reasonKey,
+        'unsupportedFormat',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.notSupported,
+        ).reasonKey,
+        'backendUnavailable',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.unknown,
+        ).reasonKey,
+        'generic',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForStatus(
+          WindowsMicrophoneAccessStatus.allowed,
+        ).reasonKey,
+        isNull,
+      );
+    });
+
+    test('maps Windows microphone stream errors to stable reason keys', () {
+      expect(
+        speechAudioCaptureFailureInfoForError(
+          const MicrophoneBackendUnavailableException(code: 'denied'),
+        ).reasonKey,
+        'microphoneDenied',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForError(
+          const MicrophoneBackendUnavailableException(
+            code: 'unsupportedFormat',
+          ),
+        ).reasonKey,
+        'unsupportedFormat',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForError(
+          const MicrophoneBackendUnavailableException(code: 'notSupported'),
+        ).reasonKey,
+        'backendUnavailable',
+      );
+      expect(
+        speechAudioCaptureFailureInfoForError(StateError('boom')).reasonKey,
+        'generic',
+      );
+    });
   });
 }

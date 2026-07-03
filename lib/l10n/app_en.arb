@@ -5315,7 +5315,7 @@
   "@speechNative": {
     "description": "CodeWalk UI string — speechNative"
   },
-  "speechNativeSTTDisabled": "Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.",
+  "speechNativeSTTDisabled": "Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.",
   "@speechNativeSTTDisabled": {
     "description": "CodeWalk UI string — speechNativeSTTDisabled"
   },
