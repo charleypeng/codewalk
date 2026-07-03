@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
+
 import '../../domain/entities/project.dart';
 import 'project_icon_discovery_service_base.dart';
 import 'project_icon_models.dart';
 
-ProjectIconDiscoveryService createProjectIconDiscoveryService() =>
+ProjectIconDiscoveryService createProjectIconDiscoveryService({Dio? dio}) =>
     const _UnsupportedProjectIconDiscoveryService();
 
 class _UnsupportedProjectIconDiscoveryService

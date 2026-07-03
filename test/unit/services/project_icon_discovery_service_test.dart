@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/presentation/services/project_icon_discovery_service_io.dart';
 import 'package:codewalk/presentation/services/project_icon_models.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
@@ -281,4 +283,167 @@ void main() {
 
     expect(result.status, ProjectIconDiscoveryStatus.unsupported);
   });
+
+  test('discovers root favicon from the OpenCode server', () async {
+    final adapter = _ProjectIconDioAdapter()
+      ..enqueue(<_ProjectIconDioResponse>[
+        const _ProjectIconDioResponse(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'name': 'favicon.png',
+            'path': 'favicon.png',
+            'type': 'file',
+          },
+        ]),
+        const _ProjectIconDioResponse(<String>['favicon.png']),
+        _ProjectIconDioResponse(<String, dynamic>{
+          'type': 'binary',
+          'content': base64Encode(<int>[1, 2, 3]),
+          'encoding': 'base64',
+          'mimeType': 'image/png',
+        }),
+      ]);
+    final dio = Dio(BaseOptions(baseUrl: 'http://localhost:4096'));
+    dio.httpClientAdapter = adapter;
+
+    final service = ProjectIconDiscoveryServiceIo(dio: dio);
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, endsWith('/favicon.png'));
+    expect(result.candidate?.sourceFormat, ProjectIconFormat.png);
+    expect(result.candidate?.bytes, <int>[1, 2, 3]);
+    expect(adapter.capturedRequests, hasLength(3));
+    expect(adapter.capturedRequests[0].path, '/file');
+    expect(adapter.capturedRequests[0].queryParameters['directory'], root.path);
+    expect(adapter.capturedRequests[1].path, '/find/file');
+    expect(adapter.capturedRequests[1].queryParameters['directory'], root.path);
+    expect(adapter.capturedRequests[2].path, '/file/content');
+    expect(adapter.capturedRequests[2].queryParameters['path'], 'favicon.png');
+  });
+
+  test('discovers sized web favicons from the OpenCode server', () async {
+    final adapter = _ProjectIconDioAdapter()
+      ..enqueue(<_ProjectIconDioResponse>[
+        const _ProjectIconDioResponse(<Map<String, dynamic>>[]),
+        const _ProjectIconDioResponse(<String>['public/favicon-32x32.png']),
+        _ProjectIconDioResponse(<String, dynamic>{
+          'type': 'binary',
+          'content': base64Encode(<int>[10, 11, 12]),
+          'encoding': 'base64',
+          'mimeType': 'image/png',
+        }),
+      ]);
+    final dio = Dio(BaseOptions(baseUrl: 'http://localhost:4096'));
+    dio.httpClientAdapter = adapter;
+
+    final service = ProjectIconDiscoveryServiceIo(dio: dio);
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, endsWith('/public/favicon-32x32.png'));
+    expect(result.candidate?.bytes, <int>[10, 11, 12]);
+    expect(
+      adapter.capturedRequests[2].queryParameters['path'],
+      'public/favicon-32x32.png',
+    );
+  });
+
+  test('keeps local discovery when a local icon is available', () async {
+    await File('${root.path}/favicon.png').writeAsBytes(<int>[4, 5, 6]);
+    final adapter = _ProjectIconDioAdapter();
+    final dio = Dio(BaseOptions(baseUrl: 'http://localhost:4096'));
+    dio.httpClientAdapter = adapter;
+
+    final service = ProjectIconDiscoveryServiceIo(dio: dio);
+    final result = await service.discover(project());
+
+    expect(result.status, ProjectIconDiscoveryStatus.found);
+    expect(result.candidate?.sourcePath, endsWith('/favicon.png'));
+    expect(result.candidate?.bytes, <int>[4, 5, 6]);
+    expect(adapter.capturedRequests, isEmpty);
+  });
+
+  test(
+    'tries the next remote favicon when one remote candidate is empty',
+    () async {
+      final adapter = _ProjectIconDioAdapter()
+        ..enqueue(<_ProjectIconDioResponse>[
+          const _ProjectIconDioResponse(<Map<String, dynamic>>[]),
+          const _ProjectIconDioResponse(<String>[
+            'favicon.png',
+            'public/favicon.png',
+          ]),
+          const _ProjectIconDioResponse(<String, dynamic>{
+            'type': 'text',
+            'content': '',
+          }),
+          _ProjectIconDioResponse(<String, dynamic>{
+            'type': 'binary',
+            'content': base64Encode(<int>[7, 8, 9]),
+            'encoding': 'base64',
+            'mimeType': 'image/png',
+          }),
+        ]);
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:4096'));
+      dio.httpClientAdapter = adapter;
+
+      final service = ProjectIconDiscoveryServiceIo(dio: dio);
+      final result = await service.discover(project());
+
+      expect(result.status, ProjectIconDiscoveryStatus.found);
+      expect(result.candidate?.sourcePath, endsWith('/public/favicon.png'));
+      expect(result.candidate?.bytes, <int>[7, 8, 9]);
+      expect(adapter.capturedRequests, hasLength(4));
+      expect(
+        adapter.capturedRequests[2].queryParameters['path'],
+        'favicon.png',
+      );
+      expect(
+        adapter.capturedRequests[3].queryParameters['path'],
+        'public/favicon.png',
+      );
+    },
+  );
+}
+
+class _ProjectIconDioResponse {
+  const _ProjectIconDioResponse(this.data);
+
+  final dynamic data;
+}
+
+class _ProjectIconDioAdapter implements HttpClientAdapter {
+  final List<_ProjectIconDioResponse> _responses = <_ProjectIconDioResponse>[];
+  final List<RequestOptions> capturedRequests = <RequestOptions>[];
+
+  void enqueue(List<_ProjectIconDioResponse> responses) {
+    _responses.addAll(responses);
+  }
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    capturedRequests.add(options);
+    if (_responses.isEmpty) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+        message: 'No mock response',
+      );
+    }
+    final response = _responses.removeAt(0);
+    return ResponseBody.fromString(
+      jsonEncode(response.data),
+      200,
+      headers: <String, List<String>>{
+        'content-type': <String>['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

@@ -1,6 +1,8 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
@@ -9,11 +11,13 @@ import '../../domain/entities/project.dart';
 import 'project_icon_discovery_service_base.dart';
 import 'project_icon_models.dart';
 
-ProjectIconDiscoveryService createProjectIconDiscoveryService() =>
-    const ProjectIconDiscoveryServiceIo();
+ProjectIconDiscoveryService createProjectIconDiscoveryService({Dio? dio}) =>
+    ProjectIconDiscoveryServiceIo(dio: dio);
 
 class ProjectIconDiscoveryServiceIo implements ProjectIconDiscoveryService {
-  const ProjectIconDiscoveryServiceIo();
+  const ProjectIconDiscoveryServiceIo({this.dio});
+
+  final Dio? dio;
 
   @override
   bool get isSupported => true;
@@ -27,7 +31,25 @@ class ProjectIconDiscoveryServiceIo implements ProjectIconDiscoveryService {
         message: 'Project path is empty.',
       );
     }
-    return compute(_discoverProjectIcon, <String, Object?>{'path': path});
+    final localResult = await compute(_discoverProjectIcon, <String, Object?>{
+      'path': path,
+    });
+    if (localResult.found) {
+      return localResult;
+    }
+
+    final remoteResult = await _discoverRemoteProjectIcon(
+      dio: dio,
+      rootPath: path,
+    );
+    if (remoteResult?.found == true) {
+      return remoteResult!;
+    }
+    if (remoteResult != null &&
+        remoteResult.status != ProjectIconDiscoveryStatus.notFound) {
+      return remoteResult;
+    }
+    return localResult;
   }
 }
 
@@ -212,6 +234,294 @@ class _IconMatchResult {
 
   final bool unsupported;
   final bool oversized;
+}
+
+Future<ProjectIconDiscoveryResult?> _discoverRemoteProjectIcon({
+  required Dio? dio,
+  required String rootPath,
+}) async {
+  if (dio == null) {
+    return null;
+  }
+
+  final paths = SplayTreeSet<String>((left, right) {
+    final byLength = left.length.compareTo(right.length);
+    if (byLength != 0) {
+      return byLength;
+    }
+    return left.toLowerCase().compareTo(right.toLowerCase());
+  });
+  var reachedServer = false;
+
+  reachedServer =
+      await _addRemoteRootFavicons(
+        dio: dio,
+        rootPath: rootPath,
+        paths: paths,
+      ) ||
+      reachedServer;
+  reachedServer =
+      await _addRemoteFoundFavicons(
+        dio: dio,
+        rootPath: rootPath,
+        paths: paths,
+      ) ||
+      reachedServer;
+
+  if (!reachedServer) {
+    return null;
+  }
+  if (paths.isEmpty) {
+    return const ProjectIconDiscoveryResult(
+      status: ProjectIconDiscoveryStatus.notFound,
+      message: 'No favicon file found on the OpenCode server.',
+    );
+  }
+
+  ProjectIconDiscoveryResult? failureResult;
+  for (final relativePath in paths) {
+    final result = await _readRemoteIconCandidate(
+      dio: dio,
+      rootPath: rootPath,
+      relativePath: relativePath,
+    );
+    if (result?.found == true) {
+      return result;
+    }
+    failureResult ??= result;
+  }
+
+  if (failureResult != null) {
+    return failureResult;
+  }
+
+  return const ProjectIconDiscoveryResult(
+    status: ProjectIconDiscoveryStatus.notFound,
+    message: 'No readable favicon file found on the OpenCode server.',
+  );
+}
+
+Future<bool> _addRemoteRootFavicons({
+  required Dio dio,
+  required String rootPath,
+  required Set<String> paths,
+}) async {
+  try {
+    final response = await dio.get(
+      '/file',
+      queryParameters: <String, dynamic>{'path': '.', 'directory': rootPath},
+    );
+    final data = response.data;
+    if (data is! List) {
+      return true;
+    }
+    for (final item in data) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, dynamic>.from(item);
+      final type = map['type']?.toString().trim().toLowerCase();
+      if (type != null && type.isNotEmpty && type != 'file') {
+        continue;
+      }
+      final rawPath = map['path']?.toString() ?? map['name']?.toString() ?? '';
+      final relativePath = _normalizeRemoteRelativePath(
+        rootPath: rootPath,
+        path: rawPath,
+      );
+      if (relativePath != null && _isRemoteFaviconPath(relativePath)) {
+        paths.add(relativePath);
+      }
+    }
+    return true;
+  } on DioException {
+    return false;
+  }
+}
+
+Future<bool> _addRemoteFoundFavicons({
+  required Dio dio,
+  required String rootPath,
+  required Set<String> paths,
+}) async {
+  try {
+    final response = await dio.get(
+      '/find/file',
+      queryParameters: <String, dynamic>{
+        'query': 'favicon',
+        'type': 'file',
+        'limit': '200',
+        'directory': rootPath,
+      },
+    );
+    final data = response.data;
+    if (data is! List) {
+      return true;
+    }
+    for (final item in data) {
+      final rawPath = switch (item) {
+        String() => item,
+        Map() => item['path']?.toString() ?? item['name']?.toString() ?? '',
+        _ => '',
+      };
+      final relativePath = _normalizeRemoteRelativePath(
+        rootPath: rootPath,
+        path: rawPath,
+      );
+      if (relativePath != null && _isRemoteFaviconPath(relativePath)) {
+        paths.add(relativePath);
+      }
+    }
+    return true;
+  } on DioException {
+    return false;
+  }
+}
+
+Future<ProjectIconDiscoveryResult?> _readRemoteIconCandidate({
+  required Dio dio,
+  required String rootPath,
+  required String relativePath,
+}) async {
+  final format = ProjectIconFormatX.fromName(fileBasename(relativePath));
+  if (format == null) {
+    return const ProjectIconDiscoveryResult(
+      status: ProjectIconDiscoveryStatus.unsupported,
+      message: 'Only unsupported favicon formats were found.',
+    );
+  }
+
+  try {
+    final response = await dio.get(
+      '/file/content',
+      queryParameters: <String, dynamic>{
+        'path': relativePath,
+        'directory': rootPath,
+      },
+    );
+    final sourceBytes = _remoteContentBytes(response.data);
+    if (sourceBytes == null || sourceBytes.isEmpty) {
+      return null;
+    }
+    if (sourceBytes.length > projectIconMaxBytes) {
+      return const ProjectIconDiscoveryResult(
+        status: ProjectIconDiscoveryStatus.oversized,
+        message: 'Project icon is over the 5 MB limit.',
+      );
+    }
+    final candidate = _candidateFromSource(
+      path: _remoteSourcePath(rootPath: rootPath, relativePath: relativePath),
+      sourceBytes: sourceBytes,
+      sourceFormat: format,
+      sourceByteLength: sourceBytes.length,
+    );
+    if (candidate == null) {
+      return ProjectIconDiscoveryResult(
+        status: ProjectIconDiscoveryStatus.error,
+        message: 'Could not decode project icon: $relativePath',
+      );
+    }
+    if (candidate.bytes.length > projectIconMaxBytes) {
+      return const ProjectIconDiscoveryResult(
+        status: ProjectIconDiscoveryStatus.oversized,
+        message: 'Decoded project icon exceeds the size limit.',
+      );
+    }
+    return ProjectIconDiscoveryResult.found(candidate);
+  } on DioException catch (error) {
+    if (error.response?.statusCode == 404) {
+      return null;
+    }
+    return ProjectIconDiscoveryResult(
+      status: ProjectIconDiscoveryStatus.error,
+      message: 'Could not read project icon from OpenCode server: $error',
+    );
+  } on FormatException catch (error) {
+    return ProjectIconDiscoveryResult(
+      status: ProjectIconDiscoveryStatus.error,
+      message: 'Could not decode project icon from OpenCode server: $error',
+    );
+  }
+}
+
+Uint8List? _remoteContentBytes(dynamic data) {
+  if (data is List<int>) {
+    return Uint8List.fromList(data);
+  }
+  if (data is String) {
+    return Uint8List.fromList(utf8.encode(data));
+  }
+  if (data is! Map) {
+    return null;
+  }
+
+  final map = Map<String, dynamic>.from(data);
+  final rawContent = map['content'];
+  if (rawContent is! String) {
+    return null;
+  }
+  final type = map['type']?.toString().trim().toLowerCase();
+  final encoding = map['encoding']?.toString().trim().toLowerCase();
+  final isBinary =
+      map['binary'] == true || type == 'binary' || encoding == 'base64';
+  if (isBinary) {
+    return Uint8List.fromList(base64Decode(rawContent));
+  }
+  return Uint8List.fromList(utf8.encode(rawContent));
+}
+
+String? _normalizeRemoteRelativePath({
+  required String rootPath,
+  required String path,
+}) {
+  final root = normalizeFilePath(rootPath);
+  var relativePath = normalizeFilePath(path);
+  if (relativePath.isEmpty || relativePath == '.') {
+    return null;
+  }
+  if (relativePath == root) {
+    return null;
+  }
+  if (relativePath.startsWith('$root/')) {
+    relativePath = relativePath.substring(root.length + 1);
+  }
+  while (relativePath.startsWith('/')) {
+    relativePath = relativePath.substring(1);
+  }
+  while (relativePath.startsWith('./')) {
+    relativePath = relativePath.substring(2);
+  }
+  final parts = relativePath.split('/');
+  if (parts.any((part) => part.isEmpty || part == '..')) {
+    return null;
+  }
+  return relativePath;
+}
+
+bool _isRemoteFaviconPath(String relativePath) {
+  final path = normalizeFilePath(relativePath).toLowerCase();
+  final name = fileBasename(relativePath).toLowerCase();
+  if (_isFaviconName(name)) {
+    return ProjectIconFormatX.fromName(name) != null;
+  }
+  if (!_isSizedWebIconName(name)) {
+    return false;
+  }
+  final parts = path.split('/').where((part) => part.isNotEmpty).toList();
+  return parts.length == 1 ||
+      (parts.length <= 3 &&
+          (parts[0] == 'web' || parts[0] == 'public' || parts[0] == 'static'));
+}
+
+String _remoteSourcePath({
+  required String rootPath,
+  required String relativePath,
+}) {
+  final root = normalizeFilePath(rootPath);
+  if (root == '/') {
+    return '/$relativePath';
+  }
+  return '$root/$relativePath';
 }
 
 const _directIconCandidates = <_DirectIconCandidate>[

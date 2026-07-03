@@ -154,7 +154,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton(UpdateCheckService.new);
   sl.registerLazySingleton(createProjectIconStore);
-  sl.registerLazySingleton(createProjectIconDiscoveryService);
+  sl.registerLazySingleton(
+    () => createProjectIconDiscoveryService(dio: sl<DioClient>().dio),
+  );
 
   // Repositories
   sl.registerLazySingleton<AppRepository>(
