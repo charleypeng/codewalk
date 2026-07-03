@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
+import '../utils/speech_engine_platform_support.dart';
 import 'sensevoice_model_manager.dart';
 import 'speech_audio_capture.dart';
 import 'speech_input_service.dart';
@@ -38,9 +39,8 @@ bool senseVoiceChunkHasSpeech(Float32List samples, {double threshold = 0.015}) {
   return (sum / samples.length) >= threshold;
 }
 
-// SenseVoice uses sherpa_onnx offline recognition. We keep the same buffered
-// silence-based microphone flow used by other offline desktop engines so the UI
-// contract stays stable while the runtime remains isolated.
+// SenseVoice uses sherpa_onnx offline recognition. Linux/macOS capture uses
+// `record`; Windows uses CodeWalk WASAPI.
 class SenseVoiceSpeechInputService implements SpeechInputService {
   SenseVoiceSpeechInputService(this._modelManager);
 
@@ -66,12 +66,7 @@ class SenseVoiceSpeechInputService implements SpeechInputService {
   String? get unavailableReason => _unavailableReason;
 
   bool get _isDesktopSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
+    return SpeechEnginePlatformSupport.isSenseVoiceSupported;
   }
 
   @override
@@ -162,8 +157,8 @@ class SenseVoiceSpeechInputService implements SpeechInputService {
     _isListening = true;
     onStatus('listening');
 
-  final timeout = pauseFor ?? const Duration(seconds: 5);
-  const maxUtteranceDuration = Duration(seconds: 15);
+    final timeout = pauseFor ?? const Duration(seconds: 5);
+    const maxUtteranceDuration = Duration(seconds: 15);
     final buffer = SenseVoiceAudioBuffer();
     Timer? silenceTimer;
     Timer? maxDurationTimer;

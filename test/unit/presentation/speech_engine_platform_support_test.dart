@@ -14,9 +14,8 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    // isNativeSupported: web and non-Linux IO platforms; Linux is excluded
-    // because Linux's native STT path is disabled in CodeWalk by design
-    // (ADR-006/038 — Linux defaults to Parakeet).
+    // isNativeSupported: web and non-Linux/non-Windows IO platforms; Linux and
+    // Windows default to on-device engines by design.
     group('isNativeSupported', () {
       test('is true on the web', () {
         // kIsWeb is a compile-time constant, so we can only exercise the
@@ -29,7 +28,6 @@ void main() {
         TargetPlatform.macOS,
         TargetPlatform.android,
         TargetPlatform.fuchsia,
-        TargetPlatform.windows,
       ]) {
         test('is true on IO $platform', () {
           debugDefaultTargetPlatformOverride = platform;
@@ -37,14 +35,19 @@ void main() {
         });
       }
 
-      test('is false on Linux', () {
-        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-        expect(SpeechEnginePlatformSupport.isNativeSupported, isFalse);
-      });
+      for (final platform in const [
+        TargetPlatform.linux,
+        TargetPlatform.windows,
+      ]) {
+        test('is false on $platform', () {
+          debugDefaultTargetPlatformOverride = platform;
+          expect(SpeechEnginePlatformSupport.isNativeSupported, isFalse);
+        });
+      }
     });
 
-    // isSherpaSupported: web false; Android false; Windows false (record_windows
-    // crash); all other IO platforms true. iOS keeps the historic "supported"
+    // isSherpaSupported: web false; Android false; all other IO platforms true.
+    // iOS keeps the historic "supported"
     // flag because sherpa_onnx ships an iOS build, even though the chat input
     // never wires it up on iOS in practice.
     group('isSherpaSupported', () {
@@ -52,6 +55,7 @@ void main() {
         TargetPlatform.iOS,
         TargetPlatform.linux,
         TargetPlatform.macOS,
+        TargetPlatform.windows,
         TargetPlatform.fuchsia,
       ]) {
         test('is true on $platform', () {
@@ -60,10 +64,7 @@ void main() {
         });
       }
 
-      for (final platform in const [
-        TargetPlatform.android,
-        TargetPlatform.windows,
-      ]) {
+      for (final platform in const [TargetPlatform.android]) {
         test('is false on $platform', () {
           debugDefaultTargetPlatformOverride = platform;
           expect(SpeechEnginePlatformSupport.isSherpaSupported, isFalse);
@@ -71,17 +72,27 @@ void main() {
       }
     });
 
-    // Desktop-only on-device engines (Moonshine, Parakeet, SenseVoice): only
-    // Linux and macOS. Windows is excluded due to the record_windows crash.
+    // Desktop-only on-device engines (Moonshine, Parakeet, SenseVoice): Linux,
+    // macOS, and Windows. Windows uses CodeWalk WASAPI instead of record_windows.
     for (final entry in <(String, bool Function())>[
-      ('isMoonshineSupported', () => SpeechEnginePlatformSupport.isMoonshineSupported),
-      ('isParakeetSupported', () => SpeechEnginePlatformSupport.isParakeetSupported),
-      ('isSenseVoiceSupported', () => SpeechEnginePlatformSupport.isSenseVoiceSupported),
+      (
+        'isMoonshineSupported',
+        () => SpeechEnginePlatformSupport.isMoonshineSupported,
+      ),
+      (
+        'isParakeetSupported',
+        () => SpeechEnginePlatformSupport.isParakeetSupported,
+      ),
+      (
+        'isSenseVoiceSupported',
+        () => SpeechEnginePlatformSupport.isSenseVoiceSupported,
+      ),
     ]) {
       group(entry.$1, () {
         for (final platform in const [
           TargetPlatform.linux,
           TargetPlatform.macOS,
+          TargetPlatform.windows,
         ]) {
           test('is true on $platform', () {
             debugDefaultTargetPlatformOverride = platform;
@@ -92,7 +103,6 @@ void main() {
         for (final platform in const [
           TargetPlatform.iOS,
           TargetPlatform.android,
-          TargetPlatform.windows,
           TargetPlatform.fuchsia,
         ]) {
           test('is false on $platform (regression for issue #43)', () {
@@ -104,12 +114,13 @@ void main() {
     }
 
     // hasAnyOnDeviceEngine: false only when no on-device engine is supported
-    // (Android, Windows). Linux/macOS expose all 4 on-device engines, iOS
+    // (Android). Linux/macOS/Windows expose all 4 on-device engines, iOS
     // exposes Sherpa, fuchsia exposes Sherpa too.
     group('hasAnyOnDeviceEngine', () {
       for (final platform in const [
         TargetPlatform.linux,
         TargetPlatform.macOS,
+        TargetPlatform.windows,
         TargetPlatform.iOS,
         TargetPlatform.fuchsia,
       ]) {
@@ -119,10 +130,7 @@ void main() {
         });
       }
 
-      for (final platform in const [
-        TargetPlatform.android,
-        TargetPlatform.windows,
-      ]) {
+      for (final platform in const [TargetPlatform.android]) {
         test('is false on $platform (regression for issue #43)', () {
           debugDefaultTargetPlatformOverride = platform;
           expect(SpeechEnginePlatformSupport.hasAnyOnDeviceEngine, isFalse);

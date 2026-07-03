@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 //   - AUDCLNT_E_ACCESSDENIED (0x80070005) -> [denied]   (privacy block)
 //   - AUDCLNT_E_DEVICE_INVALIDATED      -> [noInputDevice]
 //   - AUDCLNT_E_DEVICE_IN_USE            -> [deviceBusy]
+//   - unsupported WAVEFORMATEX           -> [unsupportedFormat]
 //   - AUDCLNT_E_NOT_INITIALIZED / others -> [unknown]
 //   - S_OK                                -> [allowed]
 enum WindowsMicrophoneAccessStatus {
@@ -17,12 +18,12 @@ enum WindowsMicrophoneAccessStatus {
   denied,
   noInputDevice,
   deviceBusy,
+  unsupportedFormat,
   unknown,
   notSupported,
 }
 
-extension WindowsMicrophoneAccessStatusLabel
-    on WindowsMicrophoneAccessStatus {
+extension WindowsMicrophoneAccessStatusLabel on WindowsMicrophoneAccessStatus {
   String get label {
     switch (this) {
       case WindowsMicrophoneAccessStatus.allowed:
@@ -33,6 +34,8 @@ extension WindowsMicrophoneAccessStatusLabel
         return 'noInputDevice';
       case WindowsMicrophoneAccessStatus.deviceBusy:
         return 'deviceBusy';
+      case WindowsMicrophoneAccessStatus.unsupportedFormat:
+        return 'unsupportedFormat';
       case WindowsMicrophoneAccessStatus.unknown:
         return 'unknown';
       case WindowsMicrophoneAccessStatus.notSupported:
@@ -51,12 +54,11 @@ class WindowsMicrophoneService {
   const WindowsMicrophoneService({
     MethodChannel? probeChannel,
     EventChannel? streamChannel,
-  })  : _probeChannel = probeChannel,
-        _streamChannel = streamChannel;
+  }) : _probeChannel = probeChannel,
+       _streamChannel = streamChannel;
 
   static const String _probeChannelName = 'codewalk/windows_microphone';
-  static const String _streamChannelName =
-      'codewalk/windows_microphone_stream';
+  static const String _streamChannelName = 'codewalk/windows_microphone_stream';
 
   final MethodChannel? _probeChannel;
   final EventChannel? _streamChannel;
@@ -95,8 +97,8 @@ class WindowsMicrophoneService {
   // Returns a stream of PCM16 mono 16 kHz chunks when the native backend is
   // active. On non-Windows the stream is empty. Any platform error
   // (including [MissingPluginException] when the native side is not built)
-  // is mapped to a synthetic error stream so the engine can fall back to
-  // Native instead of crashing.
+  // is mapped to a synthetic error stream so the engine can fail softly instead
+  // of crashing.
   Stream<Uint8List> pcmStream() {
     if (!_isWindowsTarget) {
       return const Stream<Uint8List>.empty();
@@ -149,6 +151,8 @@ class WindowsMicrophoneService {
         return WindowsMicrophoneAccessStatus.noInputDevice;
       case 'deviceBusy':
         return WindowsMicrophoneAccessStatus.deviceBusy;
+      case 'unsupportedFormat':
+        return WindowsMicrophoneAccessStatus.unsupportedFormat;
       case 'notSupported':
         return WindowsMicrophoneAccessStatus.notSupported;
       case 'unknown':
@@ -160,8 +164,8 @@ class WindowsMicrophoneService {
 }
 
 // Sentinel exception raised when the Windows native microphone backend is
-// missing or fails to initialize. Engines should map this to the Native
-// engine fallback instead of crashing.
+// missing or fails to initialize. Engines should map this to a non-crashing
+// unavailable state.
 class MicrophoneBackendUnavailableException implements Exception {
   const MicrophoneBackendUnavailableException({this.code, this.message});
 
@@ -169,6 +173,7 @@ class MicrophoneBackendUnavailableException implements Exception {
   final String? message;
 
   @override
-  String toString() => 'MicrophoneBackendUnavailableException('
+  String toString() =>
+      'MicrophoneBackendUnavailableException('
       'code: $code, message: $message)';
 }

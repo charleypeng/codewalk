@@ -20,7 +20,6 @@ import '../../../utils/speech_engine_platform_support.dart';
 import '../../../utils/windows_settings_links.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
-
 class _SherpaModelEntry {
   const _SherpaModelEntry({
     required this.code,
@@ -83,9 +82,10 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   }
 
   // Platform support is centralized in [SpeechEnginePlatformSupport] so the
-  // chat input, settings, and tests all agree on what works where. See that
-  // class for the Windows-specific exclusion rationale.
+  // chat input, settings, and tests all agree on what works where.
   bool get _supportsSherpa => SpeechEnginePlatformSupport.isSherpaSupported;
+
+  bool get _supportsSherpaModelManagement => _isLinux || _isWindows;
 
   bool get _isWindows {
     if (kIsWeb) {
@@ -96,15 +96,14 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
 
   bool get _supportsMoonshine =>
       SpeechEnginePlatformSupport.isMoonshineSupported;
-  bool get _supportsParakeet =>
-      SpeechEnginePlatformSupport.isParakeetSupported;
+  bool get _supportsParakeet => SpeechEnginePlatformSupport.isParakeetSupported;
   bool get _supportsSenseVoice =>
       SpeechEnginePlatformSupport.isSenseVoiceSupported;
 
   @override
   void initState() {
     super.initState();
-    if (_isLinux) {
+    if (_supportsSherpaModelManagement) {
       unawaited(_loadModelCatalog());
     }
     if (_supportsMoonshine) {
@@ -145,7 +144,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               settingsProvider: settingsProvider,
               silenceValue: silenceValue,
             ),
-            if (_isLinux && selectedEngine == SpeechToTextEngine.sherpa) ...[
+            if (_supportsSherpaModelManagement &&
+                selectedEngine == SpeechToTextEngine.sherpa) ...[
               const SizedBox(height: 12),
               _buildLinuxModelCard(settingsProvider),
             ],
@@ -182,27 +182,26 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     final moonshineEnabled = _supportsMoonshine;
     final parakeetEnabled = _supportsParakeet;
     final senseVoiceEnabled = _supportsSenseVoice;
-    final nativeEnabled = !_isLinux;
+    final nativeEnabled = SpeechEnginePlatformSupport.isNativeSupported;
+    final nativeUnavailableHint = switch (defaultTargetPlatform) {
+      TargetPlatform.windows =>
+        'Disabled on Windows for stability. Use Parakeet or another on-device engine through CodeWalk WASAPI capture.',
+      TargetPlatform.linux =>
+        'Unavailable on Linux. Use Parakeet for speech input.',
+      _ => 'Not available on this platform.',
+    };
     final sherpaUnavailableHint = switch (defaultTargetPlatform) {
       TargetPlatform.android =>
         'Unavailable on Android builds optimized for small APK size.',
-      TargetPlatform.windows =>
-        'Disabled on Windows because the underlying microphone plugin can crash the app.',
       _ => 'Not available on this platform.',
     };
     final moonshineUnavailableHint = switch (defaultTargetPlatform) {
-      TargetPlatform.windows =>
-        'Disabled on Windows because the underlying microphone plugin can crash the app.',
       _ => 'Available on desktop only. Android stays native-only.',
     };
     final parakeetUnavailableHint = switch (defaultTargetPlatform) {
-      TargetPlatform.windows =>
-        'Disabled on Windows because the underlying microphone plugin can crash the app.',
       _ => 'Available on desktop only. Uses offline multilingual recognition.',
     };
     final senseVoiceUnavailableHint = switch (defaultTargetPlatform) {
-      TargetPlatform.windows =>
-        'Disabled on Windows because the underlying microphone plugin can crash the app.',
       _ =>
         'Available on desktop only. Strongest for Chinese, Cantonese, Japanese, Korean, and English.',
     };
@@ -213,7 +212,10 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(context.l10n.speechEngine, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              context.l10n.speechEngine,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 4),
             Text(
               context.l10n.speechNativeStartsFaster,
@@ -234,7 +236,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               subtitle: Text(
                 nativeEnabled
                     ? 'Simpler and faster startup.'
-                    : 'Unavailable on Linux. Use Sherpa for speech input.',
+                    : nativeUnavailableHint,
               ),
             ),
             if (!nativeEnabled)
@@ -252,27 +254,6 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     Expanded(
                       child: Text(
                         context.l10n.speechNativeSTTDisabled,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (_isWindows)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Symbols.info,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        context.l10n.speechNativeSTTWorks,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -297,16 +278,19 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         Icon(
                           Symbols.info,
                           size: 18,
-                          color: Theme.of(context).colorScheme.onSecondaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSecondaryContainer,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             context.l10n.speechWindowsSetupHint,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSecondaryContainer,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
                                 ),
                           ),
                         ),
@@ -328,21 +312,16 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ),
                         OutlinedButton.icon(
                           icon: const Icon(Symbols.speech_to_text),
-                          label: Text(
-                            context.l10n.speechOpenSpeechPrivacy,
-                          ),
+                          label: Text(context.l10n.speechOpenSpeechPrivacy),
                           onPressed: () => unawaited(
                             WindowsSettingsLinks.openSpeechPrivacy(),
                           ),
                         ),
                         OutlinedButton.icon(
                           icon: const Icon(Symbols.translate),
-                          label: Text(
-                            context.l10n.speechOpenSpeechSettings,
-                          ),
-                          onPressed: () => unawaited(
-                            WindowsSettingsLinks.openSpeech(),
-                          ),
+                          label: Text(context.l10n.speechOpenSpeechSettings),
+                          onPressed: () =>
+                              unawaited(WindowsSettingsLinks.openSpeech()),
                         ),
                       ],
                     ),
@@ -1638,8 +1617,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: Text(context.l10n.settingsReadAloudEnabled),
-              subtitle:
-                  Text(context.l10n.settingsReadAloudEnabledDescription),
+              subtitle: Text(context.l10n.settingsReadAloudEnabledDescription),
               value: settingsProvider.readAloudEnabled,
               onChanged: (value) =>
                   unawaited(settingsProvider.setReadAloudEnabled(value)),
@@ -1648,8 +1626,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(context.l10n.settingsReadAloudSpeed),
-              subtitle:
-                  Text(context.l10n.settingsReadAloudSpeedDescription),
+              subtitle: Text(context.l10n.settingsReadAloudSpeedDescription),
               trailing: SizedBox(
                 width: 120,
                 child: Slider(
@@ -1667,8 +1644,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(context.l10n.settingsReadAloudPitch),
-              subtitle:
-                  Text(context.l10n.settingsReadAloudPitchDescription),
+              subtitle: Text(context.l10n.settingsReadAloudPitchDescription),
               trailing: SizedBox(
                 width: 120,
                 child: Slider(

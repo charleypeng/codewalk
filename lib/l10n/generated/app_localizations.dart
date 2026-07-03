@@ -7643,13 +7643,13 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — speechNativeSTTDisabled
   ///
   /// In en, this message translates to:
-  /// **'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.'**
+  /// **'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.'**
   String get speechNativeSTTDisabled;
 
   /// CodeWalk UI string — speechNativeSTTWorks
   ///
   /// In en, this message translates to:
-  /// **'Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.'**
+  /// **'On Windows, CodeWalk uses local on-device speech recognition through its WASAPI microphone backend. Native Windows speech recognition is disabled for stability.'**
   String get speechNativeSTTWorks;
 
   /// CodeWalk UI string — speechNativeStartsFaster
@@ -7769,7 +7769,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — speechWindowsSetupHint
   ///
   /// In en, this message translates to:
-  /// **'Windows does not prompt for microphone access at runtime. Open the settings below, enable microphone access for desktop apps, and install a speech language pack.'**
+  /// **'Windows voice input uses CodeWalk WASAPI capture with on-device models. Keep microphone access for desktop apps enabled; the buttons below open Windows settings for troubleshooting.'**
   String get speechWindowsSetupHint;
 
   /// CodeWalk UI string — statusConnected

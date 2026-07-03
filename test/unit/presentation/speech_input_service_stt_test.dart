@@ -23,6 +23,18 @@ void main() {
       expect(service.isAvailable, isFalse);
     });
 
+    test('does not initialize speech_to_text on Windows', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      final available = await service.initialize();
+
+      expect(available, isFalse);
+      expect(service.isAvailable, isFalse);
+      expect(service.unavailableReason, contains('disabled for stability'));
+      expect(service.unavailableReasonKey, 'nativeDisabled');
+    });
+
     // autoPunctuation should only be enabled on iOS and macOS where the Apple
     // Speech APIs support acoustic-cue-based punctuation inference.
     group('autoPunctuation platform logic', () {

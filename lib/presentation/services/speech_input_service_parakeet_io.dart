@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
+import '../utils/speech_engine_platform_support.dart';
 import 'parakeet_model_manager.dart';
 import 'speech_audio_capture.dart';
 import 'speech_input_service.dart';
@@ -39,8 +40,8 @@ bool parakeetChunkHasSpeech(Float32List samples, {double threshold = 0.015}) {
 }
 
 // Parakeet desktop backend uses sherpa_onnx OfflineRecognizer with
-// modelType=nemo_transducer. We keep audio collection in Dart and decode after
-// VAD-like silence detection to match the officially supported offline flow.
+// modelType=nemo_transducer. Linux/macOS capture uses `record`; Windows uses
+// CodeWalk WASAPI.
 class ParakeetSpeechInputService implements SpeechInputService {
   ParakeetSpeechInputService(this._modelManager);
 
@@ -66,12 +67,7 @@ class ParakeetSpeechInputService implements SpeechInputService {
   String? get unavailableReason => _unavailableReason;
 
   bool get _isDesktopSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
+    return SpeechEnginePlatformSupport.isParakeetSupported;
   }
 
   @override
@@ -162,8 +158,8 @@ class ParakeetSpeechInputService implements SpeechInputService {
     _isListening = true;
     onStatus('listening');
 
-  final timeout = pauseFor ?? const Duration(seconds: 5);
-  const maxUtteranceDuration = Duration(seconds: 15);
+    final timeout = pauseFor ?? const Duration(seconds: 5);
+    const maxUtteranceDuration = Duration(seconds: 15);
     final buffer = ParakeetAudioBuffer();
     Timer? silenceTimer;
     Timer? maxDurationTimer;

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
+import '../utils/speech_engine_platform_support.dart';
 import 'moonshine_model_manager.dart';
 import 'speech_audio_capture.dart';
 import 'speech_input_service.dart';
@@ -40,8 +41,7 @@ bool moonshineChunkHasSpeech(Float32List samples, {double threshold = 0.015}) {
 }
 
 // Moonshine desktop backend using sherpa_onnx OfflineRecognizer.
-// We intentionally keep Linux microphone handling in Dart and decode only after
-// the utterance ends, which avoids the native VAD path that was crashing.
+// Linux/macOS microphone capture uses `record`; Windows uses CodeWalk WASAPI.
 class MoonshineSpeechInputService implements SpeechInputService {
   MoonshineSpeechInputService(this._modelManager);
 
@@ -67,12 +67,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
   String? get unavailableReason => _unavailableReason;
 
   bool get _isDesktopSupported {
-    if (kIsWeb) {
-      return false;
-    }
-    return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows;
+    return SpeechEnginePlatformSupport.isMoonshineSupported;
   }
 
   @override
@@ -163,8 +158,8 @@ class MoonshineSpeechInputService implements SpeechInputService {
     _isListening = true;
     onStatus('listening');
 
-  final timeout = pauseFor ?? const Duration(seconds: 5);
-  const maxUtteranceDuration = Duration(seconds: 15);
+    final timeout = pauseFor ?? const Duration(seconds: 5);
+    const maxUtteranceDuration = Duration(seconds: 15);
     final buffer = MoonshineAudioBuffer();
     Timer? silenceTimer;
     Timer? maxDurationTimer;

@@ -50,6 +50,10 @@ void main() {
           WindowsMicrophoneAccessStatus.deviceBusy,
         );
         expect(
+          await probeWith('unsupportedFormat'),
+          WindowsMicrophoneAccessStatus.unsupportedFormat,
+        );
+        expect(
           await probeWith('notSupported'),
           WindowsMicrophoneAccessStatus.notSupported,
         );

@@ -4156,11 +4156,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get speechNativeSTTDisabled =>
-      'このアプリでは Linux 上のネイティブ STT が無効になっています。新規インストールでは Parakeet がデフォルトのエンジンになります。';
+      'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.';
 
   @override
   String get speechNativeSTTWorks =>
-      'Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.';
+      'On Windows, CodeWalk uses local on-device speech recognition through its WASAPI microphone backend. Native Windows speech recognition is disabled for stability.';
 
   @override
   String get speechNativeStartsFaster =>
@@ -4231,7 +4231,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get speechWindowsSetupHint =>
-      'Windows does not prompt for microphone access at runtime. Open the settings below, enable microphone access for desktop apps, and install a speech language pack.';
+      'Windows voice input uses CodeWalk WASAPI capture with on-device models. Keep microphone access for desktop apps enabled; the buttons below open Windows settings for troubleshooting.';
 
   @override
   String get statusConnected => '接続済み';

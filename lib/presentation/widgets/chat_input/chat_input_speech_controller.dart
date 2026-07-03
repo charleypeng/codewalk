@@ -135,7 +135,8 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       return;
     }
 
-    _activeSpeechService = resolution.service;
+    final service = resolution.service;
+    _activeSpeechService = service;
     if (resolution.usedFallback && mounted) {
       final label = _speechEngineLabel(resolution.engine);
       final reason = resolution.unavailableReason?.trim();
@@ -160,16 +161,16 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     _speechSuffix = textWindow.trailingText;
     _speechCommittedText = '';
     try {
-      await _speechService.startListening(
+      await service.startListening(
         onResult: _onSpeechResult,
         onStatus: _onSpeechStatus,
         onError: _onSpeechError,
         pauseFor: pauseFor,
-        localeId: _localeForService(_speechService, settingsProvider),
+        localeId: _localeForService(service, settingsProvider),
       );
       if (!mounted) return;
       _setState(() {
-        _isListening = _speechService.isListening;
+        _isListening = service.isListening;
       });
       if (_isListening) {
         _finishListeningLoading();
@@ -196,8 +197,18 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
   }
 
   Future<void> _stopListening() async {
+    final service = _activeSpeechService;
+    if (service == null) {
+      _finishListeningLoading();
+      if (mounted) {
+        _setState(() {
+          _isListening = false;
+        });
+      }
+      return;
+    }
     try {
-      await _speechService.stopListening();
+      await service.stopListening();
     } catch (_) {
       // Ignore platform stop errors to keep compose flow resilient.
     } finally {
@@ -240,11 +251,12 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     // local model is installed yet. Show the matching setup dialog.
     if (status == 'model_required') {
       _finishListeningLoading();
-      if (_speechService is MoonshineSpeechInputService) {
+      final service = _activeSpeechService;
+      if (service is MoonshineSpeechInputService) {
         _showMoonshineDownloadDialog();
-      } else if (_speechService is ParakeetSpeechInputService) {
+      } else if (service is ParakeetSpeechInputService) {
         _showParakeetDownloadDialog();
-      } else if (_speechService is SenseVoiceSpeechInputService) {
+      } else if (service is SenseVoiceSpeechInputService) {
         _showSenseVoiceDownloadDialog();
       } else {
         _showSherpaDownloadDialog();
@@ -256,7 +268,8 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       _finishListeningLoading();
     }
 
-    final listening = status == 'listening' || _speechService.isListening;
+    final service = _activeSpeechService;
+    final listening = status == 'listening' || (service?.isListening ?? false);
     if (_isListening == listening) return;
     _setState(() {
       _isListening = listening;
@@ -372,8 +385,8 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     final service = reasonService is SttSpeechInputService
         ? reasonService
         : (_activeSpeechService is SttSpeechInputService
-            ? _activeSpeechService as SttSpeechInputService
-            : null);
+              ? _activeSpeechService as SttSpeechInputService
+              : null);
     final reasonKey = service?.unavailableReasonKey;
     final (String label, Future<bool> Function() action) =
         _windowsActionForReason(reasonKey, l10n);
@@ -402,14 +415,18 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       case 'noInputDevice':
         return (l10n.speechOpenSpeechSettings, WindowsSettingsLinks.openSpeech);
       case 'deviceBusy':
-        return (l10n.speechOpenMicrophoneSettings,
-            WindowsSettingsLinks.openMicrophonePrivacy);
+        return (
+          l10n.speechOpenMicrophoneSettings,
+          WindowsSettingsLinks.openMicrophonePrivacy,
+        );
       case 'microphoneDenied':
       case 'generic':
       case null:
       default:
-        return (l10n.speechOpenMicrophoneSettings,
-            WindowsSettingsLinks.openMicrophonePrivacy);
+        return (
+          l10n.speechOpenMicrophoneSettings,
+          WindowsSettingsLinks.openMicrophonePrivacy,
+        );
     }
   }
 }

@@ -4,16 +4,22 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
+import 'windows_microphone_service.dart';
+
 // Audio capture abstraction for the on-device STT engines.
 //
 // On Windows the legacy `record` plugin (record_windows 1.0.7) can crash the
-// host process with a MediaFoundation segfault (llfbandit/record#453), so the
-// on-device engines are not enabled on Windows. The capture wrapper owns
-// the [AudioRecorder] lifecycle for the duration of a single session so
-// [startPcmStream] and [stop] always reference the same instance; the
-// engines no longer create their own recorder.
+// host process with a MediaFoundation segfault (llfbandit/record#453), so this
+// wrapper uses CodeWalk's runner-owned WASAPI bridge there. Other platforms keep
+// using [AudioRecorder]. The wrapper owns the recorder lifecycle for the
+// duration of a single session so [startPcmStream] and [stop] always reference
+// the same instance.
 class SpeechAudioCapture {
-  SpeechAudioCapture();
+  SpeechAudioCapture({WindowsMicrophoneService? windowsMicrophoneService})
+    : _windowsMicrophoneService =
+          windowsMicrophoneService ?? const WindowsMicrophoneService();
+
+  final WindowsMicrophoneService _windowsMicrophoneService;
 
   // On non-Windows, the wrapper owns the AudioRecorder for the duration of
   // a single capture session.
@@ -28,10 +34,8 @@ class SpeechAudioCapture {
 
   Future<bool> hasPermission() async {
     if (isWindowsTarget) {
-      // The on-device engines are not enabled on Windows; this branch should
-      // be unreachable. Return false to keep the engine's permission check
-      // honest until the WASAPI backend lands.
-      return false;
+      final status = await _windowsMicrophoneService.probe();
+      return status == WindowsMicrophoneAccessStatus.allowed;
     }
     final recorder = AudioRecorder();
     try {
@@ -54,11 +58,12 @@ class SpeechAudioCapture {
     int numChannels = 1,
   }) async {
     if (isWindowsTarget) {
-      throw StateError(
-        'SpeechAudioCapture.startPcmStream is not available on Windows; '
-        'the on-device engines are disabled there until the WASAPI capture '
-        'backend is validated (ADR-039).',
-      );
+      if (sampleRate != 16000 || numChannels != 1) {
+        throw StateError(
+          'Windows WASAPI speech capture supports PCM16 mono 16 kHz only.',
+        );
+      }
+      return _windowsMicrophoneService.pcmStream();
     }
     final recorder = AudioRecorder();
     _activeRecorder = recorder;
@@ -91,6 +96,7 @@ class SpeechAudioCapture {
 
   Future<void> stop() async {
     if (isWindowsTarget) {
+      await _windowsMicrophoneService.stopStream();
       return;
     }
     final recorder = _activeRecorder;

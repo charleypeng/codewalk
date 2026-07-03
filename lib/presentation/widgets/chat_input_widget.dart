@@ -464,9 +464,6 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         .sl<SenseVoiceSpeechInputService>();
   }
 
-  SpeechInputService get _speechService =>
-      _activeSpeechService ?? _nativeSpeechService;
-
   @override
   void initState() {
     super.initState();

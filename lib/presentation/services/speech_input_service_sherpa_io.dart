@@ -6,12 +6,13 @@ import 'dart:typed_data';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../core/logging/app_logger.dart';
+import '../utils/speech_engine_platform_support.dart';
 import 'sherpa_model_manager.dart';
 import 'speech_audio_capture.dart';
 import 'speech_input_service.dart';
 
 // Sherpa STT backend using sherpa_onnx OnlineRecognizer with Kroko streaming
-// transducer models and the 'record' package for microphone capture.
+// transducer models and SpeechAudioCapture for microphone capture.
 // Audio pipeline: AudioRecorder (PCM 16-bit 16kHz mono) → int16→float32
 // conversion → sherpa_onnx OnlineStream → partial/final text results.
 class SherpaSpeechInputService implements SpeechInputService {
@@ -46,6 +47,11 @@ class SherpaSpeechInputService implements SpeechInputService {
 
   @override
   Future<bool> initialize() async {
+    if (!SpeechEnginePlatformSupport.isSherpaSupported) {
+      _isAvailable = false;
+      return false;
+    }
+
     try {
       _ensureBindingsInitialized();
     } catch (error, stackTrace) {

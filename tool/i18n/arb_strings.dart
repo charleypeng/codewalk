@@ -1466,14 +1466,14 @@ const englishTemplate = <String, String>{
       'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.',
   'speechNative': 'Native',
   'speechNativeSTTDisabled':
-      'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.',
+      'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
   'speechNativeSTTWorks':
-      'Native STT works on Windows when OS speech services are enabled. Allow microphone access, enable Online speech recognition, and install the language pack you speak. Open the buttons below to jump to the exact Windows setting.',
+      'On Windows, CodeWalk uses local on-device speech recognition through its WASAPI microphone backend. Native Windows speech recognition is disabled for stability.',
   'speechOpenMicrophoneSettings': 'Open microphone settings',
   'speechOpenSpeechPrivacy': 'Open speech privacy',
   'speechOpenSpeechSettings': 'Open speech settings',
   'speechWindowsSetupHint':
-      'Windows does not prompt for microphone access at runtime. Open the settings below, enable microphone access for desktop apps, and install a speech language pack.',
+      'Windows voice input uses CodeWalk WASAPI capture with on-device models. Keep microphone access for desktop apps enabled; the buttons below open Windows settings for troubleshooting.',
   'speechNativeStartsFaster':
       'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.',
   'speechParakeet': 'Parakeet',
@@ -3045,7 +3045,7 @@ const translations = <String, Map<String, String>>{
         'تظل نماذج Moonshine قابلة للتنزيل وخارج حزمة التطبيق. اختر نموذجاً واحداً لجهاز سطح المكتب هذا وقم بإزالته لاحقاً إذا كنت تريد استعادة المساحة.',
     'speechNative': 'أصلي (Native)',
     'speechNativeSTTDisabled':
-        'ميزة تحويل الكلام إلى نص الأصلية (Native STT) معطلة على Linux في هذا التطبيق. محرك Parakeet هو المحرك الافتراضي للتثبيتات الجديدة.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'الخيار الأصلي يبدأ بشكل أسرع. يعمل Sherpa بالكامل على الجهاز بإعداد أثقل وتحكم أعمق في النموذج.',
     'speechParakeet': 'Parakeet',
@@ -4677,7 +4677,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine ডাউনলোডযোগ্য এবং অ্যাপ বান্ডেলের বাইরে থাকে। এই ডেস্কটপ ডিভাইসের জন্য একটি মডেল বাছুন এবং যদি আপনি স্থান ফিরে চান তাহলে পরে এটি সরান।',
     'speechNative': 'নেটিভ',
     'speechNativeSTTDisabled':
-        'এই অ্যাপে Linux-এ নেটিভ STT অক্ষম করা আছে। প্যারাকিট নতুন ইনস্টলের জন্য ডিফল্ট ইঞ্জিন।',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'নেটিভ দ্রুত শুরু হয়. শেরপা ভারী সেটআপ এবং গভীর মডেল নিয়ন্ত্রণ সহ সম্পূর্ণরূপে অন-ডিভাইস চালান।',
     'speechParakeet': 'প্যারাকিট',
@@ -6350,7 +6350,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine bleibt herunterladbar und außerhalb des App-Bundles. Wählen Sie ein Modell für dieses Desktop-Gerät und entfernen Sie es später, wenn Sie den Speicherplatz zurückhaben möchten.',
     'speechNative': 'Nativ',
     'speechNativeSTTDisabled':
-        'Natives STT ist unter Linux in dieser App deaktiviert. Parakeet ist die Standard-Engine für Neuinstallationen.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'Nativ startet schneller. Sherpa läuft vollständig auf dem Gerät mit komplexerer Einrichtung und tieferer Modellsteuerung.',
     'speechParakeet': 'Parakeet',
@@ -8025,7 +8025,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine permanece disponible para descargar fuera de la aplicación. Elija un modelo para este dispositivo de escritorio y elimínelo más tarde si desea recuperar el espacio.',
     'speechNative': 'Nativo',
     'speechNativeSTTDisabled':
-        'El STT nativo está desactivado en Linux en esta aplicación. Parakeet es el motor predeterminado para nuevas instalaciones.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'El nativo se inicia más rápido. Sherpa se ejecuta completamente en el dispositivo con una configuración más pesada y un control de modelo más profundo.',
     'speechParakeet': 'Parakeet',
@@ -9755,7 +9755,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine reste téléchargeable et en dehors du paquet de l\'application. Choisissez un modèle pour cet ordinateur et supprimez-le plus tard si vous souhaitez libérer de l\'espace.',
     'speechNative': 'Natif',
     'speechNativeSTTDisabled':
-        'La transcription vocale native est désactivée sur Linux dans cette application. Parakeet est le moteur par défaut pour les nouvelles installations.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'Le mode natif démarre plus rapidement. Sherpa s\'exécute entièrement sur l\'appareil avec une configuration plus lourde et un contrôle de modèle plus approfondi.',
     'speechParakeet': 'Parakeet',
@@ -11395,7 +11395,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine डाउनलोड करने योग्य रहता है और ऐप बंडल से बाहर रहता. इस डेस्कटॉप डिवाइस के लिए एक मॉडल चुनें और यदि आप स्थान वापस चाहते हैं तो इसे बाद में हटा दें।',
     'speechNative': 'मूल (Native)',
     'speechNativeSTTDisabled':
-        'इस ऐप में लिनक्स पर नेटिव STT अक्षम है। नए इंस्टॉलेशन के लिए Parakeet डिफ़ॉल्ट इंजन है।',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'नेटिव तेज़ी से शुरू होता है। Sherpa भारी सेटअप और गहरे मॉडल नियंत्रण के साथ पूरी तरह से डिवाइस पर चलता है।',
     'speechParakeet': 'Parakeet',
@@ -13095,7 +13095,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine rimane scaricabile ed esterno al pacchetto dell\'app. Scegli un modello per questo dispositivo desktop e rimuovilo in seguito se desideri recuperare spazio.',
     'speechNative': 'Nativo',
     'speechNativeSTTDisabled':
-        'L\'STT nativo è disabilitato su Linux in questa app. Parakeet è il motore predefinito per le nuove installazioni.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'L\'STT nativo si avvia più velocemente. Sherpa viene eseguito interamente sul dispositivo con una configurazione più pesante e un controllo più approfondito del modello.',
     'speechParakeet': 'Parakeet',
@@ -14581,7 +14581,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine はアプリバンドルの外に置かれ、ダウンロード可能な状態になります。このデスクトップデバイス用にモデルを1つ選択し、後で容量を戻したい場合は削除してください。',
     'speechNative': 'ネイティブ',
     'speechNativeSTTDisabled':
-        'このアプリでは Linux 上のネイティブ STT が無効になっています。新規インストールでは Parakeet がデフォルトのエンジンになります。',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'ネイティブの方が起動が早いです。Sherpa はより重いセットアップとより深いモデル制御を伴い、完全にデバイス上で動作します。',
     'speechParakeet': 'Parakeet',
@@ -16049,7 +16049,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine은 앱 번들에 포함되지 않고 다운로드 가능한 상태로 유지됩니다. 이 데스크톱 기기에 맞게 하나의 모델을 선택하고, 공간을 확보하고 싶다면 나중에 제거하세요.',
     'speechNative': '기본 제공 엔진',
     'speechNativeSTTDisabled':
-        '이 앱의 Linux 환경에서는 네이티브 STT 기능이 비활성화되어 있습니다. 신규 설치의 경우 Parakeet가 기본 엔진입니다.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         '네이티브 방식이 더 빠르게 시작됩니다. Sherpa는 비교적 무거운 구성과 심층적인 모델 제어 기능을 통해 기기 자체에서 완전히 작동합니다.',
     'speechParakeet': 'Parakeet',
@@ -17687,7 +17687,7 @@ const translations = <String, Map<String, String>>{
         'O Moonshine permanece disponível para download fora do pacote do app. Escolha um modelo para este dispositivo desktop e remova-o mais tarde se quiser recuperar o espaço.',
     'speechNative': 'Nativo',
     'speechNativeSTTDisabled':
-        'O STT nativo está desabilitado no Linux neste app. O Parakeet é o mecanismo padrão para novas instalações.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'O Nativo inicia mais rápido. O Sherpa é executado totalmente no dispositivo, com uma configuração mais pesada e maior controle do modelo.',
     'speechParakeet': 'Parakeet',
@@ -19357,7 +19357,7 @@ const translations = <String, Map<String, String>>{
         'Модели Moonshine загружаются отдельно и не входят в стандартный пакет приложения. Выберите одну модель для этого десктопного устройства и удалите ее позже, если потребуется освободить место.',
     'speechNative': 'Встроенный',
     'speechNativeSTTDisabled':
-        'Встроенный STT отключен на Linux в этом приложении. Parakeet используется в качестве движка по умолчанию для новых установок.',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'Встроенный запускается быстрее. Sherpa работает полностью на устройстве с более сложной настройкой и глубоким контролем над моделью.',
     'speechParakeet': 'Parakeet',
@@ -20981,7 +20981,7 @@ const translations = <String, Map<String, String>>{
         'Moonshine ڈاؤن لوڈ کے قابل اور ایپ بنڈل سے باہر رہتی ہے۔ اس ڈیسک ٹاپ ڈیوائس کے لیے ایک ماڈل منتخب کریں اور اگر آپ جگہ واپس چاہتے ہیں تو اسے بعد میں ہٹا دیں۔',
     'speechNative': 'مقامی',
     'speechNativeSTTDisabled':
-        'اس ایپ میں لینکس پر مقامی STT غیر فعال ہے۔ پیراکیٹ نئے انسٹالز کے لیے ڈیفالٹ انجن ہے۔',
+        'Native STT is disabled on Linux and Windows in this app. Parakeet is the default engine for new installs.',
     'speechNativeStartsFaster':
         'مقامی تیزی سے شروع ہوتا ہے۔ شیرپا بھاری سیٹ اپ اور گہرے ماڈل کنٹرول کے ساتھ مکمل طور پر آن ڈیوائس چلاتا ہے۔',
     'speechParakeet': 'طوطا',

@@ -2,13 +2,9 @@ import 'package:flutter/foundation.dart';
 
 // Centralized platform support for speech-to-text engines.
 //
-// On Windows, the `record: ^6.0.0` plugin's MediaFoundation implementation can
-// hard-crash the host process (EXCEPTION_ACCESS_VIOLATION in `record_windows`
-// during stream start — see llfbandit/record#453) when used by the on-device
-// STT engines (Sherpa, Moonshine, Parakeet, SenseVoice). To prevent the app
-// from closing unexpectedly, those engines are reported as unsupported on
-// Windows. The Native engine (UWP speech recognition via `speech_to_text`)
-// remains available and is the only working option on Windows.
+// On Windows, CodeWalk avoids both native crash surfaces that affected issue
+// #43: `speech_to_text_windows` and `record_windows`. Native STT is disabled on
+// Windows; on-device engines use the runner-owned WASAPI microphone bridge.
 //
 // See ADR-038 for the historical mitigation and ADR-039 for the partial
 // follow-up: actionable Windows settings links and a typed microphone
@@ -17,17 +13,17 @@ import 'package:flutter/foundation.dart';
 class SpeechEnginePlatformSupport {
   const SpeechEnginePlatformSupport._();
 
-  // Web: true (browser speech via speech_to_text). Linux: false — Linux
-  // defaults to on-device engines (Parakeet) per ADR-006.
+  // Web: true (browser speech via speech_to_text). Linux/Windows: false — both
+  // default to on-device engines instead of native speech plugins.
   static bool get isNativeSupported {
     if (kIsWeb) {
       return true;
     }
-    return defaultTargetPlatform != TargetPlatform.linux;
+    return defaultTargetPlatform != TargetPlatform.linux &&
+        defaultTargetPlatform != TargetPlatform.windows;
   }
 
-  // Android slim APK builds exclude sherpa_onnx; allow everywhere else except
-  // Windows (where the underlying microphone plugin can crash the app).
+  // Android slim APK builds exclude sherpa_onnx; allow everywhere else.
   static bool get isSherpaSupported {
     if (kIsWeb) {
       return false;
@@ -35,17 +31,17 @@ class SpeechEnginePlatformSupport {
     if (defaultTargetPlatform == TargetPlatform.android) {
       return false;
     }
-    return defaultTargetPlatform != TargetPlatform.windows;
+    return true;
   }
 
-  // Desktop only — uses sherpa_onnx + record for microphone capture. Windows
-  // is excluded because the `record_windows` plugin can hard-crash the app.
+  // Desktop only. Linux/macOS use `record`; Windows uses CodeWalk WASAPI.
   static bool get isMoonshineSupported {
     if (kIsWeb) {
       return false;
     }
     return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
   }
 
   static bool get isParakeetSupported {
@@ -53,7 +49,8 @@ class SpeechEnginePlatformSupport {
       return false;
     }
     return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
   }
 
   static bool get isSenseVoiceSupported {
@@ -61,7 +58,8 @@ class SpeechEnginePlatformSupport {
       return false;
     }
     return defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
   }
 
   // True when at least one on-device engine (Sherpa/Moonshine/Parakeet/

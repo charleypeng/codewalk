@@ -5,12 +5,12 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'speech_input_service.dart';
 import 'windows_microphone_service.dart';
 
-// speech_to_text backend for iOS, macOS, Web, and Windows.
+// speech_to_text backend for iOS, macOS, Web, and mobile-native targets.
 // Moves the STT logic that previously lived inline in _ChatInputWidgetState.
 class SttSpeechInputService implements SpeechInputService {
   SttSpeechInputService({WindowsMicrophoneService? windowsMicrophoneService})
-      : _windowsMicrophoneService =
-            windowsMicrophoneService ?? const WindowsMicrophoneService();
+    : _windowsMicrophoneService =
+          windowsMicrophoneService ?? const WindowsMicrophoneService();
 
   final stt.SpeechToText _speechToText = stt.SpeechToText();
   final WindowsMicrophoneService _windowsMicrophoneService;
@@ -59,6 +59,15 @@ class SttSpeechInputService implements SpeechInputService {
   Future<bool> _initializeSpeechEngine() async {
     _lastUnavailableReason = null;
     _lastUnavailableReasonKey = null;
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    if (isWindows) {
+      _isAvailable = false;
+      _lastUnavailableReasonKey = 'nativeDisabled';
+      _lastUnavailableReason =
+          'Native Windows speech recognition is disabled for stability. Use an on-device engine with CodeWalk WASAPI microphone capture.';
+      return false;
+    }
     try {
       _isAvailable = await _speechToText.initialize(
         onStatus: _handleStatus,
@@ -92,6 +101,9 @@ class SttSpeechInputService implements SpeechInputService {
         case WindowsMicrophoneAccessStatus.deviceBusy:
           _lastUnavailableReasonKey = 'deviceBusy';
           return 'The default microphone is currently in use by another app.';
+        case WindowsMicrophoneAccessStatus.unsupportedFormat:
+          _lastUnavailableReasonKey = 'unsupportedFormat';
+          return 'The default microphone format is not supported.';
         case WindowsMicrophoneAccessStatus.unknown:
           _lastUnavailableReasonKey = 'speechPrivacy';
           return 'Windows speech services may be disabled (speech privacy, online speech recognition, or language packs).';
