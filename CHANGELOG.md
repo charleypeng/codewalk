@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.165.1 - 2026-07-03
+
+- fix(sync): preserve active realtime and project contexts
+
 ## v1.165.0 - 2026-07-02
 
 - docs(files): document shell-gated file manager
