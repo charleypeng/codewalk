@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.166.0 - 2026-07-03
+
+- docs(stt): document Windows WASAPI speech path
+- fix(stt): preserve locale copy for Windows policy
+- fix(stt): harden Windows capture failures
+- fix(stt): route Windows voice through WASAPI
+- plan: fix Windows speech-to-text crash
+
 ## v1.165.1 - 2026-07-03
 
 - fix(sync): preserve active realtime and project contexts
