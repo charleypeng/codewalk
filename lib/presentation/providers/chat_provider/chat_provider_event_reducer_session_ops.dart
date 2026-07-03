@@ -2,7 +2,7 @@ part of '../chat_provider.dart';
 
 extension _ChatProviderEventReducerSessionOps on ChatProvider {
   void _applyChatEvent(ChatEvent event) {
-    final eventSessionId = _extractEventSessionId(event.properties);
+    final eventSessionId = _effectiveEventSessionIdForEvent(event);
     final task = AppLogger.beginTask(
       'realtime_event',
       tags: const <String>{'chat:realtime'},
@@ -31,7 +31,7 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
         _recentEventIds.removeFirst();
       }
     }
-    final eventSessionId = _extractEventSessionId(event.properties);
+    final eventSessionId = _effectiveEventSessionIdForEvent(event);
     if (_shouldSuppressAggressiveDataSaverEvent(event, eventSessionId)) {
       _dirtyContextKeys.add(_activeContextKey);
       AppLogger.info(
@@ -493,8 +493,16 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
       case 'message.updated':
       case 'message.created':
         final info = properties['info'] as Map<String, dynamic>?;
-        final sessionId = info?['sessionID'] as String?;
-        final messageId = info?['id'] as String?;
+        final sessionId = info == null
+            ? null
+            : _readTrimmedEventString(info, 'sessionID') ??
+                  _readTrimmedEventString(info, 'sessionId') ??
+                  eventSessionId;
+        final messageId = info == null
+            ? null
+            : _readTrimmedEventString(info, 'id') ??
+                  _readTrimmedEventString(info, 'messageID') ??
+                  _readTrimmedEventString(info, 'messageId');
         if (sessionId != null && messageId != null) {
           final isCurrentSession = _currentSession?.id == sessionId;
           if (!isCurrentSession) {
@@ -526,11 +534,24 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
       case 'message.part.updated':
       case 'message.part.delta':
         final partMap = properties['part'] as Map<String, dynamic>?;
-        var part = partMap == null
+        final part = partMap == null
             ? null
             : MessagePartModel.fromJson(partMap).toDomain();
-        final sessionId = part?.sessionId ?? properties['sessionID'] as String?;
-        final messageId = part?.messageId ?? properties['messageID'] as String?;
+        final partSessionId = part?.sessionId.trim();
+        final partMessageId = part?.messageId.trim();
+        final sessionId =
+            (partSessionId == null || partSessionId.isEmpty
+                ? null
+                : partSessionId) ??
+            _readTrimmedEventString(properties, 'sessionID') ??
+            _readTrimmedEventString(properties, 'sessionId') ??
+            eventSessionId;
+        final messageId =
+            (partMessageId == null || partMessageId.isEmpty
+                ? null
+                : partMessageId) ??
+            _readTrimmedEventString(properties, 'messageID') ??
+            _readTrimmedEventString(properties, 'messageId');
         if (sessionId == null ||
             messageId == null ||
             _currentSession?.id != sessionId) {
@@ -539,12 +560,77 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
 
         final partIndex = _messages.indexWhere((item) => item.id == messageId);
         final delta = properties['delta'] as String?;
-        if (part == null || partIndex == -1) {
+        if (part == null) {
+          if (partIndex == -1) {
+            unawaited(_fetchMessageFallback(sessionId, messageId));
+            break;
+          }
+          final partId = properties['partID'] as String?;
+          final field = properties['field'] as String?;
+          if (event.type == 'message.part.delta' &&
+              partId != null &&
+              field != null &&
+              delta != null) {
+            final message = _messages[partIndex];
+            final nextParts = List<MessagePart>.from(message.parts);
+            final existingPartIndex = nextParts.indexWhere(
+              (item) => item.id == partId,
+            );
+            if (existingPartIndex == -1) {
+              unawaited(_fetchMessageFallback(sessionId, messageId));
+              break;
+            }
+            final existingPart = nextParts[existingPartIndex];
+            final partFieldKey = _deltaDedupeFieldKey(existingPart);
+            final preferOverlapDedupe =
+                partFieldKey != null &&
+                _dedupeNextDeltaFieldKeys.remove(partFieldKey);
+            final resolvedPart = _mergeFieldDeltaPart(
+              existingPart: existingPart,
+              field: field,
+              delta: delta,
+              preferOverlapDedupe: preferOverlapDedupe,
+            );
+            if (resolvedPart == null) {
+              unawaited(_fetchMessageFallback(sessionId, messageId));
+              break;
+            }
+            if (nextParts[existingPartIndex] == resolvedPart) {
+              break;
+            }
+            nextParts[existingPartIndex] = resolvedPart;
+            _messages[partIndex] = _copyMessageWithParts(message, nextParts);
+            _markLocalMessageDeltaAdvanced(messageId);
+            _messagesVersion++;
+            _scheduleDeltaNotification(reason: 'event-message-part-delta');
+            if (message is AssistantMessage) {
+              _scheduleDebouncedMessageFallback(
+                sessionId,
+                messageId,
+                expectedLocalDeltaVersion: _messageLocalDeltaVersion(messageId),
+              );
+            }
+            final updatedMessage = _messages[partIndex];
+            if (isSessionActivelyResponding(sessionId) &&
+                _shouldSchedulePassiveAutoScrollForSession(
+                  sessionId,
+                  latestMessage: updatedMessage,
+                )) {
+              _scheduleScrollToBottom(
+                reason: 'event-reducer-message-part-delta',
+              );
+            }
+            break;
+          }
+          unawaited(_fetchMessageFallback(sessionId, messageId));
+          break;
+        }
+        if (partIndex == -1) {
           unawaited(_fetchMessageFallback(sessionId, messageId));
           break;
         }
         final incomingPart = part;
-        MessagePart resolvedPart = incomingPart;
+        var resolvedPart = incomingPart;
         final message = _messages[partIndex];
         final nextParts = List<MessagePart>.from(message.parts);
         final existingPartIndex = nextParts.indexWhere(

@@ -403,6 +403,45 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return null;
   }
 
+  MessagePart? _mergeFieldDeltaPart({
+    required MessagePart existingPart,
+    required String field,
+    required String delta,
+    bool preferOverlapDedupe = false,
+  }) {
+    if (delta.isEmpty) {
+      return existingPart;
+    }
+    if (field != 'text') {
+      return null;
+    }
+    if (existingPart is TextPart) {
+      final mergedText = preferOverlapDedupe
+          ? _appendNonOverlappingDelta(existingPart.text, delta)
+          : '${existingPart.text}$delta';
+      return TextPart(
+        id: existingPart.id,
+        messageId: existingPart.messageId,
+        sessionId: existingPart.sessionId,
+        text: mergedText,
+        time: existingPart.time,
+      );
+    }
+    if (existingPart is ReasoningPart) {
+      final mergedText = preferOverlapDedupe
+          ? _appendNonOverlappingDelta(existingPart.text, delta)
+          : '${existingPart.text}$delta';
+      return ReasoningPart(
+        id: existingPart.id,
+        messageId: existingPart.messageId,
+        sessionId: existingPart.sessionId,
+        text: mergedText,
+        time: existingPart.time,
+      );
+    }
+    return null;
+  }
+
   String _extractAutoTitleText(ChatMessage message) {
     if (message is AssistantMessage && message.summary == true) {
       return '';
@@ -1030,7 +1069,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
   /// a match when exactly one pending candidate exists for the session to avoid
   /// ambiguous replacements.
   int _findSolePendingLocalUserByTimeProximity(UserMessage incoming) {
-    int candidateIndex = -1;
+    var candidateIndex = -1;
     for (var index = 0; index < _messages.length; index += 1) {
       final current = _messages[index];
       if (current is! UserMessage) continue;

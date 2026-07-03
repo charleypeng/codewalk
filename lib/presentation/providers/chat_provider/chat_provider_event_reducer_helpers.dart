@@ -79,6 +79,77 @@ extension _ChatProviderEventReducerHelpers on ChatProvider {
     return properties;
   }
 
+  String? _effectiveEventSessionIdForEvent(ChatEvent event) {
+    if (event.type.startsWith('message.')) {
+      final inferred = _inferSessionIdFromKnownMessageEvent(event.properties);
+      if (inferred != null) {
+        return inferred;
+      }
+    }
+    return _extractEventSessionId(event.properties);
+  }
+
+  String? _inferSessionIdFromKnownMessageEvent(
+    Map<String, dynamic> properties,
+  ) {
+    final messageId = _messageIdFromEventProperties(properties);
+    if (messageId == null) {
+      return null;
+    }
+    for (final message in _messages) {
+      if (message.id == messageId && message.sessionId.trim().isNotEmpty) {
+        return message.sessionId;
+      }
+    }
+    return null;
+  }
+
+  String? _messageIdFromEventProperties(Map<String, dynamic> properties) {
+    final direct = _readTrimmedEventString(properties, 'messageID');
+    if (direct != null) {
+      return direct;
+    }
+    final directCamel = _readTrimmedEventString(properties, 'messageId');
+    if (directCamel != null) {
+      return directCamel;
+    }
+    final info = properties['info'];
+    if (info is Map) {
+      final id = _readTrimmedEventString(info, 'id');
+      if (id != null) {
+        return id;
+      }
+      final infoMessageId = _readTrimmedEventString(info, 'messageID');
+      if (infoMessageId != null) {
+        return infoMessageId;
+      }
+      final infoCamelMessageId = _readTrimmedEventString(info, 'messageId');
+      if (infoCamelMessageId != null) {
+        return infoCamelMessageId;
+      }
+    }
+    final part = properties['part'];
+    if (part is Map) {
+      final partMessageId = _readTrimmedEventString(part, 'messageID');
+      if (partMessageId != null) {
+        return partMessageId;
+      }
+      final partCamelMessageId = _readTrimmedEventString(part, 'messageId');
+      if (partCamelMessageId != null) {
+        return partCamelMessageId;
+      }
+    }
+    return null;
+  }
+
+  String? _readTrimmedEventString(Map<dynamic, dynamic> source, String key) {
+    final value = source[key]?.toString().trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
+  }
+
   void _refreshPendingInteractionsForEvent(String type) {
     AppLogger.warn(
       'Refreshing pending interactions after unparseable OpenCode event type=$type',

@@ -25,7 +25,7 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
     if (directory == null || directory.trim().isEmpty) {
       _dirtyContextKeys.add(_activeContextKey);
       if (_cellularDataSaverService.isAggressiveDataSaverActive) {
-        final eventSessionId = _extractEventSessionId(event.properties);
+        final eventSessionId = _effectiveEventSessionIdForEvent(event);
         if (_hasVisibleAggressiveDataSaverSession &&
             _isVisibleAggressiveSessionId(eventSessionId) &&
             _tryApplyGlobalEventIncremental(event)) {
@@ -40,7 +40,7 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
         return;
       }
       final currentSessionId = _currentSession?.id.trim();
-      final eventSessionId = _extractEventSessionId(event.properties)?.trim();
+      final eventSessionId = _effectiveEventSessionIdForEvent(event)?.trim();
       final refreshVisibleSession =
           event.type.startsWith('message.') &&
           currentSessionId != null &&
@@ -59,7 +59,7 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
     _dirtyContextKeys.add(targetContextKey);
 
     if (_cellularDataSaverService.isAggressiveDataSaverActive) {
-      final eventSessionId = _extractEventSessionId(event.properties);
+      final eventSessionId = _effectiveEventSessionIdForEvent(event);
       if (targetContextKey == _activeContextKey &&
           _hasVisibleAggressiveDataSaverSession &&
           _isVisibleAggressiveSessionId(eventSessionId) &&
@@ -136,7 +136,7 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
   void _scheduleGlobalFallbackReconcile(ChatEvent event) {
     final type = event.type;
     final currentSessionId = _currentSession?.id.trim();
-    final eventSessionId = _extractEventSessionId(event.properties)?.trim();
+    final eventSessionId = _effectiveEventSessionIdForEvent(event)?.trim();
     final refreshSessions =
         type.startsWith('session.') ||
         type.startsWith('project.') ||
@@ -583,7 +583,7 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
     if (!_shouldHandleFeedbackForEvent(event)) {
       return;
     }
-    final eventSessionId = _extractEventSessionId(event.properties);
+    final eventSessionId = _effectiveEventSessionIdForEvent(event);
     unawaited(
       eventFeedbackDispatcher?.handle(
         event,

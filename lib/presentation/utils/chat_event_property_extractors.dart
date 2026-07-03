@@ -3,12 +3,20 @@ String? extractEventSessionId(Map<String, dynamic> properties) {
   if (direct != null) {
     return direct;
   }
+  final directCamel = _readTrimmed(properties, 'sessionId');
+  if (directCamel != null) {
+    return directCamel;
+  }
 
   final info = properties['info'];
   if (info is Map) {
     final nestedSessionId = _readTrimmed(info, 'sessionID');
     if (nestedSessionId != null) {
       return nestedSessionId;
+    }
+    final nestedCamelSessionId = _readTrimmed(info, 'sessionId');
+    if (nestedCamelSessionId != null) {
+      return nestedCamelSessionId;
     }
     return _readTrimmed(info, 'id');
   }
@@ -20,12 +28,17 @@ String? extractEventSessionId(Map<String, dynamic> properties) {
     'permission',
     'question',
     'session',
+    'part',
   ]) {
     final nested = properties[key];
     if (nested is Map) {
       final nestedSessionId = _readTrimmed(nested, 'sessionID');
       if (nestedSessionId != null) {
         return nestedSessionId;
+      }
+      final nestedCamelSessionId = _readTrimmed(nested, 'sessionId');
+      if (nestedCamelSessionId != null) {
+        return nestedCamelSessionId;
       }
       if (key == 'session') {
         final id = _readTrimmed(nested, 'id');

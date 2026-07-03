@@ -53,6 +53,44 @@ class _DirectoryProjectRepository extends FakeProjectRepository {
   }
 }
 
+class _MutableCurrentProjectRepository extends FakeProjectRepository {
+  _MutableCurrentProjectRepository({
+    required Project currentProject,
+    required List<Project> projects,
+  }) : currentProject = currentProject,
+       super(currentProject: currentProject, projects: projects);
+
+  Project currentProject;
+
+  @override
+  Future<Either<Failure, Project>> getCurrentProject({
+    String? directory,
+  }) async {
+    if (directory == null || directory.trim().isEmpty) {
+      return Right(currentProject);
+    }
+    return super.getCurrentProject(directory: directory);
+  }
+}
+
+class _QueuedProjectListRepository extends FakeProjectRepository {
+  _QueuedProjectListRepository({
+    required super.currentProject,
+    required super.projects,
+  });
+
+  final List<Completer<Either<Failure, List<Project>>>> queuedProjectResults =
+      <Completer<Either<Failure, List<Project>>>>[];
+
+  @override
+  Future<Either<Failure, List<Project>>> getProjects() async {
+    if (queuedProjectResults.isNotEmpty) {
+      return queuedProjectResults.removeAt(0).future;
+    }
+    return super.getProjects();
+  }
+}
+
 void main() {
   group('ProjectProvider', () {
     late InMemoryAppLocalDataSource localDataSource;
@@ -401,6 +439,234 @@ void main() {
         ]),
       );
     });
+
+    test(
+      'opening another directory preserves previously open projects during partial refresh',
+      () async {
+        final projectA = Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        );
+        final projectB = Project(
+          id: 'proj_b',
+          name: 'Project B',
+          path: '/repo/b',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        );
+        final serverProjects = <Project>[projectA];
+        projectRepository = FakeProjectRepository(
+          currentProject: projectA,
+          projects: serverProjects,
+        );
+        provider = ProjectProvider(
+          projectRepository: projectRepository,
+          localDataSource: localDataSource,
+        );
+
+        await provider.initializeProject();
+        serverProjects
+          ..clear()
+          ..add(projectB);
+
+        final switched = await provider.switchToDirectoryContext('/repo/b');
+
+        expect(switched, isTrue);
+        expect(provider.currentProject?.id, 'proj_b');
+        expect(provider.openProjectIds, contains('proj_a'));
+        expect(provider.openProjectIds, contains('proj_b'));
+        expect(
+          provider.openProjects.map((project) => project.path),
+          containsAll(<String>['/repo/a', '/repo/b']),
+        );
+      },
+    );
+
+    test(
+      'force reload preserves open projects during same-server recovery',
+      () async {
+        final projectA = Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        );
+        final projectB = Project(
+          id: 'proj_b',
+          name: 'Project B',
+          path: '/repo/b',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        );
+        final serverProjects = <Project>[projectA, projectB];
+        projectRepository = FakeProjectRepository(
+          currentProject: projectA,
+          projects: serverProjects,
+        );
+        provider = ProjectProvider(
+          projectRepository: projectRepository,
+          localDataSource: localDataSource,
+        );
+
+        await provider.initializeProject();
+        await provider.switchProject('proj_b');
+        serverProjects
+          ..clear()
+          ..add(projectB);
+
+        await provider.initializeProject(forceReload: true);
+
+        expect(provider.currentProject?.id, 'proj_b');
+        expect(
+          provider.openProjectIds,
+          containsAll(<String>['proj_a', 'proj_b']),
+        );
+        expect(
+          provider.openProjects.map((project) => project.path),
+          containsAll(<String>['/repo/a', '/repo/b']),
+        );
+      },
+    );
+
+    test('server scope change clears stale current project', () async {
+      final projectA = Project(
+        id: 'proj_a',
+        name: 'Project A',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+      final projectB = Project(
+        id: 'proj_b',
+        name: 'Project B',
+        path: '/repo/b',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+      );
+      final serverProjects = <Project>[projectA];
+      final mutableRepository = _MutableCurrentProjectRepository(
+        currentProject: projectA,
+        projects: serverProjects,
+      );
+      localDataSource.activeServerId = 'srv_old';
+      projectRepository = mutableRepository;
+      provider = ProjectProvider(
+        projectRepository: projectRepository,
+        localDataSource: localDataSource,
+      );
+
+      await provider.initializeProject();
+      localDataSource.activeServerId = 'srv_new';
+      mutableRepository.currentProject = projectB;
+      serverProjects
+        ..clear()
+        ..add(projectB);
+
+      await provider.onServerScopeChanged();
+
+      expect(provider.activeServerId, 'srv_new');
+      expect(provider.currentProject?.id, 'proj_b');
+      expect(provider.openProjectIds, contains('proj_b'));
+      expect(provider.openProjectIds, isNot(contains('proj_a')));
+      expect(
+        localDataSource.scopedStrings['current_project_id::srv_new'],
+        'proj_b',
+      );
+    });
+
+    test(
+      'server scope change does not fallback to stale projects on failure',
+      () async {
+        final projectA = Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        );
+        localDataSource.activeServerId = 'srv_old';
+        projectRepository = FakeProjectRepository(
+          currentProject: projectA,
+          projects: <Project>[projectA],
+        );
+        provider = ProjectProvider(
+          projectRepository: projectRepository,
+          localDataSource: localDataSource,
+        );
+        await provider.initializeProject();
+
+        localDataSource.activeServerId = 'srv_new';
+        projectRepository.getProjectsFailure = const NetworkFailure(
+          'Server unavailable',
+          503,
+        );
+        projectRepository.currentProjectFailure = const NetworkFailure(
+          'Server unavailable',
+          503,
+        );
+
+        await provider.onServerScopeChanged();
+
+        expect(provider.activeServerId, 'srv_new');
+        expect(provider.status, ProjectStatus.error);
+        expect(provider.currentProject, isNull);
+        expect(provider.projects, isEmpty);
+        expect(provider.openProjectIds, isEmpty);
+        expect(
+          localDataSource.scopedStrings['current_project_id::srv_new'],
+          isNull,
+        );
+      },
+    );
+
+    test(
+      'server scope change ignores stale project list completions',
+      () async {
+        final projectA = Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        );
+        final queuedRepository = _QueuedProjectListRepository(
+          currentProject: projectA,
+          projects: <Project>[projectA],
+        );
+        localDataSource.activeServerId = 'srv_old';
+        projectRepository = queuedRepository;
+        provider = ProjectProvider(
+          projectRepository: projectRepository,
+          localDataSource: localDataSource,
+        );
+        await provider.initializeProject();
+
+        final staleLoad = Completer<Either<Failure, List<Project>>>();
+        final newServerLoad = Completer<Either<Failure, List<Project>>>()
+          ..complete(
+            const Left<Failure, List<Project>>(
+              NetworkFailure('Server unavailable', 503),
+            ),
+          );
+        queuedRepository.queuedProjectResults.addAll(
+          <Completer<Either<Failure, List<Project>>>>[staleLoad, newServerLoad],
+        );
+        localDataSource.activeServerId = 'srv_new';
+        queuedRepository.currentProjectFailure = const NetworkFailure(
+          'Server unavailable',
+          503,
+        );
+
+        final staleLoadFuture = provider.loadProjects();
+        await provider.onServerScopeChanged();
+
+        expect(provider.projects, isEmpty);
+        staleLoad.complete(Right<Failure, List<Project>>(<Project>[projectA]));
+        await staleLoadFuture;
+
+        expect(provider.activeServerId, 'srv_new');
+        expect(provider.status, ProjectStatus.error);
+        expect(provider.currentProject, isNull);
+        expect(provider.projects, isEmpty);
+        expect(provider.openProjectIds, isEmpty);
+      },
+    );
 
     test(
       'switchToDirectoryContext accepts normalized server project paths',

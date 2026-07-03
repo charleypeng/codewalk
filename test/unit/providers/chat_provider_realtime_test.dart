@@ -39,8 +39,8 @@ import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
-import 'package:codewalk/presentation/services/chat_title_generator.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
+import 'package:codewalk/presentation/services/chat_title_generator.dart';
 import 'package:codewalk/presentation/services/event_feedback_dispatcher.dart';
 import 'package:codewalk/presentation/services/notification_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
@@ -433,6 +433,248 @@ void main() {
       expect(provider.sessionStatusById['ses_2'], isNull);
       expect(provider.currentSessionPermissions, isEmpty);
     });
+
+    test(
+      'data saver off applies active part deltas without session id',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled();
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_data_saver_off_delta',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_data_saver_off_delta',
+                messageId: 'msg_data_saver_off_delta',
+                sessionId: 'ses_1',
+                text: 'Hel',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason: 'Expected realtime subscription with data saver disabled.',
+        );
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.part.delta',
+            properties: <String, dynamic>{
+              'messageId': 'msg_data_saver_off_delta',
+              'partID': 'prt_data_saver_off_delta',
+              'field': 'text',
+              'delta': 'lo',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final message = provider.messages.single as AssistantMessage;
+        expect((message.parts.single as TextPart).text, 'Hello');
+      },
+    );
+
+    test(
+      'aggressive data saver applies active part deltas without session id',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_active_delta',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_active_delta',
+                messageId: 'msg_active_delta',
+                sessionId: 'ses_1',
+                text: 'Hel',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason:
+              'Expected aggressive visible session burst to start realtime.',
+        );
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.part.delta',
+            properties: <String, dynamic>{
+              'messageId': 'msg_active_delta',
+              'partID': 'prt_active_delta',
+              'field': 'text',
+              'delta': 'lo',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final message = provider.messages.single as AssistantMessage;
+        expect((message.parts.single as TextPart).text, 'Hello');
+      },
+    );
+
+    test(
+      'aggressive data saver fetches active message when id-only delta arrives first',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason:
+              'Expected aggressive visible session burst to start realtime.',
+        );
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_missing_delta',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_missing_delta',
+                messageId: 'msg_missing_delta',
+                sessionId: 'ses_1',
+                text: 'Recovered answer',
+              ),
+            ],
+          ),
+        ];
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.part.delta',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'messageID': 'msg_missing_delta',
+              'partID': 'prt_missing_delta',
+              'field': 'text',
+              'delta': 'Recovered answer',
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.messages.isNotEmpty,
+          reason: 'Expected id-only delta to trigger message fallback fetch.',
+        );
+
+        final message = provider.messages.single as AssistantMessage;
+        expect((message.parts.single as TextPart).text, 'Recovered answer');
+        expect(chatRepository.getMessageCallCount, greaterThan(0));
+      },
+    );
+
+    test(
+      'aggressive data saver dedupes field-only delta after coalesced part update',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled()
+          ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+          ..debugSetTransport(DataSaverTransport.cellular);
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_overlap_delta',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_overlap_delta',
+                messageId: 'msg_overlap_delta',
+                sessionId: 'ses_1',
+                text: 'Hel',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () => provider.debugHasRealtimeEventSubscription,
+          reason:
+              'Expected aggressive visible session burst to start realtime.',
+        );
+
+        const coalescedPart = TextPart(
+          id: 'prt_overlap_delta',
+          messageId: 'msg_overlap_delta',
+          sessionId: 'ses_1',
+          text: 'Hello',
+        );
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{
+              'part': <String, dynamic>{
+                'id': coalescedPart.id,
+                'messageId': coalescedPart.messageId,
+                'sessionId': coalescedPart.sessionId,
+                'type': 'text',
+                'text': coalescedPart.text,
+              },
+              'delta': 'lo',
+            },
+          ),
+        );
+        await settleUntil(
+          () =>
+              ((provider.messages.single as AssistantMessage).parts.single
+                      as TextPart)
+                  .text ==
+              'Hello',
+          reason: 'Expected coalesced part update to apply first.',
+        );
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.part.delta',
+            properties: <String, dynamic>{
+              'messageID': 'msg_overlap_delta',
+              'partID': 'prt_overlap_delta',
+              'field': 'text',
+              'delta': 'lo',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final message = provider.messages.single as AssistantMessage;
+        expect((message.parts.single as TextPart).text, 'Hello');
+      },
+    );
 
     test(
       'foreground resume grace suppresses stale-signal delayed state until reconnect signal arrives',
@@ -2649,7 +2891,7 @@ void main() {
             id: 'msg_idle_pulse_user',
             sessionId: 'ses_1',
             time: DateTime.fromMillisecondsSinceEpoch(1000),
-            parts: <MessagePart>[
+            parts: const <MessagePart>[
               TextPart(
                 id: 'part_idle_pulse_user',
                 messageId: 'msg_idle_pulse_user',
@@ -2662,7 +2904,7 @@ void main() {
             id: 'msg_idle_pulse_assistant',
             sessionId: 'ses_1',
             time: DateTime.fromMillisecondsSinceEpoch(1100),
-            parts: <MessagePart>[
+            parts: const <MessagePart>[
               TextPart(
                 id: 'part_idle_pulse_assistant',
                 messageId: 'msg_idle_pulse_assistant',
@@ -3467,7 +3709,7 @@ void main() {
             id: 'msg_server_user_1',
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
-            parts: <MessagePart>[
+            parts: const <MessagePart>[
               TextPart(
                 id: 'prt_user_server_1',
                 messageId: 'msg_server_user_1',
@@ -4521,13 +4763,11 @@ void main() {
 }
 
 class _RecordingEventFeedbackDispatcher extends EventFeedbackDispatcher {
-  _RecordingEventFeedbackDispatcher({
-    required SettingsProvider settingsProvider,
-  }) : super(
-         settingsProvider: settingsProvider,
-         notificationService: NotificationService(assumeInitialized: true),
-         soundService: SoundService(),
-       );
+  _RecordingEventFeedbackDispatcher({required super.settingsProvider})
+    : super(
+        notificationService: NotificationService(assumeInitialized: true),
+        soundService: SoundService(),
+      );
 
   final List<String> handledTypes = <String>[];
   final List<String> dismissedSessionIds = <String>[];

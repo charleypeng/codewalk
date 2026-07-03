@@ -271,14 +271,16 @@ class MessagePartModel {
     final synthesizedState = _buildSyntheticState(type, json);
     final rawState = json['state'] as Map<String, dynamic>?;
     final mergedState = <String, dynamic>{
-      if (rawState != null) ...rawState,
-      if (synthesizedState != null) ...synthesizedState,
+      ...?rawState,
+      ...?synthesizedState,
     };
 
     return MessagePartModel(
       id: (json['id'] as String?) ?? '',
-      messageId: (json['messageID'] as String?) ?? '',
-      sessionId: (json['sessionID'] as String?) ?? '',
+      messageId:
+          (json['messageID'] as String?) ?? (json['messageId'] as String?) ?? '',
+      sessionId:
+          (json['sessionID'] as String?) ?? (json['sessionId'] as String?) ?? '',
       type: type,
       text: json['text'] as String?,
       url: json['url'] as String?,

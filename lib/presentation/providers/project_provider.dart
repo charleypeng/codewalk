@@ -31,6 +31,7 @@ class ProjectProvider extends ChangeNotifier {
   List<String> _archivedProjectIds = <String>[];
   List<String> _hiddenProjectPaths = <String>[];
   List<Worktree> _worktrees = <Worktree>[];
+  int _projectContextGeneration = 0;
   int _worktreesRequestId = 0;
   bool _worktreeSupported = false;
   String _activeServerId = 'legacy';
@@ -78,7 +79,10 @@ class ProjectProvider extends ChangeNotifier {
         .toList(growable: false);
   }
 
-  Future<void> initializeProject({bool forceReload = false}) async {
+  Future<void> initializeProject({
+    bool forceReload = false,
+    bool preserveOpenContexts = true,
+  }) async {
     if (!forceReload &&
         _status == ProjectStatus.loaded &&
         _currentProject != null) {
@@ -89,7 +93,21 @@ class ProjectProvider extends ChangeNotifier {
 
     try {
       _activeServerId = await _resolveServerId();
-      await _loadProjects(silent: true);
+      if (!preserveOpenContexts) {
+        _projectContextGeneration += 1;
+        _projects = <Project>[];
+        _currentProject = null;
+        _openProjectIds = <String>[];
+        _archivedProjectIds = <String>[];
+        _hiddenProjectPaths = <String>[];
+        _worktrees = <Worktree>[];
+        _worktreesRequestId += 1;
+        _worktreeSupported = false;
+      }
+      await _loadProjects(
+        silent: true,
+        preserveOpenContexts: preserveOpenContexts,
+      );
       await _restoreHiddenProjectPaths();
 
       final savedProjectId = await _localDataSource.getCurrentProjectId(
@@ -141,7 +159,7 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<void> onServerScopeChanged() async {
-    await initializeProject(forceReload: true);
+    await initializeProject(forceReload: true, preserveOpenContexts: false);
   }
 
   Future<void> loadProjects() async {
@@ -819,7 +837,11 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<void> _hydrateCurrentProjectFromServer() async {
+    final requestGeneration = _projectContextGeneration;
     final result = await _projectRepository.getCurrentProject();
+    if (requestGeneration != _projectContextGeneration) {
+      return;
+    }
     result.fold(
       (failure) {
         AppLogger.warn(
@@ -842,10 +864,18 @@ class ProjectProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> _loadProjects({required bool silent}) async {
-    final syntheticProjectsToPreserve =
-        _syntheticProjectsToPreserveDuringRefresh();
+  Future<void> _loadProjects({
+    required bool silent,
+    bool preserveOpenContexts = true,
+  }) async {
+    final requestGeneration = _projectContextGeneration;
+    final projectsToPreserve = preserveOpenContexts
+        ? _projectsToPreserveDuringRefresh()
+        : const <Project>[];
     final result = await _projectRepository.getProjects();
+    if (requestGeneration != _projectContextGeneration) {
+      return;
+    }
     result.fold(
       (failure) {
         if (!silent) {
@@ -854,7 +884,7 @@ class ProjectProvider extends ChangeNotifier {
       },
       (projects) {
         _projects = _sanitizeProjects(projects);
-        _mergePreservedSyntheticProjects(syntheticProjectsToPreserve);
+        _mergePreservedProjects(projectsToPreserve);
         _syncArchivedProjectIdsFromHiddenPaths();
         _openProjectIds = _openProjectIds
             .where((id) {
@@ -1065,36 +1095,38 @@ class ProjectProvider extends ChangeNotifier {
     return sanitized.isEmpty ? projects : sanitized;
   }
 
-  List<Project> _syntheticProjectsToPreserveDuringRefresh() {
-    final syntheticIds = <String>{..._openProjectIds};
+  List<Project> _projectsToPreserveDuringRefresh() {
+    final preserveIds = <String>{..._openProjectIds};
     final currentProjectId = _currentProject?.id.trim();
     if (currentProjectId != null && currentProjectId.isNotEmpty) {
-      syntheticIds.add(currentProjectId);
+      preserveIds.add(currentProjectId);
     }
-    return syntheticIds
-        .map(_syntheticProjectFromId)
+    final byId = <String, Project>{for (final item in _projects) item.id: item};
+    return preserveIds
+        .map((id) => byId[id] ?? _syntheticProjectFromId(id))
         .whereType<Project>()
+        .where((project) => !_isProjectHidden(project))
         .toList(growable: false);
   }
 
-  void _mergePreservedSyntheticProjects(Iterable<Project> projects) {
-    for (final synthetic in projects) {
-      if (_isProjectHidden(synthetic)) {
+  void _mergePreservedProjects(Iterable<Project> projects) {
+    for (final preserved in projects) {
+      if (_isProjectHidden(preserved)) {
         continue;
       }
       final existingPathIndex = _projects.indexWhere(
-        (item) => areEquivalentFilePaths(item.path, synthetic.path),
+        (item) => areEquivalentFilePaths(item.path, preserved.path),
       );
       if (existingPathIndex >= 0) {
         continue;
       }
       final existingIdIndex = _projects.indexWhere(
-        (item) => item.id == synthetic.id,
+        (item) => item.id == preserved.id,
       );
       if (existingIdIndex >= 0) {
-        _projects[existingIdIndex] = synthetic;
+        _projects[existingIdIndex] = preserved;
       } else {
-        _projects = <Project>[synthetic, ..._projects];
+        _projects = <Project>[preserved, ..._projects];
       }
     }
   }
