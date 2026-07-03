@@ -1160,24 +1160,27 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 | Linux | Sherpa ONNX or Moonshine via sherpa_onnx | On-device models are downloaded on demand; Native not supported on Linux |
 | macOS | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable; Moonshine is an optional desktop engine |
 | iOS | Native (system speech recognizer) | Native only in the current app build |
-| Windows | Native (UWP speech recognition); on-device engines (Sherpa, Moonshine, Parakeet, SenseVoice) still disabled until a validated WASAPI capture backend lands (ADR-039) | Actionable Windows settings links expose microphone, speech privacy, and language pack pages |
+| Windows | Parakeet or another on-device engine via CodeWalk WASAPI capture | Native Windows speech recognition is disabled for stability; model setup is shown when the selected on-device model is missing; Windows settings links remain available for microphone troubleshooting |
 | Web | Native (system speech recognizer) | Browser speech only |
 
-### Windows on-device STT is intentionally disabled (with actionable Windows settings links)
+### Windows STT uses on-device engines through CodeWalk WASAPI capture
 
 - **Given** the user is on Windows desktop
 - **When** the user opens `Settings > Speech` or uses the voice input button
-- **Then** only the `Native` (UWP speech recognition) engine is selectable
-- **Then** `Sherpa`, `Moonshine`, `Parakeet`, and `SenseVoice` appear as grayed-out radio options with the explanation "Disabled on Windows because the underlying microphone plugin can crash the app. Use the Native engine instead."
-- **Then** the engine card shows an actionable Windows setup card with three buttons: "Open microphone settings" (`ms-settings:privacy-microphone`), "Open speech privacy" (`ms-settings:privacy-speech`), and "Open speech settings" (`ms-settings:speech`)
+- **Then** `Native` is disabled with an explanation that CodeWalk avoids Native Windows speech recognition for stability
+- **Then** `Sherpa`, `Moonshine`, `Parakeet`, and `SenseVoice` are selectable when their model/runtime path is supported
+- **Then** Windows microphone capture for those on-device engines uses the runner-owned WASAPI backend, not `record_windows`
+- **Then** the engine card shows a Windows setup card with troubleshooting buttons: "Open microphone settings" (`ms-settings:privacy-microphone`), "Open speech privacy" (`ms-settings:privacy-speech`), and "Open speech settings" (`ms-settings:speech`)
+- **When** the app loads existing settings on Windows and finds a previously saved `Native` selection
+- **Then** the selection is migrated to `Parakeet` automatically so startup never lands on the unsafe Native engine
 - **When** the app loads existing settings on Windows and finds a previously saved Sherpa/Moonshine/Parakeet/SenseVoice selection
-- **Then** the selection is migrated to `Native` automatically so the user never lands on a crashing engine
-- **When** the Native engine fails to initialize on Windows (speech privacy disabled, online speech recognition off, missing language pack, etc.)
-- **Then** the user sees a specific reason ("Microphone access is blocked by Windows privacy settings." / "No microphone input device is available." / "The default microphone is currently in use by another app." / "Windows speech services may be disabled (speech privacy, online speech recognition, or language packs).") and the app stays responsive (no hard crash)
+- **Then** the on-device selection is preserved
+- **When** the selected on-device model is missing
+- **Then** voice input opens the matching model setup/download flow instead of falling back to Native
+- **When** the Windows WASAPI microphone backend reports microphone denied, no input device, device busy, unsupported format, missing backend, or an unknown failure
+- **Then** the user sees a non-crashing unavailable state and the composer snackbar exposes the most relevant Windows settings action
 - **When** voice input fails in the composer on Windows
-- **Then** the snackbar exposes an action button whose target URI matches the typed reason: microphone privacy for `microphoneDenied` / `generic`, speech settings for `speechPrivacy` or `noInputDevice`, and microphone privacy for `deviceBusy`
-- **When** the WASAPI preflight is unavailable (native plugin missing)
-- **Then** the on-device engines stay disabled and the Native engine reports an actionable reason. Re-enabling the on-device engines on Windows requires a validated WASAPI capture backend (tracked as a follow-up to ADR-039).
+- **Then** the snackbar action maps typed reasons to Windows Settings: speech settings for `noInputDevice`, microphone privacy for `microphoneDenied`, `deviceBusy`, `unsupportedFormat`, `backendUnavailable`, or `generic`
 
 ---
 

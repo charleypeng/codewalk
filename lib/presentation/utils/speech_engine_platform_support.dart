@@ -6,10 +6,8 @@ import 'package:flutter/foundation.dart';
 // #43: `speech_to_text_windows` and `record_windows`. Native STT is disabled on
 // Windows; on-device engines use the runner-owned WASAPI microphone bridge.
 //
-// See ADR-038 for the historical mitigation and ADR-039 for the partial
-// follow-up: actionable Windows settings links and a typed microphone
-// preflight. Re-enabling the on-device engines on Windows requires a
-// validated Windows WASAPI capture backend (tracked as a follow-up).
+// See ADR-038/ADR-039 for the historical mitigation and ADR-044 for the final
+// WASAPI backend decision.
 class SpeechEnginePlatformSupport {
   const SpeechEnginePlatformSupport._();
 

@@ -47,6 +47,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-041: Chat Stability Invariants for Delta Reconciliation and Final Reveal
 - ADR-042: Global App Logs Toggle with Default-Off and Lazy Performance Instrumentation
 - ADR-043: Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations (ADR-023 Exception)
+- ADR-044: Windows STT Final Fix — Runner-Owned WASAPI Microphone Backend and Re-Enabled On-Device Engines
 
 ---
 
@@ -2087,7 +2088,7 @@ Consolidate the viewport state and scroll follow behavior to stabilize synchroni
 
 ## ADR-038: Disable On-Device STT Engines on Windows Desktop (2026-06-07)
 
-**Status**: Accepted
+**Status**: Superseded by ADR-044 for Windows runtime behavior; retained as historical mitigation context.
 
 **Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy)
 
@@ -2152,7 +2153,7 @@ Disable the on-device STT engines (Sherpa, Moonshine, Parakeet, SenseVoice) on W
 
 ## ADR-039: Real Windows STT Fix — Actionable Settings Links and Typed Microphone Preflight (2026-06-08)
 
-**Status**: Accepted (partial fix; on-device engine re-enable on Windows is a follow-up).
+**Status**: Accepted for actionable settings links and typed preflight; Windows engine policy superseded by ADR-044.
 
 **Related**: ADR-006 (Speech Input Architecture), ADR-023 (Official OpenCode contract-first compatibility), ADR-038 (historical Windows mitigation — disable on-device engines).
 
@@ -2564,3 +2565,65 @@ Unit / widget coverage under `test/unit/presentation/workspace_file_operations_s
 - `test/unit/presentation/workspace_file_operations_service_test.dart` — sentinel extraction, malformed payload, shell quoting, capability probe + cache, invalid leaf names, root-directory refusal, ephemeral session teardown
 - `test/widget/chat_page_test.dart` — file-tree context menu wiring for create/rename/delete, root "New" menu visibility, destructive-action flag, `FakeWorkspaceFileOperationsService` plumbing
 - Ref: issue #89
+
+---
+
+## ADR-044: Windows STT Final Fix — Runner-Owned WASAPI Microphone Backend and Re-Enabled On-Device Engines (2026-07-03)
+
+**Status**: Accepted
+
+**Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy), ADR-023 (Official OpenCode contract-first compatibility), ADR-038 (Disable On-Device STT Engines on Windows — on-device path now restored), ADR-039 (Real Windows STT Fix — partial fix; actionable settings + typed preflight).
+
+### Context
+
+ADR-038 disabled the on-device STT engines on Windows because `record: ^6.0.0` → `record_windows: 1.0.7` hard-crashes the host with `EXCEPTION_ACCESS_VIOLATION_READ` in MediaFoundation (llfbandit/record#453). ADR-039 shipped a partial fix: actionable `ms-settings:` links, a typed microphone preflight over `codewalk/windows_microphone`, end-to-end `SpeechAudioCapture` lifecycle cleanup, and the architecture for a follow-up WASAPI capture backend. The follow-up has now landed: a runner-owned C++ plugin captures audio through WASAPI `IAudioClient` shared mode, never touches MediaFoundation or `record_windows`, and is compiled on `windows-latest` in CI. The `speech_to_text_windows` Native (UWP) engine is still the documented beta path and remains a native segfault surface, so it is now disabled alongside the on-device path in ADR-038 — but for a different reason.
+
+### Decision
+
+Finalize the Windows STT story:
+
+1. **Runner-owned WASAPI microphone backend.** A new native C++ plugin — `codewalk/windows_microphone` MethodChannel + `codewalk/windows_microphone_stream` EventChannel — implements capture via WASAPI `IAudioClient` shared mode. The Windows voice path uses no MediaFoundation and does not instantiate `record_windows`. The plugin is built by Flutter's normal `windows/runner` CMake target and surfaces typed statuses (`allowed` / `denied` / `noInputDevice` / `deviceBusy` / `unsupportedFormat` / `unknown` / `notSupported`) plus a PCM stream the on-device engines consume through `SpeechAudioCapture`.
+2. **Disable Native (UWP) on Windows.** `SpeechEnginePlatformSupport` reports `isNativeSupported` → `false` on Windows because `speech_to_text_windows` is still beta and can segfault during `initialize()` / `listen()`. The actionable settings card and typed preflight from ADR-039 remain and still route the user to the correct Windows settings page when the OS-side configuration blocks capture.
+3. **Re-enable the on-device engines on Windows.** Sherpa, Moonshine, Parakeet, and SenseVoice report supported on Windows via the central platform support table. They consume `SpeechAudioCapture` (which routes through the WASAPI backend on Windows) and no longer touch `record_windows`.
+4. **Migrate saved `Native` selections to Parakeet on Windows; preserve saved on-device selections.** `SettingsProvider.initialize()` migrates a saved `Native` value on Windows to Parakeet (the recommended Windows desktop default); saved on-device selections are left untouched. macOS / Linux / Android migration behavior is unchanged.
+5. **Windows CI build validates the runner compile.** The `windows_build` job in `.github/workflows/ci.yml` runs on `windows-latest` and executes `flutter build windows --debug` so C++ runner regressions are caught before they reach users.
+6. **Manual Windows microphone smoke remains required.** Automated CI cannot exercise physical microphone capture reliably. Hardware validation still requires a manual on-host smoke run on Windows desktop before end-to-end STT can be claimed for a given device/driver combination.
+
+### Rationale
+
+- WASAPI `IAudioClient` shared mode is the documented Windows capture path and is independent of MediaFoundation — the segment of `record_windows` that segfaults. Owning the plugin removes the dependence on a third-party platform channel whose stability is not guaranteed.
+- Disabling Native on Windows mirrors the same reasoning as ADR-038 for the on-device engines: a native-side segfault cannot be caught from Dart, and `speech_to_text_windows` is still beta.
+- Re-enabling only the on-device engines keeps the fix targeted — Sherpa / Moonshine / Parakeet / SenseVoice are all the WASAPI backend needs to support, the native plugin stays small, and the existing model / settings paths are untouched.
+- Migrating saved `Native` selections to Parakeet gives returning Windows users the recommended desktop default without an extra prompt; preserving on-device selections avoids surprising users who already chose an on-device engine — Windows on-device engines were only disabled in ADR-038 because of `record_windows`, so a saved on-device value is still valid once the WASAPI backend is in place.
+- A runner compile in CI catches breakage early without pretending physical capture is validated; the manual smoke caveat keeps the engineering team honest about what `windows-latest` confidence is and is not.
+
+### Consequences
+
+- ✅ Windows users can use the on-device STT engines (Sherpa / Moonshine / Parakeet / SenseVoice) again, with capture handled by the runner-owned WASAPI plugin. No `record_windows`, no `speech_to_text_windows`.
+- ✅ The Native (UWP) engine is disabled on Windows to remove the remaining segfault surface; the typed preflight and actionable settings card from ADR-039 remain for OS-side misconfiguration.
+- ✅ Existing Windows users with a saved `Native` selection are migrated to Parakeet on next launch; saved on-device selections are preserved unchanged.
+- ✅ The `windows-latest` CI job compiles the runner, closing the "no Windows build feedback" gap that ADR-039 called out as the blocker.
+- ✅ macOS, Linux, Android, and web behavior is unchanged; only Windows platform tables and settings migrations move.
+- ⚠ Manual on-host microphone smoke is still required before claiming Windows hardware validation; CI compile + MethodChannel probe ≠ real capture on a specific audio device/driver.
+- ⚠ Saved `Native` selections migrate to Parakeet (not user-choice) to keep the migration transparent; if Parakeet is unavailable because the model download fails, the user lands on the existing model-download dialog instead of an opaque broken state.
+- ⚠ The WASAPI plugin ships shared-mode capture only; exclusive mode and loopback capture remain follow-ups if a future use case needs them.
+- ❌ The Native (UWP) engine cannot be re-enabled on Windows without addressing the upstream `speech_to_text_windows` beta / COM / MediaFoundation crash surface; Native is intentionally disabled and Parakeet is the canonical Windows desktop default.
+- ❌ macOS / Linux still rely on `record` for on-device engine capture; a WASAPI-style isolation on those platforms is out of scope for this ADR.
+
+### Key Files
+
+- `windows/runner/CMakeLists.txt` + new C++ plugin sources — runner-owned WASAPI `IAudioClient` shared-mode capture, `codewalk/windows_microphone` MethodChannel, `codewalk/windows_microphone_stream` EventChannel
+- `lib/presentation/services/windows_microphone_service.dart` — typed probe + EventChannel bridge, now backed by real native code
+- `lib/presentation/services/speech_audio_capture.dart` — engine-side abstraction consuming the WASAPI stream on Windows
+- `lib/presentation/utils/speech_engine_platform_support.dart` — `isNativeSupported` → `false` on Windows; on-device engines re-enabled
+- `lib/presentation/services/speech_input_service_{sherpa,moonshine,parakeet,sensevoice}_io.dart` — Windows engine paths no longer guarded off
+- `lib/presentation/providers/settings_provider.dart` — Windows saved `Native` → `Parakeet` migration; on-device selections preserved
+- `lib/presentation/pages/settings/sections/speech_settings_section.dart` — actionable Windows setup card copy adjusted for the new engine set
+- `.github/workflows/ci.yml` — `windows_build` job compiles the Flutter Windows runner with the WASAPI plugin
+- `BEHAVIOR.md` — Windows STT table updated for WASAPI-backed on-device engines and Native disabled on Windows
+- `test/unit/presentation/speech_engine_platform_support_test.dart` — Native disabled + on-device enabled on Windows
+- `test/unit/services/windows_microphone_service_test.dart` — typed status parsing against the real native bridge (path update)
+- `test/unit/providers/settings_provider_test.dart` — Windows `Native` → `Parakeet` migration
+- Ref: issue #43, llfbandit/record#453, https://learn.microsoft.com/en-us/windows/win32/coreaudio/wasapi
+
+---

@@ -64,6 +64,7 @@ codewalk/
 ├── .github/workflows/                  # CI and release workflows
 ├── .opencode/agents/                  # Repo-local OpenCode agents
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
+│   └── windows/runner/                   # Windows runner sources (incl. `windows_microphone_plugin.{h,cpp}` runner-owned WASAPI bridge for on-device STT — see ADR-038)
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
 ├── linux/runner/resources/             # Linux launcher icon + desktop entry icon metadata
 ├── third_party/                         # Vendored Dart packages (path dependencies)
@@ -168,9 +169,9 @@ lib/presentation/services/workspace_file_operations_service.dart # WorkspaceFile
 lib/presentation/services/message_image_export_service.dart # MessageImageExportService: captures a RepaintBoundary widget as a PNG and invokes the platform share sheet; MessageImageExportResult enum (shared, tooTall, notLaidOut, failed); uses RenderRepaintBoundary.toImage() with _capturePixelRatio=2.5, capped at _maxCaptureHeight=4096 logical px
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
 lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition; consumes `SpeechAudioCapture`
-lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and Windows; exposes `unavailableReasonKey` for preflight settings routing
-lib/presentation/services/speech_audio_capture.dart # Platform-neutral audio capture and recording lifecycle cleanup; prevents AudioRecorder leaks
-lib/presentation/services/windows_microphone_service.dart # Windows microphone access probe and preflight status service
+lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and supported native targets; Windows returns unavailable before touching speech_to_text_windows and exposes `unavailableReasonKey` for settings routing
+lib/presentation/services/speech_audio_capture.dart # Platform-neutral audio capture and recording lifecycle cleanup; prevents AudioRecorder leaks; Windows branch routes through `WindowsMicrophoneService` (runner-owned WASAPI bridge in `windows/runner/windows_microphone_plugin.{h,cpp}`) to avoid the record_windows MediaFoundation crash
+lib/presentation/services/windows_microphone_service.dart # Dart-side bridge to the runner-owned WASAPI microphone plugin (`WindowsMicrophoneService.probe()` + `pcmStream()` + `stopStream()`); provides Windows microphone access probe and preflight status used by both `SpeechAudioCapture` and the speech settings preflight
 lib/presentation/services/speech_input_service_parakeet.dart # Conditional export: routes to IO or stub Parakeet STT adapter
 lib/presentation/services/speech_input_service_parakeet_io.dart # Desktop Parakeet STT backend; NeMo transducer for on-device transcription; consumes `SpeechAudioCapture`
 lib/presentation/services/speech_input_service_parakeet_stub.dart # Non-IO platforms: no-op Parakeet stub
@@ -305,17 +306,17 @@ chat_input_speech_controller.dart
 ### Speech-to-Text Platform Support
 
 ```text
-lib/presentation/utils/speech_engine_platform_support.dart # Centralized per-engine platform support table; excludes Sherpa/Moonshine/Parakeet/SenseVoice on Windows because the underlying `record_windows` plugin can hard-crash the app (see ADR-038)
+lib/presentation/utils/speech_engine_platform_support.dart # Centralized per-engine platform support table; Native disabled on Windows (speech_to_text_windows crash, see ADR-044); on-device engines (Sherpa/Moonshine/Parakeet/SenseVoice) allowed on Windows via the runner-owned WASAPI bridge
 ```
 
 Platform support rules (per `SpeechEnginePlatformSupport`):
 
-- **Native** (`speech_to_text`): web + iOS/macOS/Windows/Android/Fuchsia; Linux is excluded by design (Linux defaults to Parakeet).
-- **Sherpa**: web excluded; Android excluded (slim APK); **Windows excluded** (record_windows crash); other IO platforms allowed.
-- **Moonshine / Parakeet / SenseVoice**: Linux + macOS only. Windows excluded for the same record_windows reason. Desktop-only because they bundle `sherpa_onnx` + downloadable models.
+- **Native** (`speech_to_text`): web + iOS/macOS/Android/Fuchsia; **Windows disabled** (speech_to_text_windows crash) and Linux excluded by design (Linux defaults to Parakeet).
+- **Sherpa**: web excluded; Android excluded (slim APK); other IO platforms allowed.
+- **Moonshine / Parakeet / SenseVoice**: Linux + macOS + **Windows** (uses the runner-owned `WindowsMicrophoneService` WASAPI bridge). Desktop-only because they bundle `sherpa_onnx` + downloadable models.
 
-The `SettingsProvider` auto-migrates Windows selections of Sherpa/Moonshine/Parakeet/SenseVoice to Native on `initialize()` so existing users never land on a crashing engine.
-For Windows STT failures, Native STT performs a microphone preflight check via `WindowsMicrophoneService.probe()`, and errors are mapped to Windows settings links via `WindowsSettingsLinks` in both the speech settings section and the chat input failure snackbar.
+On Windows, `SpeechAudioCapture` short-circuits to `WindowsMicrophoneService` (PCM16 mono 16 kHz only); the plugin captures via `windows/runner/windows_microphone_plugin.{h,cpp}`, which posts `kWindowsMicrophoneDrainMessage` (WM_APP + 0x43C) to the `FlutterWindow` so queued audio/error events drain on the window message loop without blocking the capture thread. The `FlutterWindow::OnCreate`/`OnDestroy` path owns plugin lifetime and forwards window messages through `WindowsMicrophonePlugin::HandleWindowMessage`.
+For Windows STT failures, Native STT is no longer the Windows default; the speech settings preflight + chat input failure snackbar surface the Windows microphone status returned by `WindowsMicrophoneService.probe()` and map errors to Windows settings links via `WindowsSettingsLinks`.
 
 ### Terminal Workspace
 
@@ -433,7 +434,7 @@ test/contract/                         # Contract tests; `chat_event_contract_te
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 tool/release/changelog.py              # Changelog update/extract helper used by `make release` and GitHub Releases
-.github/workflows/ci.yml               # CI executes analyze + tests + coverage gate; includes Go setup (actions/setup-go@v5) in quality, test_shards, and coverage jobs for Tailscale dep
+.github/workflows/ci.yml               # CI executes analyze + tests + coverage gate; includes Go setup (actions/setup-go@v5) in quality, test_shards, and coverage jobs for Tailscale dep; `windows_build` job runs on `windows-latest` and executes `flutter build windows --debug` to validate the runner-owned WASAPI microphone bridge compiles
 ```
 
 ## Internationalization (i18n)
