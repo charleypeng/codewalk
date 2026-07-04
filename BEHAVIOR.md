@@ -354,6 +354,19 @@
 - **Then** `Contents` searches file text through the OpenCode content search endpoint and shows path, line number, and matching line preview
 - **Then** selecting a content result opens the matched file path while preserving the visible line context in the result subtitle
 
+### File viewer edits and explicitly saves text files
+
+- **Given** a connected server, an active project context, and shell-gated file operations supported for the project root
+- **When** the user opens a non-binary text file from the file tree, Quick Open, or a tapped assistant file path
+- **Then** the open-files surface renders a focused code editor with line numbers, syntax highlighting, tabbed open files, and the same desktop/mobile dialog behavior as the file viewer
+- **Then** editing a file marks its tab dirty with `*` and enables the viewer `Save` action
+- **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service, not through a local client filesystem write
+- **Then** a successful save clears the dirty marker, updates the open tab's saved content, and shows a save confirmation
+- **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces the operation error inline and via snackbar
+- **Then** if a dirty open tab would be reloaded by manual retry or diff-aware refresh, the reload is skipped so unsaved edits are not overwritten
+- **Then** binary files and empty files keep their existing non-editing fallback states
+- **Then** files larger than 1 MiB and servers without supported shell file operations open read-only with the existing safe fallback behavior
+
 ### Composer mentions include workspace symbols
 
 - **Given** the user types `@` in the composer
