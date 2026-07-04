@@ -72,6 +72,7 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:re_editor/re_editor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
@@ -6006,6 +6007,202 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('file editor saves dirty content from open files dialog', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_editor_save',
+        name: 'Project Editor Save',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_editor_save',
+          name: 'Project Editor Save',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void before() {}',
+          isBinary: false,
+        );
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+    );
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void after() {}';
+    await tester.pump();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_dirty_/repo/a/lib/main.dart'),
+      ),
+      findsOneWidget,
+    );
+
+    final saveButton = tester.widget<TextButton>(
+      find.byKey(const ValueKey<String>('file_viewer_save_button')),
+    );
+    expect(saveButton.onPressed, isNotNull);
+    await tester.tap(editorFinder);
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyS);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyS);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.writeFileCallCount, 1);
+    expect(fileOperations.lastPath, '/repo/a/lib/main.dart');
+    expect(fileOperations.lastContent, 'void after() {}');
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_dirty_/repo/a/lib/main.dart'),
+      ),
+      findsNothing,
+    );
+    expect(find.text('File saved.'), findsOneWidget);
+  });
+
+  testWidgets('file editor keeps dirty state when save fails', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_editor_save_failed',
+        name: 'Project Editor Save Failed',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_editor_save_failed',
+          name: 'Project Editor Save Failed',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void before() {}',
+          isBinary: false,
+        );
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..writeFileResult = const WorkspaceFileOperationResult(
+            ok: false,
+            code: WorkspaceFileOperationCode.permissionDenied,
+            message: 'denied',
+          );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+    );
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void denied() {}';
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_viewer_save_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.writeFileCallCount, 1);
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_dirty_/repo/a/lib/main.dart'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_editor_save_error_/repo/a/lib/main.dart'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Permission denied.'), findsWidgets);
   });
 
   testWidgets('file tree right-click opens read-only context menu', (

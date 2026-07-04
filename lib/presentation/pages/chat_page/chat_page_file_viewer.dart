@@ -38,78 +38,131 @@ extension _ChatPageFileViewer on _ChatPageState {
           children: [
             SizedBox(
               height: 44,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
                 children: [
-                  for (final path in fileState.tabSelection.openPaths)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: Container(
-                        key: ValueKey<String>(
-                          'file_viewer_tab_${_normalizeFilePath(path)}',
-                        ),
-                        decoration: BoxDecoration(
-                          color: path == activePath
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.14)
-                              : Theme.of(context).colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                _activateFileTab(
-                                  fileState: fileState,
-                                  path: path,
-                                  onUpdated: onStateChanged,
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(999),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(_fileIconForPath(path), size: 14),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      _fileBasename(path),
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.labelSmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              key: ValueKey<String>(
-                                'file_viewer_tab_close_${_normalizeFilePath(path)}',
-                              ),
-                              visualDensity: Theme.of(context).visualDensity,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 22,
-                                minHeight: 22,
-                              ),
-                              icon: const Icon(Symbols.close, size: 14),
-                              onPressed: () {
-                                _closeFileTab(
-                                  fileState: fileState,
-                                  path: path,
-                                  onUpdated: onStateChanged,
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-                        ),
+                  Expanded(
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
                       ),
+                      children: [
+                        for (final path in fileState.tabSelection.openPaths)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Container(
+                              key: ValueKey<String>(
+                                'file_viewer_tab_${_normalizeFilePath(path)}',
+                              ),
+                              decoration: BoxDecoration(
+                                color: path == activePath
+                                    ? Theme.of(context).colorScheme.primary
+                                          .withValues(alpha: 0.14)
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainer,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      _activateFileTab(
+                                        fileState: fileState,
+                                        path: path,
+                                        onUpdated: onStateChanged,
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        10,
+                                        6,
+                                        8,
+                                        6,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            _fileIconForPath(path),
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            _fileBasename(path),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.labelSmall,
+                                          ),
+                                          if (_fileDraftIsDirty(
+                                            fileState,
+                                            path,
+                                          ))
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 4,
+                                              ),
+                                              child: Text(
+                                                '*',
+                                                key: ValueKey<String>(
+                                                  'file_viewer_tab_dirty_${_normalizeFilePath(path)}',
+                                                ),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.primary,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    key: ValueKey<String>(
+                                      'file_viewer_tab_close_${_normalizeFilePath(path)}',
+                                    ),
+                                    visualDensity: Theme.of(
+                                      context,
+                                    ).visualDensity,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 22,
+                                      minHeight: 22,
+                                    ),
+                                    icon: const Icon(Symbols.close, size: 14),
+                                    onPressed: () {
+                                      _closeFileTab(
+                                        fileState: fileState,
+                                        path: path,
+                                        onUpdated: onStateChanged,
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+                  _buildFileViewerSaveAction(
+                    fileState: fileState,
+                    projectProvider: projectProvider,
+                    activePath: activePath,
+                    active: active,
+                    onStateChanged: onStateChanged,
+                  ),
+                  const SizedBox(width: 6),
                 ],
               ),
             ),
@@ -176,6 +229,7 @@ extension _ChatPageFileViewer on _ChatPageState {
                         content: active.content,
                         mimeType: active.mimeType,
                         fileState: fileState,
+                        projectProvider: projectProvider,
                         onStateChanged: onStateChanged,
                       );
                   }
@@ -257,6 +311,7 @@ extension _ChatPageFileViewer on _ChatPageState {
     required String content,
     String? mimeType,
     required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
     VoidCallback? onStateChanged,
   }) {
     final normalizedPath = _normalizeFilePath(path);
@@ -265,7 +320,10 @@ extension _ChatPageFileViewer on _ChatPageState {
       path: normalizedPath,
       content: content,
     );
-    final readOnlyReason = _editorReadOnlyReason(content);
+    final readOnlyReason = _editorReadOnlyReason(
+      content: content,
+      fileState: fileState,
+    );
     final editor = _buildFocusedFileEditor(
       path: normalizedPath,
       content: content,
@@ -273,6 +331,19 @@ extension _ChatPageFileViewer on _ChatPageState {
       language: _resolveHighlightLanguage(path: path, mimeType: mimeType),
       readOnly: readOnlyReason != null,
       readOnlyReason: readOnlyReason,
+      canSave: _canSaveFileDraft(
+        fileState: fileState,
+        content: content,
+        draft: draft,
+      ),
+      onSave: () => unawaited(
+        _saveFileEditorDraft(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          path: normalizedPath,
+          onUpdated: onStateChanged,
+        ),
+      ),
       onChanged: () => onStateChanged?.call(),
     );
 
@@ -311,9 +382,80 @@ extension _ChatPageFileViewer on _ChatPageState {
     return draft;
   }
 
-  String? _editorReadOnlyReason(String content) {
+  bool _fileDraftIsDirty(_FileExplorerContextState fileState, String path) {
+    return fileState.editorDraftsByPath[_normalizeFilePath(path)]?.isDirty ==
+        true;
+  }
+
+  Widget _buildFileViewerSaveAction({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String activePath,
+    required _FileTabViewState active,
+    VoidCallback? onStateChanged,
+  }) {
+    final normalizedPath = _normalizeFilePath(activePath);
+    final draft = fileState.editorDraftsByPath[normalizedPath];
+    final canSave =
+        active.status == _FileTabLoadStatus.ready &&
+        draft != null &&
+        _canSaveFileDraft(
+          fileState: fileState,
+          content: active.content,
+          draft: draft,
+        );
+    final isSaving = draft?.isSaving == true;
+    return TextButton.icon(
+      key: const ValueKey<String>('file_viewer_save_button'),
+      onPressed: canSave
+          ? () => unawaited(
+              _saveFileEditorDraft(
+                fileState: fileState,
+                projectProvider: projectProvider,
+                path: normalizedPath,
+                onUpdated: onStateChanged,
+              ),
+            )
+          : null,
+      icon: isSaving
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Symbols.save, size: 18),
+      label: Text(context.l10n.commonSave),
+    );
+  }
+
+  bool _canSaveFileDraft({
+    required _FileExplorerContextState fileState,
+    required String content,
+    required _FileEditorDraftState draft,
+  }) {
+    if (!draft.isDirty || draft.isSaving) {
+      return false;
+    }
+    return _editorReadOnlyReason(content: content, fileState: fileState) ==
+        null;
+  }
+
+  String? _editorReadOnlyReason({
+    required String content,
+    required _FileExplorerContextState fileState,
+  }) {
     if (content.length > _maxEditableFileLength) {
       return 'Large files open read-only to keep editing responsive.';
+    }
+    if (fileState.fileOperationCapabilitiesLoading) {
+      return 'Checking file write support...';
+    }
+    final capabilities = fileState.fileOperationCapabilities;
+    if (capabilities?.shellFileOpsSupported != true) {
+      final message = capabilities?.message.trim();
+      return message == null || message.isEmpty
+          ? context.l10n.filesOperationUnavailable
+          : message;
     }
     return null;
   }
@@ -325,6 +467,8 @@ extension _ChatPageFileViewer on _ChatPageState {
     required String language,
     required bool readOnly,
     required String? readOnlyReason,
+    required bool canSave,
+    required VoidCallback onSave,
     VoidCallback? onChanged,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -389,7 +533,7 @@ extension _ChatPageFileViewer on _ChatPageState {
         ),
       ),
     );
-    return Stack(
+    final stack = Stack(
       children: [
         Positioned.fill(child: editor),
         if (readOnlyReason != null)
@@ -414,6 +558,31 @@ extension _ChatPageFileViewer on _ChatPageState {
               ),
             ),
           ),
+        if (draft.saveErrorMessage != null)
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.error),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                child: Text(
+                  draft.saveErrorMessage!,
+                  key: ValueKey<String>('file_editor_save_error_$path'),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
+          ),
         if (content.length <= 10000)
           Positioned(
             width: 0,
@@ -424,6 +593,21 @@ extension _ChatPageFileViewer on _ChatPageState {
             ),
           ),
       ],
+    );
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+          if (canSave) {
+            onSave();
+          }
+        },
+        const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () {
+          if (canSave) {
+            onSave();
+          }
+        },
+      },
+      child: stack,
     );
   }
 

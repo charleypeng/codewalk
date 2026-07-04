@@ -482,6 +482,18 @@ extension _ChatPageFileRuntime on _ChatPageState {
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
+    final dirtyDraft = fileState.editorDraftsByPath[normalizedPath];
+    if (dirtyDraft != null && dirtyDraft.isDirty) {
+      const message = 'Unsaved changes; reload skipped.';
+      _setState(() {
+        dirtyDraft.saveErrorMessage = message;
+      });
+      onUpdated?.call();
+      if (!silent) {
+        _showFileOperationSnackBar(message);
+      }
+      return;
+    }
     if (!silent && mounted) {
       _setState(() {
         fileState.tabsByPath[normalizedPath] = const _FileTabViewState(
@@ -1041,6 +1053,70 @@ extension _ChatPageFileRuntime on _ChatPageState {
       force: true,
     );
     onUpdated?.call();
+  }
+
+  Future<void> _saveFileEditorDraft({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String path,
+    VoidCallback? onUpdated,
+  }) async {
+    final normalizedPath = _normalizeFilePath(path);
+    final draft = fileState.editorDraftsByPath[normalizedPath];
+    if (draft == null || !draft.isDirty || draft.isSaving) {
+      return;
+    }
+    if (!di.sl.isRegistered<WorkspaceFileOperationsService>() ||
+        !_fileMutationsSupported(fileState)) {
+      final message = context.l10n.filesOperationUnavailable;
+      _setState(() {
+        draft.saveErrorMessage = message;
+      });
+      onUpdated?.call();
+      _showFileOperationSnackBar(message);
+      return;
+    }
+
+    final contentToSave = draft.controller.text;
+    _setState(() {
+      draft.isSaving = true;
+      draft.saveErrorMessage = null;
+    });
+    onUpdated?.call();
+
+    final result = await di.sl<WorkspaceFileOperationsService>().writeFile(
+      serverScopeKey: projectProvider.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      path: normalizedPath,
+      content: contentToSave,
+    );
+    if (!mounted || fileState.editorDraftsByPath[normalizedPath] != draft) {
+      return;
+    }
+
+    if (!result.ok) {
+      final message = _fileOperationErrorLabel(result.code);
+      _setState(() {
+        draft.isSaving = false;
+        draft.saveErrorMessage = message;
+      });
+      onUpdated?.call();
+      _showFileOperationSnackBar(message);
+      return;
+    }
+
+    final previousTab = fileState.tabsByPath[normalizedPath];
+    _setState(() {
+      draft.isSaving = false;
+      draft.markSavedContent(contentToSave);
+      fileState.tabsByPath[normalizedPath] = _FileTabViewState(
+        status: _FileTabLoadStatus.ready,
+        content: contentToSave,
+        mimeType: previousTab?.mimeType,
+      );
+    });
+    onUpdated?.call();
+    _showFileOperationSnackBar('File saved.');
   }
 
   String _directoryCacheKey(

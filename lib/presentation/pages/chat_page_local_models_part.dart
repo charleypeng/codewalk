@@ -92,6 +92,11 @@ class _FileEditorDraftState {
 
   bool get isDirty => controller.text != savedContent;
 
+  void markSavedContent(String content) {
+    savedContent = content;
+    saveErrorMessage = null;
+  }
+
   void replaceSavedContent(String content) {
     savedContent = content;
     controller.text = content;
