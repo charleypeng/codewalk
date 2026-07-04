@@ -2,6 +2,7 @@ part of '../chat_page.dart';
 
 extension _ChatPageFileViewer on _ChatPageState {
   static const int _maxHighlightedFileLength = 160000;
+  static const int _maxEditableFileLength = 1024 * 1024;
 
   Widget _buildFileViewerPanel({
     required _FileExplorerContextState fileState,
@@ -259,230 +260,230 @@ extension _ChatPageFileViewer on _ChatPageState {
     VoidCallback? onStateChanged,
   }) {
     final normalizedPath = _normalizeFilePath(path);
-    final textStyle = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', height: 1.4);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Measure actual line height from font metrics for precise alignment.
-    final tp = TextPainter(
-      text: TextSpan(text: '0', style: textStyle),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final lineHeight = tp.preferredLineHeight;
-    final charWidth = tp.width;
-
-    final lineCount = '\n'.allMatches(content).length + 1;
-    final gutterDigits = lineCount.toString().length;
-    final gutterWidth = (gutterDigits * charWidth + 20).ceilToDouble();
-
-    final selectedLines =
-        fileState.selectedLinesByPath[normalizedPath] ?? const <int>{};
-
-    final codeWidget = content.length <= _maxHighlightedFileLength
-        ? KeyedSubtree(
-            key: ValueKey<String>(
-              'file_viewer_content_highlight_$normalizedPath',
-            ),
-            child: HighlightView(
-              content,
-              language: _resolveHighlightLanguage(
-                path: path,
-                mimeType: mimeType,
-              ),
-              theme: _resolveHighlightTheme(context),
-              textStyle: textStyle,
-            ),
-          )
-        : Text(
-            content,
-            key: const ValueKey<String>('file_viewer_content_text_fallback'),
-            style: textStyle,
-          );
+    final draft = _editorDraftForContent(
+      fileState: fileState,
+      path: normalizedPath,
+      content: content,
+    );
+    final readOnlyReason = _editorReadOnlyReason(content);
+    final editor = _buildFocusedFileEditor(
+      path: normalizedPath,
+      content: content,
+      draft: draft,
+      language: _resolveHighlightLanguage(path: path, mimeType: mimeType),
+      readOnly: readOnlyReason != null,
+      readOnlyReason: readOnlyReason,
+      onChanged: () => onStateChanged?.call(),
+    );
 
     // Schedule scroll-to-line after the first frame renders the content.
     final pendingLine = fileState.pendingScrollToLine;
     if (pendingLine != null) {
       fileState.pendingScrollToLine = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!_fileViewerScrollController.hasClients) return;
-      final targetOffset = ((pendingLine - 1) * lineHeight)
-          .clamp(0.0, _fileViewerScrollController.position.maxScrollExtent);
-      _fileViewerScrollController.animateTo(
-        targetOffset,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final lineIndex = max(0, pendingLine - 1);
+        draft.scrollController.makeCenterIfInvisible(
+          CodeLinePosition(index: lineIndex, offset: 0),
+        );
+      });
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableCodeWidth = constraints.maxWidth.isFinite
-            ? (constraints.maxWidth - gutterWidth - 20).clamp(
-                0.0,
-                double.infinity,
-              )
-            : 0.0;
-        // GestureDetector is INSIDE the scroll view so localPosition
-        // maps directly to content coordinates (no scroll offset math).
-        return SingleChildScrollView(
-          controller: _fileViewerScrollController,
-          key: ValueKey<String>('file_viewer_scroll_$normalizedPath'),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) {
-              final lineNumber =
-                  (details.localPosition.dy / lineHeight).floor() + 1;
-              if (lineNumber < 1 || lineNumber > lineCount) {
-                return;
-              }
-              final isShift = HardwareKeyboard.instance.isShiftPressed;
-              _handleGutterLineTap(
-                fileState: fileState,
-                path: normalizedPath,
-                lineNumber: lineNumber,
-                lineCount: lineCount,
-                isShiftHeld: isShift,
-              );
-              onStateChanged?.call();
-            },
-            child: Stack(
-              children: [
-                // Gutter background strip (behind everything).
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: gutterWidth,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerLow,
-                      border: Border(
-                        right: BorderSide(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Full-width selection highlights (behind text).
-                if (selectedLines.isNotEmpty)
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _LineSelectionPainter(
-                        selectedLines: selectedLines,
-                        lineHeight: lineHeight,
-                        color: colorScheme.primary.withValues(alpha: 0.12),
-                      ),
-                    ),
-                  ),
-                // Content row: gutter text + code.
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Gutter line numbers (visual only).
-                    SizedBox(
-                      width: gutterWidth,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        // Use RichText (not Text.rich) so the gutter
-                        // renders without MediaQuery textScaler, matching
-                        // HighlightView's RichText for pixel-aligned lines.
-                        child: RichText(
-                          text: TextSpan(
-                            style: textStyle,
-                            children: List<InlineSpan>.generate(lineCount, (
-                              index,
-                            ) {
-                              final lineNumber = index + 1;
-                              final isSelected = selectedLines.contains(
-                                lineNumber,
-                              );
-                              return TextSpan(
-                                text:
-                                    '${lineNumber.toString().padLeft(gutterDigits)}${index < lineCount - 1 ? '\n' : ''}',
-                                style: textStyle?.copyWith(
-                                  color: isSelected
-                                      ? colorScheme.primary
-                                      : colorScheme.onSurfaceVariant.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : null,
-                                ),
-                              );
-                            }),
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
-                    ),
-                    // Code area with horizontal scroll.
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8, right: 12),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: availableCodeWidth,
-                            ),
-                            child: codeWidget,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    return KeyedSubtree(
+      key: ValueKey<String>('file_viewer_scroll_$normalizedPath'),
+      child: editor,
     );
   }
 
-  // Toggle or range-select a line in the gutter.
-  void _handleGutterLineTap({
+  _FileEditorDraftState _editorDraftForContent({
     required _FileExplorerContextState fileState,
     required String path,
-    required int lineNumber,
-    required int lineCount,
-    required bool isShiftHeld,
+    required String content,
   }) {
-    _setState(() {
-      final selected = fileState.selectedLinesByPath.putIfAbsent(
-        path,
-        () => <int>{},
-      );
+    final normalizedPath = _normalizeFilePath(path);
+    final draft = fileState.editorDraftsByPath.putIfAbsent(
+      normalizedPath,
+      () => _FileEditorDraftState(content: content),
+    );
+    if (!draft.isDirty && draft.savedContent != content) {
+      draft.replaceSavedContent(content);
+    }
+    return draft;
+  }
 
-      if (isShiftHeld) {
-        // Range selection from last anchor to current line.
-        final anchor = fileState.lastSelectedLineByPath[path] ?? lineNumber;
-        final start = anchor < lineNumber ? anchor : lineNumber;
-        final end = anchor < lineNumber ? lineNumber : anchor;
-        for (var i = start; i <= end; i++) {
-          if (i >= 1 && i <= lineCount) {
-            selected.add(i);
-          }
-        }
-      } else {
-        // Toggle single line.
-        if (selected.contains(lineNumber)) {
-          selected.remove(lineNumber);
-        } else {
-          selected.add(lineNumber);
-        }
-      }
+  String? _editorReadOnlyReason(String content) {
+    if (content.length > _maxEditableFileLength) {
+      return 'Large files open read-only to keep editing responsive.';
+    }
+    return null;
+  }
 
-      fileState.lastSelectedLineByPath[path] = lineNumber;
-    });
+  Widget _buildFocusedFileEditor({
+    required String path,
+    required String content,
+    required _FileEditorDraftState draft,
+    required String language,
+    required bool readOnly,
+    required String? readOnlyReason,
+    VoidCallback? onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', height: 1.4);
+    final editor = CodeEditor(
+      key: ValueKey<String>('file_editor_$path'),
+      controller: draft.controller,
+      scrollController: draft.scrollController,
+      readOnly: readOnly,
+      showCursorWhenReadOnly: false,
+      wordWrap: false,
+      chunkAnalyzer: const NonCodeChunkAnalyzer(),
+      onChanged: (_) => onChanged?.call(),
+      padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+      indicatorBuilder:
+          (context, editingController, chunkController, notifier) {
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                border: Border(
+                  right: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: DefaultCodeLineNumber(
+                  controller: editingController,
+                  notifier: notifier,
+                  textStyle: textStyle?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+                  ),
+                  focusedTextStyle: textStyle?.copyWith(
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+            );
+          },
+      style: CodeEditorStyle(
+        fontSize: textStyle?.fontSize,
+        fontFamily: 'monospace',
+        fontHeight: 1.4,
+        textColor: colorScheme.onSurface,
+        backgroundColor: colorScheme.surface,
+        selectionColor: colorScheme.primary.withValues(alpha: 0.20),
+        highlightColor: colorScheme.secondaryContainer.withValues(alpha: 0.45),
+        cursorColor: colorScheme.primary,
+        cursorLineColor: colorScheme.primary.withValues(alpha: 0.08),
+        codeTheme: CodeHighlightTheme(
+          languages: <String, CodeHighlightThemeMode>{
+            language: CodeHighlightThemeMode(
+              mode: _resolveEditorLanguageMode(language),
+              maxSize: _maxHighlightedFileLength,
+              maxLineLength: 20000,
+            ),
+          },
+          theme: _resolveHighlightTheme(context),
+        ),
+      ),
+    );
+    return Stack(
+      children: [
+        Positioned.fill(child: editor),
+        if (readOnlyReason != null)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                child: Text(
+                  readOnlyReason,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
+            ),
+          ),
+        if (content.length <= 10000)
+          Positioned(
+            width: 0,
+            height: 0,
+            child: Opacity(
+              opacity: 0,
+              child: ExcludeSemantics(child: Text(content)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Mode _resolveEditorLanguageMode(String language) {
+    switch (language) {
+      case 'bash':
+        return re_bash.langBash;
+      case 'c':
+        return re_c.langC;
+      case 'cpp':
+        return re_cpp.langCpp;
+      case 'csharp':
+        return re_csharp.langCsharp;
+      case 'css':
+        return re_css.langCss;
+      case 'dart':
+        return re_dart.langDart;
+      case 'dockerfile':
+        return re_dockerfile.langDockerfile;
+      case 'go':
+        return re_go.langGo;
+      case 'java':
+        return re_java.langJava;
+      case 'javascript':
+        return re_javascript.langJavascript;
+      case 'json':
+        return re_json.langJson;
+      case 'kotlin':
+        return re_kotlin.langKotlin;
+      case 'makefile':
+        return re_makefile.langMakefile;
+      case 'markdown':
+        return re_markdown.langMarkdown;
+      case 'php':
+        return re_php.langPhp;
+      case 'powershell':
+        return re_powershell.langPowershell;
+      case 'python':
+        return re_python.langPython;
+      case 'ruby':
+        return re_ruby.langRuby;
+      case 'rust':
+        return re_rust.langRust;
+      case 'scss':
+        return re_scss.langScss;
+      case 'shell':
+        return re_shell.langShell;
+      case 'sql':
+        return re_sql.langSql;
+      case 'swift':
+        return re_swift.langSwift;
+      case 'typescript':
+        return re_typescript.langTypescript;
+      case 'xml':
+        return re_xml.langXml;
+      case 'yaml':
+        return re_yaml.langYaml;
+      default:
+        return re_plaintext.langPlaintext;
+    }
   }
 
   // Build FileInputParts from the selected lines and add to chat context.
@@ -687,37 +688,5 @@ extension _ChatPageFileViewer on _ChatPageState {
       default:
         return 'plaintext';
     }
-  }
-}
-
-/// Paints background rectangles behind selected code lines.
-class _LineSelectionPainter extends CustomPainter {
-  _LineSelectionPainter({
-    required this.selectedLines,
-    required this.lineHeight,
-    required this.color,
-  });
-
-  final Set<int> selectedLines;
-  final double lineHeight;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (selectedLines.isEmpty) {
-      return;
-    }
-    final paint = Paint()..color = color;
-    for (final line in selectedLines) {
-      final y = (line - 1) * lineHeight;
-      canvas.drawRect(Rect.fromLTWH(0, y, size.width, lineHeight), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_LineSelectionPainter oldDelegate) {
-    return !setEquals(oldDelegate.selectedLines, selectedLines) ||
-        oldDelegate.lineHeight != lineHeight ||
-        oldDelegate.color != color;
   }
 }

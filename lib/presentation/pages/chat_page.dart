@@ -9,9 +9,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderBox, ScrollDirection;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:re_editor/re_editor.dart';
+import 'package:re_highlight/languages/bash.dart' as re_bash;
+import 'package:re_highlight/languages/c.dart' as re_c;
+import 'package:re_highlight/languages/cpp.dart' as re_cpp;
+import 'package:re_highlight/languages/csharp.dart' as re_csharp;
+import 'package:re_highlight/languages/css.dart' as re_css;
+import 'package:re_highlight/languages/dart.dart' as re_dart;
+import 'package:re_highlight/languages/dockerfile.dart' as re_dockerfile;
+import 'package:re_highlight/languages/go.dart' as re_go;
+import 'package:re_highlight/languages/java.dart' as re_java;
+import 'package:re_highlight/languages/javascript.dart' as re_javascript;
+import 'package:re_highlight/languages/json.dart' as re_json;
+import 'package:re_highlight/languages/kotlin.dart' as re_kotlin;
+import 'package:re_highlight/languages/makefile.dart' as re_makefile;
+import 'package:re_highlight/languages/markdown.dart' as re_markdown;
+import 'package:re_highlight/languages/php.dart' as re_php;
+import 'package:re_highlight/languages/plaintext.dart' as re_plaintext;
+import 'package:re_highlight/languages/powershell.dart' as re_powershell;
+import 'package:re_highlight/languages/python.dart' as re_python;
+import 'package:re_highlight/languages/ruby.dart' as re_ruby;
+import 'package:re_highlight/languages/rust.dart' as re_rust;
+import 'package:re_highlight/languages/scss.dart' as re_scss;
+import 'package:re_highlight/languages/shell.dart' as re_shell;
+import 'package:re_highlight/languages/sql.dart' as re_sql;
+import 'package:re_highlight/languages/swift.dart' as re_swift;
+import 'package:re_highlight/languages/typescript.dart' as re_typescript;
+import 'package:re_highlight/languages/xml.dart' as re_xml;
+import 'package:re_highlight/languages/yaml.dart' as re_yaml;
+import 'package:re_highlight/re_highlight.dart' show Mode;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
@@ -611,8 +639,8 @@ class _ChatPageState extends State<ChatPage>
   _LockedSubConversationSelection? _cachedLockedSubConversationSelection;
 
   // Cached highlight theme to avoid re-creating the Map<String, TextStyle>
-  // spread on every _resolveHighlightTheme() call, which forces the
-  // HighlightView to re-parse when it detects a "changed" theme reference.
+  // spread on every _resolveHighlightTheme() call, which forces code surfaces
+  // to re-parse when they detect a "changed" theme reference.
   Map<String, TextStyle>? _cachedHighlightTheme;
   Brightness? _cachedHighlightBrightness;
   String? _cachedHighlightThemeKey;
@@ -750,6 +778,9 @@ class _ChatPageState extends State<ChatPage>
     _sessionSearchController.dispose();
     _sessionSearchFocusNode.dispose();
     _terminalController.dispose();
+    for (final fileState in _fileContextStates.values) {
+      fileState.dispose();
+    }
     super.dispose();
   }
 

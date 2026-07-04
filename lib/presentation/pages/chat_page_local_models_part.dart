@@ -12,6 +12,8 @@ class _FileExplorerContextState {
   final Map<String, String> directoryErrors = <String, String>{};
   final Map<String, _FileTabViewState> tabsByPath =
       <String, _FileTabViewState>{};
+  final Map<String, _FileEditorDraftState> editorDraftsByPath =
+      <String, _FileEditorDraftState>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
   WorkspaceFileOperationsCapabilities? fileOperationCapabilities;
   bool fileOperationCapabilitiesLoading = false;
@@ -33,6 +35,8 @@ class _FileExplorerContextState {
     expandedDirectories.clear();
     loadingDirectories.clear();
     directoryErrors.clear();
+    tabsByPath.clear();
+    _disposeEditorDrafts();
     fileOperationCapabilities = null;
     fileOperationCapabilitiesLoading = false;
     selectedLinesByPath.clear();
@@ -40,6 +44,21 @@ class _FileExplorerContextState {
     pendingScrollToLine = null;
     rootLoadScheduled = false;
     treeError = null;
+  }
+
+  void removeEditorDraft(String path) {
+    editorDraftsByPath.remove(path)?.dispose();
+  }
+
+  void dispose() {
+    _disposeEditorDrafts();
+  }
+
+  void _disposeEditorDrafts() {
+    for (final draft in editorDraftsByPath.values) {
+      draft.dispose();
+    }
+    editorDraftsByPath.clear();
   }
 }
 
@@ -57,6 +76,34 @@ class _FileTabViewState {
   final String content;
   final String? errorMessage;
   final String? mimeType;
+}
+
+class _FileEditorDraftState {
+  _FileEditorDraftState({required String content})
+    : controller = CodeLineEditingController.fromText(content),
+      scrollController = CodeScrollController(),
+      savedContent = content;
+
+  final CodeLineEditingController controller;
+  final CodeScrollController scrollController;
+  String savedContent;
+  bool isSaving = false;
+  String? saveErrorMessage;
+
+  bool get isDirty => controller.text != savedContent;
+
+  void replaceSavedContent(String content) {
+    savedContent = content;
+    controller.text = content;
+    saveErrorMessage = null;
+  }
+
+  void dispose() {
+    controller.dispose();
+    scrollController.verticalScroller.dispose();
+    scrollController.horizontalScroller.dispose();
+    scrollController.dispose();
+  }
 }
 
 abstract class _TimelineEntry {

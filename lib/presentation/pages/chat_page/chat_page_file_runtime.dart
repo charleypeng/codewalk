@@ -469,6 +469,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       final normalizedPath = _normalizeFilePath(path);
       fileState.selectedLinesByPath.remove(normalizedPath);
       fileState.lastSelectedLineByPath.remove(normalizedPath);
+      fileState.removeEditorDraft(normalizedPath);
     });
     onUpdated?.call();
   }
@@ -500,6 +501,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     }
     _setState(() {
       if (content == null) {
+        fileState.removeEditorDraft(normalizedPath);
         fileState.tabsByPath[normalizedPath] = _FileTabViewState(
           status: _FileTabLoadStatus.error,
           content: '',
@@ -508,6 +510,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return;
       }
       if (content.isBinary) {
+        fileState.removeEditorDraft(normalizedPath);
         fileState.tabsByPath[normalizedPath] = _FileTabViewState(
           status: _FileTabLoadStatus.binary,
           content: '',
@@ -517,6 +520,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       }
       final text = content.content;
       if (text.isEmpty) {
+        fileState.removeEditorDraft(normalizedPath);
         fileState.tabsByPath[normalizedPath] = _FileTabViewState(
           status: _FileTabLoadStatus.empty,
           content: '',
@@ -1124,6 +1128,14 @@ extension _ChatPageFileRuntime on _ChatPageState {
       fileState.tabsByPath
         ..clear()
         ..addAll(renamedTabs);
+      final renamedDrafts = <String, _FileEditorDraftState>{};
+      for (final entry in fileState.editorDraftsByPath.entries) {
+        renamedDrafts[_replacePathPrefix(entry.key, oldPath, newPath)] =
+            entry.value;
+      }
+      fileState.editorDraftsByPath
+        ..clear()
+        ..addAll(renamedDrafts);
       fileState.tabSelection = FileTabSelectionState(
         openPaths: fileState.tabSelection.openPaths
             .map((path) => _replacePathPrefix(path, oldPath, newPath))
@@ -1155,6 +1167,12 @@ extension _ChatPageFileRuntime on _ChatPageState {
       fileState.tabsByPath.removeWhere(
         (path, _) => _pathEqualsOrIsChild(path, normalized),
       );
+      final removedDraftPaths = fileState.editorDraftsByPath.keys
+          .where((path) => _pathEqualsOrIsChild(path, normalized))
+          .toList(growable: false);
+      for (final path in removedDraftPaths) {
+        fileState.removeEditorDraft(path);
+      }
       final nextOpenPaths = fileState.tabSelection.openPaths
           .where((path) => !_pathEqualsOrIsChild(path, normalized))
           .toList(growable: false);
