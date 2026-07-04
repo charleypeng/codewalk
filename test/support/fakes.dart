@@ -2489,6 +2489,7 @@ class FakeWorkspaceFileOperationsService
   WorkspaceFileOperationResult? createFolderResult;
   WorkspaceFileOperationResult? renameResult;
   WorkspaceFileOperationResult? deleteResult;
+  WorkspaceFileOperationResult? writeFileResult;
   Future<void> Function({
     required String rootDirectory,
     required String parentDirectory,
@@ -2514,15 +2515,24 @@ class FakeWorkspaceFileOperationsService
     required String name,
   })?
   onDelete;
+  Future<void> Function({
+    required String rootDirectory,
+    required String path,
+    required String content,
+  })?
+  onWriteFile;
 
   int capabilitiesCallCount = 0;
   int createFileCallCount = 0;
   int createFolderCallCount = 0;
   int renameCallCount = 0;
   int deleteCallCount = 0;
+  int writeFileCallCount = 0;
   String? lastParentDirectory;
   String? lastName;
   String? lastNewName;
+  String? lastPath;
+  String? lastContent;
 
   @override
   Future<WorkspaceFileOperationsCapabilities> getCapabilities({
@@ -2636,6 +2646,30 @@ class FakeWorkspaceFileOperationsService
           code: WorkspaceFileOperationCode.ok,
           message: 'ok',
           path: _joinPath(parentDirectory, name),
+        );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> writeFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String path,
+    required String content,
+  }) async {
+    writeFileCallCount += 1;
+    lastPath = path;
+    lastContent = content;
+    await onWriteFile?.call(
+      rootDirectory: rootDirectory,
+      path: path,
+      content: content,
+    );
+    return writeFileResult ??
+        WorkspaceFileOperationResult(
+          ok: true,
+          code: WorkspaceFileOperationCode.ok,
+          message: 'ok',
+          path: path,
         );
   }
 

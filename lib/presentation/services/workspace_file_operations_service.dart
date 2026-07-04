@@ -96,6 +96,13 @@ abstract class WorkspaceFileOperationsService {
     required String parentDirectory,
     required String name,
   });
+
+  Future<WorkspaceFileOperationResult> writeFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String path,
+    required String content,
+  });
 }
 
 class WorkspaceFileOperationsServiceImpl
@@ -296,6 +303,36 @@ class WorkspaceFileOperationsServiceImpl
     );
   }
 
+  @override
+  Future<WorkspaceFileOperationResult> writeFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String path,
+    required String content,
+  }) async {
+    final prepared = await _preparePathOperation(
+      serverScopeKey: serverScopeKey,
+      rootDirectory: rootDirectory,
+      path: path,
+    );
+    if (prepared.result != null) {
+      return prepared.result!;
+    }
+
+    final target = _joinPath(prepared.parentDirectory, prepared.name);
+    return _runMutation(
+      serverScopeKey: serverScopeKey,
+      rootDirectory: prepared.rootDirectory,
+      command: _buildWriteFileCommand(
+        rootDirectory: prepared.rootDirectory,
+        parentDirectory: prepared.parentDirectory,
+        name: prepared.name,
+        contentBase64: base64Encode(utf8.encode(content)),
+      ),
+      path: target,
+    );
+  }
+
   Future<WorkspaceFileOperationResult> _runMutation({
     required String serverScopeKey,
     required String rootDirectory,
@@ -369,6 +406,59 @@ class WorkspaceFileOperationsServiceImpl
     );
   }
 
+  Future<_PreparedLeafOperation> _preparePathOperation({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String path,
+  }) async {
+    final root = normalizeFilePath(rootDirectory);
+    final normalizedPath = normalizeFilePath(path);
+    if (normalizedPath.isEmpty || _hasUnsafePathTraversal(normalizedPath)) {
+      return _PreparedLeafOperation(
+        result: _result(WorkspaceFileOperationCode.outsideRoot),
+      );
+    }
+
+    final target = normalizedPath.startsWith('/')
+        ? normalizedPath
+        : _joinPath(root, normalizedPath);
+    if (normalizeFilePath(target) == root) {
+      return _PreparedLeafOperation(
+        result: _result(WorkspaceFileOperationCode.rootDeleteBlocked),
+      );
+    }
+    final name = fileBasename(target);
+    final preparedName = _normalizeLeafName(name);
+    if (preparedName.result != null) {
+      return _PreparedLeafOperation(result: preparedName.result!);
+    }
+
+    final parent = _parentPath(target);
+    final rootCheck = _validateRootParent(rootDirectory: root, parent: parent);
+    if (rootCheck != null) {
+      return _PreparedLeafOperation(result: rootCheck);
+    }
+
+    final capabilities = await getCapabilities(
+      serverScopeKey: serverScopeKey,
+      directory: root,
+    );
+    if (!capabilities.shellFileOpsSupported) {
+      return _PreparedLeafOperation(
+        result: _result(
+          WorkspaceFileOperationCode.unavailable,
+          message: capabilities.message,
+        ),
+      );
+    }
+
+    return _PreparedLeafOperation(
+      rootDirectory: root,
+      parentDirectory: parent,
+      name: preparedName.name,
+    );
+  }
+
   _PreparedLeafName _normalizeLeafName(String raw) {
     final value = raw.trim();
     if (value.isEmpty ||
@@ -419,6 +509,25 @@ class WorkspaceFileOperationsServiceImpl
       return '/$name';
     }
     return normalizeFilePath(joinParentPath(normalizedParent, name));
+  }
+
+  String _parentPath(String path) {
+    final normalized = normalizeFilePath(path);
+    if (normalized.isEmpty || normalized == '/') {
+      return '/';
+    }
+    final separator = normalized.lastIndexOf('/');
+    if (separator <= 0) {
+      return '/';
+    }
+    return normalized.substring(0, separator);
+  }
+
+  bool _hasUnsafePathTraversal(String path) {
+    if (path.contains('\x00') || path.contains('\n') || path.contains('\r')) {
+      return true;
+    }
+    return normalizeFilePath(path).split('/').any((segment) => segment == '..');
   }
 
   Future<WorkspaceFileOperationResult> _runShellScript({
@@ -726,12 +835,42 @@ cw_fail failed
     );
   }
 
+  String _buildWriteFileCommand({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+    required String contentBase64,
+  }) {
+    return _buildScript(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+      contentBase64: contentBase64,
+      body: r'''
+cw_validate_name "$CW_NAME"
+cw_prepare_parent
+target="$parent/$CW_NAME"
+if [ "$target" = "$root" ]; then cw_fail rootDeleteBlocked; fi
+if ! [ -e "$target" ] && ! [ -L "$target" ]; then cw_fail missing; fi
+if [ -d "$target" ] && ! [ -L "$target" ]; then cw_fail notDirectory; fi
+if ! [ -w "$target" ] || ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
+tmp="$parent/.cw-write-$$.tmp"
+if cw_decode_content "$tmp"; then
+  if mv -- "$tmp" "$target" 2>/dev/null; then cw_ok; fi
+fi
+rm -f -- "$tmp" 2>/dev/null || true
+cw_fail failed
+''',
+    );
+  }
+
   String _buildScript({
     required String rootDirectory,
     required String parentDirectory,
     required String name,
     required String body,
     String? newName,
+    String? contentBase64,
   }) {
     final buffer = StringBuffer()
       ..writeln('set -u')
@@ -740,6 +879,9 @@ cw_fail failed
       ..writeln('CW_NAME=${_shQuote(name)}');
     if (newName != null) {
       buffer.writeln('CW_NEW_NAME=${_shQuote(newName)}');
+    }
+    if (contentBase64 != null) {
+      buffer.writeln('CW_CONTENT_B64=${_shQuote(contentBase64)}');
     }
     buffer
       ..write(_shellHelpers())
@@ -768,6 +910,16 @@ cw_validate_name() {
   case "$1" in
     ''|'.'|'..'|*/*|*\\*) cw_fail invalidName ;;
   esac
+}
+cw_decode_content() {
+  if command -v base64 >/dev/null 2>&1; then
+    if printf '%s' "$CW_CONTENT_B64" | base64 -d > "$1" 2>/dev/null; then return 0; fi
+    if printf '%s' "$CW_CONTENT_B64" | base64 --decode > "$1" 2>/dev/null; then return 0; fi
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    if python3 -c 'import base64, os, sys; os.write(1, base64.b64decode(sys.argv[1]))' "$CW_CONTENT_B64" > "$1" 2>/dev/null; then return 0; fi
+  fi
+  return 1
 }
 cw_prepare_parent() {
   root=$(cd -- "$CW_ROOT_INPUT" 2>/dev/null && pwd -P) || cw_fail missing

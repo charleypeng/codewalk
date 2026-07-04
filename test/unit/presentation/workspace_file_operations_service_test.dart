@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
 import 'package:codewalk/presentation/services/workspace_file_operations_service.dart';
 import 'package:dio/dio.dart';
@@ -176,6 +178,114 @@ void main() {
           fakeServer.commands.last,
           contains("CW_NAME='John'\\''s notes.dart'"),
         );
+      },
+    );
+
+    test('write file uses base64 content and returns target path', () async {
+      final fakeServer = _FakeShellServer(
+        shellPayloads: <String>[
+          '{"ok":true,"code":"ok","message":"available"}',
+          '{"ok":true,"code":"ok","message":"ok"}',
+        ],
+      );
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final result = await service.writeFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        path: 'lib/main.dart',
+        content: "void main() {\n  print('hello');\n}\n",
+      );
+
+      expect(result.ok, isTrue);
+      expect(result.path, '/repo/a/lib/main.dart');
+      expect(fakeServer.shellCallCount, 2);
+      expect(
+        fakeServer.commands.last,
+        contains("CW_PARENT_INPUT='/repo/a/lib'"),
+      );
+      expect(fakeServer.commands.last, contains("CW_NAME='main.dart'"));
+      expect(
+        fakeServer.commands.last,
+        contains(
+          "CW_CONTENT_B64='${base64Encode(utf8.encode("void main() {\n  print('hello');\n}\n"))}'",
+        ),
+      );
+      expect(fakeServer.commands.last, contains(r'cw_decode_content "$tmp"'));
+      expect(fakeServer.commands.last, contains(r'mv -- "$tmp" "$target"'));
+    });
+
+    test('write file rejects paths outside root before shell calls', () async {
+      final fakeServer = _FakeShellServer(shellPayloads: const <String>[]);
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final escapedRelative = await service.writeFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        path: '../outside.dart',
+        content: 'changed',
+      );
+      final escapedAbsolute = await service.writeFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        path: '/repo/ab/main.dart',
+        content: 'changed',
+      );
+
+      expect(escapedRelative.ok, isFalse);
+      expect(escapedRelative.code, WorkspaceFileOperationCode.outsideRoot);
+      expect(escapedAbsolute.ok, isFalse);
+      expect(escapedAbsolute.code, WorkspaceFileOperationCode.outsideRoot);
+      expect(fakeServer.shellCallCount, 0);
+    });
+
+    test('write file blocks project root before shell calls', () async {
+      final fakeServer = _FakeShellServer(shellPayloads: const <String>[]);
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final result = await service.writeFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        path: '/repo/a',
+        content: 'changed',
+      );
+
+      expect(result.ok, isFalse);
+      expect(result.code, WorkspaceFileOperationCode.rootDeleteBlocked);
+      expect(fakeServer.shellCallCount, 0);
+    });
+
+    test(
+      'write file malformed operation invalidates capability cache',
+      () async {
+        final fakeServer = _FakeShellServer(
+          shellPayloads: <String?>[
+            '{"ok":true,"code":"ok","message":"available"}',
+            null,
+            '{"ok":true,"code":"ok","message":"available"}',
+            '{"ok":true,"code":"ok","message":"ok"}',
+          ],
+        );
+        final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+        final writeResult = await service.writeFile(
+          serverScopeKey: 'srv',
+          rootDirectory: '/repo/a',
+          path: 'lib/main.dart',
+          content: 'changed',
+        );
+        final createResult = await service.createFile(
+          serverScopeKey: 'srv',
+          rootDirectory: '/repo/a',
+          parentDirectory: '/repo/a/lib',
+          name: 'new.dart',
+        );
+
+        expect(writeResult.ok, isFalse);
+        expect(writeResult.code, WorkspaceFileOperationCode.malformedResponse);
+        expect(createResult.ok, isTrue);
+        expect(fakeServer.shellCallCount, 4);
+        expect(fakeServer.commands[2], contains('pwd -P'));
       },
     );
 
