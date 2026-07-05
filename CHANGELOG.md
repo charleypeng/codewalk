@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.168.1 - 2026-07-05
+
+- fix(files): surface delete failure diagnostics
+
 ## v1.168.0 - 2026-07-05
 
 - chore(agent): [Step 5/5] validate file editor delivery
