@@ -890,7 +890,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     if (!result.ok) {
-      _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
+      _showFileOperationSnackBar(
+        _fileOperationErrorLabel(result.code, message: result.message),
+      );
       return;
     }
     await _refreshFileTreeDirectory(
@@ -942,7 +944,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     if (!result.ok) {
-      _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
+      _showFileOperationSnackBar(
+        _fileOperationErrorLabel(result.code, message: result.message),
+      );
       return;
     }
     final oldPath = _normalizeFilePath(result.path ?? nodePath);
@@ -1009,7 +1013,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     if (!result.ok) {
-      _showFileOperationSnackBar(_fileOperationErrorLabel(result.code));
+      _showFileOperationSnackBar(
+        _fileOperationErrorLabel(result.code, message: result.message),
+      );
       return;
     }
     _reconcileDeletedFileTreePath(fileState: fileState, path: nodePath);
@@ -1180,7 +1186,10 @@ extension _ChatPageFileRuntime on _ChatPageState {
     }
 
     if (!result.ok) {
-      final message = _fileOperationErrorLabel(result.code);
+      final message = _fileOperationErrorLabel(
+        result.code,
+        message: result.message,
+      );
       _setState(() {
         draft.isSaving = false;
         draft.saveErrorMessage = message;
@@ -1426,7 +1435,18 @@ extension _ChatPageFileRuntime on _ChatPageState {
     );
   }
 
-  String _fileOperationErrorLabel(WorkspaceFileOperationCode code) {
+  String _fileOperationErrorLabel(
+    WorkspaceFileOperationCode code, {
+    String? message,
+  }) {
+    final detailedMessage = message?.trim();
+    if ((code == WorkspaceFileOperationCode.failed ||
+            code == WorkspaceFileOperationCode.malformedResponse) &&
+        detailedMessage != null &&
+        detailedMessage.isNotEmpty &&
+        detailedMessage != _defaultFileOperationErrorMessage(code)) {
+      return detailedMessage;
+    }
     switch (code) {
       case WorkspaceFileOperationCode.invalidName:
         return context.l10n.filesInvalidName;
@@ -1447,6 +1467,25 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case WorkspaceFileOperationCode.malformedResponse:
       case WorkspaceFileOperationCode.ok:
         return context.l10n.filesOperationFailed;
+    }
+  }
+
+  String _defaultFileOperationErrorMessage(WorkspaceFileOperationCode code) {
+    switch (code) {
+      case WorkspaceFileOperationCode.failed:
+        return 'File operation failed.';
+      case WorkspaceFileOperationCode.malformedResponse:
+        return 'File operation returned an invalid response.';
+      case WorkspaceFileOperationCode.ok:
+      case WorkspaceFileOperationCode.unavailable:
+      case WorkspaceFileOperationCode.invalidName:
+      case WorkspaceFileOperationCode.outsideRoot:
+      case WorkspaceFileOperationCode.rootDeleteBlocked:
+      case WorkspaceFileOperationCode.missing:
+      case WorkspaceFileOperationCode.alreadyExists:
+      case WorkspaceFileOperationCode.permissionDenied:
+      case WorkspaceFileOperationCode.notDirectory:
+        return '';
     }
   }
 

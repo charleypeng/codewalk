@@ -1262,6 +1262,7 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **Then** the file explorer header exposes a root-level `New` menu for creating files or folders at the project root
 - **Then** create, rename, and delete operations run in hidden ephemeral OpenCode shell sessions scoped to the active project root, validate leaf names, parse only the `CW_FILE_OP_JSON:` sentinel result, refresh affected tree caches, and reconcile open file tabs
 - **Then** delete requires confirmation before mutating the server filesystem
+- **Then** failed delete operations surface bounded shell diagnostic detail when available instead of only the generic failure label
 - **Then** mutating actions are hidden when the shell probe is unavailable, the current directory is missing, or the project root is `/`; read-only actions remain available
 
 ### File preview

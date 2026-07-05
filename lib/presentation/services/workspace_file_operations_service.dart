@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../core/utils/path_utils.dart';
 import 'chat_title_generator.dart';
 
@@ -355,6 +356,24 @@ class WorkspaceFileOperationsServiceImpl
       directory: rootDirectory,
       command: command,
     );
+    if (!result.ok) {
+      AppLogger.warn(
+        'Workspace file operation failed',
+        tags: const <String>{'files'},
+        metrics: <String, Object?>{
+          'code': result.code.name,
+          'pathHash': path == null ? null : AppLogger.safeContextId(path),
+          'newPathHash': newPath == null
+              ? null
+              : AppLogger.safeContextId(newPath),
+          'message': _redactOperationMessage(
+            result.message,
+            path: path,
+            newPath: newPath,
+          ),
+        },
+      );
+    }
     if (result.code == WorkspaceFileOperationCode.unavailable ||
         result.code == WorkspaceFileOperationCode.malformedResponse) {
       await invalidateCapabilities(
@@ -404,6 +423,25 @@ class WorkspaceFileOperationsServiceImpl
       parentDirectory: parent,
       name: preparedName.name,
     );
+  }
+
+  static String _redactOperationMessage(
+    String message, {
+    String? path,
+    String? newPath,
+  }) {
+    var redacted = message;
+    for (final candidate in <String?>[path, newPath]) {
+      if (candidate == null || candidate.isEmpty) {
+        continue;
+      }
+      redacted = redacted.replaceAll(candidate, '<path>');
+    }
+    const maxLength = 240;
+    if (redacted.length <= maxLength) {
+      return redacted;
+    }
+    return '${redacted.substring(0, maxLength)}...';
   }
 
   Future<_PreparedLeafOperation> _preparePathOperation({
@@ -825,11 +863,39 @@ target="$parent/$CW_NAME"
 if [ "$target" = "$root" ]; then cw_fail rootDeleteBlocked; fi
 if ! [ -e "$target" ] && ! [ -L "$target" ]; then cw_fail missing; fi
 if ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
-if [ -d "$target" ] && ! [ -L "$target" ]; then
-  if rm -r -- "$target" 2>/dev/null; then cw_ok; fi
-else
-  if rm -- "$target" 2>/dev/null; then cw_ok; fi
+errdir=$(mktemp -d "$parent/.cw-delete.XXXXXX" 2>/dev/null || true)
+err=''
+status=''
+if [ -n "$errdir" ]; then
+  err="$errdir/stderr"
+  status="$errdir/status"
 fi
+if [ -n "$err" ] && cd -- "$parent" 2>/dev/null; then
+  if [ -d "$target" ] && ! [ -L "$target" ]; then
+    { rm -r -- "$CW_NAME" >/dev/null; printf '%s' "$?" > "$status"; } 2>&1 | sed -n '1,3p' | cut -c 1-240 > "$err"
+  else
+    { rm -- "$CW_NAME" >/dev/null; printf '%s' "$?" > "$status"; } 2>&1 | sed -n '1,3p' | cut -c 1-240 > "$err"
+  fi
+  rm_status=$(cat "$status" 2>/dev/null || printf '1')
+  if [ "$rm_status" = "0" ]; then
+    rm -f -- "$err" "$status" 2>/dev/null || true
+    rmdir -- "$errdir" 2>/dev/null || true
+    cw_ok
+  fi
+else
+  if [ -d "$target" ] && ! [ -L "$target" ]; then
+    if cd -- "$parent" 2>/dev/null && rm -r -- "$CW_NAME" 2>/dev/null; then cw_ok; fi
+  else
+    if cd -- "$parent" 2>/dev/null && rm -- "$CW_NAME" 2>/dev/null; then cw_ok; fi
+  fi
+fi
+rm_error=''
+if [ -n "$err" ]; then
+  rm_error=$(cat "$err" 2>/dev/null || true)
+  rm -f -- "$err" "$status" 2>/dev/null || true
+  rmdir -- "$errdir" 2>/dev/null || true
+fi
+if [ -n "${rm_error:-}" ]; then cw_fail_message failed "$rm_error"; fi
 cw_fail failed
 ''',
     );
@@ -910,6 +976,15 @@ cw_fail() {
     notDirectory) cw_emit '{"ok":false,"code":"notDirectory","message":"Parent is not a directory."}' ;;
     *) cw_emit '{"ok":false,"code":"failed","message":"File operation failed."}' ;;
   esac
+  exit 0
+}
+cw_json_escape() {
+  printf '%s' "$1" | tr '\r\n' '  ' | tr -d '\000-\011\013-\037\177' | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+cw_fail_message() {
+  code="$1"
+  message=$(cw_json_escape "$2")
+  cw_emit "{\"ok\":false,\"code\":\"$code\",\"message\":\"$message\"}"
   exit 0
 }
 cw_validate_name() {

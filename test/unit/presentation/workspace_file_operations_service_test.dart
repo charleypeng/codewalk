@@ -296,6 +296,49 @@ void main() {
       },
     );
 
+    test('delete captures rm stderr in failed result', () async {
+      final fakeServer = _FakeShellServer(
+        shellPayloads: <String>[
+          '{"ok":true,"code":"ok","message":"available"}',
+          '{"ok":false,"code":"failed","message":"rm: cannot remove markdown.md: Operation not permitted"}',
+        ],
+      );
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final result = await service.delete(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        parentDirectory: '/repo/a/docs',
+        name: 'markdown.md',
+      );
+
+      expect(result.ok, isFalse);
+      expect(result.code, WorkspaceFileOperationCode.failed);
+      expect(result.message, contains('Operation not permitted'));
+      expect(fakeServer.shellCallCount, 2);
+      expect(fakeServer.commands.last, contains('mktemp -d'));
+      expect(fakeServer.commands.last, contains('.cw-delete.XXXXXX'));
+      expect(fakeServer.commands.last, contains(r'status="$errdir/status"'));
+      expect(
+        fakeServer.commands.last,
+        contains(r'rm -- "$CW_NAME" >/dev/null; printf'),
+      );
+      expect(
+        fakeServer.commands.last,
+        contains(r'rm -r -- "$CW_NAME" >/dev/null; printf'),
+      );
+      expect(fakeServer.commands.last, contains('sed -n '));
+      expect(fakeServer.commands.last, contains(r'cut -c 1-240 > "$err"'));
+      expect(
+        fakeServer.commands.last,
+        contains(r"tr -d '\000-\011\013-\037\177'"),
+      );
+      expect(
+        fakeServer.commands.last,
+        contains(r'cw_fail_message failed "$rm_error"'),
+      );
+    });
+
     test('malformed probe disables shell file operations', () async {
       final fakeServer = _FakeShellServer(shellPayloads: const <String?>[null]);
       final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);

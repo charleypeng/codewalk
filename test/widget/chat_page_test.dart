@@ -7272,6 +7272,80 @@ void main() {
     );
   });
 
+  testWidgets('file tree delete failure surfaces operation details', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_delete_failed',
+        name: 'Project Files Delete Failed',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_delete_failed',
+          name: 'Project Files Delete Failed',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: 'docs/note.md', name: 'note.md', type: FileNodeType.file),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..deleteResult = const WorkspaceFileOperationResult(
+            ok: false,
+            code: WorkspaceFileOperationCode.failed,
+            message: 'rm: cannot remove note.md: Operation not permitted',
+          );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_delete')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.deleteCallCount, 1);
+    expect(
+      find.text('rm: cannot remove note.md: Operation not permitted'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'file viewer fallback retries relative path when absolute result is empty',
     (WidgetTester tester) async {
