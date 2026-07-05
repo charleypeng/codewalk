@@ -212,6 +212,13 @@ void main() {
         ),
       );
       expect(fakeServer.commands.last, contains(r'cw_decode_content "$tmp"'));
+      expect(fakeServer.commands.last, contains('mktemp -d'));
+      expect(fakeServer.commands.last, contains('.cw-write.XXXXXX'));
+      expect(fakeServer.commands.last, isNot(contains(r'.cw-write-$$.tmp')));
+      expect(
+        fakeServer.commands.last,
+        contains(r'cw_copy_mode "$target" "$tmp"'),
+      );
       expect(fakeServer.commands.last, contains(r'mv -- "$tmp" "$target"'));
     });
 

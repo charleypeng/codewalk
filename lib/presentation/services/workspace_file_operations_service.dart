@@ -854,11 +854,17 @@ if [ "$target" = "$root" ]; then cw_fail rootDeleteBlocked; fi
 if ! [ -e "$target" ] && ! [ -L "$target" ]; then cw_fail missing; fi
 if [ -d "$target" ] && ! [ -L "$target" ]; then cw_fail notDirectory; fi
 if ! [ -w "$target" ] || ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
-tmp="$parent/.cw-write-$$.tmp"
+tmpdir=$(mktemp -d "$parent/.cw-write.XXXXXX" 2>/dev/null) || cw_fail failed
+tmp="$tmpdir/content"
 if cw_decode_content "$tmp"; then
-  if mv -- "$tmp" "$target" 2>/dev/null; then cw_ok; fi
+  cw_copy_mode "$target" "$tmp"
+  if mv -- "$tmp" "$target" 2>/dev/null; then
+    rmdir -- "$tmpdir" 2>/dev/null || true
+    cw_ok
+  fi
 fi
 rm -f -- "$tmp" 2>/dev/null || true
+rmdir -- "$tmpdir" 2>/dev/null || true
 cw_fail failed
 ''',
     );
@@ -920,6 +926,15 @@ cw_decode_content() {
     if python3 -c 'import base64, os, sys; os.write(1, base64.b64decode(sys.argv[1]))' "$CW_CONTENT_B64" > "$1" 2>/dev/null; then return 0; fi
   fi
   return 1
+}
+cw_copy_mode() {
+  if chmod --reference="$1" "$2" 2>/dev/null; then return 0; fi
+  mode=''
+  if command -v stat >/dev/null 2>&1; then
+    mode=$(stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null || true)
+  fi
+  if [ -n "$mode" ]; then chmod "$mode" "$2" 2>/dev/null || true; fi
+  return 0
 }
 cw_prepare_parent() {
   root=$(cd -- "$CW_ROOT_INPUT" 2>/dev/null && pwd -P) || cw_fail missing

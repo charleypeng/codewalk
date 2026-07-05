@@ -17,6 +17,7 @@ class _FileExplorerContextState {
   FileTabSelectionState tabSelection = const FileTabSelectionState();
   WorkspaceFileOperationsCapabilities? fileOperationCapabilities;
   bool fileOperationCapabilitiesLoading = false;
+  Future<void>? fileOperationCapabilitiesLoad;
   // Line selection state for "add to chat" feature (1-based line numbers).
   final Map<String, Set<int>> selectedLinesByPath = <String, Set<int>>{};
   final Map<String, int> lastSelectedLineByPath = <String, int>{};
@@ -39,6 +40,7 @@ class _FileExplorerContextState {
     _disposeEditorDrafts();
     fileOperationCapabilities = null;
     fileOperationCapabilitiesLoading = false;
+    fileOperationCapabilitiesLoad = null;
     selectedLinesByPath.clear();
     lastSelectedLineByPath.clear();
     pendingScrollToLine = null;
@@ -62,7 +64,7 @@ class _FileExplorerContextState {
   }
 }
 
-enum _FileTabLoadStatus { loading, ready, binary, empty, error }
+enum _FileTabLoadStatus { loading, ready, binary, error }
 
 class _FileTabViewState {
   const _FileTabViewState({
@@ -79,13 +81,22 @@ class _FileTabViewState {
 }
 
 class _FileEditorDraftState {
-  _FileEditorDraftState({required String content})
-    : controller = CodeLineEditingController.fromText(content),
+  factory _FileEditorDraftState({required String content}) {
+    final lineBreak = _detectTextLineBreak(content);
+    return _FileEditorDraftState._(content: content, lineBreak: lineBreak);
+  }
+
+  _FileEditorDraftState._({required String content, required this.lineBreak})
+    : controller = CodeLineEditingController.fromText(
+        content,
+        CodeLineOptions(lineBreak: lineBreak),
+      ),
       scrollController = CodeScrollController(),
       savedContent = content;
 
   final CodeLineEditingController controller;
   final CodeScrollController scrollController;
+  final TextLineBreak lineBreak;
   String savedContent;
   bool isSaving = false;
   String? saveErrorMessage;
@@ -98,8 +109,8 @@ class _FileEditorDraftState {
   }
 
   void replaceSavedContent(String content) {
-    savedContent = content;
     controller.text = content;
+    savedContent = controller.text;
     saveErrorMessage = null;
   }
 
@@ -108,6 +119,18 @@ class _FileEditorDraftState {
     scrollController.verticalScroller.dispose();
     scrollController.horizontalScroller.dispose();
     scrollController.dispose();
+  }
+
+  static TextLineBreak _detectTextLineBreak(String content) {
+    final firstCarriageReturn = content.indexOf('\r');
+    if (firstCarriageReturn < 0) {
+      return TextLineBreak.lf;
+    }
+    final nextIndex = firstCarriageReturn + 1;
+    if (nextIndex < content.length && content.codeUnitAt(nextIndex) == 0x0A) {
+      return TextLineBreak.crlf;
+    }
+    return TextLineBreak.cr;
   }
 }
 

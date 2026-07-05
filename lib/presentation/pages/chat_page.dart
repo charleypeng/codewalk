@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
@@ -20,10 +21,12 @@ import 'package:re_highlight/languages/css.dart' as re_css;
 import 'package:re_highlight/languages/dart.dart' as re_dart;
 import 'package:re_highlight/languages/dockerfile.dart' as re_dockerfile;
 import 'package:re_highlight/languages/go.dart' as re_go;
+import 'package:re_highlight/languages/ini.dart' as re_ini;
 import 'package:re_highlight/languages/java.dart' as re_java;
 import 'package:re_highlight/languages/javascript.dart' as re_javascript;
 import 'package:re_highlight/languages/json.dart' as re_json;
 import 'package:re_highlight/languages/kotlin.dart' as re_kotlin;
+import 'package:re_highlight/languages/less.dart' as re_less;
 import 'package:re_highlight/languages/makefile.dart' as re_makefile;
 import 'package:re_highlight/languages/markdown.dart' as re_markdown;
 import 'package:re_highlight/languages/php.dart' as re_php;
@@ -37,6 +40,7 @@ import 'package:re_highlight/languages/shell.dart' as re_shell;
 import 'package:re_highlight/languages/sql.dart' as re_sql;
 import 'package:re_highlight/languages/swift.dart' as re_swift;
 import 'package:re_highlight/languages/typescript.dart' as re_typescript;
+import 'package:re_highlight/languages/vue.dart' as re_vue;
 import 'package:re_highlight/languages/xml.dart' as re_xml;
 import 'package:re_highlight/languages/yaml.dart' as re_yaml;
 import 'package:re_highlight/re_highlight.dart' show Mode;

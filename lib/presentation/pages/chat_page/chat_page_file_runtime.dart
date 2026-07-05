@@ -54,13 +54,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
     });
   }
 
-  void _ensureFileOperationCapabilities({
+  Future<void> _ensureFileOperationCapabilities({
     required _FileExplorerContextState state,
     required ProjectProvider projectProvider,
   }) {
-    if (state.fileOperationCapabilities != null ||
-        state.fileOperationCapabilitiesLoading) {
-      return;
+    if (state.fileOperationCapabilities != null) {
+      return Future<void>.value();
+    }
+    if (state.fileOperationCapabilitiesLoading) {
+      return state.fileOperationCapabilitiesLoad ?? Future<void>.value();
     }
     if (projectProvider.currentDirectory == null ||
         state.rootDirectory == '/' ||
@@ -70,7 +72,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
             shellFileOpsSupported: false,
             message: 'File operations require an active project directory.',
           );
-      return;
+      return Future<void>.value();
     }
     if (!di.sl.isRegistered<WorkspaceFileOperationsService>()) {
       state.fileOperationCapabilities =
@@ -78,40 +80,46 @@ extension _ChatPageFileRuntime on _ChatPageState {
             shellFileOpsSupported: false,
             message: 'File operations are not available.',
           );
-      return;
+      return Future<void>.value();
     }
     final rootDirectory = state.rootDirectory;
     state.fileOperationCapabilitiesLoading = true;
-    unawaited(
-      di
-          .sl<WorkspaceFileOperationsService>()
-          .getCapabilities(
-            serverScopeKey: projectProvider.contextKey,
-            directory: rootDirectory,
-          )
-          .then((capabilities) {
-            if (!mounted || state.rootDirectory != rootDirectory) {
-              return;
-            }
-            _setState(() {
-              state.fileOperationCapabilities = capabilities;
-              state.fileOperationCapabilitiesLoading = false;
-            });
-          })
-          .catchError((_) {
-            if (!mounted || state.rootDirectory != rootDirectory) {
-              return;
-            }
-            _setState(() {
-              state.fileOperationCapabilities =
-                  const WorkspaceFileOperationsCapabilities(
-                    shellFileOpsSupported: false,
-                    message: 'File operations are not available.',
-                  );
-              state.fileOperationCapabilitiesLoading = false;
-            });
-          }),
-    );
+    late final Future<void> load;
+    load = di
+        .sl<WorkspaceFileOperationsService>()
+        .getCapabilities(
+          serverScopeKey: projectProvider.contextKey,
+          directory: rootDirectory,
+        )
+        .then<void>((capabilities) {
+          if (!mounted || state.rootDirectory != rootDirectory) {
+            return;
+          }
+          _setState(() {
+            state.fileOperationCapabilities = capabilities;
+            state.fileOperationCapabilitiesLoading = false;
+          });
+        })
+        .catchError((_) {
+          if (!mounted || state.rootDirectory != rootDirectory) {
+            return;
+          }
+          _setState(() {
+            state.fileOperationCapabilities =
+                const WorkspaceFileOperationsCapabilities(
+                  shellFileOpsSupported: false,
+                  message: 'File operations are not available.',
+                );
+            state.fileOperationCapabilitiesLoading = false;
+          });
+        })
+        .whenComplete(() {
+          if (state.fileOperationCapabilitiesLoad == load) {
+            state.fileOperationCapabilitiesLoad = null;
+          }
+        });
+    state.fileOperationCapabilitiesLoad = load;
+    return load;
   }
 
   void _reconcileFileContextWithSessionDiff({
@@ -463,10 +471,19 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required String path,
     VoidCallback? onUpdated,
   }) {
+    final normalizedPath = _normalizeFilePath(path);
+    final draft = fileState.editorDraftsByPath[normalizedPath];
+    if (draft != null && draft.isDirty) {
+      _setState(() {
+        draft.saveErrorMessage = _ChatPageFileViewer._dirtyCloseBlockedMessage;
+      });
+      onUpdated?.call();
+      _showFileOperationSnackBar(_ChatPageFileViewer._dirtyCloseBlockedMessage);
+      return;
+    }
     _setState(() {
       fileState.tabSelection = closeFileTab(fileState.tabSelection, path);
       // Clean up line selection state for the closed tab.
-      final normalizedPath = _normalizeFilePath(path);
       fileState.selectedLinesByPath.remove(normalizedPath);
       fileState.lastSelectedLineByPath.remove(normalizedPath);
       fileState.removeEditorDraft(normalizedPath);
@@ -531,15 +548,6 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return;
       }
       final text = content.content;
-      if (text.isEmpty) {
-        fileState.removeEditorDraft(normalizedPath);
-        fileState.tabsByPath[normalizedPath] = _FileTabViewState(
-          status: _FileTabLoadStatus.empty,
-          content: '',
-          mimeType: content.mimeType,
-        );
-        return;
-      }
       fileState.tabsByPath[normalizedPath] = _FileTabViewState(
         status: _FileTabLoadStatus.ready,
         content: text,
@@ -560,6 +568,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final mediaQuery = MediaQuery.of(context);
     final dialogWidth = (mediaQuery.size.width * 0.7).clamp(560.0, 1200.0);
     final dialogHeight = (mediaQuery.size.height * 0.7).clamp(420.0, 900.0);
+    var capabilityRefreshAttached = false;
 
     await showDialog<void>(
       context: context,
@@ -567,6 +576,21 @@ extension _ChatPageFileRuntime on _ChatPageState {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
+            if (!capabilityRefreshAttached &&
+                fileState.fileOperationCapabilitiesLoading) {
+              capabilityRefreshAttached = true;
+              final capabilitiesLoad = fileState.fileOperationCapabilitiesLoad;
+              if (capabilitiesLoad != null) {
+                unawaited(
+                  capabilitiesLoad.whenComplete(() {
+                    if (!mounted || !dialogContext.mounted) {
+                      return;
+                    }
+                    setDialogState(() {});
+                  }),
+                );
+              }
+            }
             if (fullscreen) {
               return Dialog.fullscreen(
                 key: const ValueKey<String>('open_files_dialog_fullscreen'),
@@ -890,6 +914,14 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final successMessage = context.l10n.filesRenamed;
     final originalNodePath = _normalizeFilePath(node.path);
     final nodePath = _absoluteFileTreePath(fileState, node.path);
+    if (_blockPathMutationForActiveEditorDrafts(
+      fileState: fileState,
+      path: nodePath,
+      alternatePath: originalNodePath,
+      onUpdated: onUpdated,
+    )) {
+      return;
+    }
     final parentDirectory = _parentDirectoryForFilePath(nodePath);
     final nextName = await _showFileNameDialog(
       title: context.l10n.filesRenameTitle(node.name),
@@ -952,11 +984,20 @@ extension _ChatPageFileRuntime on _ChatPageState {
     VoidCallback? onUpdated,
   }) async {
     final successMessage = context.l10n.filesDeleted;
+    final nodePath = _absoluteFileTreePath(fileState, node.path);
+    final originalNodePath = _normalizeFilePath(node.path);
+    if (_blockPathMutationForActiveEditorDrafts(
+      fileState: fileState,
+      path: nodePath,
+      alternatePath: originalNodePath,
+      onUpdated: onUpdated,
+    )) {
+      return;
+    }
     final confirmed = await _confirmDeleteFileTreeNode(node);
     if (!confirmed || !mounted) {
       return;
     }
-    final nodePath = _absoluteFileTreePath(fileState, node.path);
     final parentDirectory = _parentDirectoryForFilePath(nodePath);
     final result = await di.sl<WorkspaceFileOperationsService>().delete(
       serverScopeKey: projectProvider.contextKey,
@@ -972,7 +1013,6 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     _reconcileDeletedFileTreePath(fileState: fileState, path: nodePath);
-    final originalNodePath = _normalizeFilePath(node.path);
     if (originalNodePath != nodePath) {
       _reconcileDeletedFileTreePath(
         fileState: fileState,
@@ -992,6 +1032,42 @@ extension _ChatPageFileRuntime on _ChatPageState {
       onUpdated: onUpdated,
     );
     _showFileOperationSnackBar(successMessage);
+  }
+
+  bool _blockPathMutationForActiveEditorDrafts({
+    required _FileExplorerContextState fileState,
+    required String path,
+    String? alternatePath,
+    VoidCallback? onUpdated,
+  }) {
+    final normalizedPaths = <String>{
+      _normalizeFilePath(path),
+      if (alternatePath != null) _normalizeFilePath(alternatePath),
+    };
+    final blockedDrafts = fileState.editorDraftsByPath.entries
+        .where(
+          (entry) =>
+              normalizedPaths.any(
+                (path) => _pathEqualsOrIsChild(entry.key, path),
+              ) &&
+              (entry.value.isDirty || entry.value.isSaving),
+        )
+        .map((entry) => entry.value)
+        .toList(growable: false);
+    if (blockedDrafts.isEmpty) {
+      return false;
+    }
+    final message = blockedDrafts.any((draft) => draft.isSaving)
+        ? _ChatPageFileViewer._savingPathMutationBlockedMessage
+        : _ChatPageFileViewer._dirtyPathMutationBlockedMessage;
+    _setState(() {
+      for (final draft in blockedDrafts) {
+        draft.saveErrorMessage = message;
+      }
+    });
+    onUpdated?.call();
+    _showFileOperationSnackBar(message);
+    return true;
   }
 
   Future<String?> _showFileNameDialog({
@@ -1078,6 +1154,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
     }
 
     final contentToSave = draft.controller.text;
+    if (utf8.encode(contentToSave).length >
+        _ChatPageFileViewer._maxEditableFileLength) {
+      _setState(() {
+        draft.saveErrorMessage = _ChatPageFileViewer._draftTooLargeSaveMessage;
+      });
+      onUpdated?.call();
+      _showFileOperationSnackBar(_ChatPageFileViewer._draftTooLargeSaveMessage);
+      return;
+    }
     _setState(() {
       draft.isSaving = true;
       draft.saveErrorMessage = null;

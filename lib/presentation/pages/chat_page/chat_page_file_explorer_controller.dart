@@ -67,9 +67,11 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       state.resetForRoot(rootDirectory);
     }
     _ensureFileRootLoaded(state: state, projectProvider: projectProvider);
-    _ensureFileOperationCapabilities(
-      state: state,
-      projectProvider: projectProvider,
+    unawaited(
+      _ensureFileOperationCapabilities(
+        state: state,
+        projectProvider: projectProvider,
+      ),
     );
     return state;
   }

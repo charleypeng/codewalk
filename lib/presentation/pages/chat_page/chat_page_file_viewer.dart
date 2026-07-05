@@ -3,6 +3,14 @@ part of '../chat_page.dart';
 extension _ChatPageFileViewer on _ChatPageState {
   static const int _maxHighlightedFileLength = 160000;
   static const int _maxEditableFileLength = 1024 * 1024;
+  static const String _draftTooLargeSaveMessage =
+      'Draft is too large to save from the editor.';
+  static const String _dirtyCloseBlockedMessage =
+      'Save changes before closing this file.';
+  static const String _dirtyPathMutationBlockedMessage =
+      'Save changes before changing this path.';
+  static const String _savingPathMutationBlockedMessage =
+      'Wait for the file save to finish before changing this path.';
 
   Widget _buildFileViewerPanel({
     required _FileExplorerContextState fileState,
@@ -173,7 +181,11 @@ extension _ChatPageFileViewer on _ChatPageState {
               _buildSelectionActionBar(
                 fileState: fileState,
                 path: activePath,
-                content: active.content,
+                content: _currentFileEditorText(
+                  fileState: fileState,
+                  path: activePath,
+                  fallback: active.content,
+                ),
                 selectedCount: selectedLines.length,
                 onStateChanged: onStateChanged,
                 onContextAdded: onContextAdded,
@@ -221,8 +233,6 @@ extension _ChatPageFileViewer on _ChatPageState {
                       return Center(
                         child: Text(context.l10n.filesBinaryFilePreview),
                       );
-                    case _FileTabLoadStatus.empty:
-                      return Center(child: Text(context.l10n.filesFileEmpty));
                     case _FileTabLoadStatus.ready:
                       return _buildFileViewerContent(
                         path: activePath,
@@ -329,13 +339,10 @@ extension _ChatPageFileViewer on _ChatPageState {
       content: content,
       draft: draft,
       language: _resolveHighlightLanguage(path: path, mimeType: mimeType),
+      fileState: fileState,
       readOnly: readOnlyReason != null,
       readOnlyReason: readOnlyReason,
-      canSave: _canSaveFileDraft(
-        fileState: fileState,
-        content: content,
-        draft: draft,
-      ),
+      canSave: _canSaveFileDraft(fileState: fileState, draft: draft),
       onSave: () => unawaited(
         _saveFileEditorDraft(
           fileState: fileState,
@@ -345,6 +352,7 @@ extension _ChatPageFileViewer on _ChatPageState {
         ),
       ),
       onChanged: () => onStateChanged?.call(),
+      onLineSelectionChanged: onStateChanged,
     );
 
     // Schedule scroll-to-line after the first frame renders the content.
@@ -353,6 +361,9 @@ extension _ChatPageFileViewer on _ChatPageState {
       fileState.pendingScrollToLine = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        if (fileState.editorDraftsByPath[normalizedPath] != draft) {
+          return;
+        }
         final lineIndex = max(0, pendingLine - 1);
         draft.scrollController.makeCenterIfInvisible(
           CodeLinePosition(index: lineIndex, offset: 0),
@@ -377,7 +388,27 @@ extension _ChatPageFileViewer on _ChatPageState {
       () => _FileEditorDraftState(content: content),
     );
     if (!draft.isDirty && draft.savedContent != content) {
-      draft.replaceSavedContent(content);
+      final nextLineBreak = _FileEditorDraftState._detectTextLineBreak(content);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        final currentDraft = fileState.editorDraftsByPath[normalizedPath];
+        if (currentDraft != draft ||
+            draft.isDirty ||
+            draft.savedContent == content) {
+          return;
+        }
+        _setState(() {
+          if (draft.lineBreak != nextLineBreak) {
+            fileState.editorDraftsByPath[normalizedPath] =
+                _FileEditorDraftState(content: content);
+            draft.dispose();
+          } else {
+            draft.replaceSavedContent(content);
+          }
+        });
+      });
     }
     return draft;
   }
@@ -399,11 +430,7 @@ extension _ChatPageFileViewer on _ChatPageState {
     final canSave =
         active.status == _FileTabLoadStatus.ready &&
         draft != null &&
-        _canSaveFileDraft(
-          fileState: fileState,
-          content: active.content,
-          draft: draft,
-        );
+        _canSaveFileDraft(fileState: fileState, draft: draft);
     final isSaving = draft?.isSaving == true;
     return TextButton.icon(
       key: const ValueKey<String>('file_viewer_save_button'),
@@ -430,13 +457,18 @@ extension _ChatPageFileViewer on _ChatPageState {
 
   bool _canSaveFileDraft({
     required _FileExplorerContextState fileState,
-    required String content,
     required _FileEditorDraftState draft,
   }) {
     if (!draft.isDirty || draft.isSaving) {
       return false;
     }
-    return _editorReadOnlyReason(content: content, fileState: fileState) ==
+    if (_isEditorContentTooLarge(draft.controller.text)) {
+      return false;
+    }
+    return _editorReadOnlyReason(
+          content: draft.savedContent,
+          fileState: fileState,
+        ) ==
         null;
   }
 
@@ -444,7 +476,7 @@ extension _ChatPageFileViewer on _ChatPageState {
     required String content,
     required _FileExplorerContextState fileState,
   }) {
-    if (content.length > _maxEditableFileLength) {
+    if (_isEditorContentTooLarge(content)) {
       return 'Large files open read-only to keep editing responsive.';
     }
     if (fileState.fileOperationCapabilitiesLoading) {
@@ -460,17 +492,36 @@ extension _ChatPageFileViewer on _ChatPageState {
     return null;
   }
 
+  bool _isEditorContentTooLarge(String content) {
+    return utf8.encode(content).length > _maxEditableFileLength;
+  }
+
+  String _currentFileEditorText({
+    required _FileExplorerContextState fileState,
+    required String path,
+    required String fallback,
+  }) {
+    return fileState
+            .editorDraftsByPath[_normalizeFilePath(path)]
+            ?.controller
+            .text ??
+        fallback;
+  }
+
   Widget _buildFocusedFileEditor({
     required String path,
     required String content,
     required _FileEditorDraftState draft,
     required String language,
+    required _FileExplorerContextState fileState,
     required bool readOnly,
     required String? readOnlyReason,
     required bool canSave,
     required VoidCallback onSave,
     VoidCallback? onChanged,
+    VoidCallback? onLineSelectionChanged,
   }) {
+    final normalizedPath = _normalizeFilePath(path);
     final colorScheme = Theme.of(context).colorScheme;
     final textStyle = Theme.of(
       context,
@@ -483,10 +534,19 @@ extension _ChatPageFileViewer on _ChatPageState {
       showCursorWhenReadOnly: false,
       wordWrap: false,
       chunkAnalyzer: const NonCodeChunkAnalyzer(),
-      onChanged: (_) => onChanged?.call(),
+      onChanged: (_) {
+        if (_isEditorContentTooLarge(draft.controller.text)) {
+          draft.saveErrorMessage = _draftTooLargeSaveMessage;
+        } else if (draft.saveErrorMessage != null) {
+          draft.saveErrorMessage = null;
+        }
+        onChanged?.call();
+      },
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
       indicatorBuilder:
           (context, editingController, chunkController, notifier) {
+            final selectedLines =
+                fileState.selectedLinesByPath[normalizedPath] ?? const <int>{};
             return DecoratedBox(
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLow,
@@ -496,17 +556,55 @@ extension _ChatPageFileViewer on _ChatPageState {
                   ),
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: DefaultCodeLineNumber(
-                  controller: editingController,
-                  notifier: notifier,
-                  textStyle: textStyle?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
-                  ),
-                  focusedTextStyle: textStyle?.copyWith(
-                    color: colorScheme.primary,
-                  ),
+              child: Listener(
+                key: ValueKey<String>('file_editor_gutter_$normalizedPath'),
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: (event) {
+                  final lineNumber = _lineNumberForEditorGutterTap(
+                    controller: editingController,
+                    notifier: notifier,
+                    localPosition: event.localPosition,
+                  );
+                  if (lineNumber == null) {
+                    return;
+                  }
+                  _handleGutterLineTap(
+                    fileState: fileState,
+                    path: normalizedPath,
+                    lineNumber: lineNumber,
+                    lineCount: editingController.lineCount,
+                    isShiftHeld: HardwareKeyboard.instance.isShiftPressed,
+                  );
+                  onLineSelectionChanged?.call();
+                },
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _EditorLineSelectionPainter(
+                          controller: editingController,
+                          notifier: notifier,
+                          selectedLines: selectedLines,
+                          color: colorScheme.primary.withValues(alpha: 0.12),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: DefaultCodeLineNumber(
+                        controller: editingController,
+                        notifier: notifier,
+                        textStyle: textStyle?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.55,
+                          ),
+                        ),
+                        focusedTextStyle: textStyle?.copyWith(
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -629,6 +727,8 @@ extension _ChatPageFileViewer on _ChatPageState {
         return re_dockerfile.langDockerfile;
       case 'go':
         return re_go.langGo;
+      case 'ini':
+        return re_ini.langIni;
       case 'java':
         return re_java.langJava;
       case 'javascript':
@@ -637,6 +737,8 @@ extension _ChatPageFileViewer on _ChatPageState {
         return re_json.langJson;
       case 'kotlin':
         return re_kotlin.langKotlin;
+      case 'less':
+        return re_less.langLess;
       case 'makefile':
         return re_makefile.langMakefile;
       case 'markdown':
@@ -661,6 +763,8 @@ extension _ChatPageFileViewer on _ChatPageState {
         return re_swift.langSwift;
       case 'typescript':
         return re_typescript.langTypescript;
+      case 'vue':
+        return re_vue.langVue;
       case 'xml':
         return re_xml.langXml;
       case 'yaml':
@@ -668,6 +772,61 @@ extension _ChatPageFileViewer on _ChatPageState {
       default:
         return re_plaintext.langPlaintext;
     }
+  }
+
+  int? _lineNumberForEditorGutterTap({
+    required CodeLineEditingController controller,
+    required CodeIndicatorValueNotifier notifier,
+    required Offset localPosition,
+  }) {
+    final paragraphs = notifier.value?.paragraphs;
+    if (paragraphs == null || paragraphs.isEmpty) {
+      return null;
+    }
+    for (final paragraph in paragraphs) {
+      if (localPosition.dy >= paragraph.top &&
+          localPosition.dy < paragraph.bottom) {
+        final lineNumber = controller.index2lineIndex(paragraph.index) + 1;
+        if (lineNumber < 1 || lineNumber > controller.lineCount) {
+          return null;
+        }
+        return lineNumber;
+      }
+    }
+    return null;
+  }
+
+  // Toggle or range-select a line in the gutter.
+  void _handleGutterLineTap({
+    required _FileExplorerContextState fileState,
+    required String path,
+    required int lineNumber,
+    required int lineCount,
+    required bool isShiftHeld,
+  }) {
+    _setState(() {
+      final selected = fileState.selectedLinesByPath.putIfAbsent(
+        path,
+        () => <int>{},
+      );
+
+      if (isShiftHeld) {
+        final anchor = fileState.lastSelectedLineByPath[path] ?? lineNumber;
+        final start = min(anchor, lineNumber);
+        final end = max(anchor, lineNumber);
+        for (var i = start; i <= end; i++) {
+          if (i >= 1 && i <= lineCount) {
+            selected.add(i);
+          }
+        }
+      } else if (selected.contains(lineNumber)) {
+        selected.remove(lineNumber);
+      } else {
+        selected.add(lineNumber);
+      }
+
+      fileState.lastSelectedLineByPath[path] = lineNumber;
+    });
   }
 
   // Build FileInputParts from the selected lines and add to chat context.
@@ -682,7 +841,7 @@ extension _ChatPageFileViewer on _ChatPageState {
       return;
     }
 
-    final lines = content.split('\n');
+    final lines = _splitFileEditorLines(content);
     final ranges = _groupContiguousRanges(selected);
     final basename = _fileBasename(path);
 
@@ -716,6 +875,10 @@ extension _ChatPageFileViewer on _ChatPageState {
       fileState.selectedLinesByPath.remove(normalizedPath);
       fileState.lastSelectedLineByPath.remove(normalizedPath);
     });
+  }
+
+  List<String> _splitFileEditorLines(String content) {
+    return content.split(RegExp(r'\r\n|\r|\n'));
   }
 
   // Group a set of line numbers into contiguous (start, end) ranges.
@@ -872,5 +1035,55 @@ extension _ChatPageFileViewer on _ChatPageState {
       default:
         return 'plaintext';
     }
+  }
+}
+
+class _EditorLineSelectionPainter extends CustomPainter {
+  _EditorLineSelectionPainter({
+    required this.controller,
+    required this.notifier,
+    required Set<int> selectedLines,
+    required this.color,
+  }) : selectedLines = Set<int>.unmodifiable(selectedLines),
+       super(repaint: notifier);
+
+  final CodeLineEditingController controller;
+  final CodeIndicatorValueNotifier notifier;
+  final Set<int> selectedLines;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (selectedLines.isEmpty) {
+      return;
+    }
+    final value = notifier.value;
+    if (value == null || value.paragraphs.isEmpty) {
+      return;
+    }
+    final paint = Paint()..color = color;
+    for (final paragraph in value.paragraphs) {
+      final lineNumber = controller.index2lineIndex(paragraph.index) + 1;
+      if (!selectedLines.contains(lineNumber)) {
+        continue;
+      }
+      canvas.drawRect(
+        Rect.fromLTWH(
+          0,
+          paragraph.top,
+          size.width,
+          paragraph.preferredLineHeight,
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_EditorLineSelectionPainter oldDelegate) {
+    return oldDelegate.controller != controller ||
+        oldDelegate.notifier != notifier ||
+        oldDelegate.color != color ||
+        !setEquals(oldDelegate.selectedLines, selectedLines);
   }
 }

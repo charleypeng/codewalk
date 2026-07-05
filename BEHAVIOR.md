@@ -361,10 +361,13 @@
 - **Then** the open-files surface renders a focused code editor with line numbers, syntax highlighting, tabbed open files, and the same desktop/mobile dialog behavior as the file viewer
 - **Then** editing a file marks its tab dirty with `*` and enables the viewer `Save` action
 - **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service, not through a local client filesystem write
-- **Then** a successful save clears the dirty marker, updates the open tab's saved content, and shows a save confirmation
+- **Then** a successful save preserves the file's LF, CRLF, or CR line-ending style, clears the dirty marker, updates the open tab's saved content, and shows a save confirmation
 - **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces the operation error inline and via snackbar
-- **Then** if a dirty open tab would be reloaded by manual retry or diff-aware refresh, the reload is skipped so unsaved edits are not overwritten
-- **Then** binary files and empty files keep their existing non-editing fallback states
+- **Then** selecting editor gutter lines and choosing Add to chat sends the current draft text for the selected line ranges, including LF, CRLF, and CR files
+- **Then** if a dirty open tab would be closed, reloaded by manual retry, or reloaded by diff-aware refresh, the action is skipped so unsaved edits are not overwritten
+- **Then** rename and delete actions for a file or containing folder are blocked while a matching editor draft is dirty or saving, including relative and absolute file-tree path aliases
+- **Then** empty non-binary text files open as blank editable drafts and can become dirty before the first save
+- **Then** binary files keep their existing non-editing fallback state
 - **Then** files larger than 1 MiB and servers without supported shell file operations open read-only with the existing safe fallback behavior
 
 ### Composer mentions include workspace symbols

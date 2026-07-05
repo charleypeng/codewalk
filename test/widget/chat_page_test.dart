@@ -6109,6 +6109,94 @@ void main() {
     expect(find.text('File saved.'), findsOneWidget);
   });
 
+  testWidgets('file editor preserves CRLF line endings when saving', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_editor_crlf',
+        name: 'Project Editor CRLF',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_editor_crlf',
+          name: 'Project Editor CRLF',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void before() {\r\n  print("hello");\r\n}\r\n',
+          isBinary: false,
+        );
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_dirty_/repo/a/lib/main.dart'),
+      ),
+      findsNothing,
+    );
+
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+    );
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void after() {\n  print("hello");\n}\n';
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_viewer_save_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.writeFileCallCount, 1);
+    expect(
+      fileOperations.lastContent,
+      'void after() {\r\n  print("hello");\r\n}\r\n',
+    );
+  });
+
   testWidgets('file editor keeps dirty state when save fails', (
     WidgetTester tester,
   ) async {
@@ -6203,6 +6291,315 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Permission denied.'), findsWidgets);
+  });
+
+  testWidgets('file editor opens empty text files as editable drafts', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_editor_empty',
+        name: 'Project Editor Empty',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_editor_empty',
+          name: 'Project Editor Empty',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/empty.dart',
+        name: 'empty.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/empty.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/empty.dart',
+          content: '',
+          isBinary: false,
+        );
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/empty.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/empty.dart'),
+    );
+    expect(editorFinder, findsOneWidget);
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void created() {}';
+    await tester.pump();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_dirty_/repo/a/lib/empty.dart'),
+      ),
+      findsOneWidget,
+    );
+    final saveButton = tester.widget<TextButton>(
+      find.byKey(const ValueKey<String>('file_viewer_save_button')),
+    );
+    expect(saveButton.onPressed, isNotNull);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+    'file editor gutter selection adds current draft to chat context',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1300, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final chatRepository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_editor_context',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(0),
+            title: 'Editor Context',
+          ),
+        ],
+      );
+      chatRepository.messagesBySession['ses_editor_context'] = <ChatMessage>[];
+      final projectRepository = FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_editor_context',
+          name: 'Project Editor Context',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_editor_context',
+            name: 'Project Editor Context',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+        ],
+      );
+      projectRepository.filesByPath['.'] = const <FileNode>[
+        FileNode(
+          path: '/repo/a/lib/main.dart',
+          name: 'main.dart',
+          type: FileNodeType.file,
+        ),
+      ];
+      projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+          const FileContent(
+            path: '/repo/a/lib/main.dart',
+            content: 'original first\nsecond line\nthird line',
+            isBinary: false,
+          );
+      final fileOperations = FakeWorkspaceFileOperationsService(
+        capabilities: const WorkspaceFileOperationsCapabilities(
+          shellFileOpsSupported: true,
+          message: 'ok',
+        ),
+      );
+
+      final provider = _buildChatProvider(
+        chatRepository: chatRepository,
+        localDataSource: localDataSource,
+        projectRepository: projectRepository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, fileOperationsService: fileOperations),
+      );
+      await tester.pumpAndSettle();
+      await provider.loadSessions();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Editor Context').first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final editorFinder = find.byKey(
+        const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+      );
+      tester.widget<CodeEditor>(editorFinder).controller!.text =
+          'draft first\nsecond line\nthird line';
+      await tester.pump();
+
+      final gutterFinder = find.byKey(
+        const ValueKey<String>('file_editor_gutter_/repo/a/lib/main.dart'),
+      );
+      await tester.tapAt(tester.getTopLeft(gutterFinder) + const Offset(8, 12));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('file_viewer_selection_bar')),
+        findsOneWidget,
+      );
+      expect(find.text('1 line selected'), findsOneWidget);
+
+      await tester.tap(find.text('Add to chat'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_context_items_row')),
+        findsOneWidget,
+      );
+      expect(find.text('main.dart:1-1'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'use context');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pumpAndSettle();
+
+      final sentInput = chatRepository.lastSendInput;
+      expect(sentInput, isNotNull);
+      final sentTextPart = sentInput!.parts.whereType<TextInputPart>().single;
+      expect(sentTextPart.text, contains('use context'));
+      expect(sentTextPart.text, contains('`main.dart:1-1`'));
+      expect(sentTextPart.text, contains('draft first'));
+      expect(sentTextPart.text, isNot(contains('original first')));
+    },
+  );
+
+  testWidgets('file editor blocks closing dirty tabs', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_editor_dirty_close',
+        name: 'Project Editor Dirty Close',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_editor_dirty_close',
+          name: 'Project Editor Dirty Close',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void before() {}',
+          isBinary: false,
+        );
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+    );
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void dirty() {}';
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_close_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(editorFinder, findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_dirty_/repo/a/lib/main.dart'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Save changes before closing this file.'), findsWidgets);
+
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void before() {}';
+    await tester.pump();
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_close_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(editorFinder, findsNothing);
   });
 
   testWidgets('file tree right-click opens read-only context menu', (
@@ -6706,6 +7103,94 @@ void main() {
       find.byKey(const ValueKey<String>('file_tree_item_lib/renamed.dart')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('file tree rename blocks dirty relative editor drafts', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_relative_dirty_rename',
+        name: 'Project Files Relative Dirty Rename',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_relative_dirty_rename',
+          name: 'Project Files Relative Dirty Rename',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: 'lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['lib/main.dart'] = const FileContent(
+      path: 'lib/main.dart',
+      content: 'void before() {}',
+      isBinary: false,
+    );
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
+    );
+    await tester.pumpAndSettle();
+
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_lib/main.dart'),
+    );
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void dirty() {}';
+    await tester.pump();
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_rename')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.renameCallCount, 0);
+    expect(find.widgetWithText(TextButton, 'Rename'), findsNothing);
+    expect(find.text('Save changes before changing this path.'), findsWidgets);
   });
 
   testWidgets('file tree delete action confirms and refreshes a relative row', (
