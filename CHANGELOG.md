@@ -2,6 +2,15 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.168.0 - 2026-07-05
+
+- chore(agent): [Step 5/5] validate file editor delivery
+- chore(agent): [Step 4/5] document file editor write support
+- chore(agent): [Step 3/5] wire file editor save UX
+- chore(agent): [Step 2/5] add safe file write operation
+- chore(agent): [Step 1/5] add focused file editor
+- plan: implement focused file editor
+
 ## v1.167.0 - 2026-07-03
 
 - feat(project): auto-discover project icons
