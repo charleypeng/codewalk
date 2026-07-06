@@ -529,7 +529,9 @@
 - **Given** the active session already has cached messages visible
 - **When** background revalidation runs after project/session switch
 - **Then** the client first fetches a limited recent tail window (delta-like refresh) instead of full history
-- **Then** if the fetched tail has no safe overlap with local cache, the client immediately promotes that authoritative recent server tail, marks older history as incomplete, and automatically falls back to a full fetch to guarantee correctness
+- **Then** the fetched tail is merged non-regressively with the visible local timeline: completed or locally newer assistant content must not lose visible text, reasoning, terminal tool state, or completion status because of a shorter/stale snapshot
+- **Then** if the fetched tail has no safe overlap with local cache, the client immediately promotes the recent server tail plus a bounded safe local tail, marks older history as incomplete, and automatically falls back to a full fetch to guarantee correctness
+- **Then** explicit `message.removed` and `message.part.removed` realtime events remain authoritative over stale fallback or refresh snapshots, so recently removed messages/parts are not resurrected by delayed HTTP fetches
 
 ### Realtime event scope follows the active session
 
@@ -568,8 +570,10 @@
 - **Then** returning from background or focus with no new chat content restores a settled cached session to the latest assistant response and an active cached session to the bottom, without a second jump
 - **Then** if refreshed settled content arrives during resume revalidation, the queued cached restore waits for that refresh to finish and then reveals the newest assistant response once instead of bottom-snapping first
 - **Then** passive refreshes, realtime part updates, and status-only busy/retry reconciliation must not start a second auto-scroll owner while the active turn already owns the viewport
+- **Then** overlapping active-session refresh requests join the in-flight refresh instead of completing early, so resume/open viewport restoration waits for the actual message revalidation before it runs
 - **Then** a transient `idle` status pulse must not settle the current session while a send is still initializing or an assistant message remains incomplete locally
 - **Then** unsupported global `message.*` fallback reconcile must refresh the visible timeline only when the event explicitly targets the current session; unrelated sessions/projects may dirty caches and lists but must not move or settle the visible chat
+- **Then** duplicate `message.*` events from the session and global SSE streams are deduplicated regardless of which stream arrives first, while distinct payload mutations for the same message/part id are still applied
 - **Then** reopening a cached session does not replay old-history entrance/loading motion before newer delta content is merged
 
 ### Older history loads on demand at top reach
