@@ -299,6 +299,14 @@ extension _ChatProviderEventReducerHelpers on ChatProvider {
   bool _isRecentlyProcessedEvent(ChatEvent event) {
     final key = _composeEventDeduplicationKey(event);
     if (key == null) return false;
+    return _recentEventIds.contains(key);
+  }
+
+  /// Claims this event for processing and returns true when it was already
+  /// claimed by the paired session/global stream.
+  bool _claimRecentlyProcessedEvent(ChatEvent event) {
+    final key = _composeEventDeduplicationKey(event);
+    if (key == null) return false;
     if (_recentEventIds.contains(key)) return true;
     _recentEventIds.addLast(key);
     if (_recentEventIds.length > ChatProvider._maxRecentEventIds) {

@@ -105,6 +105,30 @@ extension ChatProviderLifecycleOps on ChatProvider {
     if (session == null) {
       return;
     }
+
+    while (true) {
+      final activeTask = _activeSessionRefreshTask;
+      if (activeTask == null) {
+        break;
+      }
+      final activeSessionId = _activeSessionRefreshSessionId;
+      _traceFinal(
+        'refresh-active-join-inflight',
+        sessionId: session.id,
+        details: 'reason=$reason activeSession=${activeSessionId ?? '-'}',
+      );
+      await activeTask;
+      if (_currentSession?.id != session.id) {
+        return;
+      }
+      if (activeSessionId == session.id) {
+        if (includeStatus) {
+          await refreshSessionStatusSnapshot();
+        }
+        return;
+      }
+    }
+
     // During abort suppression, polling already delivered fresh data.
     // Loading from server risks showing stale abort content that the
     // suppression window is designed to hide.
@@ -121,11 +145,46 @@ extension ChatProviderLifecycleOps on ChatProvider {
       );
       return;
     }
-    if (_activeSessionRefreshInFlight) {
-      return;
+
+    late final Future<bool> refreshTask;
+    refreshTask = _runActiveSessionViewRefresh(
+      session: session,
+      reason: reason,
+      includeStatus: includeStatus,
+      allowDuringAbortSuppression: allowDuringAbortSuppression,
+      preferDelta: preferDelta,
+    );
+    _activeSessionRefreshTask = refreshTask;
+    _activeSessionRefreshSessionId = session.id;
+    var fallbackToFullFetch = false;
+    try {
+      fallbackToFullFetch = await refreshTask;
+    } finally {
+      if (identical(_activeSessionRefreshTask, refreshTask)) {
+        _activeSessionRefreshTask = null;
+        _activeSessionRefreshSessionId = null;
+      }
     }
 
-    _activeSessionRefreshInFlight = true;
+    if (fallbackToFullFetch && _currentSession?.id == session.id) {
+      unawaited(
+        refreshActiveSessionView(
+          reason: '$reason:delta-fallback',
+          includeStatus: false,
+          allowDuringAbortSuppression: allowDuringAbortSuppression,
+          preferDelta: false,
+        ),
+      );
+    }
+  }
+
+  Future<bool> _runActiveSessionViewRefresh({
+    required ChatSession session,
+    required String reason,
+    required bool includeStatus,
+    required bool allowDuringAbortSuppression,
+    required bool preferDelta,
+  }) async {
     _traceFinal(
       'refresh-active-start',
       sessionId: session.id,
@@ -247,7 +306,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
         await refreshSessionStatusSnapshot();
       }
     } finally {
-      _activeSessionRefreshInFlight = false;
       _traceFinal(
         'refresh-active-finished',
         sessionId: session.id,
@@ -255,16 +313,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
       );
     }
 
-    if (fallbackToFullFetch && _currentSession?.id == session.id) {
-      unawaited(
-        refreshActiveSessionView(
-          reason: '$reason:delta-fallback',
-          includeStatus: false,
-          allowDuringAbortSuppression: allowDuringAbortSuppression,
-          preferDelta: false,
-        ),
-      );
-    }
+    return fallbackToFullFetch;
   }
 
   // Warmup providers refresh.

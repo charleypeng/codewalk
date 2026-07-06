@@ -563,6 +563,203 @@ void main() {
     );
 
     test(
+      'session stream skips exact duplicate after global message update',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled();
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_global_first_duplicate',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_global_first_duplicate',
+                messageId: 'msg_global_first_duplicate',
+                sessionId: 'ses_1',
+                text: 'Already fetched',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () =>
+              provider.debugHasRealtimeEventSubscription &&
+              provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected both session and global streams before exact duplicate dedupe regression.',
+        );
+        chatRepository.getMessageCallCount = 0;
+
+        const event = ChatEvent(
+          type: 'message.updated',
+          properties: <String, dynamic>{
+            'info': <String, dynamic>{
+              'id': 'msg_global_first_duplicate',
+              'sessionID': 'ses_1',
+            },
+          },
+        );
+        chatRepository.emitGlobalEvent(event);
+        await settleUntil(
+          () => chatRepository.getMessageCallCount == 1,
+          reason: 'Expected global stream update to fetch the message once.',
+        );
+
+        chatRepository.emitEvent(event);
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(chatRepository.getMessageCallCount, 1);
+      },
+    );
+
+    test(
+      'stale fallback does not resurrect an explicitly removed message',
+      () async {
+        final removedMessage = AssistantMessage(
+          id: 'msg_removed_fallback',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_removed_fallback',
+              messageId: 'msg_removed_fallback',
+              sessionId: 'ses_1',
+              text: 'Removed answer',
+            ),
+          ],
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          removedMessage,
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        expect(provider.messages.single.id, removedMessage.id);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.removed',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'messageID': 'msg_removed_fallback',
+            },
+          ),
+        );
+        await settleUntil(
+          () => provider.messages.isEmpty,
+          reason: 'Expected explicit removal to clear the visible message.',
+        );
+
+        chatRepository.getMessageCallCount = 0;
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          removedMessage,
+        ];
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.updated',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'id': 'msg_removed_fallback',
+                'sessionID': 'ses_1',
+              },
+            },
+          ),
+        );
+        await settleUntil(
+          () => chatRepository.getMessageCallCount == 1,
+          reason: 'Expected stale update to attempt one fallback fetch.',
+        );
+
+        expect(provider.messages, isEmpty);
+      },
+    );
+
+    test('stale fallback preserves explicit part removal', () async {
+      final messageWithRemovedPart = AssistantMessage(
+        id: 'msg_removed_part_fallback',
+        sessionId: 'ses_1',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_kept_after_part_removal',
+            messageId: 'msg_removed_part_fallback',
+            sessionId: 'ses_1',
+            text: 'Kept text',
+          ),
+          TextPart(
+            id: 'prt_removed_part_fallback',
+            messageId: 'msg_removed_part_fallback',
+            sessionId: 'ses_1',
+            text: 'Removed stale text',
+          ),
+        ],
+      );
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        messageWithRemovedPart,
+      ];
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.refresh();
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'message.part.removed',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_1',
+            'messageID': 'msg_removed_part_fallback',
+            'partID': 'prt_removed_part_fallback',
+          },
+        ),
+      );
+      await settleUntil(
+        () => (provider.messages.single.parts)
+            .where((part) => part.id == 'prt_removed_part_fallback')
+            .isEmpty,
+        reason: 'Expected explicit part removal to update the visible message.',
+      );
+
+      chatRepository.getMessageCallCount = 0;
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        messageWithRemovedPart,
+      ];
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'message.updated',
+          properties: <String, dynamic>{
+            'info': <String, dynamic>{
+              'id': 'msg_removed_part_fallback',
+              'sessionID': 'ses_1',
+            },
+          },
+        ),
+      );
+      await settleUntil(
+        () => chatRepository.getMessageCallCount == 1,
+        reason: 'Expected stale part update to attempt one fallback fetch.',
+      );
+
+      final refreshed = provider.messages.single as AssistantMessage;
+      expect(
+        refreshed.parts.map((part) => part.id),
+        isNot(contains('prt_removed_part_fallback')),
+      );
+    });
+
+    test(
       'aggressive data saver applies active part deltas without session id',
       () async {
         final dataSaverService = CellularDataSaverService.disabled()

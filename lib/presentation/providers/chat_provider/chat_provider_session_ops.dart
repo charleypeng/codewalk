@@ -47,6 +47,10 @@ extension _ChatProviderSessionOps on ChatProvider {
     _consecutiveRealtimeFailures = 0;
     _dismissedInteractionTombstones.clear();
     _dedupeNextDeltaFieldKeys.clear();
+    _recentRemovedMessageKeys.clear();
+    _recentRemovedMessageKeySet.clear();
+    _recentRemovedPartKeys.clear();
+    _recentRemovedPartKeySet.clear();
     _hasLoadedSessionsAuthoritatively = false;
     _lastRealtimeSignalAt = null;
     _degradedMode = false;

@@ -332,7 +332,8 @@ class ChatProvider extends ChangeNotifier {
   String? _sessionInsightsError;
   final Set<String> _pendingLocalUserMessageIds = <String>{};
   int _localMessageIdSequence = 0;
-  bool _activeSessionRefreshInFlight = false;
+  Future<void>? _activeSessionRefreshTask;
+  String? _activeSessionRefreshSessionId;
   bool _isLoadingOlderMessages = false;
   bool _hasMoreOldMessages = false;
   // Tracks an existing selected session whose timeline is still hydrating.
@@ -458,6 +459,11 @@ class ChatProvider extends ChangeNotifier {
   // from re-processing events already handled by the session stream.
   final Queue<String> _recentEventIds = Queue<String>();
   static const int _maxRecentEventIds = 256;
+  final Queue<String> _recentRemovedMessageKeys = Queue<String>();
+  final Set<String> _recentRemovedMessageKeySet = <String>{};
+  final Queue<String> _recentRemovedPartKeys = Queue<String>();
+  final Set<String> _recentRemovedPartKeySet = <String>{};
+  static const int _maxRecentRemovalKeys = 256;
   final Set<String> _dedupeNextDeltaFieldKeys = <String>{};
   final Map<String, int> _messageLocalDeltaVersionById = <String, int>{};
   static const int _maxMessageLocalDeltaVersions = 200;

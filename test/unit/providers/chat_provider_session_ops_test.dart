@@ -1300,6 +1300,48 @@ void main() {
       },
     );
 
+    test('refreshActiveSessionView joins an in-flight refresh', () async {
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      chatRepository.getMessagesCallCount = 0;
+
+      final firstRequestStarted = Completer<void>();
+      final releaseFirstRequest = Completer<void>();
+      chatRepository.getMessagesDelay = () async {
+        if (!firstRequestStarted.isCompleted) {
+          firstRequestStarted.complete();
+        }
+        await releaseFirstRequest.future;
+      };
+
+      final firstRefresh = provider.refreshActiveSessionView(
+        reason: 'first-refresh',
+        includeStatus: false,
+      );
+      await firstRequestStarted.future;
+
+      var secondCompleted = false;
+      final secondRefresh = provider
+          .refreshActiveSessionView(
+            reason: 'second-refresh',
+            includeStatus: false,
+          )
+          .then((_) {
+            secondCompleted = true;
+          });
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(secondCompleted, isFalse);
+      expect(chatRepository.getMessagesCallCount, 1);
+
+      releaseFirstRequest.complete();
+      await firstRefresh;
+      await secondRefresh;
+
+      expect(secondCompleted, isTrue);
+      expect(chatRepository.getMessagesCallCount, 1);
+    });
+
     test(
       'refreshActiveSessionView preserves completed assistant content against shorter same-id snapshot',
       () async {

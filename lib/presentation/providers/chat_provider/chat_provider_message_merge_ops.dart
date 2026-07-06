@@ -80,27 +80,36 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         );
       },
       (message) {
-        final isAssistant = message is AssistantMessage;
+        if (_isRecentlyRemovedMessage(sessionId, message.id)) {
+          _traceFinal(
+            'fetch-message-fallback-skipped-removed-message',
+            sessionId: sessionId,
+            details: 'messageId=${message.id}',
+          );
+          return;
+        }
+        final resolvedMessage = _withoutRecentlyRemovedParts(message);
+        final isAssistant = resolvedMessage is AssistantMessage;
         final isCompleted = isAssistant
-            ? (message as AssistantMessage).isCompleted
+            ? (resolvedMessage as AssistantMessage).isCompleted
             : false;
         _traceFinal(
           'fetch-message-fallback-success',
           sessionId: sessionId,
           details:
-              'messageId=${message.id} role=${message.role.name} assistantCompleted=$isCompleted applyToCurrentSession=$applyToCurrentSession',
+              'messageId=${resolvedMessage.id} role=${resolvedMessage.role.name} assistantCompleted=$isCompleted applyToCurrentSession=$applyToCurrentSession',
         );
         if (applyToCurrentSession && _currentSession?.id == sessionId) {
           final existingIndex = _messages.indexWhere(
-            (item) => item.id == message.id,
+            (item) => item.id == resolvedMessage.id,
           );
           final currentLocalDeltaVersion = _messageLocalDeltaVersion(
-            message.id,
+            resolvedMessage.id,
           );
           if (existingIndex != -1 &&
               currentLocalDeltaVersion > scheduledLocalDeltaVersion) {
             final completionMerged = _mergeCompletionStatusOnly(
-              message,
+              resolvedMessage,
               existingIndex,
             );
             _traceFinal(
@@ -109,33 +118,34 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
                   : 'fetch-message-fallback-skipped-stale-content',
               sessionId: sessionId,
               details:
-                  'messageId=${message.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
+                  'messageId=${resolvedMessage.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
             );
             return;
           }
-          _updateOrAddMessage(message);
+          _updateOrAddMessage(resolvedMessage);
           _traceFinal(
             'fetch-message-fallback-applied-current',
             sessionId: sessionId,
-            details: 'messageId=${message.id}',
+            details: 'messageId=${resolvedMessage.id}',
           );
         } else {
           final cached =
               _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
           final next = List<ChatMessage>.from(cached);
           final existingIndex = next.indexWhere(
-            (item) => item.id == message.id,
+            (item) => item.id == resolvedMessage.id,
           );
           final currentLocalDeltaVersion = _messageLocalDeltaVersion(
-            message.id,
+            resolvedMessage.id,
           );
           if (existingIndex != -1 &&
               currentLocalDeltaVersion > scheduledLocalDeltaVersion) {
             final existing = next[existingIndex];
-            if (existing is AssistantMessage && message is AssistantMessage) {
+            if (existing is AssistantMessage &&
+                resolvedMessage is AssistantMessage) {
               final merged = _mergeAssistantCompletionMetadataOnly(
                 existing: existing,
-                incoming: message,
+                incoming: resolvedMessage,
               );
               if (merged != null) {
                 next[existingIndex] = merged;
@@ -147,7 +157,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
                   'fetch-message-fallback-merged-cache-completion-only',
                   sessionId: sessionId,
                   details:
-                      'messageId=${message.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
+                      'messageId=${resolvedMessage.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
                 );
                 return;
               }
@@ -156,18 +166,19 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
               'fetch-message-fallback-skipped-stale-cache-content',
               sessionId: sessionId,
               details:
-                  'messageId=${message.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
+                  'messageId=${resolvedMessage.id} scheduledVersion=$scheduledLocalDeltaVersion currentVersion=$currentLocalDeltaVersion',
             );
             return;
           }
           if (existingIndex == -1) {
-            next.add(message);
+            next.add(resolvedMessage);
           } else {
             final existing = next[existingIndex];
             next[existingIndex] =
-                existing is AssistantMessage && message is AssistantMessage
-                ? _mergeAssistantMessageUpdate(existing, message)
-                : message;
+                existing is AssistantMessage &&
+                    resolvedMessage is AssistantMessage
+                ? _mergeAssistantMessageUpdate(existing, resolvedMessage)
+                : resolvedMessage;
           }
           next.sort((a, b) => a.time.compareTo(b.time));
           _cacheSessionMessages(sessionId, next);
@@ -175,7 +186,8 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           _traceFinal(
             'fetch-message-fallback-applied-cache',
             sessionId: sessionId,
-            details: 'messageId=${message.id} cachedCount=${next.length}',
+            details:
+                'messageId=${resolvedMessage.id} cachedCount=${next.length}',
           );
         }
       },
@@ -581,8 +593,15 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     List<ChatMessage> serverMessages, {
     required String sessionId,
   }) {
+    final serverMessagesForMerge = serverMessages
+        .where(
+          (message) =>
+              !_isRecentlyRemovedMessage(message.sessionId, message.id),
+        )
+        .map(_withoutRecentlyRemovedParts)
+        .toList(growable: false);
     final (:messages, :reconciledLocalIds) =
-        _mergeServerMessagesWithPendingLocalUsers(serverMessages);
+        _mergeServerMessagesWithPendingLocalUsers(serverMessagesForMerge);
     final merged = messages;
     final localMessages = _messages
         .where((message) => message.sessionId == sessionId)

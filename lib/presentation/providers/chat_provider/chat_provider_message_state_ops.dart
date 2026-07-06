@@ -66,6 +66,83 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     _dedupeNextDeltaFieldKeys.add(key);
   }
 
+  String _removedMessageKey(String sessionId, String messageId) {
+    return '${sessionId.trim()}::${messageId.trim()}';
+  }
+
+  String _removedPartKey(String sessionId, String messageId, String partId) {
+    return '${sessionId.trim()}::${messageId.trim()}::${partId.trim()}';
+  }
+
+  void _rememberRecentRemoval({
+    required String key,
+    required Queue<String> queue,
+    required Set<String> set,
+  }) {
+    if (key.trim().isEmpty || !set.add(key)) {
+      return;
+    }
+    queue.addLast(key);
+    while (queue.length > ChatProvider._maxRecentRemovalKeys) {
+      set.remove(queue.removeFirst());
+    }
+  }
+
+  void _rememberRemovedMessage(String sessionId, String messageId) {
+    if (sessionId.trim().isEmpty || messageId.trim().isEmpty) {
+      return;
+    }
+    final key = _removedMessageKey(sessionId, messageId);
+    _rememberRecentRemoval(
+      key: key,
+      queue: _recentRemovedMessageKeys,
+      set: _recentRemovedMessageKeySet,
+    );
+    _messageFallbackDebounceById.remove(messageId)?.cancel();
+  }
+
+  void _rememberRemovedPart(String sessionId, String messageId, String partId) {
+    if (sessionId.trim().isEmpty ||
+        messageId.trim().isEmpty ||
+        partId.trim().isEmpty) {
+      return;
+    }
+    _rememberRecentRemoval(
+      key: _removedPartKey(sessionId, messageId, partId),
+      queue: _recentRemovedPartKeys,
+      set: _recentRemovedPartKeySet,
+    );
+  }
+
+  bool _isRecentlyRemovedMessage(String sessionId, String messageId) {
+    return _recentRemovedMessageKeySet.contains(
+      _removedMessageKey(sessionId, messageId),
+    );
+  }
+
+  bool _isRecentlyRemovedPart(
+    String sessionId,
+    String messageId,
+    String partId,
+  ) {
+    return _recentRemovedPartKeySet.contains(
+      _removedPartKey(sessionId, messageId, partId),
+    );
+  }
+
+  ChatMessage _withoutRecentlyRemovedParts(ChatMessage message) {
+    final nextParts = message.parts
+        .where(
+          (part) =>
+              !_isRecentlyRemovedPart(message.sessionId, message.id, part.id),
+        )
+        .toList(growable: false);
+    if (nextParts.length == message.parts.length) {
+      return message;
+    }
+    return _copyMessageWithParts(message, nextParts);
+  }
+
   ChatMessage _copyMessageWithParts(
     ChatMessage message,
     List<MessagePart> parts,

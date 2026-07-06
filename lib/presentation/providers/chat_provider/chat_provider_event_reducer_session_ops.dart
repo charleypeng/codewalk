@@ -23,13 +23,10 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
 
   void _applyChatEventInner(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
-    // Register event in dedup buffer so the global stream skips duplicates.
-    final dedupKey = _composeEventDeduplicationKey(event);
-    if (dedupKey != null && !_recentEventIds.contains(dedupKey)) {
-      _recentEventIds.addLast(dedupKey);
-      if (_recentEventIds.length > ChatProvider._maxRecentEventIds) {
-        _recentEventIds.removeFirst();
-      }
+    // Claim the event in the shared dedup buffer so the paired session/global
+    // stream skips exact duplicates regardless of which stream arrives first.
+    if (_claimRecentlyProcessedEvent(event)) {
+      return;
     }
     final eventSessionId = _effectiveEventSessionIdForEvent(event);
     if (_shouldSuppressAggressiveDataSaverEvent(event, eventSessionId)) {
@@ -721,6 +718,7 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
             _currentSession?.id != sessionId) {
           break;
         }
+        _rememberRemovedPart(sessionId, messageId, partId);
         final messageIndex = _messages.indexWhere(
           (item) => item.id == messageId,
         );
@@ -746,6 +744,7 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
             _currentSession?.id != sessionId) {
           break;
         }
+        _rememberRemovedMessage(sessionId, messageId);
         final removedIndex = _messages.indexWhere(
           (item) => item.id == messageId,
         );
