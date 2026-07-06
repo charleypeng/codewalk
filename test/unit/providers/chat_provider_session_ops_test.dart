@@ -1829,129 +1829,124 @@ void main() {
       },
     );
 
-  // ADR-023 regression coverage for /session/{id}/diff handling. The official
-  // upstream SessionSummary.diff returns [] when messageID is omitted, so
-  // CodeWalk must always scope the call to a server-confirmed user turn.
-  group('ChatProvider - diff (ADR-023)', () {
-    test(
-      'loadSessionInsights targets the latest server-confirmed user message',
-      () async {
-        final session = ChatSession(
-          id: 'ses_diff_adr_1',
-          workspaceId: 'default',
-          time: DateTime.fromMillisecondsSinceEpoch(1000),
-          title: 'Diff ADR 1',
-        );
-        chatRepository.sessions.add(session);
-        chatRepository.messagesBySession[session.id] = <ChatMessage>[
-          UserMessage(
-            id: 'msg_user_diff_1',
-            sessionId: 'ses_diff_adr_1',
-            time: DateTime.fromMillisecondsSinceEpoch(1500),
-            parts: <MessagePart>[
-              TextPart(
-                id: 'prt_diff_1',
-                messageId: 'msg_user_diff_1',
-                sessionId: 'ses_diff_adr_1',
-                text: 'edit',
-              ),
-            ],
-          ),
-        ];
-        chatRepository.sessionDiffById[session.id] = const <SessionDiff>[
-          SessionDiff(
-            file: 'lib/main.dart',
-            before: 'old',
-            after: 'new',
-            additions: 1,
-            deletions: 1,
-            status: 'modified',
-          ),
-        ];
-        await provider.selectSession(session);
-        // Let the unawaited selectSession -> loadSessionInsights settle.
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        chatRepository.getSessionDiffCallCount = 0;
-        chatRepository.lastGetSessionDiffMessageId = null;
+    // ADR-023 regression coverage for /session/{id}/diff handling. The official
+    // upstream SessionSummary.diff returns [] when messageID is omitted, so
+    // CodeWalk must always scope the call to a server-confirmed user turn.
+    group('ChatProvider - diff (ADR-023)', () {
+      test(
+        'loadSessionInsights targets the latest server-confirmed user message',
+        () async {
+          final session = ChatSession(
+            id: 'ses_diff_adr_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Diff ADR 1',
+          );
+          chatRepository.sessions.add(session);
+          chatRepository.messagesBySession[session.id] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_user_diff_1',
+              sessionId: 'ses_diff_adr_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1500),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'prt_diff_1',
+                  messageId: 'msg_user_diff_1',
+                  sessionId: 'ses_diff_adr_1',
+                  text: 'edit',
+                ),
+              ],
+            ),
+          ];
+          chatRepository.sessionDiffById[session.id] = const <SessionDiff>[
+            SessionDiff(
+              file: 'lib/main.dart',
+              before: 'old',
+              after: 'new',
+              additions: 1,
+              deletions: 1,
+              status: 'modified',
+            ),
+          ];
+          await provider.selectSession(session);
+          // Let the unawaited selectSession -> loadSessionInsights settle.
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          chatRepository.getSessionDiffCallCount = 0;
+          chatRepository.lastGetSessionDiffMessageId = null;
 
-        await provider.loadSessionInsights(session.id, userInitiated: true);
+          await provider.loadSessionInsights(session.id, userInitiated: true);
 
-        // Critical: the resolver must have forwarded a non-null messageId
-        // to the datasource so the upstream summary.diff call returns the
-        // real diff instead of an empty list.
-        expect(chatRepository.getSessionDiffCallCount, 1);
-        expect(chatRepository.lastGetSessionDiffMessageId, 'msg_user_diff_1');
-        expect(provider.currentSessionDiff, hasLength(1));
-        expect(provider.isCurrentSessionDiffLoaded, isTrue);
-        expect(provider.currentSessionDiffError, isNull);
-      },
-    );
+          // Critical: the resolver must have forwarded a non-null messageId
+          // to the datasource so the upstream summary.diff call returns the
+          // real diff instead of an empty list.
+          expect(chatRepository.getSessionDiffCallCount, 1);
+          expect(chatRepository.lastGetSessionDiffMessageId, 'msg_user_diff_1');
+          expect(provider.currentSessionDiff, hasLength(1));
+          expect(provider.isCurrentSessionDiffLoaded, isTrue);
+          expect(provider.currentSessionDiffError, isNull);
+        },
+      );
 
-    test(
-      'automatic empty diff refresh does not clear a known-good diff',
-      () async {
-        final session = ChatSession(
-          id: 'ses_diff_adr_2',
-          workspaceId: 'default',
-          time: DateTime.fromMillisecondsSinceEpoch(1000),
-          title: 'Diff ADR 2',
-        );
-        chatRepository.sessions.add(session);
-        chatRepository.messagesBySession[session.id] = <ChatMessage>[
-          UserMessage(
-            id: 'msg_user_diff_2',
-            sessionId: 'ses_diff_adr_2',
-            time: DateTime.fromMillisecondsSinceEpoch(1500),
-            parts: <MessagePart>[
-              TextPart(
-                id: 'prt_diff_2',
-                messageId: 'msg_user_diff_2',
-                sessionId: 'ses_diff_adr_2',
-                text: 'edit',
-              ),
-            ],
-          ),
-        ];
+      test(
+        'automatic empty diff refresh does not clear a known-good diff',
+        () async {
+          final session = ChatSession(
+            id: 'ses_diff_adr_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Diff ADR 2',
+          );
+          chatRepository.sessions.add(session);
+          chatRepository.messagesBySession[session.id] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_user_diff_2',
+              sessionId: 'ses_diff_adr_2',
+              time: DateTime.fromMillisecondsSinceEpoch(1500),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'prt_diff_2',
+                  messageId: 'msg_user_diff_2',
+                  sessionId: 'ses_diff_adr_2',
+                  text: 'edit',
+                ),
+              ],
+            ),
+          ];
 
-        // First, populate the diff cache via a successful scoped call.
-        chatRepository.sessionDiffById[session.id] = const <SessionDiff>[
-          SessionDiff(
-            file: 'lib/main.dart',
-            before: 'old',
-            after: 'new',
-            additions: 1,
-            deletions: 1,
-            status: 'modified',
-          ),
-        ];
-        await provider.selectSession(session);
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        expect(provider.currentSessionDiff, hasLength(1));
+          // First, populate the diff cache via a successful scoped call.
+          chatRepository.sessionDiffById[session.id] = const <SessionDiff>[
+            SessionDiff(
+              file: 'lib/main.dart',
+              before: 'old',
+              after: 'new',
+              additions: 1,
+              deletions: 1,
+              status: 'modified',
+            ),
+          ];
+          await provider.selectSession(session);
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          expect(provider.currentSessionDiff, hasLength(1));
 
-        // Now simulate an automatic refresh that returns no diff (e.g. the
-        // latest server-confirmed turn produced no file changes).
-        chatRepository.sessionDiffById[session.id] = const <SessionDiff>[];
-        chatRepository.getSessionDiffCallCount = 0;
-        chatRepository.lastGetSessionDiffMessageId = null;
-        await provider.loadSessionInsights(session.id, silent: true);
+          // Now simulate an automatic refresh that returns no diff (e.g. the
+          // latest server-confirmed turn produced no file changes).
+          chatRepository.sessionDiffById[session.id] = const <SessionDiff>[];
+          chatRepository.getSessionDiffCallCount = 0;
+          chatRepository.lastGetSessionDiffMessageId = null;
+          await provider.loadSessionInsights(session.id, silent: true);
 
-        // The call MUST have used a messageId, otherwise upstream returns
-        // [] and the bug is unfixed.
-        expect(chatRepository.getSessionDiffCallCount, 1);
-        expect(chatRepository.lastGetSessionDiffMessageId, 'msg_user_diff_2');
-        // Existing non-empty diff must be preserved.
-        expect(provider.currentSessionDiff, hasLength(1));
-        expect(
-          provider.currentSessionDiff.single.file,
-          'lib/main.dart',
-        );
-      },
-    );
+          // The call MUST have used a messageId, otherwise upstream returns
+          // [] and the bug is unfixed.
+          expect(chatRepository.getSessionDiffCallCount, 1);
+          expect(chatRepository.lastGetSessionDiffMessageId, 'msg_user_diff_2');
+          // Existing non-empty diff must be preserved.
+          expect(provider.currentSessionDiff, hasLength(1));
+          expect(provider.currentSessionDiff.single.file, 'lib/main.dart');
+        },
+      );
 
-    test(
-      'review-changes exhaustive scan clears the diff only when every '
-      'eligible turn returns empty',
-      () async {
+      test('review-changes exhaustive scan clears the diff only when every '
+          'eligible turn returns empty', () async {
         final session = ChatSession(
           id: 'ses_diff_adr_3',
           workspaceId: 'default',
@@ -2023,85 +2018,81 @@ void main() {
         // produced no changes.
         expect(provider.currentSessionDiff, isNotEmpty);
         expect(provider.isCurrentSessionDiffLoaded, isTrue);
-      },
-    );
+      });
 
-    test(
-      'loadSessionInsights marks loaded-empty when no user turn exists yet',
-      () async {
-        final session = ChatSession(
-          id: 'ses_diff_adr_4',
-          workspaceId: 'default',
-          time: DateTime.fromMillisecondsSinceEpoch(1000),
-          title: 'Diff ADR 4',
-        );
-        chatRepository.sessions.add(session);
-        // No UserMessage is seeded.
-        chatRepository.sessionDiffById[session.id] = const <SessionDiff>[
-          SessionDiff(
-            file: 'lib/main.dart',
-            before: 'old',
-            after: 'new',
-            additions: 1,
-            deletions: 1,
-            status: 'modified',
-          ),
-        ];
-        await provider.selectSession(session);
-        await Future<void>.delayed(const Duration(milliseconds: 30));
+      test(
+        'loadSessionInsights marks loaded-empty when no user turn exists yet',
+        () async {
+          final session = ChatSession(
+            id: 'ses_diff_adr_4',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Diff ADR 4',
+          );
+          chatRepository.sessions.add(session);
+          // No UserMessage is seeded.
+          chatRepository.sessionDiffById[session.id] = const <SessionDiff>[
+            SessionDiff(
+              file: 'lib/main.dart',
+              before: 'old',
+              after: 'new',
+              additions: 1,
+              deletions: 1,
+              status: 'modified',
+            ),
+          ];
+          await provider.selectSession(session);
+          await Future<void>.delayed(const Duration(milliseconds: 30));
 
-        await provider.loadSessionInsights(
-          session.id,
-          userInitiated: true,
-        );
+          await provider.loadSessionInsights(session.id, userInitiated: true);
 
-        // The provider should not call the REST diff endpoint when there
-        // is no server-confirmed user turn to scope it to, and the UI
-        // state should reflect a definitive "loaded empty" result for
-        // the user-initiated path.
-        expect(chatRepository.getSessionDiffCallCount, 0);
-        expect(provider.isCurrentSessionDiffLoaded, isTrue);
-        expect(provider.currentSessionDiff, isEmpty);
-      },
-    );
+          // The provider should not call the REST diff endpoint when there
+          // is no server-confirmed user turn to scope it to, and the UI
+          // state should reflect a definitive "loaded empty" result for
+          // the user-initiated path.
+          expect(chatRepository.getSessionDiffCallCount, 0);
+          expect(provider.isCurrentSessionDiffLoaded, isTrue);
+          expect(provider.currentSessionDiff, isEmpty);
+        },
+      );
 
-    test(
-      'loadSessionInsights latches an error when the diff request fails',
-      () async {
-        final session = ChatSession(
-          id: 'ses_diff_adr_5',
-          workspaceId: 'default',
-          time: DateTime.fromMillisecondsSinceEpoch(1000),
-          title: 'Diff ADR 5',
-        );
-        chatRepository.sessions.add(session);
-        chatRepository.messagesBySession[session.id] = <ChatMessage>[
-          UserMessage(
-            id: 'msg_user_diff_err',
-            sessionId: 'ses_diff_adr_5',
-            time: DateTime.fromMillisecondsSinceEpoch(1500),
-            parts: <MessagePart>[
-              TextPart(
-                id: 'prt_diff_err',
-                messageId: 'msg_user_diff_err',
-                sessionId: 'ses_diff_adr_5',
-                text: 'edit',
-              ),
-            ],
-          ),
-        ];
-        await provider.selectSession(session);
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-        chatRepository.sessionDiffFailure = const NetworkFailure('offline');
+      test(
+        'loadSessionInsights latches an error when the diff request fails',
+        () async {
+          final session = ChatSession(
+            id: 'ses_diff_adr_5',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Diff ADR 5',
+          );
+          chatRepository.sessions.add(session);
+          chatRepository.messagesBySession[session.id] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_user_diff_err',
+              sessionId: 'ses_diff_adr_5',
+              time: DateTime.fromMillisecondsSinceEpoch(1500),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'prt_diff_err',
+                  messageId: 'msg_user_diff_err',
+                  sessionId: 'ses_diff_adr_5',
+                  text: 'edit',
+                ),
+              ],
+            ),
+          ];
+          await provider.selectSession(session);
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          chatRepository.sessionDiffFailure = const NetworkFailure('offline');
 
-        await provider.loadSessionInsights(session.id, userInitiated: true);
+          await provider.loadSessionInsights(session.id, userInitiated: true);
 
-        // A failure does not advance the loaded-state bookkeeping — the
-        // error is latched instead so the UI can surface it.
-        expect(provider.currentSessionDiff, isEmpty);
-        expect(provider.currentSessionDiffError, 'offline');
-      },
-    );
-  });
+          // A failure does not advance the loaded-state bookkeeping — the
+          // error is latched instead so the UI can surface it.
+          expect(provider.currentSessionDiff, isEmpty);
+          expect(provider.currentSessionDiffError, 'offline');
+        },
+      );
+    });
   });
 }

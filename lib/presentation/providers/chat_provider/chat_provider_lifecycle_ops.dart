@@ -143,7 +143,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
       final cachedMessages = List<ChatMessage>.from(
         _messages.where((message) => message.sessionId == session.id),
       );
-      final previousLatestSessionMessage = cachedMessages.lastOrNull;
       final canUseDelta = preferDelta && cachedMessages.isNotEmpty;
       final messagesResult = await getChatMessages(
         GetChatMessagesParams(
@@ -237,19 +236,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
             unawaited(
               _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
             );
-          }
-          final sessionStatusType = _sessionStatusById[session.id]?.type;
-          final hasBusyRefreshStatus =
-              sessionStatusType == SessionStatusType.busy ||
-              sessionStatusType == SessionStatusType.retry;
-          final latestSessionMessage = _messages.lastOrNull;
-          final latestSessionMessageChanged =
-              latestSessionMessage != previousLatestSessionMessage;
-          if (!_isCompactingContext &&
-              latestSessionMessageChanged &&
-              !hasBusyRefreshStatus &&
-              !isSessionActivelyResponding(session.id)) {
-            _scheduleScrollToBottom(reason: 'refresh-active-session-view');
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {
             fallbackToFullFetch = true;

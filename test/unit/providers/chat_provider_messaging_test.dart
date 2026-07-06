@@ -1576,8 +1576,8 @@ void main() {
         final visibleFinal = AssistantMessage(
           id: 'msg_visible_final_tail',
           sessionId: sessionId,
-          time: DateTime.fromMillisecondsSinceEpoch(5000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(5100),
+          time: DateTime.fromMillisecondsSinceEpoch(20000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(20100),
           parts: const <MessagePart>[
             TextPart(
               id: 'part_visible_final_tail',

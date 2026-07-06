@@ -163,7 +163,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           if (existingIndex == -1) {
             next.add(message);
           } else {
-            next[existingIndex] = message;
+            final existing = next[existingIndex];
+            next[existingIndex] =
+                existing is AssistantMessage && message is AssistantMessage
+                ? _mergeAssistantMessageUpdate(existing, message)
+                : message;
           }
           next.sort((a, b) => a.time.compareTo(b.time));
           _cacheSessionMessages(sessionId, next);
@@ -353,6 +357,50 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     return (messages: merged, reconciledLocalIds: reconciledLocalIds);
   }
 
+  bool _hasVisibleAssistantContent(AssistantMessage message) {
+    if (message.parts.isEmpty) {
+      return message.isCompleted;
+    }
+    for (final part in message.parts) {
+      if (part is TextPart && part.text.trim().isNotEmpty) {
+        return true;
+      }
+      if (part is ReasoningPart && part.text.trim().isNotEmpty) {
+        return true;
+      }
+      if (part is ToolPart && _isTerminalToolState(part.state)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _shouldPreserveSettledLocalTailMessage({
+    required ChatMessage message,
+    required DateTime? latestServerTime,
+  }) {
+    if (message is! AssistantMessage) {
+      return false;
+    }
+    if (!message.isCompleted || !_hasVisibleAssistantContent(message)) {
+      return false;
+    }
+    if (latestServerTime == null) {
+      return true;
+    }
+    return !message.time.isBefore(latestServerTime);
+  }
+
+  DateTime? _latestMessageTime(List<ChatMessage> messages) {
+    DateTime? latest;
+    for (final message in messages) {
+      if (latest == null || message.time.isAfter(latest)) {
+        latest = message.time;
+      }
+    }
+    return latest;
+  }
+
   ({List<ChatMessage> messages, bool requiresFullFetch, bool usedGapRecovery})
   _mergeServerTailWithCachedMessages({
     required List<ChatMessage> serverMessages,
@@ -536,22 +584,34 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     final (:messages, :reconciledLocalIds) =
         _mergeServerMessagesWithPendingLocalUsers(serverMessages);
     final merged = messages;
-    final currentSessionId = _currentSession?.id;
-    final shouldPreserveLocalTail =
-        currentSessionId == sessionId && isSessionActivelyResponding(sessionId);
-    if (!shouldPreserveLocalTail || _messages.isEmpty) {
-      return List<ChatMessage>.from(merged);
-    }
-
-    final existingIds = merged.map((message) => message.id).toSet();
-    // Treat reconciled local IDs as already present so they are not re-added.
-    existingIds.addAll(reconciledLocalIds);
     final localMessages = _messages
         .where((message) => message.sessionId == sessionId)
         .toList(growable: false);
     if (localMessages.isEmpty) {
       return List<ChatMessage>.from(merged);
     }
+
+    final localById = <String, ChatMessage>{
+      for (final message in localMessages) message.id: message,
+    };
+    for (var index = 0; index < merged.length; index += 1) {
+      final serverMessage = merged[index];
+      final localMessage = localById[serverMessage.id];
+      if (localMessage is AssistantMessage &&
+          serverMessage is AssistantMessage) {
+        merged[index] = _mergeAssistantMessageUpdate(
+          localMessage,
+          serverMessage,
+        );
+      }
+    }
+
+    final currentSessionId = _currentSession?.id;
+    final shouldPreserveLocalTail =
+        currentSessionId == sessionId && isSessionActivelyResponding(sessionId);
+    final existingIds = merged.map((message) => message.id).toSet();
+    // Treat reconciled local IDs as already present so they are not re-added.
+    existingIds.addAll(reconciledLocalIds);
 
     var anchorIndex = -1;
     for (var index = localMessages.length - 1; index >= 0; index -= 1) {
@@ -569,9 +629,19 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         : (localMessages.length > maxTailMessagesWithoutAnchor
               ? localMessages.length - maxTailMessagesWithoutAnchor
               : 0);
+    final latestServerTime = _latestMessageTime(
+      merged.where((message) => message.sessionId == sessionId).toList(),
+    );
     for (var index = tailStart; index < localMessages.length; index += 1) {
       final message = localMessages[index];
       if (existingIds.contains(message.id)) {
+        continue;
+      }
+      if (!shouldPreserveLocalTail &&
+          !_shouldPreserveSettledLocalTailMessage(
+            message: message,
+            latestServerTime: latestServerTime,
+          )) {
         continue;
       }
       if (message is UserMessage &&
