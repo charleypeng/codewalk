@@ -1260,7 +1260,7 @@ void main() {
     });
 
     test(
-      'refreshActiveSessionView reports latest-message changes after a settled passive refresh',
+      'refreshActiveSessionView does not schedule scroll after a settled passive refresh',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
@@ -1296,7 +1296,60 @@ void main() {
         // Flush microtask-coalesced scroll callback.
         await Future<void>.value();
 
-        expect(scrollRequests, 1);
+        expect(scrollRequests, 0);
+      },
+    );
+
+    test(
+      'refreshActiveSessionView preserves completed assistant content against shorter same-id snapshot',
+      () async {
+        const sessionId = 'ses_1';
+        final completedLocal = AssistantMessage(
+          id: 'msg_completed_refresh_regression',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2500),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_completed_refresh_regression',
+              messageId: 'msg_completed_refresh_regression',
+              sessionId: sessionId,
+              text: 'complete final answer that must stay visible',
+            ),
+          ],
+        );
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          completedLocal,
+        ];
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          AssistantMessage(
+            id: completedLocal.id,
+            sessionId: sessionId,
+            time: completedLocal.time,
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_completed_refresh_regression',
+                messageId: 'msg_completed_refresh_regression',
+                sessionId: sessionId,
+                text: 'complete final',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refreshActiveSessionView(includeStatus: false);
+
+        final refreshed = provider.messages.single as AssistantMessage;
+        expect(refreshed.isCompleted, isTrue);
+        expect(refreshed.completedTime, completedLocal.completedTime);
+        expect(
+          (refreshed.parts.single as TextPart).text,
+          'complete final answer that must stay visible',
+        );
       },
     );
 

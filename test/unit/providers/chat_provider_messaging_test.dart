@@ -1553,6 +1553,114 @@ void main() {
     );
 
     test(
+      'refreshActiveSessionView keeps visible completed local tail during no-overlap delta recovery',
+      () async {
+        const sessionId = 'ses_1';
+        final cachedHistory = List<ChatMessage>.generate(205, (index) {
+          final messageId = 'cached_visible_$index';
+          return AssistantMessage(
+            id: messageId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000 + index),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1500 + index),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$messageId',
+                messageId: messageId,
+                sessionId: sessionId,
+                text: 'cached visible $index',
+              ),
+            ],
+          );
+        });
+        final visibleFinal = AssistantMessage(
+          id: 'msg_visible_final_tail',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(5000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(5100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_visible_final_tail',
+              messageId: 'msg_visible_final_tail',
+              sessionId: sessionId,
+              text: 'final answer that must not disappear during gap recovery',
+            ),
+          ],
+        );
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          ...cachedHistory,
+          visibleFinal,
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.firstWhere((item) => item.id == sessionId),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final serverTail = List<ChatMessage>.generate(220, (index) {
+          final messageId = 'server_gap_$index';
+          return AssistantMessage(
+            id: messageId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(10000 + index),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(10100 + index),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$messageId',
+                messageId: messageId,
+                sessionId: sessionId,
+                text: 'server gap $index',
+              ),
+            ],
+          );
+        });
+        final fullFetchGate = Completer<void>();
+        var requestNumber = 0;
+        chatRepository.getMessagesRequestedLimits.clear();
+        chatRepository.getMessagesHandler =
+            (String _, String __, {String? directory, int? limit}) async {
+              requestNumber += 1;
+              if (requestNumber == 1) {
+                return Right(serverTail.sublist(serverTail.length - 200));
+              }
+              await fullFetchGate.future;
+              return Right(<ChatMessage>[...serverTail, visibleFinal]);
+            };
+
+        await provider.refreshActiveSessionView(
+          reason: 'test-visible-tail-gap-recovery',
+          includeStatus: false,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(chatRepository.getMessagesRequestedLimits, <int?>[200, null]);
+        expect(
+          provider.messages.any((message) => message.id == visibleFinal.id),
+          isTrue,
+          reason:
+              'The locally visible completed final answer must not disappear while the full fetch is still blocked.',
+        );
+        expect(
+          (provider.messages
+                      .whereType<AssistantMessage>()
+                      .firstWhere((message) => message.id == visibleFinal.id)
+                      .parts
+                      .single
+                  as TextPart)
+              .text,
+          'final answer that must not disappear during gap recovery',
+        );
+
+        fullFetchGate.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.messages.last.id, visibleFinal.id);
+      },
+    );
+
+    test(
       'refreshActiveSessionView does not schedule scroll callback for busy passive refresh message changes',
       () async {
         const sessionId = 'ses_1';
