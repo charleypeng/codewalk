@@ -484,6 +484,85 @@ void main() {
     );
 
     test(
+      'global distinct part delta is not deduped after session stream delta',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled();
+        addTearDown(dataSaverService.dispose);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_cross_stream_delta',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_cross_stream_delta',
+                messageId: 'msg_cross_stream_delta',
+                sessionId: 'ses_1',
+                text: 'He',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.refresh();
+        await settleUntil(
+          () =>
+              provider.debugHasRealtimeEventSubscription &&
+              provider.debugHasGlobalEventSubscription,
+          reason:
+              'Expected both session and global streams before cross-stream dedupe regression.',
+        );
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.part.delta',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'messageID': 'msg_cross_stream_delta',
+              'partID': 'prt_cross_stream_delta',
+              'field': 'text',
+              'delta': 'l',
+            },
+          ),
+        );
+        await settleUntil(
+          () =>
+              ((provider.messages.single as AssistantMessage).parts.single
+                      as TextPart)
+                  .text ==
+              'Hel',
+          reason: 'Expected session stream delta to apply first.',
+        );
+
+        chatRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'message.part.delta',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'messageID': 'msg_cross_stream_delta',
+              'partID': 'prt_cross_stream_delta',
+              'field': 'text',
+              'delta': 'lo',
+            },
+          ),
+        );
+        await settleUntil(
+          () =>
+              ((provider.messages.single as AssistantMessage).parts.single
+                      as TextPart)
+                  .text ==
+              'Hello',
+          reason:
+              'Expected distinct global delta with same message/part ids to apply.',
+        );
+      },
+    );
+
+    test(
       'aggressive data saver applies active part deltas without session id',
       () async {
         final dataSaverService = CellularDataSaverService.disabled()

@@ -161,30 +161,138 @@ extension _ChatProviderEventReducerHelpers on ChatProvider {
   /// Returns null for events that cannot be meaningfully deduplicated.
   String? _composeEventDeduplicationKey(ChatEvent event) {
     final props = event.properties;
+    final info = props['info'];
+    final infoMap = info is Map ? Map<String, dynamic>.from(info) : null;
     final sessionId =
-        props['sessionID'] as String? ??
-        (props['info'] is Map
-            ? (props['info'] as Map)['sessionID'] as String?
-            : null);
-    final messageId =
-        props['messageID'] as String? ??
-        (props['info'] is Map ? (props['info'] as Map)['id'] as String? : null);
-    final partId =
-        (props['part'] is Map
-            ? (props['part'] as Map)['id'] as String?
-            : null) ??
-        props['partID'] as String?;
-    final requestId = props['requestID'] as String?;
+        _extractEventSessionId(props) ??
+        (infoMap == null ? null : _extractEventSessionId(infoMap));
+    final messageId = _messageIdFromEventProperties(props);
+    final partId = _partIdFromEventProperties(props);
+    final requestId =
+        _readTrimmedEventString(props, 'requestID') ??
+        _readTrimmedEventString(props, 'requestId') ??
+        (infoMap == null
+            ? null
+            : _readTrimmedEventString(infoMap, 'requestID') ??
+                  _readTrimmedEventString(infoMap, 'requestId') ??
+                  _readTrimmedEventString(infoMap, 'id'));
+    final mutationSignature = _messageMutationDedupSignature(event);
     // Build composite key from available identifiers
     final segments = <String>[event.type];
     if (sessionId != null) segments.add(sessionId);
     if (messageId != null) segments.add(messageId);
     if (partId != null) segments.add(partId);
     if (requestId != null) segments.add(requestId);
+    if (mutationSignature != null) segments.add(mutationSignature);
     // Events with only type+session (e.g. session.status) change over time,
     // so skip dedup for events without a fine-grained identifier.
     if (messageId == null && partId == null && requestId == null) return null;
     return segments.join(':');
+  }
+
+  String? _partIdFromEventProperties(Map<String, dynamic> properties) {
+    final direct = _readTrimmedEventString(properties, 'partID');
+    if (direct != null) {
+      return direct;
+    }
+    final directCamel = _readTrimmedEventString(properties, 'partId');
+    if (directCamel != null) {
+      return directCamel;
+    }
+    final part = properties['part'];
+    if (part is Map) {
+      final id = _readTrimmedEventString(part, 'id');
+      if (id != null) {
+        return id;
+      }
+      final partId = _readTrimmedEventString(part, 'partID');
+      if (partId != null) {
+        return partId;
+      }
+      final partCamelId = _readTrimmedEventString(part, 'partId');
+      if (partCamelId != null) {
+        return partCamelId;
+      }
+    }
+    return null;
+  }
+
+  String? _messageMutationDedupSignature(ChatEvent event) {
+    final props = event.properties;
+    switch (event.type) {
+      case 'message.created':
+      case 'message.updated':
+        final info = props['info'];
+        if (info == null) {
+          return null;
+        }
+        return 'payload=${_stableEventValueHash(info)}';
+      case 'message.part.updated':
+        final part = props['part'];
+        final delta = props['delta'];
+        if (part == null && delta == null) {
+          return null;
+        }
+        final signaturePayload = <String, dynamic>{};
+        if (part != null) {
+          signaturePayload['part'] = part;
+        }
+        if (delta != null) {
+          signaturePayload['delta'] = delta;
+        }
+        return 'payload=${_stableEventValueHash(signaturePayload)}';
+      case 'message.part.delta':
+        final field = props['field'];
+        final delta = props['delta'];
+        final part = props['part'];
+        if (field == null && delta == null && part == null) {
+          return null;
+        }
+        final signaturePayload = <String, dynamic>{};
+        if (field != null) {
+          signaturePayload['field'] = field;
+        }
+        if (delta != null) {
+          signaturePayload['delta'] = delta;
+        }
+        if (part != null) {
+          signaturePayload['part'] = part;
+        }
+        return 'payload=${_stableEventValueHash(signaturePayload)}';
+      default:
+        return null;
+    }
+  }
+
+  String _stableEventValueHash(Object? value) {
+    final canonical = jsonEncode(_canonicalEventValue(value));
+    var hash = 0x811c9dc5;
+    for (final codeUnit in canonical.codeUnits) {
+      hash ^= codeUnit;
+      hash = (hash * 0x01000193) & 0xffffffff;
+    }
+    return '${canonical.length}:${hash.toRadixString(16).padLeft(8, '0')}';
+  }
+
+  Object? _canonicalEventValue(Object? value) {
+    if (value == null || value is num || value is bool || value is String) {
+      return value;
+    }
+    if (value is DateTime) {
+      return value.toIso8601String();
+    }
+    if (value is Map) {
+      final entries = value.entries.toList()
+        ..sort((a, b) => a.key.toString().compareTo(b.key.toString()));
+      return <String, Object?>{
+        for (final entry in entries)
+          entry.key.toString(): _canonicalEventValue(entry.value),
+      };
+    }
+    if (value is Iterable) {
+      return value.map(_canonicalEventValue).toList(growable: false);
+    }
+    return value.toString();
   }
 
   /// Returns true if this event was recently processed (duplicate).
