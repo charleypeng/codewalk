@@ -16327,6 +16327,38 @@ void main() {
         greaterThan(1),
       );
       expect(scrollableAfter.position.pixels, closeTo(pixelsBeforeResume, 1));
+
+      final pixelsAfterResume = scrollableAfter.position.pixels;
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_resume_reveal',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_resume_reveal',
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final scrollableAfterStatus = tester.state<ScrollableState>(
+        scrollableFinder,
+      );
+      expect(
+        scrollableAfterStatus.position.pixels,
+        closeTo(pixelsAfterResume, 1),
+        reason:
+            'status-only events after resume must not trigger a second jump',
+      );
     },
   );
 
@@ -16415,6 +16447,38 @@ void main() {
       greaterThan(1),
     );
     expect(find.byTooltip('Go to latest message'), findsNothing);
+
+    final pixelsAfterReveal = scrollableAfter.position.pixels;
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'session.status',
+        properties: <String, dynamic>{
+          'sessionID': 'ses_resume_reveal_changed',
+          'status': <String, dynamic>{'type': 'busy'},
+        },
+      ),
+    );
+    await tester.pump();
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'session.status',
+        properties: <String, dynamic>{
+          'sessionID': 'ses_resume_reveal_changed',
+          'status': <String, dynamic>{'type': 'idle'},
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollableAfterStatus = tester.state<ScrollableState>(
+      scrollableFinder,
+    );
+    expect(
+      scrollableAfterStatus.position.pixels,
+      closeTo(pixelsAfterReveal, 1),
+      reason:
+          'status-only events after the resume reveal must not trigger a second jump',
+    );
   });
 
   testWidgets(

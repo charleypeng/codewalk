@@ -362,6 +362,10 @@ class _ChatPageState extends State<ChatPage>
   String? _settledLatestAssistantWorkGroupId;
   int _debugActiveTurnPassiveScrollRequests = 0;
   String? _debugActiveTurnPassiveScrollSessionId;
+  String? _lastProviderMessageTrackingSessionId;
+  String? _lastProviderMessageTrackingLastId;
+  int _lastProviderMessageTrackingCount = 0;
+  int _lastProviderMessageTrackingVersion = -1;
 
   void _setScrollOwner(_ScrollOwner owner) {
     final previousOwner = _currentScrollOwner;
@@ -383,6 +387,14 @@ class _ChatPageState extends State<ChatPage>
 
   void _requestPassiveScrollToBottom({required String reason}) {
     if (!mounted) {
+      return;
+    }
+    if (_resumeRefreshViewportRestorePending) {
+      _traceFinalUi(
+        'passive-scroll-suppressed-resume-refresh-pending',
+        details: 'reason=$reason',
+      );
+      _markUnreadMessagesBelow();
       return;
     }
     if (_hasUserScrollPriority()) {
@@ -805,6 +817,7 @@ class _ChatPageState extends State<ChatPage>
         if (_isChatScreenActive()) {
           _lastResumeRefreshAt = DateTime.now();
           _resumeRefreshViewportRestorePending = true;
+          _returnRevealGeneration += 1;
           unawaited(
             provider
                 .refreshActiveSessionView(reason: 'app-lifecycle-resumed')
@@ -839,6 +852,7 @@ class _ChatPageState extends State<ChatPage>
   @override
   void onWindowRestore() {
     _isAppInForeground = true;
+    _returnRevealGeneration += 1;
     _applyForegroundPolicy(reason: 'window-restore');
     _startForegroundWarningGrace();
     final provider = _chatProvider;
@@ -852,6 +866,7 @@ class _ChatPageState extends State<ChatPage>
   void onWindowFocus() {
     if (!_isAppInForeground) {
       _isAppInForeground = true;
+      _returnRevealGeneration += 1;
       _applyForegroundPolicy(reason: 'window-focus');
       _startForegroundWarningGrace();
       final provider = _chatProvider;

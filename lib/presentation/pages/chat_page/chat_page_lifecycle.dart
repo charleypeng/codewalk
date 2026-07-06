@@ -61,6 +61,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     final provider = _chatProvider;
     if (provider != null) {
       _syncSessionScrollState(provider);
+      _syncPassiveProviderMessageIndicator(provider);
       _syncResponseViewportPolicy(provider);
       _syncChatRouteActivity(provider);
       _consumePendingUiNotice(provider);
@@ -547,7 +548,10 @@ extension _ChatPageLifecycle on _ChatPageState {
     }
     if (_resumeRefreshViewportRestorePending &&
         reason != 'app-resumed-refresh-complete') {
-      _queueCachedViewportRestore(chatProvider, reason: reason);
+      _traceFinalUi(
+        'return-to-chat-deferred-resume-refresh-pending',
+        details: 'reason=$reason',
+      );
       return;
     }
     if (chatProvider.messages.isEmpty ||

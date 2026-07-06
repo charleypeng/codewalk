@@ -53,7 +53,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return false;
     }
     final currentMax = _scrollController.position.maxScrollExtent;
-    if (_isProgrammaticScrollInFlight ||
+    if (_resumeRefreshViewportRestorePending ||
+        _isReturnRevealInFlight ||
+        _olderMessagesAnchorRestoreInFlight ||
+        _isProgrammaticScrollInFlight ||
         _hasUserScrollPriority() ||
         _responseSettleFramesRemaining > 0 ||
         _scrollFollowMode == _ScrollFollowMode.reading) {
@@ -545,6 +548,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _scrollFollowMode = _ScrollFollowMode.following;
       _showScrollToFirstFab = false;
       _hasUnreadMessagesBelow = false;
+      _rememberProviderMessageSignature(chatProvider);
     }
 
     if (sessionId == _trackedSessionId &&
@@ -578,6 +582,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
+      _rememberProviderMessageSignature(chatProvider);
       return;
     }
 
@@ -593,6 +598,57 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         );
       });
     }
+  }
+
+  void _rememberProviderMessageSignature(ChatProvider chatProvider) {
+    _lastProviderMessageTrackingSessionId = chatProvider.currentSession?.id;
+    _lastProviderMessageTrackingLastId = chatProvider.messages.lastOrNull?.id;
+    _lastProviderMessageTrackingCount = chatProvider.messages.length;
+    _lastProviderMessageTrackingVersion = chatProvider.messagesVersion;
+  }
+
+  void _syncPassiveProviderMessageIndicator(ChatProvider chatProvider) {
+    final sessionId = chatProvider.currentSession?.id;
+    final lastId = chatProvider.messages.lastOrNull?.id;
+    final count = chatProvider.messages.length;
+    final version = chatProvider.messagesVersion;
+    final sameSession =
+        sessionId != null && sessionId == _lastProviderMessageTrackingSessionId;
+    final hadBaseline = sameSession && _lastProviderMessageTrackingVersion >= 0;
+    final changed =
+        hadBaseline &&
+        version != _lastProviderMessageTrackingVersion &&
+        (lastId != _lastProviderMessageTrackingLastId ||
+            count != _lastProviderMessageTrackingCount);
+
+    _lastProviderMessageTrackingSessionId = sessionId;
+    _lastProviderMessageTrackingLastId = lastId;
+    _lastProviderMessageTrackingCount = count;
+    _lastProviderMessageTrackingVersion = version;
+
+    if (!changed ||
+        sessionId == null ||
+        chatProvider.messages.isEmpty ||
+        _scrollFollowMode == _ScrollFollowMode.following ||
+        _resumeRefreshViewportRestorePending ||
+        _isReturnRevealInFlight ||
+        _olderMessagesAnchorRestoreInFlight) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _chatProvider?.currentSession?.id != sessionId) {
+        return;
+      }
+      if (_scrollFollowMode == _ScrollFollowMode.following) {
+        return;
+      }
+      _traceFinalUi(
+        'passive-provider-message-change-mark-unread',
+        details: 'session=$sessionId last=${lastId ?? "-"}',
+      );
+      _markUnreadMessagesBelow();
+    });
   }
 
   void _syncResponseViewportPolicy(ChatProvider chatProvider) {
