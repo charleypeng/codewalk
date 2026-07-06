@@ -2,6 +2,16 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.169.0 - 2026-07-06
+
+- chore(agent): [Step 7/8] document chat stability behavior
+- chore(agent): [Step 6/8] apply reviewer chat stability fixes
+- chore(agent): [Step 4/8] harden cross-stream event dedupe
+- chore(agent): [Step 3/8] harden chat viewport resume ownership
+- chore(agent): [Step 2/8] implement provider non-regressive refresh merge
+- chore(agent): [Step 1/8] add chat stability regressions
+- plan: fix chat stability regressions
+
 ## v1.168.1 - 2026-07-05
 
 - fix(files): surface delete failure diagnostics
