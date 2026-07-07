@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.170.1 - 2026-07-07
+
+- fix(chat): add quick-reply model routing
+
 ## v1.170.0 - 2026-07-07
 
 - chore(agent): [Step 5/6] apply reviewer validation fixes
