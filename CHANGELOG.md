@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.171.1 - 2026-07-07
+
+- fix(settings): default new installs to refined visual style
+
 ## v1.171.0 - 2026-07-07
 
 - fix(docs): add refined visual layer ADR
