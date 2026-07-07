@@ -1,5 +1,9 @@
 part of '../chat_input_widget.dart';
 
+const String _cannedAgentInheritValue = '__cw_inherit_agent__';
+const String _cannedThinkingInheritValue = '__cw_inherit_thinking__';
+const String _cannedThinkingAutoValue = '__cw_auto_thinking__';
+
 extension _ChatInputCannedController on _ChatInputWidgetState {
   List<CannedAnswer> get _visibleCannedAnswers {
     final merged = <CannedAnswer>[
@@ -161,6 +165,34 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       _popoverType = ChatComposerPopoverType.none;
       _activeSuggestionIndex = 0;
     });
+    final selectionOverride = ChatQuickReplySelectionOverride(
+      agentName: answer.normalizedAgentName.isEmpty
+          ? null
+          : answer.normalizedAgentName,
+      thinkingMode: answer.thinkingMode,
+      thinkingVariantId: answer.normalizedThinkingVariantId.isEmpty
+          ? null
+          : answer.normalizedThinkingVariantId,
+    );
+    if (selectionOverride.hasExplicitOverride) {
+      final applyOverride = widget.onApplyQuickReplySelectionOverride;
+      if (applyOverride == null) {
+        _showCannedAnswerOverrideWarning(_cannedOverrideApplyFailedMessage);
+        _ensureInputFocus();
+        return;
+      }
+      final result = await applyOverride(selectionOverride);
+      if (!mounted) {
+        return;
+      }
+      if (!result.applied) {
+        _showCannedAnswerOverrideWarning(
+          result.message ?? _cannedOverrideApplyFailedMessage,
+        );
+        _ensureInputFocus();
+        return;
+      }
+    }
     if (answer.sendAutomatically) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
@@ -171,6 +203,18 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       return;
     }
     _ensureInputFocus();
+  }
+
+  String get _cannedOverrideApplyFailedMessage =>
+      'Could not apply the saved quick-reply routing. Review before sending.';
+
+  void _showCannedAnswerOverrideWarning(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _promptCreateCannedAnswer() async {
@@ -275,6 +319,8 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     var insertMode = initial?.insertMode ?? CannedAnswerInsertMode.append;
     var sendAutomatically = initial?.sendAutomatically ?? false;
     var scopeMode = initial?.scopeMode ?? CannedAnswerScopeMode.global;
+    var agentSelection = _initialCannedAgentSelection(initial);
+    var thinkingSelection = _initialCannedThinkingSelection(initial);
     final isProjectScopeAvailable =
         _normalizedCannedServerId.isNotEmpty &&
         _normalizedCannedScopeId.isNotEmpty;
@@ -284,107 +330,167 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     }
     final result = await showDialog<CannedAnswer>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(
-                initial == null
-                    ? context.l10n.cannedAddTitle
-                    : context.l10n.cannedEditTitle,
+          builder: (dialogContext, setDialogState) {
+            final mediaQuery = MediaQuery.of(dialogContext);
+            final isCompact = mediaQuery.size.width < 600;
+            final title = initial == null
+                ? context.l10n.cannedAddTitle
+                : context.l10n.cannedEditTitle;
+
+            void save() {
+              final text = textController.text.trim();
+              if (text.isEmpty) {
+                return;
+              }
+              final thinkingOverride = _thinkingOverrideFromSelection(
+                thinkingSelection,
+              );
+              Navigator.of(dialogContext).pop(
+                CannedAnswer(
+                  id: initial?.id ?? _nextCannedAnswerId(),
+                  label: labelController.text.trim().isEmpty
+                      ? null
+                      : labelController.text.trim(),
+                  text: text,
+                  insertMode: insertMode,
+                  sendAutomatically: sendAutomatically,
+                  scopeMode: scopeMode,
+                  agentName: _agentNameFromSelection(agentSelection),
+                  thinkingMode: thinkingOverride.mode,
+                  thinkingVariantId: thinkingOverride.variantId,
+                  updatedAtEpochMs: DateTime.now().millisecondsSinceEpoch,
+                ),
+              );
+            }
+
+            final body = _buildCannedEditorBody(
+              dialogContext: dialogContext,
+              isCompact: isCompact,
+              initial: initial,
+              labelController: labelController,
+              textController: textController,
+              insertMode: insertMode,
+              sendAutomatically: sendAutomatically,
+              scopeMode: scopeMode,
+              agentSelection: agentSelection,
+              thinkingSelection: thinkingSelection,
+              isProjectScopeAvailable: isProjectScopeAvailable,
+              onInsertModeChanged: (value) {
+                setDialogState(() {
+                  insertMode = value;
+                });
+              },
+              onSendAutomaticallyChanged: (value) {
+                setDialogState(() {
+                  sendAutomatically = value;
+                });
+              },
+              onScopeModeChanged: (value) {
+                setDialogState(() {
+                  scopeMode = value;
+                });
+              },
+              onAgentSelectionChanged: (value) {
+                setDialogState(() {
+                  agentSelection = value;
+                });
+              },
+              onThinkingSelectionChanged: (value) {
+                setDialogState(() {
+                  thinkingSelection = value;
+                });
+              },
+            );
+
+            if (isCompact) {
+              return Dialog.fullscreen(
+                key: const ValueKey<String>('canned_answer_editor_fullscreen'),
+                child: Scaffold(
+                  appBar: AppBar(
+                    title: Text(title),
+                    leading: IconButton(
+                      icon: const Icon(Symbols.close_rounded),
+                      tooltip: context.l10n.commonCancel,
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                    ),
+                    actions: [
+                      TextButton(
+                        key: const ValueKey<String>(
+                          'canned_answer_save_button',
+                        ),
+                        onPressed: save,
+                        child: Text(context.l10n.commonSave),
+                      ),
+                    ],
+                  ),
+                  body: SafeArea(child: body),
+                ),
+              );
+            }
+
+            final dialogHeight = (mediaQuery.size.height * 0.86).clamp(
+              480.0,
+              820.0,
+            );
+            return Dialog(
+              key: const ValueKey<String>('canned_answer_editor_dialog'),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 24,
               ),
-              content: SingleChildScrollView(
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: 720,
+                height: dialogHeight,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
-                      controller: labelController,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.onboardingLabel,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 18, 12, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: Theme.of(
+                                dialogContext,
+                              ).textTheme.titleLarge,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Symbols.close_rounded),
+                            tooltip: context.l10n.commonCancel,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: textController,
-                      minLines: 2,
-                      maxLines: 6,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.cannedTextLabel,
+                    Expanded(child: body),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            child: Text(context.l10n.commonCancel),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton(
+                            key: const ValueKey<String>(
+                              'canned_answer_save_button',
+                            ),
+                            onPressed: save,
+                            child: Text(context.l10n.commonSave),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      title: Text(context.l10n.composerCannedAppendAtCursor),
-                      subtitle: Text(context.l10n.cannedAppendAtCursorSubtitle),
-                      value: insertMode == CannedAnswerInsertMode.append,
-                      onChanged: (enabled) {
-                        setDialogState(() {
-                          insertMode = enabled
-                              ? CannedAnswerInsertMode.append
-                              : CannedAnswerInsertMode.replace;
-                        });
-                      },
-                    ),
-                    SwitchListTile(
-                      title: Text(context.l10n.composerCannedSendAutomatically),
-                      subtitle:
-                          Text(context.l10n.cannedSendAutomaticallySubtitle),
-                      value: sendAutomatically,
-                      onChanged: (enabled) {
-                        setDialogState(() {
-                          sendAutomatically = enabled;
-                        });
-                      },
-                    ),
-                    SwitchListTile(
-                      title: Text(context.l10n.composerCannedScopeGlobal),
-                      subtitle: Text(
-                        isProjectScopeAvailable
-                            ? context.l10n.cannedScopeGlobalSubtitle
-                            : context.l10n.cannedScopeGlobalUnavailableSubtitle,
-                      ),
-                      value: scopeMode == CannedAnswerScopeMode.global,
-                      onChanged: isProjectScopeAvailable
-                          ? (enabled) {
-                              setDialogState(() {
-                                scopeMode = enabled
-                                    ? CannedAnswerScopeMode.global
-                                    : CannedAnswerScopeMode.projectOnly;
-                              });
-                            }
-                          : null,
                     ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(context.l10n.commonCancel),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final text = textController.text.trim();
-                    if (text.isEmpty) {
-                      return;
-                    }
-                    Navigator.of(context).pop(
-                      CannedAnswer(
-                        id: initial?.id ?? _nextCannedAnswerId(),
-                        label: labelController.text.trim().isEmpty
-                            ? null
-                            : labelController.text.trim(),
-                        text: text,
-                        insertMode: insertMode,
-                        sendAutomatically: sendAutomatically,
-                        scopeMode: scopeMode,
-                        updatedAtEpochMs: DateTime.now().millisecondsSinceEpoch,
-                      ),
-                    );
-                  },
-                  child: Text(context.l10n.commonSave),
-                ),
-              ],
             );
           },
         );
@@ -393,6 +499,297 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     labelController.dispose();
     textController.dispose();
     return result;
+  }
+
+  String _initialCannedAgentSelection(CannedAnswer? initial) {
+    final agentName = initial?.normalizedAgentName ?? '';
+    if (agentName.isNotEmpty &&
+        widget.quickReplyAgentOptions.any(
+          (option) => option.name == agentName,
+        )) {
+      return agentName;
+    }
+    return _cannedAgentInheritValue;
+  }
+
+  String _initialCannedThinkingSelection(CannedAnswer? initial) {
+    if (initial == null) {
+      return _cannedThinkingInheritValue;
+    }
+    return switch (initial.thinkingMode) {
+      CannedAnswerThinkingMode.inherit => _cannedThinkingInheritValue,
+      CannedAnswerThinkingMode.auto => _cannedThinkingAutoValue,
+      CannedAnswerThinkingMode.variant =>
+        widget.quickReplyThinkingOptions.any(
+              (option) => option.id == initial.normalizedThinkingVariantId,
+            )
+            ? initial.normalizedThinkingVariantId
+            : _cannedThinkingInheritValue,
+    };
+  }
+
+  String? _agentNameFromSelection(String value) {
+    return value == _cannedAgentInheritValue ? null : value;
+  }
+
+  ({CannedAnswerThinkingMode mode, String? variantId})
+  _thinkingOverrideFromSelection(String value) {
+    if (value == _cannedThinkingInheritValue) {
+      return (mode: CannedAnswerThinkingMode.inherit, variantId: null);
+    }
+    if (value == _cannedThinkingAutoValue) {
+      return (mode: CannedAnswerThinkingMode.auto, variantId: null);
+    }
+    return (mode: CannedAnswerThinkingMode.variant, variantId: value);
+  }
+
+  Widget _buildCannedEditorBody({
+    required BuildContext dialogContext,
+    required bool isCompact,
+    required CannedAnswer? initial,
+    required TextEditingController labelController,
+    required TextEditingController textController,
+    required CannedAnswerInsertMode insertMode,
+    required bool sendAutomatically,
+    required CannedAnswerScopeMode scopeMode,
+    required String agentSelection,
+    required String thinkingSelection,
+    required bool isProjectScopeAvailable,
+    required ValueChanged<CannedAnswerInsertMode> onInsertModeChanged,
+    required ValueChanged<bool> onSendAutomaticallyChanged,
+    required ValueChanged<CannedAnswerScopeMode> onScopeModeChanged,
+    required ValueChanged<String> onAgentSelectionChanged,
+    required ValueChanged<String> onThinkingSelectionChanged,
+  }) {
+    final initialAgentUnavailable =
+        (initial?.normalizedAgentName.isNotEmpty ?? false) &&
+        !widget.quickReplyAgentOptions.any(
+          (option) => option.name == initial!.normalizedAgentName,
+        );
+    final initialThinkingUnavailable =
+        initial?.thinkingMode == CannedAnswerThinkingMode.variant &&
+        !widget.quickReplyThinkingOptions.any(
+          (option) => option.id == initial!.normalizedThinkingVariantId,
+        );
+    return ListView(
+      padding: EdgeInsets.fromLTRB(24, isCompact ? 16 : 4, 24, 24),
+      children: [
+        _buildCannedEditorSection(
+          dialogContext: dialogContext,
+          title: 'Content',
+          children: [
+            TextField(
+              key: const ValueKey<String>('canned_answer_label_field'),
+              controller: labelController,
+              decoration: InputDecoration(
+                labelText: context.l10n.composerCannedLabel,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const ValueKey<String>('canned_answer_text_field'),
+              controller: textController,
+              minLines: 3,
+              maxLines: isCompact ? 8 : 6,
+              decoration: InputDecoration(
+                labelText: context.l10n.cannedTextLabel,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildCannedEditorSection(
+          dialogContext: dialogContext,
+          title: 'Behavior',
+          children: [
+            SwitchListTile(
+              title: Text(context.l10n.composerCannedAppendAtCursor),
+              subtitle: Text(context.l10n.cannedAppendAtCursorSubtitle),
+              value: insertMode == CannedAnswerInsertMode.append,
+              onChanged: (enabled) {
+                onInsertModeChanged(
+                  enabled
+                      ? CannedAnswerInsertMode.append
+                      : CannedAnswerInsertMode.replace,
+                );
+              },
+            ),
+            SwitchListTile(
+              title: Text(context.l10n.composerCannedSendAutomatically),
+              subtitle: Text(context.l10n.cannedSendAutomaticallySubtitle),
+              value: sendAutomatically,
+              onChanged: onSendAutomaticallyChanged,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildCannedEditorSection(
+          dialogContext: dialogContext,
+          title: 'Scope',
+          children: [
+            SwitchListTile(
+              title: Text(context.l10n.composerCannedScopeGlobal),
+              subtitle: Text(
+                isProjectScopeAvailable
+                    ? context.l10n.cannedScopeGlobalSubtitle
+                    : context.l10n.cannedScopeGlobalUnavailableSubtitle,
+              ),
+              value: scopeMode == CannedAnswerScopeMode.global,
+              onChanged: isProjectScopeAvailable
+                  ? (enabled) {
+                      onScopeModeChanged(
+                        enabled
+                            ? CannedAnswerScopeMode.global
+                            : CannedAnswerScopeMode.projectOnly,
+                      );
+                    }
+                  : null,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildCannedEditorSection(
+          dialogContext: dialogContext,
+          title: 'Routing',
+          children: [
+            SearchableDropdownFormField<String>(
+              key: const ValueKey<String>('canned_answer_agent_dropdown'),
+              value: agentSelection,
+              isExpanded: true,
+              onChanged: widget.quickReplySelectionOverridesEnabled
+                  ? (value) => onAgentSelectionChanged(
+                      value ?? _cannedAgentInheritValue,
+                    )
+                  : null,
+              decoration: InputDecoration(
+                labelText: context.l10n.chatChooseAgent,
+              ),
+              searchHintText: context.l10n.chatChooseAgent,
+              emptyText: context.l10n.cannedNoSuggestions,
+              searchTermsBuilder: _agentSearchTerms,
+              items: _cannedAgentDropdownItems(),
+            ),
+            if (initialAgentUnavailable)
+              _buildCannedEditorWarning(
+                dialogContext,
+                'The saved agent is not available in the current server context.',
+              ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key: const ValueKey<String>('canned_answer_thinking_dropdown'),
+              value: thinkingSelection,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: context.l10n.chatChooseEffort,
+              ),
+              items: _cannedThinkingDropdownItems(),
+              onChanged: widget.quickReplySelectionOverridesEnabled
+                  ? (value) => onThinkingSelectionChanged(
+                      value ?? _cannedThinkingInheritValue,
+                    )
+                  : null,
+            ),
+            if (initialThinkingUnavailable)
+              _buildCannedEditorWarning(
+                dialogContext,
+                'The saved thinking level is not available for the current model.',
+              ),
+            if (!widget.quickReplySelectionOverridesEnabled)
+              _buildCannedEditorWarning(
+                dialogContext,
+                'Agent and thinking overrides are locked in this sub-conversation.',
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCannedEditorSection({
+    required BuildContext dialogContext,
+    required String title,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(dialogContext);
+    final colorScheme = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: AppShapes.borderLarge,
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCannedEditorWarning(BuildContext context, String text) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        text,
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: colorScheme.error),
+      ),
+    );
+  }
+
+  List<DropdownMenuItem<String>> _cannedAgentDropdownItems() {
+    return <DropdownMenuItem<String>>[
+      const DropdownMenuItem<String>(
+        value: _cannedAgentInheritValue,
+        child: Text('Use current agent'),
+      ),
+      for (final option in widget.quickReplyAgentOptions)
+        DropdownMenuItem<String>(
+          value: option.name,
+          child: Text(option.label, overflow: TextOverflow.ellipsis),
+        ),
+    ];
+  }
+
+  Iterable<String> _agentSearchTerms(String value) {
+    if (value == _cannedAgentInheritValue) {
+      return const <String>['Use current agent', 'current', 'agent'];
+    }
+    final option = widget.quickReplyAgentOptions
+        .where((item) => item.name == value)
+        .firstOrNull;
+    return <String>[value, if (option != null) option.label];
+  }
+
+  List<DropdownMenuItem<String>> _cannedThinkingDropdownItems() {
+    return <DropdownMenuItem<String>>[
+      const DropdownMenuItem<String>(
+        value: _cannedThinkingInheritValue,
+        child: Text('Use current thinking'),
+      ),
+      DropdownMenuItem<String>(
+        value: _cannedThinkingAutoValue,
+        child: Text(context.l10n.modelAuto),
+      ),
+      for (final option in widget.quickReplyThinkingOptions)
+        DropdownMenuItem<String>(
+          value: option.id,
+          child: Text(option.label, overflow: TextOverflow.ellipsis),
+        ),
+    ];
   }
 
   String _nextCannedAnswerId() {

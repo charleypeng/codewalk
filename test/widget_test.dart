@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:codewalk/core/di/injection_container.dart' as di;
 import 'package:codewalk/core/i18n/l10n_bridge.dart';
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/domain/entities/canned_answer.dart';
 import 'package:codewalk/domain/entities/chat_composer_draft.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
@@ -461,6 +462,138 @@ void main() {
     expect(find.text('Send automatically'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('new quick reply dialog shows agent and thinking selectors', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+          quickReplyAgentOptions: const <ChatQuickReplyAgentOption>[
+            ChatQuickReplyAgentOption(name: 'plan', label: 'Plan'),
+          ],
+          quickReplyThinkingOptions: const <ChatQuickReplyThinkingOption>[
+            ChatQuickReplyThinkingOption(id: 'high', label: 'High'),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New quick reply'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('canned_answer_agent_dropdown')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('canned_answer_thinking_dropdown')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('canned override applies before auto-send', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    var overrideApplied = false;
+    var sentAfterOverride = false;
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'override-send-1',
+          'text': 'Route me',
+          'insertMode': 'append',
+          'sendAutomatically': true,
+          'scopeMode': 'global',
+          'agentName': 'plan',
+          'thinkingMode': 'auto',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {
+            sentAfterOverride = overrideApplied;
+          },
+          cannedAnswersDataSource: localDataSource,
+          onApplyQuickReplySelectionOverride: (override) async {
+            expect(override.agentName, 'plan');
+            expect(override.thinkingMode, CannedAnswerThinkingMode.auto);
+            overrideApplied = true;
+            return const ChatQuickReplySelectionApplyResult(applied: true);
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Route me'));
+    await tester.pumpAndSettle();
+
+    expect(overrideApplied, isTrue);
+    expect(sentAfterOverride, isTrue);
+  });
+
+  testWidgets('failed canned override inserts text and blocks auto-send', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    ChatInputSubmission? sentSubmission;
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'override-fail-1',
+          'text': 'Manual review',
+          'insertMode': 'append',
+          'sendAutomatically': true,
+          'scopeMode': 'global',
+          'agentName': 'missing',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (submission) {
+            sentSubmission = submission;
+          },
+          cannedAnswersDataSource: localDataSource,
+          onApplyQuickReplySelectionOverride: (_) async {
+            return const ChatQuickReplySelectionApplyResult(
+              applied: false,
+              message: 'Routing failed',
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Manual review'));
+    await tester.pumpAndSettle();
+
+    expect(sentSubmission, isNull);
+    expect(find.text('Routing failed'), findsOneWidget);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'Manual review');
   });
 
   testWidgets('extras menu shows top quick-reply and attachment actions', (
