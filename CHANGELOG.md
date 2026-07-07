@@ -2,6 +2,16 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.171.0 - 2026-07-07
+
+- fix(docs): add refined visual layer ADR
+- chore(agent): [Step 5/6] validate and document refined visual layer
+- chore(agent): [Step 4/6] apply refined chat surfaces
+- chore(agent): [Step 3/6] add visual style settings UI
+- chore(agent): [Step 2/6] add visual style theme tokens
+- chore(agent): [Step 1/6] add visual style persistence
+- plan: implement CodeWalk refined visual layer
+
 ## v1.170.1 - 2026-07-07
 
 - fix(chat): add quick-reply model routing
