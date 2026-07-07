@@ -1,6 +1,7 @@
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/theme/app_shapes.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
+import 'package:codewalk/presentation/theme/app_visual_style_tokens.dart';
 import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +24,52 @@ void main() {
     expect(darkTheme.useMaterial3, isTrue);
     expect(lightTheme.brightness, Brightness.light);
     expect(darkTheme.brightness, Brightness.dark);
+  });
+
+  test('adds classic visual style tokens by default', () {
+    final scheme = ColorScheme.fromSeed(seedColor: AppTheme.seedColor);
+    final theme = AppTheme.lightFrom(scheme);
+
+    final tokens = theme.extension<AppVisualStyleTokens>();
+
+    expect(tokens, isNotNull);
+    expect(tokens!.visualStyle, VisualStyle.classic);
+    expect(tokens.cardRadius, AppShapes.borderExtraLarge);
+  });
+
+  test('adds refined visual style tokens when requested', () {
+    final scheme = ColorScheme.fromSeed(seedColor: AppTheme.seedColor);
+    final classicTheme = AppTheme.lightFrom(scheme);
+    final refinedTheme = AppTheme.lightFrom(
+      scheme,
+      visualStyle: VisualStyle.refined,
+    );
+
+    final classicTokens = classicTheme.extension<AppVisualStyleTokens>()!;
+    final refinedTokens = refinedTheme.extension<AppVisualStyleTokens>()!;
+
+    expect(refinedTokens.visualStyle, VisualStyle.refined);
+    expect(refinedTokens.cardRadius, isNot(classicTokens.cardRadius));
+    expect(
+      refinedTokens.composerShadow.single.blurRadius,
+      lessThan(classicTokens.composerShadow.single.blurRadius),
+    );
+  });
+
+  test('keeps OpenCode theme tokens beside visual style tokens', () {
+    final scheme = ColorScheme.fromSeed(seedColor: AppTheme.seedColor);
+    final openCodeTokens = classicThemeTokensFrom(scheme);
+    final theme = AppTheme.lightFrom(
+      scheme,
+      visualStyle: VisualStyle.refined,
+      themeExtensions: <ThemeExtension<dynamic>>[openCodeTokens],
+    );
+
+    expect(theme.extension<OpenCodeThemeTokens>(), same(openCodeTokens));
+    expect(
+      theme.extension<AppVisualStyleTokens>()?.visualStyle,
+      VisualStyle.refined,
+    );
   });
 
   test('maps density helpers consistently', () {

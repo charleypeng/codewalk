@@ -104,6 +104,7 @@ class MyApp extends StatelessWidget {
               final customSeed = settingsProvider.customColorSeed;
               final contrastLevel = settingsProvider.contrastLevel;
               final themePreset = settingsProvider.themePreset;
+              final visualStyle = settingsProvider.visualStyle;
 
               // Sync actual dynamic color availability to provider so
               // the settings UI can reflect reality (not just platform
@@ -176,6 +177,7 @@ class MyApp extends StatelessWidget {
                 theme: AppTheme.lightFrom(
                   lightScheme,
                   appDensity: appDensity,
+                  visualStyle: visualStyle,
                   themeExtensions: <ThemeExtension<dynamic>>[
                     lightResolvedTokens,
                   ],
@@ -183,6 +185,7 @@ class MyApp extends StatelessWidget {
                 darkTheme: AppTheme.darkFrom(
                   resolvedDarkScheme,
                   appDensity: appDensity,
+                  visualStyle: visualStyle,
                   themeExtensions: <ThemeExtension<dynamic>>[
                     darkResolvedTokens,
                   ],
