@@ -2,6 +2,8 @@ enum CannedAnswerInsertMode { append, replace }
 
 enum CannedAnswerScopeMode { global, projectOnly }
 
+enum CannedAnswerThinkingMode { inherit, auto, variant }
+
 class CannedAnswer {
   const CannedAnswer({
     required this.id,
@@ -10,6 +12,9 @@ class CannedAnswer {
     this.insertMode = CannedAnswerInsertMode.append,
     this.sendAutomatically = false,
     this.scopeMode = CannedAnswerScopeMode.global,
+    this.agentName,
+    this.thinkingMode = CannedAnswerThinkingMode.inherit,
+    this.thinkingVariantId,
     required this.updatedAtEpochMs,
   });
 
@@ -19,10 +24,23 @@ class CannedAnswer {
   final CannedAnswerInsertMode insertMode;
   final bool sendAutomatically;
   final CannedAnswerScopeMode scopeMode;
+  final String? agentName;
+  final CannedAnswerThinkingMode thinkingMode;
+  final String? thinkingVariantId;
   final int updatedAtEpochMs;
 
   String get normalizedLabel {
     final trimmed = label?.trim() ?? '';
+    return trimmed;
+  }
+
+  String get normalizedAgentName {
+    final trimmed = agentName?.trim() ?? '';
+    return trimmed;
+  }
+
+  String get normalizedThinkingVariantId {
+    final trimmed = thinkingVariantId?.trim() ?? '';
     return trimmed;
   }
 
@@ -33,6 +51,9 @@ class CannedAnswer {
     CannedAnswerInsertMode? insertMode,
     bool? sendAutomatically,
     CannedAnswerScopeMode? scopeMode,
+    String? Function()? agentName,
+    CannedAnswerThinkingMode? thinkingMode,
+    String? Function()? thinkingVariantId,
     int? updatedAtEpochMs,
   }) {
     return CannedAnswer(
@@ -42,6 +63,11 @@ class CannedAnswer {
       insertMode: insertMode ?? this.insertMode,
       sendAutomatically: sendAutomatically ?? this.sendAutomatically,
       scopeMode: scopeMode ?? this.scopeMode,
+      agentName: agentName != null ? agentName() : this.agentName,
+      thinkingMode: thinkingMode ?? this.thinkingMode,
+      thinkingVariantId: thinkingVariantId != null
+          ? thinkingVariantId()
+          : this.thinkingVariantId,
       updatedAtEpochMs: updatedAtEpochMs ?? this.updatedAtEpochMs,
     );
   }
@@ -54,6 +80,12 @@ class CannedAnswer {
       'insertMode': _insertModeKey(insertMode),
       if (sendAutomatically) 'sendAutomatically': true,
       'scopeMode': _scopeModeKey(scopeMode),
+      if (normalizedAgentName.isNotEmpty) 'agentName': normalizedAgentName,
+      if (thinkingMode != CannedAnswerThinkingMode.inherit)
+        'thinkingMode': _thinkingModeKey(thinkingMode),
+      if (thinkingMode == CannedAnswerThinkingMode.variant &&
+          normalizedThinkingVariantId.isNotEmpty)
+        'thinkingVariantId': normalizedThinkingVariantId,
       'updatedAtEpochMs': updatedAtEpochMs,
     };
   }
@@ -68,6 +100,17 @@ class CannedAnswer {
     final modeValue = json['insertMode']?.toString().trim().toLowerCase() ?? '';
     final sendAutomatically = json['sendAutomatically'] == true;
     final scopeValue = json['scopeMode']?.toString().trim().toLowerCase() ?? '';
+    final agentNameValue = json['agentName']?.toString().trim() ?? '';
+    final thinkingModeValue =
+        json['thinkingMode']?.toString().trim().toLowerCase() ?? '';
+    final thinkingVariantIdValue =
+        json['thinkingVariantId']?.toString().trim() ?? '';
+    final parsedThinkingMode = _thinkingModeFromKey(thinkingModeValue);
+    final thinkingMode =
+        parsedThinkingMode == CannedAnswerThinkingMode.variant &&
+            thinkingVariantIdValue.isEmpty
+        ? CannedAnswerThinkingMode.inherit
+        : parsedThinkingMode;
     final updatedAtRaw = json['updatedAtEpochMs'];
     final updatedAtEpochMs = updatedAtRaw is num
         ? updatedAtRaw.toInt()
@@ -79,6 +122,13 @@ class CannedAnswer {
       insertMode: _insertModeFromKey(modeValue),
       sendAutomatically: sendAutomatically,
       scopeMode: _scopeModeFromKey(scopeValue),
+      agentName: agentNameValue.isEmpty ? null : agentNameValue,
+      thinkingMode: thinkingMode,
+      thinkingVariantId:
+          thinkingMode == CannedAnswerThinkingMode.variant &&
+              thinkingVariantIdValue.isNotEmpty
+          ? thinkingVariantIdValue
+          : null,
       updatedAtEpochMs: updatedAtEpochMs,
     );
   }
@@ -109,5 +159,21 @@ CannedAnswerScopeMode _scopeModeFromKey(String value) {
   return switch (value) {
     'project_only' => CannedAnswerScopeMode.projectOnly,
     _ => CannedAnswerScopeMode.global,
+  };
+}
+
+String _thinkingModeKey(CannedAnswerThinkingMode mode) {
+  return switch (mode) {
+    CannedAnswerThinkingMode.inherit => 'inherit',
+    CannedAnswerThinkingMode.auto => 'auto',
+    CannedAnswerThinkingMode.variant => 'variant',
+  };
+}
+
+CannedAnswerThinkingMode _thinkingModeFromKey(String value) {
+  return switch (value) {
+    'auto' => CannedAnswerThinkingMode.auto,
+    'variant' => CannedAnswerThinkingMode.variant,
+    _ => CannedAnswerThinkingMode.inherit,
   };
 }
