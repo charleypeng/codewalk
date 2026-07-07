@@ -2,6 +2,15 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.170.0 - 2026-07-07
+
+- chore(agent): [Step 5/6] apply reviewer validation fixes
+- chore(agent): [Step 4/6] document and localize quick-reply routing UI
+- chore(agent): [Step 3/6] redesign quick-reply editor and override apply
+- chore(agent): [Step 2/6] wire quick-reply selection plumbing
+- chore(agent): [Step 1/6] extend canned answer routing metadata
+- plan: implement quick-reply agent and thinking selection
+
 ## v1.169.0 - 2026-07-06
 
 - chore(agent): [Step 7/8] document chat stability behavior
