@@ -835,14 +835,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                       ),
                                     )
                                     .toList(growable: false),
-                                quickReplySelectedAgentName:
-                                    chatProvider.selectedAgentName,
-                                quickReplySelectedThinkingMode:
-                                    chatProvider.selectedVariantId == null
-                                    ? CannedAnswerThinkingMode.auto
-                                    : CannedAnswerThinkingMode.variant,
-                                quickReplySelectedThinkingVariantId:
-                                    chatProvider.selectedVariantId,
                                 quickReplySelectionOverridesEnabled:
                                     quickReplySelectionOverridesEnabled,
                                 onApplyQuickReplySelectionOverride: (override) async {
@@ -856,17 +848,18 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                   final agentName = override.agentName?.trim();
                                   if (agentName != null &&
                                       agentName.isNotEmpty) {
-                                    final exists = chatProvider.selectableAgents
-                                        .any(
-                                          (agent) => agent.name == agentName,
+                                    final resolvedAgentName =
+                                        _resolveQuickReplyAgentName(
+                                          chatProvider,
+                                          agentName,
                                         );
-                                    if (!exists) {
+                                    if (resolvedAgentName == null) {
                                       return const ChatQuickReplySelectionApplyResult(
                                         applied: false,
                                       );
                                     }
                                     await chatProvider.setSelectedAgent(
-                                      agentName,
+                                      resolvedAgentName,
                                     );
                                   }
 
@@ -874,6 +867,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                     case CannedAnswerThinkingMode.inherit:
                                       break;
                                     case CannedAnswerThinkingMode.auto:
+                                      if (chatProvider.selectedModel == null) {
+                                        return const ChatQuickReplySelectionApplyResult(
+                                          applied: false,
+                                        );
+                                      }
                                       await chatProvider.setSelectedVariant(
                                         null,
                                       );
@@ -947,6 +945,28 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   bool _isSubConversationSession(ChatSession? session) {
     final parentId = session?.parentId?.trim();
     return parentId != null && parentId.isNotEmpty;
+  }
+
+  String? _resolveQuickReplyAgentName(
+    ChatProvider chatProvider,
+    String agentName,
+  ) {
+    final candidate = agentName.trim();
+    if (candidate.isEmpty) {
+      return null;
+    }
+    for (final agent in chatProvider.selectableAgents) {
+      if (agent.name == candidate) {
+        return agent.name;
+      }
+    }
+    final normalized = candidate.toLowerCase();
+    for (final agent in chatProvider.selectableAgents) {
+      if (agent.name.toLowerCase() == normalized) {
+        return agent.name;
+      }
+    }
+    return null;
   }
 
   Widget _buildSubConversationReturnButton(ChatProvider chatProvider) {

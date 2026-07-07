@@ -430,10 +430,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               );
             }
 
-            final dialogHeight = (mediaQuery.size.height * 0.86).clamp(
-              480.0,
-              820.0,
-            );
+            final dialogHeight = math.min(mediaQuery.size.height * 0.86, 820.0);
             return Dialog(
               key: const ValueKey<String>('canned_answer_editor_dialog'),
               insetPadding: const EdgeInsets.symmetric(
@@ -571,137 +568,144 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
         !widget.quickReplyThinkingOptions.any(
           (option) => option.id == initial!.normalizedThinkingVariantId,
         );
-    return ListView(
-      padding: EdgeInsets.fromLTRB(24, isCompact ? 16 : 4, 24, 24),
-      children: [
-        _buildCannedEditorSection(
-          dialogContext: dialogContext,
-          title: context.l10n.composerCannedText,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, isCompact ? 16 : 4, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              key: const ValueKey<String>('canned_answer_label_field'),
-              controller: labelController,
-              decoration: InputDecoration(
-                labelText: context.l10n.composerCannedLabel,
-              ),
+            _buildCannedEditorSection(
+              dialogContext: dialogContext,
+              title: context.l10n.composerCannedText,
+              children: [
+                TextField(
+                  key: const ValueKey<String>('canned_answer_label_field'),
+                  controller: labelController,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.composerCannedLabel,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const ValueKey<String>('canned_answer_text_field'),
+                  controller: textController,
+                  minLines: 3,
+                  maxLines: isCompact ? 8 : 6,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.cannedTextLabel,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              key: const ValueKey<String>('canned_answer_text_field'),
-              controller: textController,
-              minLines: 3,
-              maxLines: isCompact ? 8 : 6,
-              decoration: InputDecoration(
-                labelText: context.l10n.cannedTextLabel,
-              ),
+            const SizedBox(height: 16),
+            _buildCannedEditorSection(
+              dialogContext: dialogContext,
+              title: context.l10n.settingsBehaviorTitle,
+              children: [
+                SwitchListTile(
+                  title: Text(context.l10n.composerCannedAppendAtCursor),
+                  subtitle: Text(context.l10n.cannedAppendAtCursorSubtitle),
+                  value: insertMode == CannedAnswerInsertMode.append,
+                  onChanged: (enabled) {
+                    onInsertModeChanged(
+                      enabled
+                          ? CannedAnswerInsertMode.append
+                          : CannedAnswerInsertMode.replace,
+                    );
+                  },
+                ),
+                SwitchListTile(
+                  title: Text(context.l10n.composerCannedSendAutomatically),
+                  subtitle: Text(context.l10n.cannedSendAutomaticallySubtitle),
+                  value: sendAutomatically,
+                  onChanged: onSendAutomaticallyChanged,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildCannedEditorSection(
+              dialogContext: dialogContext,
+              title: context.l10n.composerCannedScopeGlobal,
+              children: [
+                SwitchListTile(
+                  title: Text(context.l10n.composerCannedScopeGlobal),
+                  subtitle: Text(
+                    isProjectScopeAvailable
+                        ? context.l10n.cannedScopeGlobalSubtitle
+                        : context.l10n.cannedScopeGlobalUnavailableSubtitle,
+                  ),
+                  value: scopeMode == CannedAnswerScopeMode.global,
+                  onChanged: isProjectScopeAvailable
+                      ? (enabled) {
+                          onScopeModeChanged(
+                            enabled
+                                ? CannedAnswerScopeMode.global
+                                : CannedAnswerScopeMode.projectOnly,
+                          );
+                        }
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildCannedEditorSection(
+              dialogContext: dialogContext,
+              title: context.l10n.chatChooseAgent,
+              children: [
+                SearchableDropdownFormField<String>(
+                  key: const ValueKey<String>('canned_answer_agent_dropdown'),
+                  value: agentSelection,
+                  isExpanded: true,
+                  onChanged: widget.quickReplySelectionOverridesEnabled
+                      ? (value) => onAgentSelectionChanged(
+                          value ?? _cannedAgentInheritValue,
+                        )
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.chatChooseAgent,
+                  ),
+                  searchHintText: context.l10n.chatChooseAgent,
+                  emptyText: context.l10n.cannedNoSuggestions,
+                  searchTermsBuilder: _agentSearchTerms,
+                  items: _cannedAgentDropdownItems(),
+                ),
+                if (initialAgentUnavailable)
+                  _buildCannedEditorWarning(
+                    dialogContext,
+                    context.l10n.settingsBehaviorNoAgents,
+                  ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: const ValueKey<String>(
+                    'canned_answer_thinking_dropdown',
+                  ),
+                  initialValue: thinkingSelection,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.chatChooseEffort,
+                  ),
+                  items: _cannedThinkingDropdownItems(),
+                  onChanged: widget.quickReplySelectionOverridesEnabled
+                      ? (value) => onThinkingSelectionChanged(
+                          value ?? _cannedThinkingInheritValue,
+                        )
+                      : null,
+                ),
+                if (initialThinkingUnavailable)
+                  _buildCannedEditorWarning(
+                    dialogContext,
+                    context.l10n.chatChooseEffort,
+                  ),
+                if (!widget.quickReplySelectionOverridesEnabled)
+                  _buildCannedEditorWarning(
+                    dialogContext,
+                    context.l10n.chatReturnToMainConversation,
+                  ),
+              ],
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        _buildCannedEditorSection(
-          dialogContext: dialogContext,
-          title: context.l10n.settingsBehaviorTitle,
-          children: [
-            SwitchListTile(
-              title: Text(context.l10n.composerCannedAppendAtCursor),
-              subtitle: Text(context.l10n.cannedAppendAtCursorSubtitle),
-              value: insertMode == CannedAnswerInsertMode.append,
-              onChanged: (enabled) {
-                onInsertModeChanged(
-                  enabled
-                      ? CannedAnswerInsertMode.append
-                      : CannedAnswerInsertMode.replace,
-                );
-              },
-            ),
-            SwitchListTile(
-              title: Text(context.l10n.composerCannedSendAutomatically),
-              subtitle: Text(context.l10n.cannedSendAutomaticallySubtitle),
-              value: sendAutomatically,
-              onChanged: onSendAutomaticallyChanged,
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildCannedEditorSection(
-          dialogContext: dialogContext,
-          title: context.l10n.composerCannedScopeGlobal,
-          children: [
-            SwitchListTile(
-              title: Text(context.l10n.composerCannedScopeGlobal),
-              subtitle: Text(
-                isProjectScopeAvailable
-                    ? context.l10n.cannedScopeGlobalSubtitle
-                    : context.l10n.cannedScopeGlobalUnavailableSubtitle,
-              ),
-              value: scopeMode == CannedAnswerScopeMode.global,
-              onChanged: isProjectScopeAvailable
-                  ? (enabled) {
-                      onScopeModeChanged(
-                        enabled
-                            ? CannedAnswerScopeMode.global
-                            : CannedAnswerScopeMode.projectOnly,
-                      );
-                    }
-                  : null,
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildCannedEditorSection(
-          dialogContext: dialogContext,
-          title: context.l10n.chatChooseAgent,
-          children: [
-            SearchableDropdownFormField<String>(
-              key: const ValueKey<String>('canned_answer_agent_dropdown'),
-              value: agentSelection,
-              isExpanded: true,
-              onChanged: widget.quickReplySelectionOverridesEnabled
-                  ? (value) => onAgentSelectionChanged(
-                      value ?? _cannedAgentInheritValue,
-                    )
-                  : null,
-              decoration: InputDecoration(
-                labelText: context.l10n.chatChooseAgent,
-              ),
-              searchHintText: context.l10n.chatChooseAgent,
-              emptyText: context.l10n.cannedNoSuggestions,
-              searchTermsBuilder: _agentSearchTerms,
-              items: _cannedAgentDropdownItems(),
-            ),
-            if (initialAgentUnavailable)
-              _buildCannedEditorWarning(
-                dialogContext,
-                context.l10n.settingsBehaviorNoAgents,
-              ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: const ValueKey<String>('canned_answer_thinking_dropdown'),
-              initialValue: thinkingSelection,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: context.l10n.chatChooseEffort,
-              ),
-              items: _cannedThinkingDropdownItems(),
-              onChanged: widget.quickReplySelectionOverridesEnabled
-                  ? (value) => onThinkingSelectionChanged(
-                      value ?? _cannedThinkingInheritValue,
-                    )
-                  : null,
-            ),
-            if (initialThinkingUnavailable)
-              _buildCannedEditorWarning(
-                dialogContext,
-                context.l10n.chatChooseEffort,
-              ),
-            if (!widget.quickReplySelectionOverridesEnabled)
-              _buildCannedEditorWarning(
-                dialogContext,
-                context.l10n.chatReturnToMainConversation,
-              ),
-          ],
-        ),
-      ],
+      ),
     );
   }
 
@@ -766,7 +770,11 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
 
   Iterable<String> _agentSearchTerms(String value) {
     if (value == _cannedAgentInheritValue) {
-      return const <String>['Use current agent', 'current', 'agent'];
+      return <String>[
+        context.l10n.chatUseCurrent,
+        context.l10n.chatChooseAgent,
+        'inherit',
+      ];
     }
     final option = widget.quickReplyAgentOptions
         .where((item) => item.name == value)

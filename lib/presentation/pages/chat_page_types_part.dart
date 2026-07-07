@@ -211,6 +211,7 @@ typedef _ChatContentBuildKey = ({
   int messagesVersion,
   int modelAttachmentSignature,
   int pendingHistoryComposerSyncToken,
+  int quickReplySelectionSignature,
   int sessionDiffSignature,
   int sessionSignature,
   int sessionStatusSignature,
@@ -368,6 +369,17 @@ int _modelAttachmentSignature(Model? model) {
   return Object.hash(model.attachment, model.modalities);
 }
 
+int _quickReplySelectionSignature(ChatProvider chatProvider) {
+  return Object.hash(
+    chatProvider.selectedAgentName,
+    chatProvider.selectedProviderId,
+    chatProvider.selectedModelId,
+    chatProvider.selectedVariantId,
+    _agentListSignature(chatProvider.selectableAgents),
+    _variantListSignature(chatProvider.availableVariants),
+  );
+}
+
 int _threadInteractionSignature(ChatProvider chatProvider) {
   var signature = Object.hash(
     chatProvider.isRespondingInteraction,
@@ -398,6 +410,7 @@ _ChatContentBuildKey _chatContentBuildKey(ChatProvider chatProvider) {
     isCompactingContext: chatProvider.isCompactingContext,
     pendingHistoryComposerSyncToken:
         chatProvider.pendingHistoryComposerSyncToken,
+    quickReplySelectionSignature: _quickReplySelectionSignature(chatProvider),
     threadInteractionSignature: _threadInteractionSignature(chatProvider),
     sessionStatusSignature: currentStatus.hashCode,
     sessionTodoSignature: _sessionTodoSignature(

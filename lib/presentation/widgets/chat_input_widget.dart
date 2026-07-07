@@ -268,9 +268,6 @@ class ChatInputWidget extends StatefulWidget {
     this.cannedAnswersScopeId,
     this.quickReplyAgentOptions = const <ChatQuickReplyAgentOption>[],
     this.quickReplyThinkingOptions = const <ChatQuickReplyThinkingOption>[],
-    this.quickReplySelectedAgentName,
-    this.quickReplySelectedThinkingMode = CannedAnswerThinkingMode.inherit,
-    this.quickReplySelectedThinkingVariantId,
     this.onApplyQuickReplySelectionOverride,
     this.quickReplySelectionOverridesEnabled = true,
     this.contextItems = const <FileInputPart>[],
@@ -310,9 +307,6 @@ class ChatInputWidget extends StatefulWidget {
   final String? cannedAnswersScopeId;
   final List<ChatQuickReplyAgentOption> quickReplyAgentOptions;
   final List<ChatQuickReplyThinkingOption> quickReplyThinkingOptions;
-  final String? quickReplySelectedAgentName;
-  final CannedAnswerThinkingMode quickReplySelectedThinkingMode;
-  final String? quickReplySelectedThinkingVariantId;
   final Future<ChatQuickReplySelectionApplyResult> Function(
     ChatQuickReplySelectionOverride override,
   )?

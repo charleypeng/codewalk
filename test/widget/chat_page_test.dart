@@ -9548,6 +9548,74 @@ void main() {
     expect(find.text('High'), findsOneWidget);
   });
 
+  testWidgets('quick reply applies agent and thinking before sending', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_quick_reply_route',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Quick Reply Route',
+        ),
+      ],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode(<Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'qr-plan-high',
+          'label': 'Plan high',
+          'text': 'Use routed quick reply',
+          'insertMode': 'replace',
+          'sendAutomatically': true,
+          'scopeMode': 'global',
+          'agentName': 'PLAN',
+          'thinkingMode': 'variant',
+          'thinkingVariantId': 'high',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+      includeVariants: true,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await provider.setSelectedAgent('build');
+    await provider.setSelectedVariant('low');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Plan high'));
+    await tester.pumpAndSettle();
+
+    final sentInput = repository.lastSendInput;
+    expect(sentInput, isNotNull);
+    expect(sentInput!.mode, 'plan');
+    expect(sentInput.variant, 'high');
+    expect(
+      sentInput.parts.whereType<TextInputPart>().single.text,
+      'Use routed quick reply',
+    );
+    expect(provider.selectedAgentName, 'plan');
+    expect(provider.selectedVariantId, 'high');
+  });
+
   testWidgets(
     'model selector shows connected providers and dynamic OpenCode Zen free models',
     (WidgetTester tester) async {
