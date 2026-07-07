@@ -27,9 +27,9 @@ import '../services/speech_input_service_sensevoice.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import '../theme/app_shapes.dart';
+import '../theme/app_theme.dart';
 import '../utils/speech_engine_platform_support.dart';
 import '../utils/windows_settings_links.dart';
-import '../theme/app_theme.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
 import 'parakeet_model_download_dialog.dart';
@@ -265,6 +265,13 @@ class ChatInputWidget extends StatefulWidget {
     this.cannedAnswersDataSource,
     this.cannedAnswersServerId,
     this.cannedAnswersScopeId,
+    this.quickReplyAgentOptions = const <ChatQuickReplyAgentOption>[],
+    this.quickReplyThinkingOptions = const <ChatQuickReplyThinkingOption>[],
+    this.quickReplySelectedAgentName,
+    this.quickReplySelectedThinkingMode = CannedAnswerThinkingMode.inherit,
+    this.quickReplySelectedThinkingVariantId,
+    this.onApplyQuickReplySelectionOverride,
+    this.quickReplySelectionOverridesEnabled = true,
     this.contextItems = const <FileInputPart>[],
     this.onRemoveContextItem,
     this.blockReason,
@@ -300,6 +307,16 @@ class ChatInputWidget extends StatefulWidget {
   final AppLocalDataSource? cannedAnswersDataSource;
   final String? cannedAnswersServerId;
   final String? cannedAnswersScopeId;
+  final List<ChatQuickReplyAgentOption> quickReplyAgentOptions;
+  final List<ChatQuickReplyThinkingOption> quickReplyThinkingOptions;
+  final String? quickReplySelectedAgentName;
+  final CannedAnswerThinkingMode quickReplySelectedThinkingMode;
+  final String? quickReplySelectedThinkingVariantId;
+  final Future<ChatQuickReplySelectionApplyResult> Function(
+    ChatQuickReplySelectionOverride override,
+  )?
+  onApplyQuickReplySelectionOverride;
+  final bool quickReplySelectionOverridesEnabled;
   // File line references added as context for the next message.
   final List<FileInputPart> contextItems;
   final void Function(int index)? onRemoveContextItem;

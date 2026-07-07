@@ -722,6 +722,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                 chatProvider.currentSession?.id;
                             final projectProvider = context
                                 .read<ProjectProvider>();
+                            final quickReplySelectionOverridesEnabled =
+                                !isSubConversation;
                             return _wrapWithChatFontScale(
                               context: context,
                               settingsProvider: settingsProvider,
@@ -815,6 +817,98 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                     projectProvider.activeServerId,
                                 cannedAnswersScopeId:
                                     projectProvider.currentScopeId,
+                                quickReplyAgentOptions: chatProvider
+                                    .selectableAgents
+                                    .map(
+                                      (agent) => ChatQuickReplyAgentOption(
+                                        name: agent.name,
+                                        label: _formatAgentLabel(agent.name),
+                                      ),
+                                    )
+                                    .toList(growable: false),
+                                quickReplyThinkingOptions: chatProvider
+                                    .availableVariants
+                                    .map(
+                                      (variant) => ChatQuickReplyThinkingOption(
+                                        id: variant.id,
+                                        label: variant.name,
+                                      ),
+                                    )
+                                    .toList(growable: false),
+                                quickReplySelectedAgentName:
+                                    chatProvider.selectedAgentName,
+                                quickReplySelectedThinkingMode:
+                                    chatProvider.selectedVariantId == null
+                                    ? CannedAnswerThinkingMode.auto
+                                    : CannedAnswerThinkingMode.variant,
+                                quickReplySelectedThinkingVariantId:
+                                    chatProvider.selectedVariantId,
+                                quickReplySelectionOverridesEnabled:
+                                    quickReplySelectionOverridesEnabled,
+                                onApplyQuickReplySelectionOverride: (override) async {
+                                  if (!quickReplySelectionOverridesEnabled &&
+                                      override.hasExplicitOverride) {
+                                    return const ChatQuickReplySelectionApplyResult(
+                                      applied: false,
+                                    );
+                                  }
+
+                                  final agentName = override.agentName?.trim();
+                                  if (agentName != null &&
+                                      agentName.isNotEmpty) {
+                                    final exists = chatProvider.selectableAgents
+                                        .any(
+                                          (agent) => agent.name == agentName,
+                                        );
+                                    if (!exists) {
+                                      return const ChatQuickReplySelectionApplyResult(
+                                        applied: false,
+                                      );
+                                    }
+                                    await chatProvider.setSelectedAgent(
+                                      agentName,
+                                    );
+                                  }
+
+                                  switch (override.thinkingMode) {
+                                    case CannedAnswerThinkingMode.inherit:
+                                      break;
+                                    case CannedAnswerThinkingMode.auto:
+                                      await chatProvider.setSelectedVariant(
+                                        null,
+                                      );
+                                      break;
+                                    case CannedAnswerThinkingMode.variant:
+                                      final variantId = override
+                                          .thinkingVariantId
+                                          ?.trim();
+                                      if (variantId == null ||
+                                          variantId.isEmpty) {
+                                        return const ChatQuickReplySelectionApplyResult(
+                                          applied: false,
+                                        );
+                                      }
+                                      final exists = chatProvider
+                                          .availableVariants
+                                          .any(
+                                            (variant) =>
+                                                variant.id == variantId,
+                                          );
+                                      if (!exists) {
+                                        return const ChatQuickReplySelectionApplyResult(
+                                          applied: false,
+                                        );
+                                      }
+                                      await chatProvider.setSelectedVariant(
+                                        variantId,
+                                      );
+                                      break;
+                                  }
+
+                                  return const ChatQuickReplySelectionApplyResult(
+                                    applied: true,
+                                  );
+                                },
                                 contextItems: _fileContextItems,
                                 composerShowcaseKey: _composerTourKey,
                                 composerShowcaseTargetKey:

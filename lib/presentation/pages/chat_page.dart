@@ -58,6 +58,7 @@ import '../../core/utils/path_utils.dart';
 import '../../core/utils/timeline_search_service.dart';
 import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../domain/entities/agent.dart';
+import '../../domain/entities/canned_answer.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
