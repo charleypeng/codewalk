@@ -48,6 +48,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-042: Global App Logs Toggle with Default-Off and Lazy Performance Instrumentation
 - ADR-043: Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations (ADR-023 Exception)
 - ADR-044: Windows STT Final Fix — Runner-Owned WASAPI Microphone Backend and Re-Enabled On-Device Engines
+- ADR-045: CodeWalk Refined Visual Layer Over Material Stack
 
 ---
 
@@ -2680,3 +2681,88 @@ Finalize the Windows STT story:
 - Ref: issue #43, llfbandit/record#453, https://learn.microsoft.com/en-us/windows/win32/coreaudio/wasapi
 
 ---
+
+## ADR-045: CodeWalk Refined Visual Layer Over Material Stack (2026-07-07)
+
+**Status**: Accepted
+
+**Related**: ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-013 (MD3 WindowSizeClass Responsive Breakpoint Strategy), ADR-014 (Centralized MD3 Design Tokens for Shapes and Brand Colors), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-034 (Density-Aware Spacing Tokens via `AppDensitySpacing`). Ref: issue #86.
+
+### Context
+
+Issue #86 asks for a less default-Material visual revamp of CodeWalk. The current look and feel is unmistakably out-of-the-box Material 3: standard `Card`/`ListTile`/`AppBar` chrome, default filled/input chip elevations, and the conventional MD3 tonal surface treatment. Users perceive this as visually generic and want a more refined, opinionated look while still keeping CodeWalk a first-class citizen in the OpenCode ecosystem.
+
+Three constraints define the design space:
+
+1. **No iOS imitation.** The app must remain recognizably CodeWalk / Material-flavored. Adopting a Cupertino or iOS-style chrome would (a) break Material You expectations on Android, (b) conflict with the existing Material Symbols iconography (ADR-012), and (c) create inconsistent mobile/desktop look-and-feel. The refined look stays inside the Material 3 widget vocabulary.
+2. **No third-party design-system package.** Pulling in `forui`, `mix`, `shadcn`, `fluentui`, `macos_ui`, or similar would (a) introduce a non-First-Party Flutter dependency for visual primitives, (b) create ongoing version-compat risk against Flutter/Material upgrades, (c) increase build size on mobile, and (d) leak a separate design vocabulary into surfaces that must remain consistent with the rest of the app.
+3. **Preserve mobile / desktop / web / accessibility invariants.** RTL, focus traversal, keyboard shortcuts, dynamic color, AMOLED mode, density preference, Material Symbols icons, and the existing `OpenCodeThemeTokens` preset palette (the `OpenCode` brand theme + presets) must all continue to work. The refined layer is additive, not a replacement.
+
+The Material You / MD3 stack (ADR-013, ADR-014, ADR-034) is already the canonical theme/token model. The refined layer must live on top of it without breaking its contract.
+
+### Decision
+
+Adopt a **refined visual layer** as an opt-in alternative style on top of the existing Flutter Material / Material 3 stack. The default style remains `classic` (today's Material 3 look); `refined` is a user-elected, persisted preference.
+
+1. **Persisted `VisualStyle` enum in `ExperienceSettings`** — add a `VisualStyle` enum (`classic` | `refined`) with default `classic` and persist it through `SettingsProvider` via the existing ADR-007 contract. New installs default to `classic`; existing installs keep their unchanged look unless the user explicitly opts in. The `OpenCodeThemeTokens` preset palette, dynamic color (`DynamicColorBuilder`), AMOLED mode, density (`AppDensity`), RTL, focus traversal, keyboard policy (ADR-024), and Material Symbols icons (ADR-012) are all preserved unchanged.
+
+2. **`AppVisualStyleTokens` ThemeExtension** — introduce a new `ThemeExtension<AppVisualStyleTokens>` class that carries refined-only visual adjustments: surface tonal steps (card, panel, composer, muted-control, selected), hairline divider and border widths, refined corner radii (a separate scale, distinct from `AppShapes`), refined shadow tokens, and separator/tint colors. The extension is registered on the `ThemeData` produced by `AppTheme.lightFrom(...)` and `AppTheme.darkFrom(...)` for both styles; `classic` resolves to its baseline values (so today’s look is unchanged when `VisualStyle.classic` is active) and `refined` resolves to the refined scale. The extension exposes an `isRefined` flag so widgets can branch on the resolved style without re-reading the persisted setting, and provides refined-only surface/radius/border-width/shadow/separator-tint paths that call sites opt into while Classic fallbacks remain the default.
+
+3. **`AppTheme.lightFrom` / `AppTheme.darkFrom` dispatch on optional `visualStyle`** — `AppTheme.lightFrom(...)` and `AppTheme.darkFrom(...)` accept an optional `VisualStyle` parameter (defaulting to `classic`) and resolve the same Material 3 color scheme, typography, and `AppDensity` inputs for both styles; only the refined constants (radii, shadows, hairline weights, tonal offsets) diverge. Both factories delegate to a private `_buildTheme(...)` helper that owns the shared resolution logic and registers `AppVisualStyleTokens` on the produced `ThemeData`. The result is two `ThemeData` flavors built from the same source-of-truth tokens, with the switch happening once per factory call instead of being scattered across widgets. A `withResponsiveSnackBars(theme)` helper layers tokenized snack-bar treatment on top of the resolved `ThemeData` when `theme.visualStyleTokens.isRefined` is true, so snackbars join the refined token path in this pass.
+
+4. **Scoped migration of high-visibility surfaces** — the refined layer is rolled out incrementally across the highest-visibility surfaces first, then lower-priority ones in follow-ups: composer (`chat_input_widget.dart`), chat message bubbles (`chat_message_widget.dart` / `chat_message_content.dart`), the chat page scaffold / status / timeline / composer regions, and the session list (`chat_session_list.dart`). High-impact widgets consume `Theme.of(context).visualStyleTokens` and branch on `visualTokens.isRefined` to take refined-only surface / radius / border-width / shadow / separator-tint paths while preserving the existing Classic fallbacks; the dispatch is therefore not a single chokepoint but a deliberate per-widget opt-in over a shared token source. The visual section in `appearance_settings_section.dart` exposes the `VisualStyle` selector as a Material 3 `SegmentedButton` (no live preview); the choice is discoverable, reversible without restart, and rendered alongside the existing density / dynamic-color / AMOLED / theme-preset controls.
+
+5. **`main.dart` wires the persisted style at startup** — `MyApp` reads the persisted `VisualStyle` from `SettingsProvider` on first frame and passes it into `AppTheme.lightFrom(...)` / `AppTheme.darkFrom(...)`. Theme rebuilds on style change are scoped through `SettingsProvider` listener so a settings change propagates without losing transient UI state.
+
+6. **`OpenCodeThemeTokens` preset palette stays authoritative** — the `OpenCode` brand theme and the other official theme presets remain the canonical color source for both `classic` and `refined`. Dynamic color (`DynamicColorBuilder`, `SettingsProvider.dynamicColorAvailable`) continues to override the seed when available; AMOLED continues to apply on top of either style. The refined layer only modulates surface treatment, radii, shadows, and tonal offsets — it does not invent new color seeds.
+
+### Rationale
+
+- **Lower-risk incremental layer over existing architecture.** Material 3 widgets are kept; no widgets are replaced, no third-party design system is adopted, and the existing `AppShapes` / `AppDensitySpacing` / `OpenCodeThemeTokens` contracts are preserved. The refined look is an additive `ThemeExtension`, so most surfaces opt in by reading the extension while the rest of the widget tree keeps working unchanged.
+- **Reversible rollout.** Because the default is `classic` and the choice is persisted in `ExperienceSettings`, the refined layer can ship behind a user-facing toggle and be rolled back by setting the default back to `classic`. No destructive migration, no API contract change, no schema migration beyond the new `VisualStyle` field.
+- **Preserves official OpenCode compatibility.** The visual layer does not touch server contracts, model payloads, message lifecycle, or any behavior governed by ADR-023. The `OpenCodeThemeTokens` preset palette continues to be the brand source; refined is a presentation-only layering on top of it.
+- **`ThemeExtension` is the canonical Flutter mechanism.** Adding an extension is the standard way to carry design tokens that vary by theme without forking `ThemeData`. It composes cleanly with `MaterialApp.theme` / `darkTheme`, density (ADR-034), and dynamic color, and it is tree-shakable: widgets that don’t read it pay zero cost.
+- **Shared resolution in `_buildTheme`, per-widget opt-in elsewhere.** `AppTheme.lightFrom` / `AppTheme.darkFrom` / `_buildTheme` own the per-call dispatch (color scheme, typography, density, registered extension) so the Material 3 inputs and refined offsets stay co-located; high-impact widgets read the same `Theme.of(context).visualStyleTokens` they already use and branch on `visualTokens.isRefined` for refined-only color / radius / shadow paths, with Classic fallbacks preserved. This keeps the resolution path single-sourced while letting each surface choose its level of refinement.
+- **Discoverable, non-disruptive UX.** The `VisualStyle` selector is exposed in the existing appearance settings section as a Material 3 `SegmentedButton` (no live preview) next to the other visual preferences (density, dynamic color, AMOLED, theme preset). The choice is committed immediately, is reversible, and does not require a restart.
+
+### Consequences
+
+- ✅ CodeWalk gains a more opinionated, less default-Material visual identity without leaving the Material 3 widget vocabulary.
+- ✅ Default remains `classic`; the change is opt-in and reversible per user without restart.
+- ✅ `OpenCodeThemeTokens`, dynamic color, AMOLED, density, RTL, focus, keyboard policy, and Material Symbols icons all continue to work unchanged.
+- ✅ `ThemeExtension` keeps the refined tokens tree-shakable, type-safe, and composable with the existing Material 3 theme.
+- ✅ Shared `_buildTheme` resolution keeps the Material 3 inputs and refined offsets co-located; high-impact widgets opt into refined paths by reading `Theme.of(context).visualStyleTokens` and branching on `visualTokens.isRefined`, with Classic fallbacks preserved.
+- ✅ Migration is incremental — high-visibility surfaces first, lower-priority surfaces follow behind the same `VisualStyle` switch; snackbars are tokenized via `withResponsiveSnackBars` when refined is active.
+- ⚠ The refined layer is constrained by what Material 3 widgets can express. Component-level customization beyond what `ThemeData` / `ThemeExtension` / widget builders expose requires either wrapped widgets or follow-up work.
+- ⚠ Future broader component / library work (e.g. custom scrollbars, custom navigation rails) remains a separate decision behind its own ADR — the refined layer is intentionally visual-only in this pass.
+- ⚠ Lower-priority surfaces (settings sub-pages, dialogs, tooltips) keep the classic treatment in this pass and can be migrated later behind the same `VisualStyle` switch.
+- ⚠ The visual section in `appearance_settings_section.dart` gains an extra `SegmentedButton` selector; the section's existing density / dynamic-color / AMOLED controls must stay coherent with the new selector.
+- ❌ No third-party design-system package is added (`forui`, `mix`, `shadcn`, `fluentui`, `macos_ui`, or similar are intentionally rejected).
+- ❌ No global `AppShapes` change — `AppShapes` remains the canonical shape scale; refined radii live in the new `AppVisualStyleTokens` extension.
+- ❌ No icon replacement — Material Symbols (ADR-012) remain the only icon vocabulary for both styles.
+- ❌ No blur / vibrancy / glass effects in this pass — refined stays within MD3 surface tonal vocabulary.
+- ❌ No JSON user-supplied theme system in this pass — preset selection continues to use the existing `OpenCodeThemeTokens` palette; user themes are a follow-up behind their own ADR.
+
+### ADR-023 Compatibility
+
+This ADR is fully compliant with ADR-023. It introduces no OpenCode server contract change, no new endpoints, no modification to existing request/response schemas, and no change to message lifecycle, realtime event semantics, or model/agent/provider resolution. The refined layer is a presentation-only change: `VisualStyle` lives in `ExperienceSettings`, the visual tokens live in a Flutter `ThemeExtension`, and the theme is built once per `AppTheme.lightFrom` / `AppTheme.darkFrom` call (via the shared `_buildTheme` helper). Server-authoritative behavior and the official OpenCode client contract are untouched.
+
+### Key Files
+
+- `lib/domain/entities/experience_settings.dart` — `VisualStyle` enum (`classic` | `refined`) with `classic` default; persistence field
+- `lib/presentation/providers/settings_provider.dart` — `VisualStyle` getter / setter; persistence migration; listener-driven theme rebuild hook
+- `lib/presentation/theme/app_theme.dart` — `AppTheme.lightFrom(...)` / `AppTheme.darkFrom(...)` accept an optional `VisualStyle` (default `classic`); private `_buildTheme(...)` owns shared resolution and registers `AppVisualStyleTokens` on both light and dark `ThemeData`; `withResponsiveSnackBars(theme)` layers tokenized snack-bar treatment when `theme.visualStyleTokens.isRefined`
+- `lib/presentation/theme/app_visual_style_tokens.dart` — new `ThemeExtension<AppVisualStyleTokens>` carrying refined surface tonal steps, hairline divider and border widths, refined radii, shadow tokens, and separator/tint colors; baseline values for `classic`, refined values for `refined`; exposes `isRefined` so widgets can branch on the resolved style
+- `lib/presentation/pages/settings/sections/appearance_settings_section.dart` — `VisualStyle` `SegmentedButton` selector (no live preview); placement next to density / dynamic-color / AMOLED / theme-preset controls
+- `lib/main.dart` — reads persisted `VisualStyle` from `SettingsProvider` and passes it into `AppTheme.lightFrom` / `AppTheme.darkFrom`; `MaterialApp.theme` rebuild on style change
+- `lib/presentation/widgets/chat_input_widget.dart` — consumes `Theme.of(context).visualStyleTokens`, branches on `isRefined` for refined composer color / radius / hairline-border / tonal-offset paths while preserving Classic fallbacks
+- `lib/presentation/widgets/chat_message/chat_message_content.dart` — refined bubble / block surface treatment (token-driven, with Classic fallback)
+- `lib/presentation/widgets/chat_message_widget.dart` — refined message shell (token-driven, with Classic fallback)
+- `lib/presentation/pages/chat_page.dart` (import owner) + `chat_page_scaffold.dart` + `chat_page_status_presenter.dart` + `chat_page_timeline_runtime.dart` + `chat_page_composer_widgets.dart` + composer parts — refined scaffold / status / timeline / composer region treatment (token-driven, with Classic fallback)
+- `lib/presentation/widgets/chat_session_list.dart` — refined sidebar list treatment (token-driven, with Classic fallback)
+- `test/unit/domain/experience_settings_test.dart` — `VisualStyle` default and serialization coverage
+- `test/unit/providers/settings_provider_test.dart` — `VisualStyle` getter / setter and persistence migration coverage
+- `test/unit/presentation/app_theme_test.dart` — `AppTheme.lightFrom` / `AppTheme.darkFrom` / `_buildTheme` dispatch and `AppVisualStyleTokens` registration coverage (including `withResponsiveSnackBars` Refined tokenization)
+- `test/widget/settings_page_test.dart` — `VisualStyle` selector presence and persistence wiring in the appearance settings section
+- `test/widget/chat_message_widget_test.dart`, `test/widget/chat_page_test.dart` — run as regression suites over the migrated widget paths; no new explicit refined assertions were added in this pass
+- Ref: issue #86
