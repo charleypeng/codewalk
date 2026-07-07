@@ -826,6 +826,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                       ),
                                     )
                                     .toList(growable: false),
+                                quickReplyModelOptions:
+                                    _buildQuickReplyModelOptions(chatProvider),
                                 quickReplyThinkingOptions: chatProvider
                                     .availableVariants
                                     .map(
@@ -861,6 +863,36 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                     await chatProvider.setSelectedAgent(
                                       resolvedAgentName,
                                     );
+                                  }
+
+                                  final providerId = override.providerId
+                                      ?.trim();
+                                  final modelId = override.modelId?.trim();
+                                  if ((providerId?.isNotEmpty ?? false) ||
+                                      (modelId?.isNotEmpty ?? false)) {
+                                    if (providerId == null ||
+                                        providerId.isEmpty ||
+                                        modelId == null ||
+                                        modelId.isEmpty) {
+                                      return const ChatQuickReplySelectionApplyResult(
+                                        applied: false,
+                                      );
+                                    }
+                                    final exists = _quickReplyModelExists(
+                                      chatProvider,
+                                      providerId: providerId,
+                                      modelId: modelId,
+                                    );
+                                    if (!exists) {
+                                      return const ChatQuickReplySelectionApplyResult(
+                                        applied: false,
+                                      );
+                                    }
+                                    await chatProvider
+                                        .setSelectedModelByProvider(
+                                          providerId: providerId,
+                                          modelId: modelId,
+                                        );
                                   }
 
                                   switch (override.thinkingMode) {
@@ -967,6 +999,70 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       }
     }
     return null;
+  }
+
+  List<ChatQuickReplyModelOption> _buildQuickReplyModelOptions(
+    ChatProvider chatProvider,
+  ) {
+    final providers = List<Provider>.of(chatProvider.providers)
+      ..sort((a, b) {
+        final byName = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        if (byName != 0) {
+          return byName;
+        }
+        return a.id.compareTo(b.id);
+      });
+    final options = <ChatQuickReplyModelOption>[];
+    for (final provider in providers) {
+      final models =
+          provider.models.values
+              .where(
+                (model) => isUserSelectableModel(
+                  provider: provider,
+                  model: model,
+                  connectedProviderIds: chatProvider.connectedProviderIds,
+                ),
+              )
+              .toList(growable: false)
+            ..sort((a, b) {
+              final byName = a.name.toLowerCase().compareTo(
+                b.name.toLowerCase(),
+              );
+              if (byName != 0) {
+                return byName;
+              }
+              return a.id.compareTo(b.id);
+            });
+      for (final model in models) {
+        options.add(
+          ChatQuickReplyModelOption(
+            providerId: provider.id,
+            providerLabel: provider.name,
+            modelId: model.id,
+            modelLabel: model.name,
+            variantOptions: model.variants.values
+                .map(
+                  (variant) => ChatQuickReplyThinkingOption(
+                    id: variant.id,
+                    label: variant.name,
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        );
+      }
+    }
+    return options;
+  }
+
+  bool _quickReplyModelExists(
+    ChatProvider chatProvider, {
+    required String providerId,
+    required String modelId,
+  }) {
+    return _buildQuickReplyModelOptions(chatProvider).any(
+      (option) => option.providerId == providerId && option.modelId == modelId,
+    );
   }
 
   Widget _buildSubConversationReturnButton(ChatProvider chatProvider) {

@@ -260,9 +260,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 : variants.isNotEmpty) ...[
               SizedBox(width: controlGap),
               Tooltip(
-                message: isSubConversation
-                    ? context.l10n.chatEffortLockedSubConversation
-                    : context.l10n.chatChooseEffort,
+                message: context.l10n.shortcutNextVariant,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: isCompact

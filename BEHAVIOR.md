@@ -682,16 +682,16 @@
 - **Then** the extras popover shows a top action row with quick actions such as `New quick reply` and `Attach files`, leaving room for future actions
 - **Then** attachment entry is opened from that extras popover instead of a separate attachment button near the model controls
 - **Then** selecting an item inserts canned text according to item mode: `Append at cursor` inserts at current selection, `Replace` overwrites composer text
-- **Then** if that canned answer has an agent or thinking-level override, the app applies the override to the visible composer selection after insertion and before any automatic send
-- **Then** if that canned answer has `Send automatically` enabled, the app sends the resulting composer message immediately after insertion and after any saved agent/thinking override is successfully applied
-- **Then** if an explicit saved agent or thinking-level override cannot be applied in the current server/model context, the app keeps the inserted text in the composer, shows a warning, and blocks automatic send so the user can review manually
-- **Then** in sub-conversations where model/agent controls are locked, canned-answer agent/thinking overrides are also locked; text insertion still works, but automatic send is blocked when the saved quick reply depends on a locked override
+- **Then** if that canned answer has an agent, model, or variant override, the app applies the override to the visible composer selection after insertion and before any automatic send
+- **Then** if that canned answer has `Send automatically` enabled, the app sends the resulting composer message immediately after insertion and after any saved agent/model/variant override is successfully applied
+- **Then** if an explicit saved agent, model, or variant override cannot be applied in the current server/model context, the app keeps the inserted text in the composer, shows a warning, and blocks automatic send so the user can review manually
+- **Then** in sub-conversations where model/agent controls are locked, canned-answer agent/model/variant overrides are also locked; text insertion still works, but automatic send is blocked when the saved quick reply depends on a locked override
 - **Then** long-pressing a canned item opens edit/delete actions
-- **Then** add/edit supports an optional label, required text, insertion mode, optional `Send automatically`, scope mode (`Global` or `Project-only`), optional agent override, and optional thinking-level override
+- **Then** add/edit supports an optional label, required text, insertion mode, optional `Send automatically`, scope mode (`Global` or `Project-only`), optional agent override, optional model override, and optional variant override
 - **Then** the add/edit surface uses a fullscreen editor on compact screens and a large scrollable dialog on wider screens so all options remain reachable
 - **Then** global items are available across all contexts, while project-only items are restricted to the active `serverId::scopeId` context
 - **Then** global canned answers are indicated inline with a globe icon instead of a standalone textual `Global` subtitle line
-- **Then** canned answers with saved agent or thinking-level routing show compact trailing indicators in the extras popover
+- **Then** canned answers with saved agent, model, or variant routing show compact trailing indicators in the extras popover
 - **Then** each canned-answer row stays on a single line and shows only one primary text source: the optional label when present, otherwise the canned text truncated with ellipsis
 
 ### Optimistic user message ID uses local prefix — never server format
@@ -842,9 +842,9 @@
 - **Then** the full chat composer remains available inside the child thread, including text send, slash input, attachments, and voice input
 - **Then** a dedicated `Return to main conversation` control remains visible so the user can navigate back to the parent thread at any time
 - **Then** when that child thread is actively responding, the same composer stop behavior remains available without leaving the child thread
-- **Then** agent/model/effort selectors remain non-interactive in the child thread
+- **Then** agent/model/variant selectors remain non-interactive in the child thread
 - **Then** the locked model chip reflects the child-thread metadata (not the parent selection)
-- **Then** the effort chip is shown only when an explicit child-thread variant is known
+- **Then** the variant chip is shown only when an explicit child-thread variant is known
 
 ### Sub-conversation navigation is deterministic
 

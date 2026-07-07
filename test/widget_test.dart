@@ -464,41 +464,59 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('new quick reply dialog shows agent and thinking selectors', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      _buildChatInputHarness(
-        child: ChatInputWidget(
-          onSendMessage: (_) {},
-          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
-          quickReplyAgentOptions: const <ChatQuickReplyAgentOption>[
-            ChatQuickReplyAgentOption(name: 'plan', label: 'Plan'),
-          ],
-          quickReplyThinkingOptions: const <ChatQuickReplyThinkingOption>[
-            ChatQuickReplyThinkingOption(id: 'high', label: 'High'),
-          ],
+  testWidgets(
+    'new quick reply dialog shows agent model and variant selectors',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _buildChatInputHarness(
+          child: ChatInputWidget(
+            onSendMessage: (_) {},
+            cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+            quickReplyAgentOptions: const <ChatQuickReplyAgentOption>[
+              ChatQuickReplyAgentOption(name: 'plan', label: 'Plan'),
+            ],
+            quickReplyModelOptions: const <ChatQuickReplyModelOption>[
+              ChatQuickReplyModelOption(
+                providerId: 'provider_1',
+                providerLabel: 'Provider 1',
+                modelId: 'model_1',
+                modelLabel: 'Model 1',
+                variantOptions: <ChatQuickReplyThinkingOption>[
+                  ChatQuickReplyThinkingOption(id: 'high', label: 'High'),
+                ],
+              ),
+            ],
+            quickReplyThinkingOptions: const <ChatQuickReplyThinkingOption>[
+              ChatQuickReplyThinkingOption(id: 'high', label: 'High'),
+            ],
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Extras'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('New quick reply'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Extras'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('New quick reply'));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('canned_answer_agent_dropdown')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('canned_answer_thinking_dropdown')),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-  });
+      expect(
+        find.byKey(const ValueKey<String>('canned_answer_agent_dropdown')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('canned_answer_model_dropdown')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('canned_answer_thinking_dropdown')),
+        findsOneWidget,
+      );
+      expect(find.text('Next variant'), findsOneWidget);
+      expect(find.text('Choose effort'), findsNothing);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('new quick reply editor uses fullscreen on compact screens', (
     WidgetTester tester,
@@ -585,6 +603,8 @@ void main() {
           'sendAutomatically': true,
           'scopeMode': 'global',
           'agentName': 'plan',
+          'providerId': 'provider_1',
+          'modelId': 'model_1',
           'thinkingMode': 'auto',
           'updatedAtEpochMs': 1,
         },
@@ -600,6 +620,8 @@ void main() {
           cannedAnswersDataSource: localDataSource,
           onApplyQuickReplySelectionOverride: (override) async {
             expect(override.agentName, 'plan');
+            expect(override.providerId, 'provider_1');
+            expect(override.modelId, 'model_1');
             expect(override.thinkingMode, CannedAnswerThinkingMode.auto);
             overrideApplied = true;
             return const ChatQuickReplySelectionApplyResult(applied: true);
@@ -738,6 +760,8 @@ void main() {
           'insertMode': 'append',
           'scopeMode': 'global',
           'agentName': 'plan',
+          'providerId': 'provider_1',
+          'modelId': 'model_1',
           'thinkingMode': 'auto',
           'updatedAtEpochMs': 1,
         },
@@ -760,6 +784,7 @@ void main() {
     expect(find.text('Routed reply'), findsOneWidget);
     expect(find.text('Hidden routed text'), findsNothing);
     expect(find.byIcon(Symbols.support_agent_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.code_rounded), findsOneWidget);
     expect(find.byIcon(Symbols.tune_rounded), findsOneWidget);
   });
 

@@ -21,6 +21,22 @@ class ChatQuickReplyAgentOption {
   final String label;
 }
 
+class ChatQuickReplyModelOption {
+  const ChatQuickReplyModelOption({
+    required this.providerId,
+    required this.providerLabel,
+    required this.modelId,
+    required this.modelLabel,
+    this.variantOptions = const <ChatQuickReplyThinkingOption>[],
+  });
+
+  final String providerId;
+  final String providerLabel;
+  final String modelId;
+  final String modelLabel;
+  final List<ChatQuickReplyThinkingOption> variantOptions;
+}
+
 class ChatQuickReplyThinkingOption {
   const ChatQuickReplyThinkingOption({required this.id, required this.label});
 
@@ -31,16 +47,22 @@ class ChatQuickReplyThinkingOption {
 class ChatQuickReplySelectionOverride {
   const ChatQuickReplySelectionOverride({
     required this.agentName,
+    required this.providerId,
+    required this.modelId,
     required this.thinkingMode,
     required this.thinkingVariantId,
   });
 
   final String? agentName;
+  final String? providerId;
+  final String? modelId;
   final CannedAnswerThinkingMode thinkingMode;
   final String? thinkingVariantId;
 
   bool get hasExplicitOverride =>
       (agentName?.trim().isNotEmpty ?? false) ||
+      ((providerId?.trim().isNotEmpty ?? false) &&
+          (modelId?.trim().isNotEmpty ?? false)) ||
       thinkingMode != CannedAnswerThinkingMode.inherit;
 }
 

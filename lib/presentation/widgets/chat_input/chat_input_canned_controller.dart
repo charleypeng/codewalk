@@ -1,6 +1,8 @@
 part of '../chat_input_widget.dart';
 
 const String _cannedAgentInheritValue = '__cw_inherit_agent__';
+const String _cannedModelInheritValue = '__cw_inherit_model__';
+const String _cannedModelSelectionSeparator = '\t';
 const String _cannedThinkingInheritValue = '__cw_inherit_thinking__';
 const String _cannedThinkingAutoValue = '__cw_auto_thinking__';
 
@@ -169,6 +171,12 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       agentName: answer.normalizedAgentName.isEmpty
           ? null
           : answer.normalizedAgentName,
+      providerId: answer.normalizedProviderId.isEmpty
+          ? null
+          : answer.normalizedProviderId,
+      modelId: answer.normalizedModelId.isEmpty
+          ? null
+          : answer.normalizedModelId,
       thinkingMode: answer.thinkingMode,
       thinkingVariantId: answer.normalizedThinkingVariantId.isEmpty
           ? null
@@ -320,7 +328,11 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     var sendAutomatically = initial?.sendAutomatically ?? false;
     var scopeMode = initial?.scopeMode ?? CannedAnswerScopeMode.global;
     var agentSelection = _initialCannedAgentSelection(initial);
-    var thinkingSelection = _initialCannedThinkingSelection(initial);
+    var modelSelection = _initialCannedModelSelection(initial);
+    var thinkingSelection = _initialCannedThinkingSelection(
+      initial,
+      modelSelection,
+    );
     final isProjectScopeAvailable =
         _normalizedCannedServerId.isNotEmpty &&
         _normalizedCannedScopeId.isNotEmpty;
@@ -347,6 +359,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               final thinkingOverride = _thinkingOverrideFromSelection(
                 thinkingSelection,
               );
+              final modelOverride = _modelOverrideFromSelection(modelSelection);
               Navigator.of(dialogContext).pop(
                 CannedAnswer(
                   id: initial?.id ?? _nextCannedAnswerId(),
@@ -358,6 +371,8 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                   sendAutomatically: sendAutomatically,
                   scopeMode: scopeMode,
                   agentName: _agentNameFromSelection(agentSelection),
+                  providerId: modelOverride.providerId,
+                  modelId: modelOverride.modelId,
                   thinkingMode: thinkingOverride.mode,
                   thinkingVariantId: thinkingOverride.variantId,
                   updatedAtEpochMs: DateTime.now().millisecondsSinceEpoch,
@@ -375,6 +390,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               sendAutomatically: sendAutomatically,
               scopeMode: scopeMode,
               agentSelection: agentSelection,
+              modelSelection: modelSelection,
               thinkingSelection: thinkingSelection,
               isProjectScopeAvailable: isProjectScopeAvailable,
               onInsertModeChanged: (value) {
@@ -395,6 +411,17 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               onAgentSelectionChanged: (value) {
                 setDialogState(() {
                   agentSelection = value;
+                });
+              },
+              onModelSelectionChanged: (value) {
+                setDialogState(() {
+                  modelSelection = value;
+                  if (!_thinkingSelectionAvailableForModel(
+                    thinkingSelection,
+                    modelSelection,
+                  )) {
+                    thinkingSelection = _cannedThinkingInheritValue;
+                  }
                 });
               },
               onThinkingSelectionChanged: (value) {
@@ -509,7 +536,24 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     return _cannedAgentInheritValue;
   }
 
-  String _initialCannedThinkingSelection(CannedAnswer? initial) {
+  String _initialCannedModelSelection(CannedAnswer? initial) {
+    final providerId = initial?.normalizedProviderId ?? '';
+    final modelId = initial?.normalizedModelId ?? '';
+    if (providerId.isNotEmpty &&
+        modelId.isNotEmpty &&
+        widget.quickReplyModelOptions.any(
+          (option) =>
+              option.providerId == providerId && option.modelId == modelId,
+        )) {
+      return _modelSelectionValue(providerId: providerId, modelId: modelId);
+    }
+    return _cannedModelInheritValue;
+  }
+
+  String _initialCannedThinkingSelection(
+    CannedAnswer? initial,
+    String modelSelection,
+  ) {
     if (initial == null) {
       return _cannedThinkingInheritValue;
     }
@@ -517,9 +561,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       CannedAnswerThinkingMode.inherit => _cannedThinkingInheritValue,
       CannedAnswerThinkingMode.auto => _cannedThinkingAutoValue,
       CannedAnswerThinkingMode.variant =>
-        widget.quickReplyThinkingOptions.any(
-              (option) => option.id == initial.normalizedThinkingVariantId,
-            )
+        _variantOptionsForModelSelection(
+              modelSelection,
+            ).any((option) => option.id == initial.normalizedThinkingVariantId)
             ? initial.normalizedThinkingVariantId
             : _cannedThinkingInheritValue,
     };
@@ -527,6 +571,29 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
 
   String? _agentNameFromSelection(String value) {
     return value == _cannedAgentInheritValue ? null : value;
+  }
+
+  String _modelSelectionValue({
+    required String providerId,
+    required String modelId,
+  }) {
+    return '$providerId$_cannedModelSelectionSeparator$modelId';
+  }
+
+  ({String? providerId, String? modelId}) _modelOverrideFromSelection(
+    String value,
+  ) {
+    if (value == _cannedModelInheritValue) {
+      return (providerId: null, modelId: null);
+    }
+    final separatorIndex = value.indexOf(_cannedModelSelectionSeparator);
+    if (separatorIndex <= 0 || separatorIndex == value.length - 1) {
+      return (providerId: null, modelId: null);
+    }
+    return (
+      providerId: value.substring(0, separatorIndex),
+      modelId: value.substring(separatorIndex + 1),
+    );
   }
 
   ({CannedAnswerThinkingMode mode, String? variantId})
@@ -550,12 +617,14 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     required bool sendAutomatically,
     required CannedAnswerScopeMode scopeMode,
     required String agentSelection,
+    required String modelSelection,
     required String thinkingSelection,
     required bool isProjectScopeAvailable,
     required ValueChanged<CannedAnswerInsertMode> onInsertModeChanged,
     required ValueChanged<bool> onSendAutomaticallyChanged,
     required ValueChanged<CannedAnswerScopeMode> onScopeModeChanged,
     required ValueChanged<String> onAgentSelectionChanged,
+    required ValueChanged<String> onModelSelectionChanged,
     required ValueChanged<String> onThinkingSelectionChanged,
   }) {
     final initialAgentUnavailable =
@@ -563,9 +632,18 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
         !widget.quickReplyAgentOptions.any(
           (option) => option.name == initial!.normalizedAgentName,
         );
+    final initialModelUnavailable =
+        (initial?.normalizedProviderId.isNotEmpty ?? false) &&
+        (initial?.normalizedModelId.isNotEmpty ?? false) &&
+        !widget.quickReplyModelOptions.any(
+          (option) =>
+              option.providerId == initial!.normalizedProviderId &&
+              option.modelId == initial.normalizedModelId,
+        );
+    final variantOptions = _variantOptionsForModelSelection(modelSelection);
     final initialThinkingUnavailable =
         initial?.thinkingMode == CannedAnswerThinkingMode.variant &&
-        !widget.quickReplyThinkingOptions.any(
+        !variantOptions.any(
           (option) => option.id == initial!.normalizedThinkingVariantId,
         );
     return SingleChildScrollView(
@@ -675,6 +753,29 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                     context.l10n.settingsBehaviorNoAgents,
                   ),
                 const SizedBox(height: 12),
+                SearchableDropdownFormField<String>(
+                  key: const ValueKey<String>('canned_answer_model_dropdown'),
+                  value: modelSelection,
+                  isExpanded: true,
+                  onChanged: widget.quickReplySelectionOverridesEnabled
+                      ? (value) => onModelSelectionChanged(
+                          value ?? _cannedModelInheritValue,
+                        )
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.chatChooseModel,
+                  ),
+                  searchHintText: context.l10n.modelSearchHint,
+                  emptyText: context.l10n.modelModelsFound,
+                  searchTermsBuilder: _modelSearchTerms,
+                  items: _cannedModelDropdownItems(),
+                ),
+                if (initialModelUnavailable)
+                  _buildCannedEditorWarning(
+                    dialogContext,
+                    context.l10n.settingsBehaviorNoModels,
+                  ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   key: const ValueKey<String>(
                     'canned_answer_thinking_dropdown',
@@ -682,9 +783,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                   initialValue: thinkingSelection,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: context.l10n.chatChooseEffort,
+                    labelText: context.l10n.shortcutNextVariant,
                   ),
-                  items: _cannedThinkingDropdownItems(),
+                  items: _cannedThinkingDropdownItems(variantOptions),
                   onChanged: widget.quickReplySelectionOverridesEnabled
                       ? (value) => onThinkingSelectionChanged(
                           value ?? _cannedThinkingInheritValue,
@@ -694,7 +795,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                 if (initialThinkingUnavailable)
                   _buildCannedEditorWarning(
                     dialogContext,
-                    context.l10n.chatChooseEffort,
+                    context.l10n.shortcutNextVariant,
                   ),
                 if (!widget.quickReplySelectionOverridesEnabled)
                   _buildCannedEditorWarning(
@@ -782,7 +883,86 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     return <String>[value, if (option != null) option.label];
   }
 
-  List<DropdownMenuItem<String>> _cannedThinkingDropdownItems() {
+  List<DropdownMenuItem<String>> _cannedModelDropdownItems() {
+    return <DropdownMenuItem<String>>[
+      DropdownMenuItem<String>(
+        value: _cannedModelInheritValue,
+        child: Text(context.l10n.chatUseCurrent),
+      ),
+      for (final option in widget.quickReplyModelOptions)
+        DropdownMenuItem<String>(
+          value: _modelSelectionValue(
+            providerId: option.providerId,
+            modelId: option.modelId,
+          ),
+          child: Text(
+            option.modelLabel == option.modelId
+                ? '${option.providerLabel} / ${option.modelId}'
+                : '${option.modelLabel} (${option.providerLabel})',
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+    ];
+  }
+
+  Iterable<String> _modelSearchTerms(String value) {
+    if (value == _cannedModelInheritValue) {
+      return <String>[
+        context.l10n.chatUseCurrent,
+        context.l10n.chatChooseModel,
+        'inherit',
+      ];
+    }
+    final override = _modelOverrideFromSelection(value);
+    final option = widget.quickReplyModelOptions
+        .where(
+          (item) =>
+              item.providerId == override.providerId &&
+              item.modelId == override.modelId,
+        )
+        .firstOrNull;
+    return <String>[
+      value,
+      if (override.providerId != null) override.providerId!,
+      if (override.modelId != null) override.modelId!,
+      if (option != null) option.providerLabel,
+      if (option != null) option.modelLabel,
+    ];
+  }
+
+  List<ChatQuickReplyThinkingOption> _variantOptionsForModelSelection(
+    String modelSelection,
+  ) {
+    if (modelSelection == _cannedModelInheritValue) {
+      return widget.quickReplyThinkingOptions;
+    }
+    final override = _modelOverrideFromSelection(modelSelection);
+    final option = widget.quickReplyModelOptions
+        .where(
+          (item) =>
+              item.providerId == override.providerId &&
+              item.modelId == override.modelId,
+        )
+        .firstOrNull;
+    return option?.variantOptions ?? const <ChatQuickReplyThinkingOption>[];
+  }
+
+  bool _thinkingSelectionAvailableForModel(
+    String thinkingSelection,
+    String modelSelection,
+  ) {
+    if (thinkingSelection == _cannedThinkingInheritValue ||
+        thinkingSelection == _cannedThinkingAutoValue) {
+      return true;
+    }
+    return _variantOptionsForModelSelection(
+      modelSelection,
+    ).any((option) => option.id == thinkingSelection);
+  }
+
+  List<DropdownMenuItem<String>> _cannedThinkingDropdownItems(
+    List<ChatQuickReplyThinkingOption> variantOptions,
+  ) {
     return <DropdownMenuItem<String>>[
       DropdownMenuItem<String>(
         value: _cannedThinkingInheritValue,
@@ -792,7 +972,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
         value: _cannedThinkingAutoValue,
         child: Text(context.l10n.modelAuto),
       ),
-      for (final option in widget.quickReplyThinkingOptions)
+      for (final option in variantOptions)
         DropdownMenuItem<String>(
           value: option.id,
           child: Text(option.label, overflow: TextOverflow.ellipsis),
@@ -824,26 +1004,39 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
 
   Widget? _buildCannedAnswerRoutingIndicators(CannedAnswer item) {
     final hasAgentOverride = item.normalizedAgentName.isNotEmpty;
+    final hasModelOverride =
+        item.normalizedProviderId.isNotEmpty &&
+        item.normalizedModelId.isNotEmpty;
     final hasThinkingOverride =
         item.thinkingMode != CannedAnswerThinkingMode.inherit;
-    if (!hasAgentOverride && !hasThinkingOverride) {
+    if (!hasAgentOverride && !hasModelOverride && !hasThinkingOverride) {
       return null;
     }
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    final indicators = <Widget>[
+      if (hasAgentOverride)
+        Tooltip(
+          message: context.l10n.chatChooseAgent,
+          child: Icon(Symbols.support_agent_rounded, size: 18, color: color),
+        ),
+      if (hasModelOverride)
+        Tooltip(
+          message: context.l10n.chatChooseModel,
+          child: Icon(Symbols.code_rounded, size: 18, color: color),
+        ),
+      if (hasThinkingOverride)
+        Tooltip(
+          message: context.l10n.shortcutNextVariant,
+          child: Icon(Symbols.tune_rounded, size: 18, color: color),
+        ),
+    ];
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (hasAgentOverride)
-          Tooltip(
-            message: context.l10n.chatChooseAgent,
-            child: Icon(Symbols.support_agent_rounded, size: 18, color: color),
-          ),
-        if (hasAgentOverride && hasThinkingOverride) const SizedBox(width: 6),
-        if (hasThinkingOverride)
-          Tooltip(
-            message: context.l10n.chatChooseEffort,
-            child: Icon(Symbols.tune_rounded, size: 18, color: color),
-          ),
+        for (var index = 0; index < indicators.length; index++) ...[
+          if (index > 0) const SizedBox(width: 6),
+          indicators[index],
+        ],
       ],
     );
   }

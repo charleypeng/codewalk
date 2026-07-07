@@ -9548,7 +9548,7 @@ void main() {
     expect(find.text('High'), findsOneWidget);
   });
 
-  testWidgets('quick reply applies agent and thinking before sending', (
+  testWidgets('quick reply applies agent model and variant before sending', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -9576,6 +9576,8 @@ void main() {
           'sendAutomatically': true,
           'scopeMode': 'global',
           'agentName': 'PLAN',
+          'providerId': 'provider_1',
+          'modelId': 'model_2',
           'thinkingMode': 'variant',
           'thinkingVariantId': 'high',
           'updatedAtEpochMs': 1,
@@ -9585,7 +9587,32 @@ void main() {
     final provider = _buildChatProvider(
       chatRepository: repository,
       localDataSource: localDataSource,
-      includeVariants: true,
+      providersResponse: ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'provider_1',
+            name: 'Provider 1',
+            env: const <String>[],
+            models: <String, Model>{
+              'model_1': _model(
+                'model_1',
+                variants: const <String, ModelVariant>{
+                  'low': ModelVariant(id: 'low', name: 'Low'),
+                  'high': ModelVariant(id: 'high', name: 'High'),
+                },
+              ),
+              'model_2': _model(
+                'model_2',
+                variants: const <String, ModelVariant>{
+                  'high': ModelVariant(id: 'high', name: 'High'),
+                },
+              ),
+            },
+          ),
+        ],
+        defaultModels: const <String, String>{'provider_1': 'model_1'},
+        connected: const <String>['provider_1'],
+      ),
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
@@ -9607,12 +9634,15 @@ void main() {
     final sentInput = repository.lastSendInput;
     expect(sentInput, isNotNull);
     expect(sentInput!.mode, 'plan');
+    expect(sentInput.providerId, 'provider_1');
+    expect(sentInput.modelId, 'model_2');
     expect(sentInput.variant, 'high');
     expect(
       sentInput.parts.whereType<TextInputPart>().single.text,
       'Use routed quick reply',
     );
     expect(provider.selectedAgentName, 'plan');
+    expect(provider.selectedModelId, 'model_2');
     expect(provider.selectedVariantId, 'high');
   });
 

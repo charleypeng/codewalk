@@ -13,6 +13,8 @@ class CannedAnswer {
     this.sendAutomatically = false,
     this.scopeMode = CannedAnswerScopeMode.global,
     this.agentName,
+    this.providerId,
+    this.modelId,
     this.thinkingMode = CannedAnswerThinkingMode.inherit,
     this.thinkingVariantId,
     required this.updatedAtEpochMs,
@@ -25,6 +27,8 @@ class CannedAnswer {
   final bool sendAutomatically;
   final CannedAnswerScopeMode scopeMode;
   final String? agentName;
+  final String? providerId;
+  final String? modelId;
   final CannedAnswerThinkingMode thinkingMode;
   final String? thinkingVariantId;
   final int updatedAtEpochMs;
@@ -36,6 +40,16 @@ class CannedAnswer {
 
   String get normalizedAgentName {
     final trimmed = agentName?.trim() ?? '';
+    return trimmed;
+  }
+
+  String get normalizedProviderId {
+    final trimmed = providerId?.trim() ?? '';
+    return trimmed;
+  }
+
+  String get normalizedModelId {
+    final trimmed = modelId?.trim() ?? '';
     return trimmed;
   }
 
@@ -52,6 +66,8 @@ class CannedAnswer {
     bool? sendAutomatically,
     CannedAnswerScopeMode? scopeMode,
     String? Function()? agentName,
+    String? Function()? providerId,
+    String? Function()? modelId,
     CannedAnswerThinkingMode? thinkingMode,
     String? Function()? thinkingVariantId,
     int? updatedAtEpochMs,
@@ -64,6 +80,8 @@ class CannedAnswer {
       sendAutomatically: sendAutomatically ?? this.sendAutomatically,
       scopeMode: scopeMode ?? this.scopeMode,
       agentName: agentName != null ? agentName() : this.agentName,
+      providerId: providerId != null ? providerId() : this.providerId,
+      modelId: modelId != null ? modelId() : this.modelId,
       thinkingMode: thinkingMode ?? this.thinkingMode,
       thinkingVariantId: thinkingVariantId != null
           ? thinkingVariantId()
@@ -81,6 +99,10 @@ class CannedAnswer {
       if (sendAutomatically) 'sendAutomatically': true,
       'scopeMode': _scopeModeKey(scopeMode),
       if (normalizedAgentName.isNotEmpty) 'agentName': normalizedAgentName,
+      if (normalizedProviderId.isNotEmpty && normalizedModelId.isNotEmpty)
+        'providerId': normalizedProviderId,
+      if (normalizedProviderId.isNotEmpty && normalizedModelId.isNotEmpty)
+        'modelId': normalizedModelId,
       if (thinkingMode != CannedAnswerThinkingMode.inherit)
         'thinkingMode': _thinkingModeKey(thinkingMode),
       if (thinkingMode == CannedAnswerThinkingMode.variant &&
@@ -101,6 +123,10 @@ class CannedAnswer {
     final sendAutomatically = json['sendAutomatically'] == true;
     final scopeValue = json['scopeMode']?.toString().trim().toLowerCase() ?? '';
     final agentNameValue = json['agentName']?.toString().trim() ?? '';
+    final providerIdValue = json['providerId']?.toString().trim() ?? '';
+    final modelIdValue = json['modelId']?.toString().trim() ?? '';
+    final hasModelOverride =
+        providerIdValue.isNotEmpty && modelIdValue.isNotEmpty;
     final thinkingModeValue =
         json['thinkingMode']?.toString().trim().toLowerCase() ?? '';
     final thinkingVariantIdValue =
@@ -123,6 +149,8 @@ class CannedAnswer {
       sendAutomatically: sendAutomatically,
       scopeMode: _scopeModeFromKey(scopeValue),
       agentName: agentNameValue.isEmpty ? null : agentNameValue,
+      providerId: hasModelOverride ? providerIdValue : null,
+      modelId: hasModelOverride ? modelIdValue : null,
       thinkingMode: thinkingMode,
       thinkingVariantId:
           thinkingMode == CannedAnswerThinkingMode.variant &&

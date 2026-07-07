@@ -45,6 +45,36 @@ void main() {
       expect(restored?.agentName, 'plan');
     });
 
+    test('serializes and deserializes provider and model ids', () {
+      const answer = CannedAnswer(
+        id: 'canned-model',
+        text: 'Use selected model',
+        providerId: 'anthropic',
+        modelId: 'claude-sonnet',
+        updatedAtEpochMs: 789,
+      );
+
+      final json = answer.toJson();
+      final restored = CannedAnswer.fromJson(json);
+
+      expect(json['providerId'], 'anthropic');
+      expect(json['modelId'], 'claude-sonnet');
+      expect(restored?.providerId, 'anthropic');
+      expect(restored?.modelId, 'claude-sonnet');
+    });
+
+    test('ignores partial model override JSON', () {
+      final restored = CannedAnswer.fromJson(<String, dynamic>{
+        'id': 'partial-model',
+        'text': 'Missing provider',
+        'modelId': 'claude-sonnet',
+        'updatedAtEpochMs': 789,
+      });
+
+      expect(restored?.providerId, isNull);
+      expect(restored?.modelId, isNull);
+    });
+
     test('serializes and deserializes auto thinking mode', () {
       const answer = CannedAnswer(
         id: 'canned-auto-thinking',
@@ -91,6 +121,8 @@ void main() {
       });
 
       expect(restored?.agentName, isNull);
+      expect(restored?.providerId, isNull);
+      expect(restored?.modelId, isNull);
       expect(restored?.thinkingMode, CannedAnswerThinkingMode.inherit);
       expect(restored?.thinkingVariantId, isNull);
     });

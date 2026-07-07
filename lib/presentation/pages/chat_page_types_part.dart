@@ -362,6 +362,28 @@ int _variantListSignature(Iterable<ModelVariant> variants) {
   return Object.hash(count, signature);
 }
 
+int _quickReplyModelListSignature(ChatProvider chatProvider) {
+  var signature = 0;
+  var count = 0;
+  for (final provider in chatProvider.providers) {
+    for (final model in provider.models.values) {
+      if (!isUserSelectableModel(
+        provider: provider,
+        model: model,
+        connectedProviderIds: chatProvider.connectedProviderIds,
+      )) {
+        continue;
+      }
+      count += 1;
+      signature = _foldSignature(
+        signature,
+        Object.hash(provider.id, provider.name, model.hashCode),
+      );
+    }
+  }
+  return Object.hash(count, signature);
+}
+
 int _modelAttachmentSignature(Model? model) {
   if (model == null) {
     return 0;
@@ -376,6 +398,7 @@ int _quickReplySelectionSignature(ChatProvider chatProvider) {
     chatProvider.selectedModelId,
     chatProvider.selectedVariantId,
     _agentListSignature(chatProvider.selectableAgents),
+    _quickReplyModelListSignature(chatProvider),
     _variantListSignature(chatProvider.availableVariants),
   );
 }
