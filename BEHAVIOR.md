@@ -1526,6 +1526,15 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Then** the app supports light, dark, and AMOLED themes, plus Material You dynamic color from the system wallpaper
 - **Then** the `OpenCode Presets` picker mirrors the official OpenCode Web built-in theme registry rather than the older limited docs list
 
+### Visual style selection
+
+- **Given** the user opens `Settings` > `Appearance`
+- **When** the user changes `Visual style` between `Classic` and `Refined`
+- **Then** the setting applies immediately and persists in `ExperienceSettings` across app restarts
+- **Then** `Classic` remains the default and preserves the existing Material 3 surface treatment
+- **Then** `Refined` applies quieter CodeWalk-specific surface, radius, separator, tint, and shadow tokens to the app theme, chat composer, message bubbles, timeline status cards, snackbars, and sidebar/session rows
+- **Then** changing `Visual style` does not change the selected color palette, OpenCode preset, dynamic color preference, AMOLED dark preference, density, text scale, locale, or OpenCode server behavior
+
 ### OpenCode presets recolor markdown and code surfaces
 
 - **Given** the user has an OpenCode preset active

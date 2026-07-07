@@ -96,13 +96,17 @@ class AppTheme {
             _mobileSnackBarHorizontalInset,
             16,
           );
+    final visualTokens = theme.visualStyleTokens;
+    final snackBarBorderRadius = visualTokens.isRefined
+        ? visualTokens.controlRadius
+        : AppShapes.borderLarge;
 
     return theme.copyWith(
       snackBarTheme: theme.snackBarTheme.copyWith(
         behavior: SnackBarBehavior.floating,
         insetPadding: snackBarInset,
         showCloseIcon: wideLayout,
-        shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
+        shape: RoundedRectangleBorder(borderRadius: snackBarBorderRadius),
       ),
     );
   }

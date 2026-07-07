@@ -109,6 +109,22 @@ void main() {
     );
   });
 
+  test('uses refined snackbar radius when visual style is refined', () {
+    final theme = AppTheme.lightFrom(
+      ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+      visualStyle: VisualStyle.refined,
+    );
+    final resolved = AppTheme.withResponsiveSnackBars(
+      theme,
+      const MediaQueryData(size: Size(390, 844)),
+    );
+
+    expect(
+      (resolved.snackBarTheme.shape! as RoundedRectangleBorder).borderRadius,
+      theme.visualStyleTokens.controlRadius,
+    );
+  });
+
   test('limits desktop snackbar width through lateral inset padding', () {
     final theme = AppTheme.lightFrom(
       ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
