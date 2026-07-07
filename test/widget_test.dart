@@ -500,6 +500,68 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('new quick reply editor uses fullscreen on compact screens', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New quick reply'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('canned_answer_editor_fullscreen')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('canned_answer_editor_dialog')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('new quick reply editor uses centered dialog on wide screens', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New quick reply'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('canned_answer_editor_dialog')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('canned_answer_editor_fullscreen')),
+      findsNothing,
+    );
+  });
+
   testWidgets('canned override applies before auto-send', (
     WidgetTester tester,
   ) async {
@@ -653,6 +715,44 @@ void main() {
     expect(find.byIcon(Symbols.public_rounded), findsOneWidget);
     expect(find.text('Global reply'), findsOneWidget);
     expect(find.text('Shared text'), findsNothing);
+  });
+
+  testWidgets('canned routing overrides show compact indicators', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'routing-1',
+          'label': 'Routed reply',
+          'text': 'Hidden routed text',
+          'insertMode': 'append',
+          'scopeMode': 'global',
+          'agentName': 'plan',
+          'thinkingMode': 'auto',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: localDataSource,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Routed reply'), findsOneWidget);
+    expect(find.text('Hidden routed text'), findsNothing);
+    expect(find.byIcon(Symbols.support_agent_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.tune_rounded), findsOneWidget);
   });
 
   testWidgets(

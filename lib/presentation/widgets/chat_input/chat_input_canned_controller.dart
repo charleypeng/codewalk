@@ -206,7 +206,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
   }
 
   String get _cannedOverrideApplyFailedMessage =>
-      'Could not apply the saved quick-reply routing. Review before sending.';
+      context.l10n.errorProviderUnavailable;
 
   void _showCannedAnswerOverrideWarning(String message) {
     if (!mounted) {
@@ -576,7 +576,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       children: [
         _buildCannedEditorSection(
           dialogContext: dialogContext,
-          title: 'Content',
+          title: context.l10n.composerCannedText,
           children: [
             TextField(
               key: const ValueKey<String>('canned_answer_label_field'),
@@ -600,7 +600,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
         const SizedBox(height: 16),
         _buildCannedEditorSection(
           dialogContext: dialogContext,
-          title: 'Behavior',
+          title: context.l10n.settingsBehaviorTitle,
           children: [
             SwitchListTile(
               title: Text(context.l10n.composerCannedAppendAtCursor),
@@ -625,7 +625,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
         const SizedBox(height: 16),
         _buildCannedEditorSection(
           dialogContext: dialogContext,
-          title: 'Scope',
+          title: context.l10n.composerCannedScopeGlobal,
           children: [
             SwitchListTile(
               title: Text(context.l10n.composerCannedScopeGlobal),
@@ -650,7 +650,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
         const SizedBox(height: 16),
         _buildCannedEditorSection(
           dialogContext: dialogContext,
-          title: 'Routing',
+          title: context.l10n.chatChooseAgent,
           children: [
             SearchableDropdownFormField<String>(
               key: const ValueKey<String>('canned_answer_agent_dropdown'),
@@ -672,12 +672,12 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
             if (initialAgentUnavailable)
               _buildCannedEditorWarning(
                 dialogContext,
-                'The saved agent is not available in the current server context.',
+                context.l10n.settingsBehaviorNoAgents,
               ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               key: const ValueKey<String>('canned_answer_thinking_dropdown'),
-              value: thinkingSelection,
+              initialValue: thinkingSelection,
               isExpanded: true,
               decoration: InputDecoration(
                 labelText: context.l10n.chatChooseEffort,
@@ -692,12 +692,12 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
             if (initialThinkingUnavailable)
               _buildCannedEditorWarning(
                 dialogContext,
-                'The saved thinking level is not available for the current model.',
+                context.l10n.chatChooseEffort,
               ),
             if (!widget.quickReplySelectionOverridesEnabled)
               _buildCannedEditorWarning(
                 dialogContext,
-                'Agent and thinking overrides are locked in this sub-conversation.',
+                context.l10n.chatReturnToMainConversation,
               ),
           ],
         ),
@@ -752,9 +752,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
 
   List<DropdownMenuItem<String>> _cannedAgentDropdownItems() {
     return <DropdownMenuItem<String>>[
-      const DropdownMenuItem<String>(
+      DropdownMenuItem<String>(
         value: _cannedAgentInheritValue,
-        child: Text('Use current agent'),
+        child: Text(context.l10n.chatUseCurrent),
       ),
       for (final option in widget.quickReplyAgentOptions)
         DropdownMenuItem<String>(
@@ -776,9 +776,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
 
   List<DropdownMenuItem<String>> _cannedThinkingDropdownItems() {
     return <DropdownMenuItem<String>>[
-      const DropdownMenuItem<String>(
+      DropdownMenuItem<String>(
         value: _cannedThinkingInheritValue,
-        child: Text('Use current thinking'),
+        child: Text(context.l10n.chatUseCurrent),
       ),
       DropdownMenuItem<String>(
         value: _cannedThinkingAutoValue,
@@ -812,6 +812,32 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
   String _cannedAnswerDisplayText(CannedAnswer item) {
     // Keep each quick reply row to one visible text source.
     return item.normalizedLabel.isEmpty ? item.text : item.normalizedLabel;
+  }
+
+  Widget? _buildCannedAnswerRoutingIndicators(CannedAnswer item) {
+    final hasAgentOverride = item.normalizedAgentName.isNotEmpty;
+    final hasThinkingOverride =
+        item.thinkingMode != CannedAnswerThinkingMode.inherit;
+    if (!hasAgentOverride && !hasThinkingOverride) {
+      return null;
+    }
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasAgentOverride)
+          Tooltip(
+            message: context.l10n.chatChooseAgent,
+            child: Icon(Symbols.support_agent_rounded, size: 18, color: color),
+          ),
+        if (hasAgentOverride && hasThinkingOverride) const SizedBox(width: 6),
+        if (hasThinkingOverride)
+          Tooltip(
+            message: context.l10n.chatChooseEffort,
+            child: Icon(Symbols.tune_rounded, size: 18, color: color),
+          ),
+      ],
+    );
   }
 
   Widget _buildExtrasPopover({
@@ -878,6 +904,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      trailing: _buildCannedAnswerRoutingIndicators(item),
                       onTap: () {
                         _setState(() {
                           _activeSuggestionIndex = index;

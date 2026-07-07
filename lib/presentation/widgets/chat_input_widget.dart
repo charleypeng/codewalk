@@ -33,8 +33,8 @@ import '../utils/windows_settings_links.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
 import 'parakeet_model_download_dialog.dart';
-import 'sensevoice_model_download_dialog.dart';
 import 'searchable_dropdown_form_field.dart';
+import 'sensevoice_model_download_dialog.dart';
 import 'sherpa_model_download_dialog.dart';
 
 part 'chat_input_widget_types_part.dart';
