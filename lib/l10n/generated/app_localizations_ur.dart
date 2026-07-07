@@ -3378,7 +3378,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'ڈیفالٹ کلاسک شکل یا زیادہ نرم بہتر سطحوں کا انتخاب کریں۔';
+      'کلاسک شکل یا زیادہ نرم بہتر سطحوں کا انتخاب کریں۔';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'کلاسک';

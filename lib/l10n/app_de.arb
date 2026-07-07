@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "Design",
   "settingsAppearanceThemeDescription": "Wählen Sie den hellen, dunklen oder Systemmodus, behalten Sie die klassische CodeWalk-Palette bei oder wechseln Sie zu einer OpenCode-Voreinstellung.",
   "settingsAppearanceVisualStyle": "Visueller Stil",
-  "settingsAppearanceVisualStyleDescription": "Wählen Sie die klassische Standardoptik oder weichere verfeinerte Oberflächen.",
+  "settingsAppearanceVisualStyleDescription": "Wählen Sie die klassische Optik oder weichere verfeinerte Oberflächen.",
   "settingsAppearanceVisualStyleClassic": "Klassisch",
   "settingsAppearanceVisualStyleRefined": "Verfeinert",
   "settingsAppearanceThinkingBubbles": "Denkblasen",

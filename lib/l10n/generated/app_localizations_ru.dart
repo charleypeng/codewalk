@@ -3411,7 +3411,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'Выберите классический вид по умолчанию или более мягкие улучшенные поверхности.';
+      'Выберите классический вид или более мягкие улучшенные поверхности.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'Классический';

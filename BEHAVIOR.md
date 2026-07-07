@@ -1531,7 +1531,9 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Given** the user opens `Settings` > `Appearance`
 - **When** the user changes `Visual style` between `Classic` and `Refined`
 - **Then** the setting applies immediately and persists in `ExperienceSettings` across app restarts
-- **Then** `Classic` remains the default and preserves the existing Material 3 surface treatment
+- **Then** new installations start with `Refined` selected by default
+- **Then** older persisted settings that do not contain a `visualStyle` key continue to open in `Classic` for compatibility
+- **Then** selecting `Classic` preserves the existing Material 3 surface treatment
 - **Then** `Refined` applies quieter CodeWalk-specific surface, radius, separator, tint, and shadow tokens to the app theme, chat composer, message bubbles, timeline status cards, snackbars, and sidebar/session rows
 - **Then** changing `Visual style` does not change the selected color palette, OpenCode preset, dynamic color preference, AMOLED dark preference, density, text scale, locale, or OpenCode server behavior
 

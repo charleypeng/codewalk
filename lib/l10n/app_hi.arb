@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "थीम",
   "settingsAppearanceThemeDescription": "लाइट, डार्क या सिस्टम मोड चुनें, फिर CodeWalk क्लासिक पैलेट रखें या OpenCode प्रीसेट पर स्विच करें।",
   "settingsAppearanceVisualStyle": "दृश्य शैली",
-  "settingsAppearanceVisualStyleDescription": "डिफ़ॉल्ट क्लासिक रूप या नरम परिष्कृत सतहें चुनें।",
+  "settingsAppearanceVisualStyleDescription": "क्लासिक रूप या नरम परिष्कृत सतहें चुनें।",
   "settingsAppearanceVisualStyleClassic": "क्लासिक",
   "settingsAppearanceVisualStyleRefined": "परिष्कृत",
   "settingsAppearanceThinkingBubbles": "विचार करने वाले बुलबुले (Thinking bubbles)",

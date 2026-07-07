@@ -2702,9 +2702,9 @@ The Material You / MD3 stack (ADR-013, ADR-014, ADR-034) is already the canonica
 
 ### Decision
 
-Adopt a **refined visual layer** as an opt-in alternative style on top of the existing Flutter Material / Material 3 stack. The default style remains `classic` (today's Material 3 look); `refined` is a user-elected, persisted preference.
+Adopt a **refined visual layer** on top of the existing Flutter Material / Material 3 stack. New installations default to `refined`; `classic` remains available as a reversible user preference and as the compatibility fallback for legacy persisted payloads missing the `visualStyle` key.
 
-1. **Persisted `VisualStyle` enum in `ExperienceSettings`** — add a `VisualStyle` enum (`classic` | `refined`) with default `classic` and persist it through `SettingsProvider` via the existing ADR-007 contract. New installs default to `classic`; existing installs keep their unchanged look unless the user explicitly opts in. The `OpenCodeThemeTokens` preset palette, dynamic color (`DynamicColorBuilder`), AMOLED mode, density (`AppDensity`), RTL, focus traversal, keyboard policy (ADR-024), and Material Symbols icons (ADR-012) are all preserved unchanged.
+1. **Persisted `VisualStyle` enum in `ExperienceSettings`** — add a `VisualStyle` enum (`classic` | `refined`) and persist it through `SettingsProvider` via the existing ADR-007 contract. New installs default to `refined` via `ExperienceSettings.defaults()`, while legacy persisted settings payloads missing `visualStyle` resolve to `classic` so existing users keep the prior look unless they opt in. The `OpenCodeThemeTokens` preset palette, dynamic color (`DynamicColorBuilder`), AMOLED mode, density (`AppDensity`), RTL, focus traversal, keyboard policy (ADR-024), and Material Symbols icons (ADR-012) are all preserved unchanged.
 
 2. **`AppVisualStyleTokens` ThemeExtension** — introduce a new `ThemeExtension<AppVisualStyleTokens>` class that carries refined-only visual adjustments: surface tonal steps (card, panel, composer, muted-control, selected), hairline divider and border widths, refined corner radii (a separate scale, distinct from `AppShapes`), refined shadow tokens, and separator/tint colors. The extension is registered on the `ThemeData` produced by `AppTheme.lightFrom(...)` and `AppTheme.darkFrom(...)` for both styles; `classic` resolves to its baseline values (so today’s look is unchanged when `VisualStyle.classic` is active) and `refined` resolves to the refined scale. The extension exposes an `isRefined` flag so widgets can branch on the resolved style without re-reading the persisted setting, and provides refined-only surface/radius/border-width/shadow/separator-tint paths that call sites opt into while Classic fallbacks remain the default.
 
@@ -2719,7 +2719,7 @@ Adopt a **refined visual layer** as an opt-in alternative style on top of the ex
 ### Rationale
 
 - **Lower-risk incremental layer over existing architecture.** Material 3 widgets are kept; no widgets are replaced, no third-party design system is adopted, and the existing `AppShapes` / `AppDensitySpacing` / `OpenCodeThemeTokens` contracts are preserved. The refined look is an additive `ThemeExtension`, so most surfaces opt in by reading the extension while the rest of the widget tree keeps working unchanged.
-- **Reversible rollout.** Because the default is `classic` and the choice is persisted in `ExperienceSettings`, the refined layer can ship behind a user-facing toggle and be rolled back by setting the default back to `classic`. No destructive migration, no API contract change, no schema migration beyond the new `VisualStyle` field.
+- **Reversible rollout.** Because the choice is persisted in `ExperienceSettings`, the refined layer can be rolled back by switching the new-install default back to `classic` while preserving user-selected values and the existing legacy missing-key fallback. No destructive migration, no API contract change, no schema migration beyond the new `VisualStyle` field.
 - **Preserves official OpenCode compatibility.** The visual layer does not touch server contracts, model payloads, message lifecycle, or any behavior governed by ADR-023. The `OpenCodeThemeTokens` preset palette continues to be the brand source; refined is a presentation-only layering on top of it.
 - **`ThemeExtension` is the canonical Flutter mechanism.** Adding an extension is the standard way to carry design tokens that vary by theme without forking `ThemeData`. It composes cleanly with `MaterialApp.theme` / `darkTheme`, density (ADR-034), and dynamic color, and it is tree-shakable: widgets that don’t read it pay zero cost.
 - **Shared resolution in `_buildTheme`, per-widget opt-in elsewhere.** `AppTheme.lightFrom` / `AppTheme.darkFrom` / `_buildTheme` own the per-call dispatch (color scheme, typography, density, registered extension) so the Material 3 inputs and refined offsets stay co-located; high-impact widgets read the same `Theme.of(context).visualStyleTokens` they already use and branch on `visualTokens.isRefined` for refined-only color / radius / shadow paths, with Classic fallbacks preserved. This keeps the resolution path single-sourced while letting each surface choose its level of refinement.
@@ -2728,7 +2728,7 @@ Adopt a **refined visual layer** as an opt-in alternative style on top of the ex
 ### Consequences
 
 - ✅ CodeWalk gains a more opinionated, less default-Material visual identity without leaving the Material 3 widget vocabulary.
-- ✅ Default remains `classic`; the change is opt-in and reversible per user without restart.
+- ✅ New installs default to `refined`; Classic remains available and legacy missing-key payloads keep Classic for compatibility; the choice is reversible per user without restart.
 - ✅ `OpenCodeThemeTokens`, dynamic color, AMOLED, density, RTL, focus, keyboard policy, and Material Symbols icons all continue to work unchanged.
 - ✅ `ThemeExtension` keeps the refined tokens tree-shakable, type-safe, and composable with the existing Material 3 theme.
 - ✅ Shared `_buildTheme` resolution keeps the Material 3 inputs and refined offsets co-located; high-impact widgets opt into refined paths by reading `Theme.of(context).visualStyleTokens` and branching on `visualTokens.isRefined`, with Classic fallbacks preserved.
@@ -2749,7 +2749,7 @@ This ADR is fully compliant with ADR-023. It introduces no OpenCode server contr
 
 ### Key Files
 
-- `lib/domain/entities/experience_settings.dart` — `VisualStyle` enum (`classic` | `refined`) with `classic` default; persistence field
+- `lib/domain/entities/experience_settings.dart` — `VisualStyle` enum (`classic` | `refined`) with `refined` as the new-install default and `classic` as the legacy missing-key fallback; persistence field
 - `lib/presentation/providers/settings_provider.dart` — `VisualStyle` getter / setter; persistence migration; listener-driven theme rebuild hook
 - `lib/presentation/theme/app_theme.dart` — `AppTheme.lightFrom(...)` / `AppTheme.darkFrom(...)` accept an optional `VisualStyle` (default `classic`); private `_buildTheme(...)` owns shared resolution and registers `AppVisualStyleTokens` on both light and dark `ThemeData`; `withResponsiveSnackBars(theme)` layers tokenized snack-bar treatment when `theme.visualStyleTokens.isRefined`
 - `lib/presentation/theme/app_visual_style_tokens.dart` — new `ThemeExtension<AppVisualStyleTokens>` carrying refined surface tonal steps, hairline divider and border widths, refined radii, shadow tokens, and separator/tint colors; baseline values for `classic`, refined values for `refined`; exposes `isRefined` so widgets can branch on the resolved style

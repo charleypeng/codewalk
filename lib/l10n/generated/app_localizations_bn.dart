@@ -3389,7 +3389,7 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'ডিফল্ট ক্লাসিক রূপ অথবা আরও নরম পরিশীলিত সারফেস বেছে নিন।';
+      'ক্লাসিক রূপ অথবা আরও নরম পরিশীলিত সারফেস বেছে নিন।';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'ক্লাসিক';

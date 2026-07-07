@@ -3178,7 +3178,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppearanceVisualStyle => '视觉样式';
 
   @override
-  String get settingsAppearanceVisualStyleDescription => '选择默认的经典外观，或更柔和的精致界面。';
+  String get settingsAppearanceVisualStyleDescription => '选择经典外观，或更柔和的精致界面。';
 
   @override
   String get settingsAppearanceVisualStyleClassic => '经典';

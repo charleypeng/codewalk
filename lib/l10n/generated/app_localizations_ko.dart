@@ -3248,7 +3248,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      '기본 클래식 모양 또는 더 부드러운 리파인드 표면을 선택합니다.';
+      '클래식 모양 또는 더 부드러운 리파인드 표면을 선택합니다.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => '클래식';

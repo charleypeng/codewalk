@@ -3452,7 +3452,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'Choisissez le style classique par défaut ou des surfaces raffinées plus douces.';
+      'Choisissez le style classique ou des surfaces raffinées plus douces.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'Classique';

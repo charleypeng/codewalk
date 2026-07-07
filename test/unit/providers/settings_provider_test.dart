@@ -689,14 +689,14 @@ void main() {
       );
       await first.initialize();
 
-      expect(first.visualStyle, VisualStyle.classic);
+      expect(first.visualStyle, VisualStyle.refined);
 
-      await first.setVisualStyle(VisualStyle.refined);
+      await first.setVisualStyle(VisualStyle.classic);
 
       final raw = local.experienceSettingsJson;
       expect(raw, isNotNull);
       final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
-      expect(settingsJson['visualStyle'], 'refined');
+      expect(settingsJson['visualStyle'], 'classic');
 
       final second = SettingsProvider(
         localDataSource: local,
@@ -705,9 +705,9 @@ void main() {
       );
       await second.initialize();
 
-      expect(second.visualStyle, VisualStyle.refined);
+      expect(second.visualStyle, VisualStyle.classic);
 
-      await second.setVisualStyle(VisualStyle.refined);
+      await second.setVisualStyle(VisualStyle.classic);
       final afterNoOp = local.experienceSettingsJson;
       expect(afterNoOp, raw);
     });

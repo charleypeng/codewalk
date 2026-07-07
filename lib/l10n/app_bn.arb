@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "থিম",
   "settingsAppearanceThemeDescription": "হালকা, অন্ধকার বা সিস্টেম মোড চয়ন করুন, তারপর CodeWalk ক্লাসিক প্যালেট রাখুন বা একটি OpenCode প্রিসেট এ স্যুইচ করুন।",
   "settingsAppearanceVisualStyle": "ভিজ্যুয়াল স্টাইল",
-  "settingsAppearanceVisualStyleDescription": "ডিফল্ট ক্লাসিক রূপ অথবা আরও নরম পরিশীলিত সারফেস বেছে নিন।",
+  "settingsAppearanceVisualStyleDescription": "ক্লাসিক রূপ অথবা আরও নরম পরিশীলিত সারফেস বেছে নিন।",
   "settingsAppearanceVisualStyleClassic": "ক্লাসিক",
   "settingsAppearanceVisualStyleRefined": "পরিশীলিত",
   "settingsAppearanceThinkingBubbles": "বুদবুদ চিন্তা",

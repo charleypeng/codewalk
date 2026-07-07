@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "Тема",
   "settingsAppearanceThemeDescription": "Выберите светлый, темный или системный режим, а затем сохраните классическую палитру CodeWalk или переключитесь на предустановку OpenCode.",
   "settingsAppearanceVisualStyle": "Визуальный стиль",
-  "settingsAppearanceVisualStyleDescription": "Выберите классический вид по умолчанию или более мягкие улучшенные поверхности.",
+  "settingsAppearanceVisualStyleDescription": "Выберите классический вид или более мягкие улучшенные поверхности.",
   "settingsAppearanceVisualStyleClassic": "Классический",
   "settingsAppearanceVisualStyleRefined": "Улучшенный",
   "settingsAppearanceThinkingBubbles": "Размышления",

@@ -205,8 +205,8 @@ void main() {
   });
 
   group('visual style serialization', () {
-    test('defaults to classic visual style', () {
-      expect(ExperienceSettings.defaults().visualStyle, VisualStyle.classic);
+    test('defaults new installs to refined visual style', () {
+      expect(ExperienceSettings.defaults().visualStyle, VisualStyle.refined);
     });
 
     test('serializes and deserializes refined visual style', () {
@@ -221,7 +221,7 @@ void main() {
       expect(restored.visualStyle, VisualStyle.refined);
     });
 
-    test('falls back to classic when visual style key is missing', () {
+    test('keeps legacy payloads classic when visual style key is missing', () {
       final restored = ExperienceSettings.fromJson(<String, dynamic>{});
 
       expect(restored.visualStyle, VisualStyle.classic);

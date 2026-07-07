@@ -3245,7 +3245,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      '既定のクラシック表示、またはより柔らかな洗練表示を選択します。';
+      'クラシック表示、またはより柔らかな洗練表示を選択します。';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'クラシック';

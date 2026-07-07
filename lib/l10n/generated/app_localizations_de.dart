@@ -3421,7 +3421,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'Wählen Sie die klassische Standardoptik oder weichere verfeinerte Oberflächen.';
+      'Wählen Sie die klassische Optik oder weichere verfeinerte Oberflächen.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'Klassisch';

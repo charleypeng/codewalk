@@ -3372,7 +3372,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'Choose the default Classic look or softer Refined surfaces.';
+      'Choose Classic or softer Refined surfaces.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'Classic';

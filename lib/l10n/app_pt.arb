@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "Tema",
   "settingsAppearanceThemeDescription": "Escolha entre modo claro, escuro ou sistema, depois mantenha a paleta clássica do CodeWalk ou mude para um preset OpenCode.",
   "settingsAppearanceVisualStyle": "Estilo visual",
-  "settingsAppearanceVisualStyleDescription": "Escolha a aparência clássica padrão ou superfícies refinadas mais suaves.",
+  "settingsAppearanceVisualStyleDescription": "Escolha a aparência clássica ou superfícies refinadas mais suaves.",
   "settingsAppearanceVisualStyleClassic": "Clássico",
   "settingsAppearanceVisualStyleRefined": "Refinado",
   "settingsAppearanceThinkingBubbles": "Balões de pensamento",

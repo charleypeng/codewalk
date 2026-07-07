@@ -3337,7 +3337,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'اختر المظهر الكلاسيكي الافتراضي أو أسطحًا محسّنة أكثر نعومة.';
+      'اختر المظهر الكلاسيكي أو أسطحًا محسّنة أكثر نعومة.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'كلاسيكي';

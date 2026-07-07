@@ -3403,7 +3403,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'Escolha a aparência clássica padrão ou superfícies refinadas mais suaves.';
+      'Escolha a aparência clássica ou superfícies refinadas mais suaves.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'Clássico';

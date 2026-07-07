@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "テーマ",
   "settingsAppearanceThemeDescription": "ライト、ダーク、またはシステムモードを選択し、CodeWalk クラシックパレットを維持するか、OpenCode プリセットに切り替えます。",
   "settingsAppearanceVisualStyle": "ビジュアルスタイル",
-  "settingsAppearanceVisualStyleDescription": "既定のクラシック表示、またはより柔らかな洗練表示を選択します。",
+  "settingsAppearanceVisualStyleDescription": "クラシック表示、またはより柔らかな洗練表示を選択します。",
   "settingsAppearanceVisualStyleClassic": "クラシック",
   "settingsAppearanceVisualStyleRefined": "洗練",
   "settingsAppearanceThinkingBubbles": "思考プロセスバブル",

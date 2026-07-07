@@ -3390,7 +3390,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'डिफ़ॉल्ट क्लासिक रूप या नरम परिष्कृत सतहें चुनें।';
+      'क्लासिक रूप या नरम परिष्कृत सतहें चुनें।';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'क्लासिक';

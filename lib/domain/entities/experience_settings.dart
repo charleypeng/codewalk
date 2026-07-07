@@ -705,7 +705,7 @@ class ExperienceSettings {
       loggingEnabled: false,
       performanceLoggingEnabled: false,
       themeMode: ThemeModeOption.system,
-      visualStyle: VisualStyle.classic,
+      visualStyle: VisualStyle.refined,
       localeCode: null,
       themePreset: null,
       useAmoledDark: false,
@@ -766,7 +766,7 @@ class ExperienceSettings {
     this.loggingEnabled = false,
     this.performanceLoggingEnabled = false,
     this.themeMode = ThemeModeOption.system,
-    this.visualStyle = VisualStyle.classic,
+    this.visualStyle = VisualStyle.refined,
     this.localeCode,
     this.themePreset,
     this.useAmoledDark = false,
@@ -1430,7 +1430,9 @@ class ExperienceSettings {
       themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
     }
 
-    var visualStyle = defaults.visualStyle;
+    // Missing visualStyle means an older persisted settings payload; keep those
+    // users on Classic while new installs use ExperienceSettings.defaults().
+    var visualStyle = VisualStyle.classic;
     final visualStyleJson = json['visualStyle'];
     if (visualStyleJson is String && visualStyleJson.trim().isNotEmpty) {
       visualStyle = visualStyleFromKey(visualStyleJson);

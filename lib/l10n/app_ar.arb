@@ -949,7 +949,7 @@
   "settingsAppearanceTheme": "السمة",
   "settingsAppearanceThemeDescription": "اختر الوضع الفاتح، أو الداكن، أو وضع النظام، ثم احتفظ بلوحة ألوان CodeWalk الكلاسيكية أو انتقل إلى إعداد مسبق لـ OpenCode.",
   "settingsAppearanceVisualStyle": "النمط المرئي",
-  "settingsAppearanceVisualStyleDescription": "اختر المظهر الكلاسيكي الافتراضي أو أسطحًا محسّنة أكثر نعومة.",
+  "settingsAppearanceVisualStyleDescription": "اختر المظهر الكلاسيكي أو أسطحًا محسّنة أكثر نعومة.",
   "settingsAppearanceVisualStyleClassic": "كلاسيكي",
   "settingsAppearanceVisualStyleRefined": "محسّن",
   "settingsAppearanceThinkingBubbles": "فقاعات التفكير",

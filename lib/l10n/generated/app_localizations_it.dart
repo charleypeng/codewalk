@@ -3425,7 +3425,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settingsAppearanceVisualStyleDescription =>
-      'Scegli lo stile classico predefinito o superfici più morbide e raffinate.';
+      'Scegli lo stile classico o superfici più morbide e raffinate.';
 
   @override
   String get settingsAppearanceVisualStyleClassic => 'Classico';

@@ -5981,7 +5981,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — settingsAppearanceVisualStyleDescription
   ///
   /// In en, this message translates to:
-  /// **'Choose the default Classic look or softer Refined surfaces.'**
+  /// **'Choose Classic or softer Refined surfaces.'**
   String get settingsAppearanceVisualStyleDescription;
 
   /// CodeWalk UI string — settingsAppearanceVisualStyleClassic
