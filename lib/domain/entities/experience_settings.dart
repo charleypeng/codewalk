@@ -32,6 +32,8 @@ enum ChatRenderMode { live, block }
 
 enum ThemeModeOption { system, light, dark }
 
+enum VisualStyle { classic, refined }
+
 enum OpenCodeThemePreset {
   oc2,
   amoled,
@@ -515,6 +517,20 @@ ThemeModeOption themeModeOptionFromKey(String value) {
   };
 }
 
+String visualStyleKey(VisualStyle style) {
+  return switch (style) {
+    VisualStyle.classic => 'classic',
+    VisualStyle.refined => 'refined',
+  };
+}
+
+VisualStyle visualStyleFromKey(String value) {
+  return switch (value.trim().toLowerCase()) {
+    'refined' => VisualStyle.refined,
+    _ => VisualStyle.classic,
+  };
+}
+
 String speechToTextEngineKey(SpeechToTextEngine engine) {
   return switch (engine) {
     SpeechToTextEngine.native => 'native',
@@ -689,6 +705,7 @@ class ExperienceSettings {
       loggingEnabled: false,
       performanceLoggingEnabled: false,
       themeMode: ThemeModeOption.system,
+      visualStyle: VisualStyle.classic,
       localeCode: null,
       themePreset: null,
       useAmoledDark: false,
@@ -749,6 +766,7 @@ class ExperienceSettings {
     this.loggingEnabled = false,
     this.performanceLoggingEnabled = false,
     this.themeMode = ThemeModeOption.system,
+    this.visualStyle = VisualStyle.classic,
     this.localeCode,
     this.themePreset,
     this.useAmoledDark = false,
@@ -809,6 +827,7 @@ class ExperienceSettings {
   final bool loggingEnabled;
   final bool performanceLoggingEnabled;
   final ThemeModeOption themeMode;
+  final VisualStyle visualStyle;
   final String? localeCode;
   final OpenCodeThemePreset? themePreset;
   final bool useAmoledDark;
@@ -869,6 +888,7 @@ class ExperienceSettings {
     bool? loggingEnabled,
     bool? performanceLoggingEnabled,
     ThemeModeOption? themeMode,
+    VisualStyle? visualStyle,
     String? Function()? localeCode,
     OpenCodeThemePreset? Function()? themePreset,
     bool? useAmoledDark,
@@ -951,6 +971,7 @@ class ExperienceSettings {
       performanceLoggingEnabled:
           performanceLoggingEnabled ?? this.performanceLoggingEnabled,
       themeMode: themeMode ?? this.themeMode,
+      visualStyle: visualStyle ?? this.visualStyle,
       localeCode: localeCode != null ? localeCode() : this.localeCode,
       themePreset: themePreset != null ? themePreset() : this.themePreset,
       useAmoledDark: useAmoledDark ?? this.useAmoledDark,
@@ -1056,6 +1077,7 @@ class ExperienceSettings {
       'loggingEnabled': loggingEnabled,
       'performanceLoggingEnabled': performanceLoggingEnabled,
       'themeMode': themeModeOptionKey(themeMode),
+      'visualStyle': visualStyleKey(visualStyle),
       if (localeCode != null) 'localeCode': localeCode,
       if (themePreset != null)
         'themePreset': openCodeThemePresetKey(themePreset!),
@@ -1408,6 +1430,12 @@ class ExperienceSettings {
       themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
     }
 
+    var visualStyle = defaults.visualStyle;
+    final visualStyleJson = json['visualStyle'];
+    if (visualStyleJson is String && visualStyleJson.trim().isNotEmpty) {
+      visualStyle = visualStyleFromKey(visualStyleJson);
+    }
+
     String? localeCode;
     final localeCodeJson = json['localeCode'];
     if (localeCodeJson is String && localeCodeJson.trim().isNotEmpty) {
@@ -1577,6 +1605,7 @@ class ExperienceSettings {
       loggingEnabled: loggingEnabled,
       performanceLoggingEnabled: performanceLoggingEnabled,
       themeMode: themeMode,
+      visualStyle: visualStyle,
       localeCode: localeCode,
       themePreset: themePreset,
       useAmoledDark: useAmoledDark,

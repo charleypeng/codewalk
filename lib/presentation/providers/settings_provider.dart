@@ -144,6 +144,7 @@ class SettingsProvider extends ChangeNotifier {
   List<String> get openCodeDefaultAgentOptions =>
       List<String>.unmodifiable(_openCodeDefaultAgentOptions);
   ThemeModeOption get themeMode => _settings.themeMode;
+  VisualStyle get visualStyle => _settings.visualStyle;
   String? get localeCode => _settings.localeCode;
   bool get useAmoledDark => _settings.useAmoledDark;
   bool get useDynamicColor => _settings.useDynamicColor;
@@ -476,6 +477,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(themeMode: mode);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setVisualStyle(VisualStyle style) async {
+    if (_settings.visualStyle == style) {
+      return;
+    }
+    _settings = _settings.copyWith(visualStyle: style);
     notifyListeners();
     await _persist();
   }

@@ -680,6 +680,38 @@ void main() {
       expect(second.themeMode, ThemeModeOption.dark);
     });
 
+    test('persists visual style preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.visualStyle, VisualStyle.classic);
+
+      await first.setVisualStyle(VisualStyle.refined);
+
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(settingsJson['visualStyle'], 'refined');
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.visualStyle, VisualStyle.refined);
+
+      await second.setVisualStyle(VisualStyle.refined);
+      final afterNoOp = local.experienceSettingsJson;
+      expect(afterNoOp, raw);
+    });
+
     test('loads OpenCode-backed default model and agent options', () async {
       final local = InMemoryAppLocalDataSource();
       final adapter = _MockDioAdapter()

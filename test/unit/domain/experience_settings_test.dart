@@ -204,6 +204,38 @@ void main() {
     });
   });
 
+  group('visual style serialization', () {
+    test('defaults to classic visual style', () {
+      expect(ExperienceSettings.defaults().visualStyle, VisualStyle.classic);
+    });
+
+    test('serializes and deserializes refined visual style', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        visualStyle: VisualStyle.refined,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['visualStyle'], 'refined');
+      expect(restored.visualStyle, VisualStyle.refined);
+    });
+
+    test('falls back to classic when visual style key is missing', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{});
+
+      expect(restored.visualStyle, VisualStyle.classic);
+    });
+
+    test('falls back to classic for unknown visual style keys', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'visualStyle': 'future-style',
+      });
+
+      expect(restored.visualStyle, VisualStyle.classic);
+    });
+  });
+
   group('font size fields', () {
     test('default values match safe scale center and terminal default', () {
       final defaults = ExperienceSettings.defaults();
