@@ -2,6 +2,7 @@ part of '../chat_page.dart';
 
 extension _ChatPageComposerWidgets on _ChatPageState {
   Widget _buildShortcutHint(String shortcut, String description) {
+    final visualTokens = Theme.of(context).visualStyleTokens;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -11,8 +12,12 @@ extension _ChatPageComposerWidgets on _ChatPageState {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+                color: visualTokens.isRefined
+                    ? visualTokens.mutedControlSurface
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: visualTokens.isRefined
+                    ? visualTokens.controlRadius
+                    : BorderRadius.circular(8),
               ),
               child: Text(
                 shortcut,
@@ -44,13 +49,16 @@ extension _ChatPageComposerWidgets on _ChatPageState {
     required bool forceCollapsed,
   }) {
     final effectiveCollapsed = forceCollapsed || sp.taskListCollapsed;
+    final visualTokens = Theme.of(context).visualStyleTokens;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: visualTokens.isRefined
+            ? visualTokens.cardSurface
+            : Theme.of(context).colorScheme.surfaceContainerLow,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: SessionTodoListWidget(
@@ -69,13 +77,16 @@ extension _ChatPageComposerWidgets on _ChatPageState {
   }
 
   Widget _buildInlineDiffCard(BuildContext context, ChatProvider chatProvider) {
+    final visualTokens = Theme.of(context).visualStyleTokens;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: visualTokens.isRefined
+            ? visualTokens.cardSurface
+            : Theme.of(context).colorScheme.surfaceContainerLow,
         child: SingleChildScrollView(
           primary: false,
           child: Padding(

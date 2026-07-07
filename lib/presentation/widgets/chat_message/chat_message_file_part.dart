@@ -3,6 +3,8 @@ part of '../chat_message_widget.dart';
 /// File attachment rendering with image preview and action handling.
 extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
   Widget _buildFilePart(BuildContext context, FilePart part) {
+    final theme = Theme.of(context);
+    final visualTokens = theme.visualStyleTokens;
     final sourcePath = part.fileSource?.path ?? part.symbolSource?.path;
     final isInlineDataAttachment = _isInlineDataAttachment(part.url);
     final imagePreview = _buildImageAttachmentPreview(context, part);
@@ -10,9 +12,18 @@ extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: AppShapes.borderSmall,
-        border: Border.all(color: Theme.of(context).dividerColor),
+        color: visualTokens.isRefined
+            ? visualTokens.cardSurface
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
+        border: Border.all(
+          color: visualTokens.isRefined
+              ? visualTokens.separator
+              : theme.dividerColor,
+          width: visualTokens.isRefined ? visualTokens.enabledBorderWidth : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,10 +34,7 @@ extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
           ],
           Row(
             children: [
-              Icon(
-                _getFileIcon(part.mime),
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              Icon(_getFileIcon(part.mime), color: theme.colorScheme.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -42,7 +50,7 @@ extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
                       Text(
                         sourcePath,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                   ],
@@ -86,9 +94,12 @@ extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
       return null;
     }
 
+    final visualTokens = Theme.of(context).visualStyleTokens;
     return ClipRRect(
       key: ValueKey<String>('file_image_preview_${part.id}'),
-      borderRadius: AppShapes.borderSmall,
+      borderRadius: visualTokens.isRefined
+          ? visualTokens.controlRadius
+          : AppShapes.borderSmall,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 220, minHeight: 120),
         child: Container(

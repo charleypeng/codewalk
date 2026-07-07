@@ -17,7 +17,9 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
     required ColorScheme colorScheme,
     required double maxHeight,
   }) {
-    final useDenseListTiles = Theme.of(context).visualDensity.vertical < 0;
+    final theme = Theme.of(context);
+    final visualTokens = theme.visualStyleTokens;
+    final useDenseListTiles = theme.visualDensity.vertical < 0;
     final isMention = _popoverType == ChatComposerPopoverType.mention;
     final suggestions = isMention
         ? _mentionSuggestions
@@ -56,8 +58,12 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
       skipTraversal: true,
       child: Material(
         key: ValueKey<String>('composer_popover_panel_${_popoverType.name}'),
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        color: visualTokens.isRefined
+            ? visualTokens.panelSurface
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.panelRadius
+            : BorderRadius.circular(16),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxHeight),
           child: _isLoadingSuggestions && suggestions.isEmpty
@@ -106,7 +112,9 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerLow,
+                          color: visualTokens.isRefined
+                              ? visualTokens.cardSurface
+                              : colorScheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(

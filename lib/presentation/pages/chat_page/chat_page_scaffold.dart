@@ -346,6 +346,7 @@ extension _ChatPageScaffold on _ChatPageState {
   }) {
     final appProvider = context.watch<AppProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
+    final visualTokens = Theme.of(context).visualStyleTokens;
     final badgeReason = _resolveHamburgerBadgeReason(
       chatProvider: chatProvider,
       appProvider: appProvider,
@@ -371,7 +372,9 @@ extension _ChatPageScaffold on _ChatPageState {
                         ),
                       )
                     : null,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: visualTokens.isRefined
+                    ? visualTokens.controlRadius
+                    : BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -828,9 +831,15 @@ extension _ChatPageScaffold on _ChatPageState {
     final projectLabelColor = isCurrentSession
         ? colorScheme.onSecondaryContainer
         : colorScheme.onSurfaceVariant;
+    final visualTokens = Theme.of(context).visualStyleTokens;
     final projectChipColor = isCurrentSession
         ? colorScheme.secondaryContainer
-        : colorScheme.surfaceContainerHighest;
+        : (visualTokens.isRefined
+              ? visualTokens.mutedControlSurface
+              : colorScheme.surfaceContainerHighest);
+    final recentTileRadius = visualTokens.isRefined
+        ? visualTokens.controlRadius
+        : BorderRadius.circular(16);
     final titleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontWeight: (highlighted || isCurrentSession)
           ? FontWeight.w700
@@ -880,10 +889,10 @@ extension _ChatPageScaffold on _ChatPageState {
                 onLongPress: openRecentContextMenu,
                 child: Material(
                   color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: recentTileRadius,
                   child: InkWell(
                     key: ValueKey<String>('recent_session_tile_${session.id}'),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: recentTileRadius,
                     onTap: () => unawaited(
                       _openSessionFromProjectGroup(
                         projectId: project.id,

@@ -47,6 +47,8 @@ class AppVisualStyleTokens extends ThemeExtension<AppVisualStyleTokens> {
   final double enabledBorderWidth;
   final List<BoxShadow> composerShadow;
 
+  bool get isRefined => visualStyle == VisualStyle.refined;
+
   factory AppVisualStyleTokens.classic(
     ColorScheme colorScheme,
     Brightness brightness,

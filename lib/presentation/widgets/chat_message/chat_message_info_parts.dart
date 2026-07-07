@@ -21,17 +21,23 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     if (part.text.trim().isEmpty) {
       return const SizedBox.shrink();
     }
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
-        borderRadius: AppShapes.borderSmall,
+        color: visualTokens.isRefined
+            ? visualTokens.selectedSurface
+            : colorScheme.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          color: colorScheme.primary.withValues(alpha: 0.3),
+          width: visualTokens.isRefined ? visualTokens.enabledBorderWidth : 1,
         ),
       ),
       child: Column(
@@ -39,11 +45,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
         children: [
           Row(
             children: [
-              Icon(
-                Symbols.psychology,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              Icon(Symbols.psychology, size: 16, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 compactLayout
@@ -51,7 +53,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
                     : context.l10n.chatMessageThinkingProcess,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: colorScheme.primary,
                 ),
               ),
             ],
@@ -125,17 +127,26 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
         context,
         icon: Symbols.task,
         title: context.l10n.msgInfoSubtaskPartAgent(part.agent),
-        subtitle: context.l10n.msgInfoPartDescriptionModel(part.description, model),
+        subtitle: context.l10n.msgInfoPartDescriptionModel(
+          part.description,
+          model,
+        ),
       );
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: AppShapes.borderSmall,
+        color: visualTokens.isRefined
+            ? visualTokens.mutedControlSurface
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +165,10 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  context.l10n.msgInfoPartDescriptionModel(part.description, model),
+                  context.l10n.msgInfoPartDescriptionModel(
+                    part.description,
+                    model,
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -390,11 +404,11 @@ class _CollapsibleReasoningContentState
             child: Text(
               _expanded
                   ? (compactLayout
-                      ? context.l10n.chatMessageShowLessCompact
-                      : context.l10n.chatMessageShowLess)
+                        ? context.l10n.chatMessageShowLessCompact
+                        : context.l10n.chatMessageShowLess)
                   : (compactLayout
-                      ? context.l10n.chatMessageShowMoreCompact
-                      : context.l10n.chatMessageShowMore),
+                        ? context.l10n.chatMessageShowMoreCompact
+                        : context.l10n.chatMessageShowMore),
             ),
           ),
         ),

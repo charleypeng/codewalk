@@ -18,7 +18,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     TaskToolChildSummary? taskChildSummary,
   }) {
     final isCompactToolStatus = MediaQuery.sizeOf(context).width < 600;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
     final presentation = _toolPresentation(part.tool);
     final descriptionLabel = _resolveToolDescriptionLabel(part);
     final typeLabel = _resolveToolTypeLabel(part);
@@ -46,10 +48,12 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
         vertical: isTaskTool ? 8 : 12,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: AppShapes.borderSmall,
+        color: visualTokens.isRefined
+            ? visualTokens.mutedControlSurface
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +165,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
       child: InkWell(
         key: ValueKey<String>('task_tool_open_session_${part.id}'),
         onTap: onNavigateToSubConversation,
-        borderRadius: AppShapes.borderSmall,
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
         child: content,
       ),
     );

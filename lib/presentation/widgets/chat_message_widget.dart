@@ -23,6 +23,7 @@ import '../services/message_image_export_service.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_semantic_colors.dart';
 import '../theme/app_shapes.dart';
+import '../theme/app_visual_style_tokens.dart';
 import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
 import '../utils/chat_abort_message.dart';
@@ -109,8 +110,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   static const int _maxToolOutputPreviewChars = 50000;
   static const int _maxToolCommandPreviewChars = 6000;
   static const int _maxSyntheticDiffChars = 20000;
-  static final RegExp _whitespaceRegExp = RegExp(r'\s+');
-
   // Snapshot of the last build inputs to skip redundant rebuilds.
   // Completed messages can skip rebuild when no visible prop changed.
   int _lastPartCount = -1;
@@ -375,10 +374,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         color: themeTokens.surfaceRaised,
         borderRadius: AppShapes.borderExtraSmall,
         border: Border(
-          left: BorderSide(
-            color: themeTokens.markdownBlockQuote,
-            width: 4.0,
-          ),
+          left: BorderSide(color: themeTokens.markdownBlockQuote, width: 4.0),
         ),
       ),
       em: Theme.of(
@@ -575,19 +571,23 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     required String title,
     String? subtitle,
   }) {
+    final theme = Theme.of(context);
+    final visualTokens = theme.visualStyleTokens;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: AppShapes.borderSmall,
+        color: visualTokens.isRefined
+            ? visualTokens.mutedControlSurface
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+          Icon(icon, size: 16, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -638,15 +638,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       name: error.name,
     );
     final title = isInlineAbortError ? null : error.name;
+    final theme = Theme.of(context);
+    final visualTokens = theme.visualStyleTokens;
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: AppShapes.borderSmall,
+        color: theme.colorScheme.errorContainer,
+        borderRadius: visualTokens.isRefined
+            ? visualTokens.cardRadius
+            : AppShapes.borderSmall,
         border: Border.all(
-          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+          color: theme.colorScheme.error.withValues(alpha: 0.3),
+          width: visualTokens.isRefined ? visualTokens.enabledBorderWidth : 1,
         ),
       ),
       child: Row(

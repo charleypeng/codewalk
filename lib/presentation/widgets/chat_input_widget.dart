@@ -28,6 +28,7 @@ import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_visual_style_tokens.dart';
 import '../utils/speech_engine_platform_support.dart';
 import '../utils/windows_settings_links.dart';
 import 'chat_tour_showcase.dart';
@@ -909,8 +910,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
+    final isDark = theme.brightness == Brightness.dark;
     final attachButtonStyle = composerAttachButtonStyle(
       colorScheme: colorScheme,
     );
@@ -932,12 +935,14 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final blockReason = widget.blockReason?.trim();
     final hasBlockReason = blockReason != null && blockReason.isNotEmpty;
     const composerBackgroundColor = Colors.transparent;
-    final normalBubblePreferredColor = Color.alphaBlend(
-      colorScheme.surfaceContainerHighest.withValues(
-        alpha: isDark ? 0.94 : 0.96,
-      ),
-      colorScheme.surface,
-    );
+    final normalBubblePreferredColor = visualTokens.isRefined
+        ? visualTokens.composerSurface
+        : Color.alphaBlend(
+            colorScheme.surfaceContainerHighest.withValues(
+              alpha: isDark ? 0.94 : 0.96,
+            ),
+            colorScheme.surface,
+          );
     final normalBubbleFallbackOverlayColor = colorScheme.onSurface.withValues(
       alpha: isDark ? 0.12 : 0.035,
     );
@@ -968,7 +973,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         inputBubbleColor,
       );
     }
-    final inputBubbleBorderRadius = AppShapes.borderExtraLarge;
+    final inputBubbleBorderRadius = visualTokens.isRefined
+        ? visualTokens.cardRadius
+        : AppShapes.borderExtraLarge;
 
     Widget wrapComposerTourTarget(Widget child) {
       final showcaseKey = widget.composerShowcaseKey;
@@ -1155,7 +1162,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     color: colorScheme.errorContainer.withValues(
                       alpha: isDark ? 0.36 : 0.72,
                     ),
-                    borderRadius: AppShapes.borderLarge,
+                    borderRadius: visualTokens.isRefined
+                        ? visualTokens.cardRadius
+                        : AppShapes.borderLarge,
                   ),
                   child: Padding(
                     padding: AppDensitySpacing.blockReasonInnerPadding(
@@ -1232,13 +1241,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                           decoration: BoxDecoration(
                             color: inputBubbleColor,
                             borderRadius: inputBubbleBorderRadius,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.07),
-                                blurRadius: 12,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            boxShadow: visualTokens.isRefined
+                                ? visualTokens.composerShadow
+                                : [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.07,
+                                      ),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                           ),
                           child: ClipRRect(
                             borderRadius: inputBubbleBorderRadius,

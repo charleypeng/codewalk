@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../core/i18n/l10n_context.dart';
 import '../../domain/entities/chat_session.dart';
 import '../providers/chat_provider.dart';
+import '../theme/app_visual_style_tokens.dart';
 import '../utils/session_title_formatter.dart';
 import 'session_context_menu.dart';
 import 'sidebar_selection_indicator.dart';
@@ -399,6 +400,13 @@ class _ChatSessionListState extends State<ChatSessionList> {
       allowUnreadCompletion: isRootSession,
     );
     final colorScheme = Theme.of(context).colorScheme;
+    final visualTokens = Theme.of(context).visualStyleTokens;
+    final tileRadius = visualTokens.isRefined
+        ? visualTokens.controlRadius
+        : BorderRadius.circular(18);
+    final toggleRadius = visualTokens.isRefined
+        ? visualTokens.controlRadius
+        : BorderRadius.circular(10);
     final isPinned = widget.pinnedSessionIds.contains(session.id);
     final childLabel = childCount == 1
         ? '1 sub-conversation'
@@ -445,17 +453,13 @@ class _ChatSessionListState extends State<ChatSessionList> {
             surface: 'main',
             child: Material(
               color: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: tileRadius),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   ListTile(
                     mouseCursor: SystemMouseCursors.click,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: tileRadius),
                     contentPadding: EdgeInsets.fromLTRB(
                       10 + (depth * 16.0),
                       0,
@@ -482,7 +486,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                                 _invalidateTreeCache();
                               });
                             },
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: toggleRadius,
                             child: Padding(
                               padding: const EdgeInsets.only(right: 4),
                               child: Icon(

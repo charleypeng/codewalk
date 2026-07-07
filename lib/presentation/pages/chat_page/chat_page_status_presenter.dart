@@ -368,7 +368,9 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           context: context,
           appProvider: appProvider,
         );
-        final colorScheme = Theme.of(context).colorScheme;
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        final visualTokens = theme.visualStyleTokens;
 
         return PopupMenuButton<String>(
           key: const ValueKey<String>('sidebar_server_switch_button'),
@@ -437,10 +439,12 @@ extension _ChatPageStatusPresenter on _ChatPageState {
             key: const ValueKey<String>('sidebar_server_status_control'),
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.26,
-              ),
-              borderRadius: AppShapes.borderLarge,
+              color: visualTokens.isRefined
+                  ? visualTokens.mutedControlSurface
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.26),
+              borderRadius: visualTokens.isRefined
+                  ? visualTokens.controlRadius
+                  : AppShapes.borderLarge,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

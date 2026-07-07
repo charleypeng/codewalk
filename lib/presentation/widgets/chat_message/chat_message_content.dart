@@ -11,7 +11,9 @@ const _userBubbleMinWidth = 220.0;
 extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   Widget _buildContent(BuildContext context) {
     final isUser = message.role == MessageRole.user;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
     final bubblePadding = isUser
         ? const EdgeInsets.fromLTRB(14, 10, 14, 12)
         : const EdgeInsets.fromLTRB(12, 8, 12, 10);
@@ -19,10 +21,15 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
       context,
       isUser: isUser,
     );
-    final bubbleBorderRadius = AppShapes.borderLarge.copyWith(
-      bottomRight: isUser ? const Radius.circular(6) : null,
-      bottomLeft: !isUser ? const Radius.circular(6) : null,
-    );
+    final bubbleBorderRadius = visualTokens.isRefined
+        ? visualTokens.bubbleRadius.copyWith(
+            bottomRight: isUser ? visualTokens.bubbleTightCornerRadius : null,
+            bottomLeft: !isUser ? visualTokens.bubbleTightCornerRadius : null,
+          )
+        : AppShapes.borderLarge.copyWith(
+            bottomRight: isUser ? const Radius.circular(6) : null,
+            bottomLeft: !isUser ? const Radius.circular(6) : null,
+          );
 
     final hasVisibleContent = _messageHasVisibleContent(message);
     final hasVisibleError =
@@ -92,12 +99,22 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                     child: Container(
                       padding: bubblePadding,
                       decoration: BoxDecoration(
-                        color: isUser
-                            ? colorScheme.primaryContainer.withValues(
-                                alpha: 0.45,
-                              )
-                            : colorScheme.surfaceContainerHigh,
+                        color: visualTokens.isRefined
+                            ? (isUser
+                                  ? visualTokens.selectedSurface
+                                  : visualTokens.cardSurface)
+                            : (isUser
+                                  ? colorScheme.primaryContainer.withValues(
+                                      alpha: 0.45,
+                                    )
+                                  : colorScheme.surfaceContainerHigh),
                         borderRadius: bubbleBorderRadius,
+                        border: visualTokens.isRefined
+                            ? Border.all(
+                                color: visualTokens.separator,
+                                width: visualTokens.enabledBorderWidth,
+                              )
+                            : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

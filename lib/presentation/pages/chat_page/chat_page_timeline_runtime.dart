@@ -93,7 +93,9 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
   }
 
   Widget _buildPendingAssistantEntry(_TimelinePendingAssistantEntry entry) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
     return Padding(
       key: ValueKey<String>(entry.key),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -104,12 +106,23 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: AppShapes.borderLarge.copyWith(
-                bottomLeft: const Radius.circular(6),
-              ),
+              color: visualTokens.isRefined
+                  ? visualTokens.cardSurface
+                  : colorScheme.surfaceContainerHigh,
+              borderRadius: visualTokens.isRefined
+                  ? visualTokens.bubbleRadius.copyWith(
+                      bottomLeft: visualTokens.bubbleTightCornerRadius,
+                    )
+                  : AppShapes.borderLarge.copyWith(
+                      bottomLeft: const Radius.circular(6),
+                    ),
               border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+                color: visualTokens.isRefined
+                    ? visualTokens.separator
+                    : colorScheme.outlineVariant.withValues(alpha: 0.35),
+                width: visualTokens.isRefined
+                    ? visualTokens.enabledBorderWidth
+                    : 1,
               ),
             ),
             child: Row(
@@ -246,7 +259,9 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
   }
 
   Widget _buildCollapsedHistoryEntry(_TimelineCollapsedHistoryEntry entry) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
     final group = entry.group;
     final actionLabel = entry.expanded
         ? context.l10n.chatHistoryHideEarlier
@@ -266,12 +281,19 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             key: const ValueKey<String>('timeline_collapsed_history_header'),
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.45,
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: visualTokens.isRefined
+                  ? visualTokens.mutedControlSurface
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              borderRadius: visualTokens.isRefined
+                  ? visualTokens.cardRadius
+                  : BorderRadius.circular(12),
               border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                color: visualTokens.isRefined
+                    ? visualTokens.separator
+                    : colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: visualTokens.isRefined
+                    ? visualTokens.enabledBorderWidth
+                    : 1,
               ),
             ),
             child: Column(
@@ -331,7 +353,9 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     _TimelineCollapsedAssistantWorkEntry entry, {
     required Widget Function(ChatMessage message) buildPreviewMessage,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visualTokens = theme.visualStyleTokens;
     final group = entry.group;
     final actionLabel = entry.expanded
         ? context.l10n.chatWorkHide
@@ -364,12 +388,19 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             ),
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.45,
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: visualTokens.isRefined
+                  ? visualTokens.mutedControlSurface
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              borderRadius: visualTokens.isRefined
+                  ? visualTokens.cardRadius
+                  : BorderRadius.circular(12),
               border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                color: visualTokens.isRefined
+                    ? visualTokens.separator
+                    : colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: visualTokens.isRefined
+                    ? visualTokens.enabledBorderWidth
+                    : 1,
               ),
             ),
             child: Column(
@@ -418,7 +449,9 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                   ),
                   const SizedBox(height: 10),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: visualTokens.isRefined
+                        ? visualTokens.controlRadius
+                        : BorderRadius.circular(10),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: colorScheme.surface.withValues(alpha: 0.95),
