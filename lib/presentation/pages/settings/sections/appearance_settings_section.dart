@@ -39,16 +39,32 @@ class AppearanceSettingsSection extends StatelessWidget {
         final selectedPreset =
             settingsProvider.themePreset ?? kDefaultOpenCodeThemePreset;
         final presetOptions = openCodeThemePresetOptions();
+        final selectedVisualStyle = settingsProvider.visualStyle;
         // Show the persisted preference regardless of active theme.
         // The switch is disabled when dark mode is inactive.
         final amoledSwitchValue = settingsProvider.useAmoledDark;
         final selectedDensity = settingsProvider.appDensity;
         final densityOptions = <({AppDensity value, String label})>[
-          (value: AppDensity.extraDense, label: context.l10n.settingsAppearanceDensityExtraDense),
-          (value: AppDensity.dense, label: context.l10n.settingsAppearanceDensityDense),
-          (value: AppDensity.normal, label: context.l10n.settingsAppearanceDensityNormal),
-          (value: AppDensity.spacious, label: context.l10n.settingsAppearanceDensitySpacious),
-          (value: AppDensity.extraSpacious, label: context.l10n.settingsAppearanceDensityExtraSpacious),
+          (
+            value: AppDensity.extraDense,
+            label: context.l10n.settingsAppearanceDensityExtraDense,
+          ),
+          (
+            value: AppDensity.dense,
+            label: context.l10n.settingsAppearanceDensityDense,
+          ),
+          (
+            value: AppDensity.normal,
+            label: context.l10n.settingsAppearanceDensityNormal,
+          ),
+          (
+            value: AppDensity.spacious,
+            label: context.l10n.settingsAppearanceDensitySpacious,
+          ),
+          (
+            value: AppDensity.extraSpacious,
+            label: context.l10n.settingsAppearanceDensityExtraSpacious,
+          ),
         ];
         final systemFontScale = settingsProvider.systemFontScale;
         final chatFontScale = settingsProvider.chatFontScale;
@@ -125,12 +141,16 @@ class AppearanceSettingsSection extends StatelessWidget {
                         segments: <ButtonSegment<_AppearanceThemeFamily>>[
                           ButtonSegment<_AppearanceThemeFamily>(
                             value: _AppearanceThemeFamily.classic,
-                            label: Text(context.l10n.settingsAppearanceCodeWalkClassic),
+                            label: Text(
+                              context.l10n.settingsAppearanceCodeWalkClassic,
+                            ),
                             icon: const Icon(Symbols.palette),
                           ),
                           ButtonSegment<_AppearanceThemeFamily>(
                             value: _AppearanceThemeFamily.presets,
-                            label: Text(context.l10n.settingsAppearanceOpenCodePresets),
+                            label: Text(
+                              context.l10n.settingsAppearanceOpenCodePresets,
+                            ),
                             icon: const Icon(Symbols.format_paint),
                           ),
                         ],
@@ -155,13 +175,15 @@ class AppearanceSettingsSection extends StatelessWidget {
                         ),
                         value: selectedPreset,
                         decoration: InputDecoration(
-                          labelText: context.l10n.settingsAppearancePresetPalette,
+                          labelText:
+                              context.l10n.settingsAppearancePresetPalette,
                           border: const OutlineInputBorder(),
                           helperText:
                               context.l10n.settingsAppearancePresetHelper,
                         ),
                         isExpanded: true,
-                        searchHintText: context.l10n.settingsAppearanceSearchPreset,
+                        searchHintText:
+                            context.l10n.settingsAppearanceSearchPreset,
                         emptyText: context.l10n.settingsAppearanceNoPresets,
                         searchTermsBuilder: (value) => <String>[
                           openCodeThemePresetLabel(value),
@@ -188,6 +210,45 @@ class AppearanceSettingsSection extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
+                    const SizedBox(height: 12),
+                    Text(
+                      context.l10n.settingsAppearanceVisualStyle,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.l10n.settingsAppearanceVisualStyleDescription,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<VisualStyle>(
+                        key: const ValueKey<String>(
+                          'settings_visual_style_segmented',
+                        ),
+                        segments: <ButtonSegment<VisualStyle>>[
+                          ButtonSegment<VisualStyle>(
+                            value: VisualStyle.classic,
+                            label: Text(
+                              context.l10n.settingsAppearanceVisualStyleClassic,
+                            ),
+                            icon: const Icon(Symbols.tune),
+                          ),
+                          ButtonSegment<VisualStyle>(
+                            value: VisualStyle.refined,
+                            label: Text(
+                              context.l10n.settingsAppearanceVisualStyleRefined,
+                            ),
+                            icon: const Icon(Symbols.auto_awesome),
+                          ),
+                        ],
+                        selected: <VisualStyle>{selectedVisualStyle},
+                        onSelectionChanged: (selected) => unawaited(
+                          settingsProvider.setVisualStyle(selected.first),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     SwitchListTile.adaptive(
                       key: const ValueKey<String>(
@@ -223,10 +284,14 @@ class AppearanceSettingsSection extends StatelessWidget {
                       key: const ValueKey<String>(
                         'settings_toggle_dynamic_color',
                       ),
-                      title: Text(context.l10n.settingsAppearanceWallpaperColors),
+                      title: Text(
+                        context.l10n.settingsAppearanceWallpaperColors,
+                      ),
                       subtitle: Text(
                         isPresetThemeActive
-                            ? context.l10n.settingsAppearanceWallpaperPresetBlocked
+                            ? context
+                                  .l10n
+                                  .settingsAppearanceWallpaperPresetBlocked
                             : context.l10n.settingsAppearanceWallpaperNormal,
                       ),
                       value: settingsProvider.useDynamicColor,
@@ -250,10 +315,14 @@ class AppearanceSettingsSection extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           isPresetThemeActive
-                              ? context.l10n.settingsAppearanceBrandColorPresetBlocked
+                              ? context
+                                    .l10n
+                                    .settingsAppearanceBrandColorPresetBlocked
                               : settingsProvider.useDynamicColor &&
                                     settingsProvider.dynamicColorAvailable
-                              ? context.l10n.settingsAppearanceBrandColorDynamicBlocked
+                              ? context
+                                    .l10n
+                                    .settingsAppearanceBrandColorDynamicBlocked
                               : context.l10n.settingsAppearanceBrandColorNormal,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
@@ -329,15 +398,21 @@ class AppearanceSettingsSection extends StatelessWidget {
                         Text(
                           isDynamicActive
                               ? isPresetThemeActive
-                                    ? context.l10n.settingsAppearanceContrastPresetBlocked
-                                    : context.l10n.settingsAppearanceContrastDynamicBlocked
+                                    ? context
+                                          .l10n
+                                          .settingsAppearanceContrastPresetBlocked
+                                    : context
+                                          .l10n
+                                          .settingsAppearanceContrastDynamicBlocked
                               : context.l10n.settingsAppearanceContrastNormal,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Text(context.l10n.settingsAppearanceContrastReduced),
+                            Text(
+                              context.l10n.settingsAppearanceContrastReduced,
+                            ),
                             Expanded(
                               child: Slider(
                                 key: const ValueKey<String>(
@@ -431,40 +506,39 @@ class AppearanceSettingsSection extends StatelessWidget {
                     const SizedBox(height: 12),
                     _FontSizeSliderRow(
                       title: context.l10n.settingsAppearanceSystemFontScale,
-                      description:
-                          context.l10n.settingsAppearanceSystemFontScaleDescription,
+                      description: context
+                          .l10n
+                          .settingsAppearanceSystemFontScaleDescription,
                       value: systemFontScale,
                       min: kMinSystemFontScale,
                       max: kMaxSystemFontScale,
                       divisions: systemFontDivisions,
                       valueLabel: '${(systemFontScale * 100).round()}%',
                       valueKeySuffix: 'system',
-                      onChanged: (value) => unawaited(
-                        settingsProvider.setSystemFontScale(value),
-                      ),
+                      onChanged: (value) =>
+                          unawaited(settingsProvider.setSystemFontScale(value)),
                     ),
                     const SizedBox(height: 12),
                     _FontSizeSliderRow(
                       title: context.l10n.settingsAppearanceChatFontScale,
-                      description:
-                          context.l10n.settingsAppearanceChatFontScaleDescription,
+                      description: context
+                          .l10n
+                          .settingsAppearanceChatFontScaleDescription,
                       value: chatFontScale,
                       min: kMinChatFontScale,
                       max: kMaxChatFontScale,
                       divisions: chatFontDivisions,
                       valueLabel: '${(chatFontScale * 100).round()}%',
                       valueKeySuffix: 'chat',
-                      onChanged: (value) => unawaited(
-                        settingsProvider.setChatFontScale(value),
-                      ),
+                      onChanged: (value) =>
+                          unawaited(settingsProvider.setChatFontScale(value)),
                     ),
                     const SizedBox(height: 12),
                     _FontSizeSliderRow(
                       title: context.l10n.settingsAppearanceTerminalFontSize,
-                      description:
-                          context
-                              .l10n
-                              .settingsAppearanceTerminalFontSizeDescription,
+                      description: context
+                          .l10n
+                          .settingsAppearanceTerminalFontSizeDescription,
                       value: terminalFontSize,
                       min: kMinTerminalFontSize,
                       max: kMaxTerminalFontSize,
@@ -530,22 +604,23 @@ class AppearanceSettingsSection extends StatelessWidget {
                     subtitle: Text(
                       context.l10n.settingsAppearanceComposerTipsDescription,
                     ),
-        value: settingsProvider.showComposerTips,
-        onChanged: (value) =>
-            unawaited(settingsProvider.setShowComposerTips(value)),
-      ),
-      const Divider(height: 1),
-      SwitchListTile.adaptive(
-        key: const ValueKey<String>('settings_toggle_math_rendering'),
-        title: Text(context.l10n.settingsAppearanceMathRendering),
-        subtitle: Text(
-          context.l10n.settingsAppearanceMathRenderingDescription,
-        ),
-        value: settingsProvider.showMathRendering,
-        onChanged: (value) => unawaited(
-          settingsProvider.setShowMathRendering(value),
-        ),
-      ),
+                    value: settingsProvider.showComposerTips,
+                    onChanged: (value) =>
+                        unawaited(settingsProvider.setShowComposerTips(value)),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile.adaptive(
+                    key: const ValueKey<String>(
+                      'settings_toggle_math_rendering',
+                    ),
+                    title: Text(context.l10n.settingsAppearanceMathRendering),
+                    subtitle: Text(
+                      context.l10n.settingsAppearanceMathRenderingDescription,
+                    ),
+                    value: settingsProvider.showMathRendering,
+                    onChanged: (value) =>
+                        unawaited(settingsProvider.setShowMathRendering(value)),
+                  ),
                 ],
               ),
             ),
@@ -587,17 +662,10 @@ class _FontSizeSliderRow extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(
-              child: Text(
-                title,
-                style: textTheme.titleSmall,
-              ),
-            ),
+            Expanded(child: Text(title, style: textTheme.titleSmall)),
             Text(
               valueLabel,
-              key: ValueKey<String>(
-                'settings_font_size_value_$valueKeySuffix',
-              ),
+              key: ValueKey<String>('settings_font_size_value_$valueKeySuffix'),
               style: textTheme.titleSmall?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -605,10 +673,7 @@ class _FontSizeSliderRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        Text(
-          description,
-          style: textTheme.bodySmall,
-        ),
+        Text(description, style: textTheme.bodySmall),
         Slider(
           key: ValueKey<String>('settings_font_size_slider_$valueKeySuffix'),
           value: value.clamp(min, max),

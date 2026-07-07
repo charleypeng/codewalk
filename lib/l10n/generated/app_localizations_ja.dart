@@ -3241,6 +3241,19 @@ class AppLocalizationsJa extends AppLocalizations {
       'ライト、ダーク、またはシステムモードを選択し、CodeWalk クラシックパレットを維持するか、OpenCode プリセットに切り替えます。';
 
   @override
+  String get settingsAppearanceVisualStyle => 'ビジュアルスタイル';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      '既定のクラシック表示、またはより柔らかな洗練表示を選択します。';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'クラシック';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => '洗練';
+
+  @override
   String get settingsAppearanceThinkingBubbles => '思考プロセスバブル';
 
   @override

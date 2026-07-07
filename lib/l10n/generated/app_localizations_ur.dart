@@ -3374,6 +3374,19 @@ class AppLocalizationsUr extends AppLocalizations {
       'لائٹ، ڈارک، یا سسٹم موڈ کا انتخاب کریں، پھر CodeWalk کلاسک پیلیٹ رکھیں یا اوپن کوڈ پری سیٹ پر سوئچ کریں۔';
 
   @override
+  String get settingsAppearanceVisualStyle => 'بصری انداز';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'ڈیفالٹ کلاسک شکل یا زیادہ نرم بہتر سطحوں کا انتخاب کریں۔';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'کلاسک';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'بہتر';
+
+  @override
   String get settingsAppearanceThinkingBubbles => 'سوچنے والے بلبلے۔';
 
   @override

@@ -3386,6 +3386,19 @@ class AppLocalizationsHi extends AppLocalizations {
       'लाइट, डार्क या सिस्टम मोड चुनें, फिर CodeWalk क्लासिक पैलेट रखें या OpenCode प्रीसेट पर स्विच करें।';
 
   @override
+  String get settingsAppearanceVisualStyle => 'दृश्य शैली';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'डिफ़ॉल्ट क्लासिक रूप या नरम परिष्कृत सतहें चुनें।';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'क्लासिक';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'परिष्कृत';
+
+  @override
   String get settingsAppearanceThinkingBubbles =>
       'विचार करने वाले बुलबुले (Thinking bubbles)';
 

@@ -3385,6 +3385,19 @@ class AppLocalizationsBn extends AppLocalizations {
       'হালকা, অন্ধকার বা সিস্টেম মোড চয়ন করুন, তারপর CodeWalk ক্লাসিক প্যালেট রাখুন বা একটি OpenCode প্রিসেট এ স্যুইচ করুন।';
 
   @override
+  String get settingsAppearanceVisualStyle => 'ভিজ্যুয়াল স্টাইল';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'ডিফল্ট ক্লাসিক রূপ অথবা আরও নরম পরিশীলিত সারফেস বেছে নিন।';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'ক্লাসিক';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'পরিশীলিত';
+
+  @override
   String get settingsAppearanceThinkingBubbles => 'বুদবুদ চিন্তা';
 
   @override

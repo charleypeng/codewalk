@@ -3407,6 +3407,19 @@ class AppLocalizationsRu extends AppLocalizations {
       'Выберите светлый, темный или системный режим, а затем сохраните классическую палитру CodeWalk или переключитесь на предустановку OpenCode.';
 
   @override
+  String get settingsAppearanceVisualStyle => 'Визуальный стиль';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'Выберите классический вид по умолчанию или более мягкие улучшенные поверхности.';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'Классический';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'Улучшенный';
+
+  @override
   String get settingsAppearanceThinkingBubbles => 'Размышления';
 
   @override

@@ -3333,6 +3333,19 @@ class AppLocalizationsAr extends AppLocalizations {
       'اختر الوضع الفاتح، أو الداكن، أو وضع النظام، ثم احتفظ بلوحة ألوان CodeWalk الكلاسيكية أو انتقل إلى إعداد مسبق لـ OpenCode.';
 
   @override
+  String get settingsAppearanceVisualStyle => 'النمط المرئي';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'اختر المظهر الكلاسيكي الافتراضي أو أسطحًا محسّنة أكثر نعومة.';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'كلاسيكي';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'محسّن';
+
+  @override
   String get settingsAppearanceThinkingBubbles => 'فقاعات التفكير';
 
   @override

@@ -3448,6 +3448,19 @@ class AppLocalizationsFr extends AppLocalizations {
       'Choisissez le mode clair, sombre ou système, puis conservez la palette classique de CodeWalk ou passez à un préréglage OpenCode.';
 
   @override
+  String get settingsAppearanceVisualStyle => 'Style visuel';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'Choisissez le style classique par défaut ou des surfaces raffinées plus douces.';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'Classique';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'Raffiné';
+
+  @override
   String get settingsAppearanceThinkingBubbles => 'Bulles de réflexion';
 
   @override

@@ -4178,6 +4178,22 @@
   "@settingsAppearanceThemeDescription": {
     "description": "CodeWalk UI string — settingsAppearanceThemeDescription"
   },
+  "settingsAppearanceVisualStyle": "Visual style",
+  "@settingsAppearanceVisualStyle": {
+    "description": "CodeWalk UI string — settingsAppearanceVisualStyle"
+  },
+  "settingsAppearanceVisualStyleDescription": "Choose the default Classic look or softer Refined surfaces.",
+  "@settingsAppearanceVisualStyleDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceVisualStyleDescription"
+  },
+  "settingsAppearanceVisualStyleClassic": "Classic",
+  "@settingsAppearanceVisualStyleClassic": {
+    "description": "CodeWalk UI string — settingsAppearanceVisualStyleClassic"
+  },
+  "settingsAppearanceVisualStyleRefined": "Refined",
+  "@settingsAppearanceVisualStyleRefined": {
+    "description": "CodeWalk UI string — settingsAppearanceVisualStyleRefined"
+  },
   "settingsAppearanceThinkingBubbles": "Thinking bubbles",
   "@settingsAppearanceThinkingBubbles": {
     "description": "CodeWalk UI string — settingsAppearanceThinkingBubbles"

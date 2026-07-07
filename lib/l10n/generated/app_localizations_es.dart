@@ -3413,6 +3413,19 @@ class AppLocalizationsEs extends AppLocalizations {
       'Elija entre modo claro, oscuro o sistema.';
 
   @override
+  String get settingsAppearanceVisualStyle => 'Estilo visual';
+
+  @override
+  String get settingsAppearanceVisualStyleDescription =>
+      'Elija el aspecto clásico predeterminado o superficies refinadas más suaves.';
+
+  @override
+  String get settingsAppearanceVisualStyleClassic => 'Clásico';
+
+  @override
+  String get settingsAppearanceVisualStyleRefined => 'Refinado';
+
+  @override
   String get settingsAppearanceThinkingBubbles => 'Burbujas de pensamiento';
 
   @override

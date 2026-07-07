@@ -124,6 +124,17 @@ void main() {
 
     expect(find.text('CodeWalk Classic'), findsOneWidget);
     expect(find.text('OpenCode Presets'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('settings_visual_style_segmented')),
+      findsOneWidget,
+    );
+    expect(find.text('Visual style'), findsOneWidget);
+
+    await tester.tap(find.text('Refined'));
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.visualStyle, VisualStyle.refined);
+    expect(jsonDecode(local.experienceSettingsJson!)['visualStyle'], 'refined');
 
     await tester.tap(find.text('OpenCode Presets'));
     await tester.pumpAndSettle();
