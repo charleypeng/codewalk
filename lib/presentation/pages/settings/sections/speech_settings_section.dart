@@ -7,15 +7,18 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/auth/tts_api_key_storage.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/i18n/l10n_context.dart';
 import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/i18n/l10n_context.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/moonshine_model_manager.dart';
 import '../../../services/parakeet_model_manager.dart';
+import '../../../services/read_aloud_service.dart';
 import '../../../services/sensevoice_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
+import '../../../services/tts/openai_compatible_tts_backend.dart';
 import '../../../utils/speech_engine_platform_support.dart';
 import '../../../utils/windows_settings_links.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
@@ -73,6 +76,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   double _senseVoiceDownloadProgress = 0;
   String? _senseVoiceModelError;
   double? _silenceDraftSeconds;
+  final TextEditingController _readAloudApiKeyController =
+      TextEditingController();
+  bool _loadingReadAloudApiKey = false;
+  bool _hasOpenAiCompatibleApiKey = false;
+  String? _readAloudApiKeyStatus;
 
   bool get _isLinux {
     if (kIsWeb) {
@@ -115,6 +123,101 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     if (_supportsSenseVoice) {
       unawaited(_loadSenseVoiceModelCatalog());
     }
+    unawaited(_loadReadAloudApiKeyState());
+  }
+
+  @override
+  void dispose() {
+    _readAloudApiKeyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadReadAloudApiKeyState() async {
+    if (!di.sl.isRegistered<TtsApiKeyStorage>()) {
+      return;
+    }
+    setState(() {
+      _loadingReadAloudApiKey = true;
+      _readAloudApiKeyStatus = null;
+    });
+    try {
+      final key = await di.sl<TtsApiKeyStorage>().read(
+        ReadAloudProvider.openAiCompatible,
+      );
+      if (!mounted) return;
+      setState(() {
+        _hasOpenAiCompatibleApiKey = key != null && key.isNotEmpty;
+        _loadingReadAloudApiKey = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingReadAloudApiKey = false;
+        _readAloudApiKeyStatus = 'Secure API key storage is unavailable.';
+      });
+    }
+  }
+
+  Future<void> _saveOpenAiCompatibleApiKey() async {
+    if (!di.sl.isRegistered<TtsApiKeyStorage>()) {
+      setState(() {
+        _readAloudApiKeyStatus = 'Secure API key storage is unavailable.';
+      });
+      return;
+    }
+    final value = _readAloudApiKeyController.text;
+    setState(() {
+      _loadingReadAloudApiKey = true;
+      _readAloudApiKeyStatus = null;
+    });
+    try {
+      await di.sl<TtsApiKeyStorage>().write(
+        ReadAloudProvider.openAiCompatible,
+        value,
+      );
+      _readAloudApiKeyController.clear();
+      if (!mounted) return;
+      setState(() {
+        _hasOpenAiCompatibleApiKey = value.trim().isNotEmpty;
+        _loadingReadAloudApiKey = false;
+        _readAloudApiKeyStatus = value.trim().isEmpty
+            ? 'API key removed.'
+            : 'API key saved securely on this device.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingReadAloudApiKey = false;
+        _readAloudApiKeyStatus = 'Secure API key storage is unavailable.';
+      });
+    }
+  }
+
+  Future<void> _testReadAloudVoice(SettingsProvider settingsProvider) async {
+    if (!di.sl.isRegistered<ReadAloudService>()) {
+      return;
+    }
+    final service = di.sl<ReadAloudService>();
+    await service.speak(
+      messageId: 'settings_read_aloud_test',
+      text: 'This is a CodeWalk text-to-speech test.',
+      provider: settingsProvider.readAloudProvider,
+      rate: settingsProvider.readAloudRate,
+      pitch: settingsProvider.readAloudPitch,
+      voice: settingsProvider.readAloudVoice,
+      voiceId: settingsProvider.readAloudVoiceId,
+      voiceLocale: settingsProvider.readAloudVoiceLocale,
+      model: settingsProvider.readAloudModel,
+      baseUrl: settingsProvider.readAloudBaseUrl,
+      responseFormat: settingsProvider.readAloudResponseFormat,
+    );
+    final error = service.lastErrorMessage;
+    if (!mounted || error == null || error.isEmpty) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error), duration: const Duration(seconds: 4)),
+    );
   }
 
   @override
@@ -222,205 +325,191 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 10),
-            RadioListTile<SpeechToTextEngine>(
-              contentPadding: EdgeInsets.zero,
-              value: SpeechToTextEngine.native,
+            RadioGroup<SpeechToTextEngine>(
               groupValue: selectedEngine,
-              onChanged: nativeEnabled
-                  ? (value) {
-                      if (value == null) return;
-                      unawaited(settingsProvider.setSpeechToTextEngine(value));
-                    }
-                  : null,
-              title: Text(context.l10n.speechNative),
-              subtitle: Text(
-                nativeEnabled
-                    ? 'Simpler and faster startup.'
-                    : nativeUnavailableHint,
-              ),
-            ),
-            if (!nativeEnabled)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Symbols.info,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.outline,
+              onChanged: (value) {
+                if (value == null) return;
+                unawaited(settingsProvider.setSpeechToTextEngine(value));
+              },
+              child: Column(
+                children: [
+                  RadioListTile<SpeechToTextEngine>(
+                    contentPadding: EdgeInsets.zero,
+                    value: SpeechToTextEngine.native,
+                    enabled: nativeEnabled,
+                    title: Text(context.l10n.speechNative),
+                    subtitle: Text(
+                      nativeEnabled
+                          ? 'Simpler and faster startup.'
+                          : nativeUnavailableHint,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _isWindows
-                            ? context.l10n.speechNativeSTTWorks
-                            : context.l10n.speechNativeSTTDisabled,
-                        style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (!nativeEnabled)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Symbols.info,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _isWindows
+                                  ? context.l10n.speechNativeSTTWorks
+                                  : context.l10n.speechNativeSTTDisabled,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (_isWindows) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Symbols.info,
+                                size: 18,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  context.l10n.speechWindowsSetupHint,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondaryContainer,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              OutlinedButton.icon(
+                                icon: const Icon(Symbols.mic),
+                                label: Text(
+                                  context.l10n.speechOpenMicrophoneSettings,
+                                ),
+                                onPressed: () => unawaited(
+                                  WindowsSettingsLinks.openMicrophonePrivacy(),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                icon: const Icon(Symbols.speech_to_text),
+                                label: Text(
+                                  context.l10n.speechOpenSpeechPrivacy,
+                                ),
+                                onPressed: () => unawaited(
+                                  WindowsSettingsLinks.openSpeechPrivacy(),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                icon: const Icon(Symbols.translate),
+                                label: Text(
+                                  context.l10n.speechOpenSpeechSettings,
+                                ),
+                                onPressed: () => unawaited(
+                                  WindowsSettingsLinks.openSpeech(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-            if (_isWindows) ...[
-              const SizedBox(height: 4),
-              Container(
-                margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  const Divider(height: 1),
+                  RadioListTile<SpeechToTextEngine>(
+                    contentPadding: EdgeInsets.zero,
+                    value: SpeechToTextEngine.sherpa,
+                    enabled: sherpaEnabled,
+                    title: Text(context.l10n.speechSherpa),
+                    subtitle: Text(
+                      sherpaEnabled
+                          ? 'Heavier, experimental, and bug-prone. Often more precise with downloaded models.'
+                          : sherpaUnavailableHint,
+                    ),
+                  ),
+                  if (sherpaEnabled) ...[
+                    const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          Symbols.info,
+                          Symbols.warning_amber_rounded,
                           size: 18,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSecondaryContainer,
+                          color: Theme.of(context).colorScheme.tertiary,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            context.l10n.speechWindowsSetupHint,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSecondaryContainer,
-                                ),
+                            context.l10n.speechSherpaExperimentalFail,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          icon: const Icon(Symbols.mic),
-                          label: Text(
-                            context.l10n.speechOpenMicrophoneSettings,
-                          ),
-                          onPressed: () => unawaited(
-                            WindowsSettingsLinks.openMicrophonePrivacy(),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Symbols.speech_to_text),
-                          label: Text(context.l10n.speechOpenSpeechPrivacy),
-                          onPressed: () => unawaited(
-                            WindowsSettingsLinks.openSpeechPrivacy(),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Symbols.translate),
-                          label: Text(context.l10n.speechOpenSpeechSettings),
-                          onPressed: () =>
-                              unawaited(WindowsSettingsLinks.openSpeech()),
                         ),
                       ],
                     ),
                   ],
-                ),
-              ),
-            ],
-            const Divider(height: 1),
-            RadioListTile<SpeechToTextEngine>(
-              contentPadding: EdgeInsets.zero,
-              value: SpeechToTextEngine.sherpa,
-              groupValue: selectedEngine,
-              onChanged: sherpaEnabled
-                  ? (value) {
-                      if (value == null) return;
-                      unawaited(settingsProvider.setSpeechToTextEngine(value));
-                    }
-                  : null,
-              title: Text(context.l10n.speechSherpa),
-              subtitle: Text(
-                sherpaEnabled
-                    ? 'Heavier, experimental, and bug-prone. Often more precise with downloaded models.'
-                    : sherpaUnavailableHint,
-              ),
-            ),
-            if (sherpaEnabled) ...[
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Symbols.warning_amber_rounded,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.tertiary,
+                  const Divider(height: 1),
+                  RadioListTile<SpeechToTextEngine>(
+                    contentPadding: EdgeInsets.zero,
+                    value: SpeechToTextEngine.moonshine,
+                    enabled: moonshineEnabled,
+                    title: Text(context.l10n.speechMoonshine),
+                    subtitle: Text(
+                      moonshineEnabled
+                          ? 'Desktop-only experimental path using sherpa_onnx offline recognition and downloadable models.'
+                          : moonshineUnavailableHint,
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      context.l10n.speechSherpaExperimentalFail,
-                      style: Theme.of(context).textTheme.bodySmall,
+                  const Divider(height: 1),
+                  RadioListTile<SpeechToTextEngine>(
+                    contentPadding: EdgeInsets.zero,
+                    value: SpeechToTextEngine.parakeet,
+                    enabled: parakeetEnabled,
+                    title: Text(context.l10n.speechParakeet),
+                    subtitle: Text(
+                      parakeetEnabled
+                          ? 'Desktop-only offline NeMo transducer path with one multilingual downloadable model.'
+                          : parakeetUnavailableHint,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  RadioListTile<SpeechToTextEngine>(
+                    contentPadding: EdgeInsets.zero,
+                    value: SpeechToTextEngine.sensevoice,
+                    enabled: senseVoiceEnabled,
+                    title: Text(context.l10n.speechSenseVoice),
+                    subtitle: Text(
+                      senseVoiceEnabled
+                          ? 'Desktop-only offline path tuned for Chinese, Cantonese, Japanese, Korean, and English.'
+                          : senseVoiceUnavailableHint,
                     ),
                   ),
                 ],
-              ),
-            ],
-            const Divider(height: 1),
-            RadioListTile<SpeechToTextEngine>(
-              contentPadding: EdgeInsets.zero,
-              value: SpeechToTextEngine.moonshine,
-              groupValue: selectedEngine,
-              onChanged: moonshineEnabled
-                  ? (value) {
-                      if (value == null) return;
-                      unawaited(settingsProvider.setSpeechToTextEngine(value));
-                    }
-                  : null,
-              title: Text(context.l10n.speechMoonshine),
-              subtitle: Text(
-                moonshineEnabled
-                    ? 'Desktop-only experimental path using sherpa_onnx offline recognition and downloadable models.'
-                    : moonshineUnavailableHint,
-              ),
-            ),
-            const Divider(height: 1),
-            RadioListTile<SpeechToTextEngine>(
-              contentPadding: EdgeInsets.zero,
-              value: SpeechToTextEngine.parakeet,
-              groupValue: selectedEngine,
-              onChanged: parakeetEnabled
-                  ? (value) {
-                      if (value == null) return;
-                      unawaited(settingsProvider.setSpeechToTextEngine(value));
-                    }
-                  : null,
-              title: Text(context.l10n.speechParakeet),
-              subtitle: Text(
-                parakeetEnabled
-                    ? 'Desktop-only offline NeMo transducer path with one multilingual downloadable model.'
-                    : parakeetUnavailableHint,
-              ),
-            ),
-            const Divider(height: 1),
-            RadioListTile<SpeechToTextEngine>(
-              contentPadding: EdgeInsets.zero,
-              value: SpeechToTextEngine.sensevoice,
-              groupValue: selectedEngine,
-              onChanged: senseVoiceEnabled
-                  ? (value) {
-                      if (value == null) return;
-                      unawaited(settingsProvider.setSpeechToTextEngine(value));
-                    }
-                  : null,
-              title: Text(context.l10n.speechSenseVoice),
-              subtitle: Text(
-                senseVoiceEnabled
-                    ? 'Desktop-only offline path tuned for Chinese, Cantonese, Japanese, Korean, and English.'
-                    : senseVoiceUnavailableHint,
               ),
             ),
           ],
@@ -534,7 +623,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const Center(child: CircularProgressIndicator())
             else ...[
               DropdownButtonFormField<String>(
-                value: selectedId,
+                initialValue: selectedId,
                 decoration: const InputDecoration(
                   labelText: 'Moonshine model',
                   border: OutlineInputBorder(),
@@ -665,7 +754,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const Center(child: CircularProgressIndicator())
             else ...[
               DropdownButtonFormField<String>(
-                value: selectedId,
+                initialValue: selectedId,
                 decoration: const InputDecoration(
                   labelText: 'Parakeet model',
                   border: OutlineInputBorder(),
@@ -796,7 +885,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const Center(child: CircularProgressIndicator())
             else ...[
               DropdownButtonFormField<String>(
-                value: selectedId,
+                initialValue: selectedId,
                 decoration: const InputDecoration(
                   labelText: 'SenseVoice model',
                   border: OutlineInputBorder(),
@@ -1249,13 +1338,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _modelError = 'Download failed: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingModel = false;
+          _downloadProgress = 0;
+        });
       }
-      setState(() {
-        _isMutatingModel = false;
-        _downloadProgress = 0;
-      });
     }
   }
 
@@ -1347,12 +1435,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _modelError = 'Failed to remove model: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingModel = false;
+        });
       }
-      setState(() {
-        _isMutatingModel = false;
-      });
     }
   }
 
@@ -1389,13 +1476,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _moonshineModelError = 'Download failed: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingMoonshineModel = false;
+          _moonshineDownloadProgress = 0;
+        });
       }
-      setState(() {
-        _isMutatingMoonshineModel = false;
-        _moonshineDownloadProgress = 0;
-      });
     }
   }
 
@@ -1415,12 +1501,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _moonshineModelError = 'Failed to remove model: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingMoonshineModel = false;
+        });
       }
-      setState(() {
-        _isMutatingMoonshineModel = false;
-      });
     }
   }
 
@@ -1457,13 +1542,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _parakeetModelError = 'Download failed: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingParakeetModel = false;
+          _parakeetDownloadProgress = 0;
+        });
       }
-      setState(() {
-        _isMutatingParakeetModel = false;
-        _parakeetDownloadProgress = 0;
-      });
     }
   }
 
@@ -1483,12 +1567,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _parakeetModelError = 'Failed to remove model: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingParakeetModel = false;
+        });
       }
-      setState(() {
-        _isMutatingParakeetModel = false;
-      });
     }
   }
 
@@ -1525,13 +1608,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _senseVoiceModelError = 'Download failed: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingSenseVoiceModel = false;
+          _senseVoiceDownloadProgress = 0;
+        });
       }
-      setState(() {
-        _isMutatingSenseVoiceModel = false;
-        _senseVoiceDownloadProgress = 0;
-      });
     }
   }
 
@@ -1551,12 +1633,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         _senseVoiceModelError = 'Failed to remove model: $error';
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isMutatingSenseVoiceModel = false;
+        });
       }
-      setState(() {
-        _isMutatingSenseVoiceModel = false;
-      });
     }
   }
 
@@ -1599,7 +1680,203 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     return kSenseVoiceModelDefault;
   }
 
+  Widget _buildReadAloudProviderSelector(SettingsProvider settingsProvider) {
+    return DropdownButtonFormField<ReadAloudProvider>(
+      initialValue: settingsProvider.readAloudProvider,
+      decoration: const InputDecoration(
+        labelText: 'Text-to-speech provider',
+        border: OutlineInputBorder(),
+      ),
+      items: const <DropdownMenuItem<ReadAloudProvider>>[
+        DropdownMenuItem(
+          value: ReadAloudProvider.native,
+          child: Text('System / Native'),
+        ),
+        DropdownMenuItem(
+          value: ReadAloudProvider.edgeExperimental,
+          child: Text('Microsoft Edge Speech (experimental)'),
+        ),
+        DropdownMenuItem(
+          value: ReadAloudProvider.openAiCompatible,
+          child: Text('OpenAI-compatible'),
+        ),
+      ],
+      onChanged: (value) {
+        if (value == null) return;
+        unawaited(settingsProvider.setReadAloudProvider(value));
+      },
+    );
+  }
+
+  Widget _buildNativeReadAloudVoicePicker(SettingsProvider settingsProvider) {
+    if (!di.sl.isRegistered<ReadAloudService>()) {
+      return const SizedBox.shrink();
+    }
+    return FutureBuilder<List<Map<String, String>>>(
+      future: di.sl<ReadAloudService>().getVoicesForProvider(
+        ReadAloudProvider.native,
+      ),
+      builder: (context, snapshot) {
+        final voices = snapshot.data ?? const <Map<String, String>>[];
+        if (voices.isEmpty) {
+          return ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(context.l10n.settingsReadAloudVoice),
+            subtitle: Text(context.l10n.settingsReadAloudVoiceHint),
+          );
+        }
+        final selected =
+            voices.any(
+              (voice) => voice['name'] == settingsProvider.readAloudVoiceId,
+            )
+            ? settingsProvider.readAloudVoiceId
+            : null;
+        return DropdownButtonFormField<String>(
+          initialValue: selected,
+          decoration: InputDecoration(
+            labelText: context.l10n.settingsReadAloudVoice,
+            helperText: context.l10n.settingsReadAloudVoiceHint,
+          ),
+          items: voices.map((voice) {
+            final id = voice['name'] ?? '';
+            final locale = voice['locale'] ?? '';
+            final label = voice['label']?.isNotEmpty == true
+                ? voice['label']!
+                : locale.isNotEmpty
+                ? '$id ($locale)'
+                : id;
+            return DropdownMenuItem<String>(value: id, child: Text(label));
+          }).toList(),
+          onChanged: (value) {
+            final selectedVoice = voices.firstWhere(
+              (voice) => voice['name'] == value,
+              orElse: () => const <String, String>{},
+            );
+            unawaited(
+              settingsProvider.setReadAloudVoiceSelection(
+                id: value,
+                locale: selectedVoice['locale'],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEdgeReadAloudNotice() {
+    return const ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Symbols.experiment),
+      title: Text('Microsoft Edge Speech is experimental'),
+      subtitle: Text(
+        'Direct Edge synthesis is blocked in this build because the unofficial Edge Read Aloud protocol requires unstable Edge-specific transport headers. Use an OpenAI-compatible Edge proxy or switch providers. Message text would be sent to Microsoft when enabled by a compatible proxy.',
+      ),
+    );
+  }
+
+  Widget _buildOpenAiCompatibleReadAloudFields(
+    SettingsProvider settingsProvider,
+  ) {
+    final selectedVoice =
+        kOpenAiCompatibleVoiceIds.contains(settingsProvider.readAloudVoiceId)
+        ? settingsProvider.readAloudVoiceId
+        : 'alloy';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text('Cloud TTS privacy'),
+          subtitle: Text(
+            'Cloud TTS sends the selected assistant message text to the configured provider. API keys are stored in secure storage on this device.',
+          ),
+        ),
+        TextFormField(
+          initialValue: settingsProvider.readAloudBaseUrl,
+          decoration: const InputDecoration(
+            labelText: 'Base URL',
+            helperText: 'Example: https://api.openai.com/v1',
+          ),
+          keyboardType: TextInputType.url,
+          onChanged: (value) =>
+              unawaited(settingsProvider.setReadAloudBaseUrl(value)),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _readAloudApiKeyController,
+          decoration: InputDecoration(
+            labelText: 'API key',
+            helperText: _hasOpenAiCompatibleApiKey
+                ? 'A key is saved. Enter a new value to replace it, or save an empty value to remove it.'
+                : 'No API key saved.',
+            suffixIcon: _loadingReadAloudApiKey
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Save API key',
+                    icon: const Icon(Symbols.save),
+                    onPressed: () => unawaited(_saveOpenAiCompatibleApiKey()),
+                  ),
+          ),
+          obscureText: true,
+          enableSuggestions: false,
+          autocorrect: false,
+          onFieldSubmitted: (_) => unawaited(_saveOpenAiCompatibleApiKey()),
+        ),
+        if (_readAloudApiKeyStatus != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _readAloudApiKeyStatus!,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+        const SizedBox(height: 12),
+        TextFormField(
+          initialValue: settingsProvider.readAloudModel,
+          decoration: const InputDecoration(
+            labelText: 'Model',
+            helperText: 'Default: gpt-4o-mini-tts',
+          ),
+          onChanged: (value) =>
+              unawaited(settingsProvider.setReadAloudModel(value)),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          initialValue: selectedVoice,
+          decoration: const InputDecoration(labelText: 'Voice'),
+          items: kOpenAiCompatibleVoiceIds
+              .map(
+                (voice) =>
+                    DropdownMenuItem<String>(value: voice, child: Text(voice)),
+              )
+              .toList(),
+          onChanged: (value) {
+            unawaited(
+              settingsProvider.setReadAloudVoiceSelection(
+                id: value,
+                locale: null,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Pitch is not supported by OpenAI-compatible TTS and is hidden for this provider.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
   Widget _buildReadAloudCard(SettingsProvider settingsProvider) {
+    final readAloudProvider = settingsProvider.readAloudProvider;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -1616,6 +1893,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
+            _buildReadAloudProviderSelector(settingsProvider),
+            const SizedBox(height: 8),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: Text(context.l10n.settingsReadAloudEnabled),
@@ -1623,6 +1902,28 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               value: settingsProvider.readAloudEnabled,
               onChanged: (value) =>
                   unawaited(settingsProvider.setReadAloudEnabled(value)),
+            ),
+            if (readAloudProvider == ReadAloudProvider.native) ...[
+              const Divider(height: 1),
+              _buildNativeReadAloudVoicePicker(settingsProvider),
+            ],
+            if (readAloudProvider == ReadAloudProvider.edgeExperimental) ...[
+              const Divider(height: 1),
+              _buildEdgeReadAloudNotice(),
+            ],
+            if (readAloudProvider == ReadAloudProvider.openAiCompatible) ...[
+              const Divider(height: 1),
+              _buildOpenAiCompatibleReadAloudFields(settingsProvider),
+            ],
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                icon: const Icon(Symbols.play_arrow),
+                label: const Text('Test voice'),
+                onPressed: () =>
+                    unawaited(_testReadAloudVoice(settingsProvider)),
+              ),
             ),
             const Divider(height: 1),
             ListTile(
@@ -1642,24 +1943,26 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 ),
               ),
             ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.settingsReadAloudPitch),
-              subtitle: Text(context.l10n.settingsReadAloudPitchDescription),
-              trailing: SizedBox(
-                width: 120,
-                child: Slider(
-                  value: settingsProvider.readAloudPitch,
-                  min: 0.5,
-                  max: 2.0,
-                  divisions: 6,
-                  label: settingsProvider.readAloudPitch.toStringAsFixed(1),
-                  onChanged: (value) =>
-                      unawaited(settingsProvider.setReadAloudPitch(value)),
+            if (readAloudProvider == ReadAloudProvider.native) ...[
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.l10n.settingsReadAloudPitch),
+                subtitle: Text(context.l10n.settingsReadAloudPitchDescription),
+                trailing: SizedBox(
+                  width: 120,
+                  child: Slider(
+                    value: settingsProvider.readAloudPitch,
+                    min: 0.5,
+                    max: 2.0,
+                    divisions: 6,
+                    label: settingsProvider.readAloudPitch.toStringAsFixed(1),
+                    onChanged: (value) =>
+                        unawaited(settingsProvider.setReadAloudPitch(value)),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

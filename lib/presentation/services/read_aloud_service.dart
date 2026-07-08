@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import '../../core/auth/tts_api_key_storage.dart';
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
 import 'tts/generated_tts_audio_player.dart';
@@ -27,8 +28,10 @@ class ReadAloudService extends ChangeNotifier {
     FlutterTts? tts,
     Map<ReadAloudProvider, TtsBackend>? backends,
     TtsAudioPlayer? audioPlayer,
+    TtsApiKeyStorage? apiKeyStorage,
   }) : _backends = _buildBackends(tts: tts, backends: backends),
-       _audioPlayer = audioPlayer {
+       _audioPlayer = audioPlayer,
+       _apiKeyStorage = apiKeyStorage {
     if (_audioPlayer != null) {
       _attachAudioPlayer(_audioPlayer!);
     }
@@ -47,6 +50,7 @@ class ReadAloudService extends ChangeNotifier {
   }
 
   final Map<ReadAloudProvider, TtsBackend> _backends;
+  final TtsApiKeyStorage? _apiKeyStorage;
   TtsAudioPlayer? _audioPlayer;
   StreamSubscription<void>? _audioCompleteSubscription;
   StreamSubscription<Duration>? _audioDurationSubscription;
@@ -130,7 +134,7 @@ class ReadAloudService extends ChangeNotifier {
           model: model,
           baseUrl: baseUrl,
           responseFormat: responseFormat,
-          apiKey: apiKey,
+          apiKey: apiKey ?? await _apiKeyForProvider(provider),
         ),
         _callbacksFor(generation),
       );
@@ -230,6 +234,13 @@ class ReadAloudService extends ChangeNotifier {
 
   TtsBackend _backendFor(ReadAloudProvider provider) {
     return _backends[provider] ?? _backends[ReadAloudProvider.native]!;
+  }
+
+  Future<String?> _apiKeyForProvider(ReadAloudProvider provider) async {
+    if (provider != ReadAloudProvider.openAiCompatible) {
+      return null;
+    }
+    return _apiKeyStorage?.read(provider);
   }
 
   TtsAudioPlayer _ensureAudioPlayer() {

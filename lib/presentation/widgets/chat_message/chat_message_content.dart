@@ -385,10 +385,8 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   Future<void> _onShareAsImage(BuildContext context) async {
     if (_hideShareImageButtonForCapture) return;
 
-    setState(() {
-      _hideShareImageButtonForCapture = true;
-      _localUiStateVersion += 1;
-    });
+    final subject = context.l10n.msgShareAsImageSubject;
+    _setShareImageCaptureHidden(true);
 
     var result = MessageImageExportResult.failed;
     try {
@@ -397,14 +395,11 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
       await WidgetsBinding.instance.endOfFrame;
       result = await MessageImageExportService.captureAndShare(
         boundaryKey: _shareImageKey,
-        subject: context.l10n.msgShareAsImageSubject,
+        subject: subject,
       );
     } finally {
       if (mounted) {
-        setState(() {
-          _hideShareImageButtonForCapture = false;
-          _localUiStateVersion += 1;
-        });
+        _setShareImageCaptureHidden(false);
       }
     }
 
@@ -484,50 +479,39 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
             if (text.isEmpty) {
               return;
             }
-            unawaited(
-              readAloudService.speak(
+            unawaited(() async {
+              await readAloudService.speak(
                 messageId: message.id,
                 text: text,
+                provider: settingsProvider.readAloudProvider,
                 rate: settingsProvider.readAloudRate,
                 pitch: settingsProvider.readAloudPitch,
                 voice: settingsProvider.readAloudVoice,
-              ),
-            );
+                voiceId: settingsProvider.readAloudVoiceId,
+                voiceLocale: settingsProvider.readAloudVoiceLocale,
+                model: settingsProvider.readAloudModel,
+                baseUrl: settingsProvider.readAloudBaseUrl,
+                responseFormat: settingsProvider.readAloudResponseFormat,
+              );
+              final error = readAloudService.lastErrorMessage;
+              if (!context.mounted || error == null || error.isEmpty) {
+                return;
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(error),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }());
           },
         );
       },
     );
   }
 
-  // Strips basic Markdown syntax so TTS reads natural text, not raw
-  // formatting characters. Handles bold (**/__), italic (*/_), inline code
-  // (`), links [...](...), images ![..](..), headings (#), and blockquotes (>).
-  static final RegExp _ttsStrippingRegExp = RegExp(
-    r'(\*\*|__)(.*?)\1|'
-    r'(\*|_)(.*?)\3|'
-    r'`([^`]*)`|'
-    r'!?\[([^\]]*)\]\([^)]*\)|'
-    r'^#{1,6}\s*|'
-    r'^>\s*',
-    multiLine: true,
-  );
-
   String _extractReadableText(AssistantMessage message) {
-    final buffer = StringBuffer();
-    for (final part in message.parts) {
-      if (part is TextPart && part.text.trim().isNotEmpty) {
-        // Strip markdown formatting before feeding to TTS.
-        // Dart replaceAll does not interpolate capture groups in the
-        // replacement string — use replaceAllMapped instead.
-        final cleaned = part.text.replaceAllMapped(
-          _ttsStrippingRegExp,
-          (m) => m.group(2) ?? m.group(4) ?? m.group(5) ?? m.group(6) ?? '',
-        );
-        buffer.write(cleaned);
-        buffer.write(' ');
-      }
-    }
-    return buffer.toString().trim();
+    return ReadAloudTextExtractor.extract(message);
   }
 
   Widget _buildAssistantInfo(BuildContext context, AssistantMessage message) {

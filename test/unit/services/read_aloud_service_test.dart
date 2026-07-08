@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:codewalk/core/auth/tts_api_key_storage.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/services/read_aloud_service.dart';
 import 'package:codewalk/presentation/services/tts/generated_tts_audio_player.dart';
@@ -181,6 +182,25 @@ class _FakeGeneratedBackend implements TtsBackend {
   void dispose() {}
 }
 
+class _FakeTtsApiKeyStorageBackend implements TtsApiKeyStorageBackend {
+  final Map<String, String> values = <String, String>{};
+
+  @override
+  Future<void> write({required String key, required String value}) async {
+    values[key] = value;
+  }
+
+  @override
+  Future<String?> read({required String key}) async {
+    return values[key];
+  }
+
+  @override
+  Future<void> delete({required String key}) async {
+    values.remove(key);
+  }
+}
+
 class _FakeTtsAudioPlayer implements TtsAudioPlayer {
   final StreamController<void> _completeController =
       StreamController<void>.broadcast(sync: true);
@@ -337,6 +357,30 @@ void main() {
       expect(service.state, ReadAloudState.idle);
       expect(service.activeMessageId, isNull);
 
+      await service.dispose();
+    });
+
+    test('reads OpenAI-compatible API key from secure storage', () async {
+      final backend = _FakeGeneratedBackend();
+      final player = _FakeTtsAudioPlayer();
+      final keyBackend = _FakeTtsApiKeyStorageBackend();
+      final keyStorage = TtsApiKeyStorage(backend: keyBackend);
+      await keyStorage.write(ReadAloudProvider.openAiCompatible, 'sk-test');
+      final service = ReadAloudService(
+        backends: <ReadAloudProvider, TtsBackend>{
+          ReadAloudProvider.openAiCompatible: backend,
+        },
+        audioPlayer: player,
+        apiKeyStorage: keyStorage,
+      );
+
+      await service.speak(
+        messageId: 'msg_1',
+        text: 'Hello cloud',
+        provider: ReadAloudProvider.openAiCompatible,
+      );
+
+      expect(backend.requests.single.apiKey, 'sk-test');
       await service.dispose();
     });
 

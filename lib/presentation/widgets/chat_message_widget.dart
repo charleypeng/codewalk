@@ -18,6 +18,7 @@ import '../../core/logging/app_logger.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../presentation/providers/settings_provider.dart';
 import '../../presentation/services/read_aloud_service.dart';
+import '../../presentation/services/tts/read_aloud_text_extractor.dart';
 import '../services/file_part_action_service.dart' as file_part_action;
 import '../services/message_image_export_service.dart';
 import '../theme/app_animations.dart';
@@ -144,6 +145,13 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // used by MessageImageExportService to capture the bubble as a PNG.
   final GlobalKey _shareImageKey = GlobalKey();
   bool _hideShareImageButtonForCapture = false;
+
+  void _setShareImageCaptureHidden(bool hidden) {
+    setState(() {
+      _hideShareImageButtonForCapture = hidden;
+      _localUiStateVersion += 1;
+    });
+  }
 
   String _nextStableIdentity(String prefix) {
     _stableIdentitySequence += 1;

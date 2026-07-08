@@ -13,6 +13,7 @@ import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../data/repositories/app_repository_impl.dart';
 import '../../data/repositories/chat_repository_impl.dart';
 import '../../data/repositories/project_repository_impl.dart';
+import '../../domain/entities/experience_settings.dart';
 import '../../domain/repositories/app_repository.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/project_repository.dart';
@@ -70,6 +71,10 @@ import '../../presentation/services/speech_input_service_parakeet.dart';
 import '../../presentation/services/speech_input_service_sensevoice.dart';
 import '../../presentation/services/speech_input_service_sherpa.dart';
 import '../../presentation/services/speech_input_service_stt.dart';
+import '../../presentation/services/tts/edge_experimental_tts_backend.dart';
+import '../../presentation/services/tts/native_tts_backend.dart';
+import '../../presentation/services/tts/openai_compatible_tts_backend.dart';
+import '../../presentation/services/tts/tts_backend.dart';
 import '../../presentation/services/update_check_service.dart';
 import '../../presentation/services/workspace_file_operations_service.dart';
 import '../auth/tts_api_key_storage.dart';
@@ -122,7 +127,16 @@ Future<void> init() async {
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
   sl.registerLazySingleton(TtsApiKeyStorage.new);
-  sl.registerLazySingleton(ReadAloudService.new);
+  sl.registerLazySingleton(
+    () => ReadAloudService(
+      apiKeyStorage: sl<TtsApiKeyStorage>(),
+      backends: <ReadAloudProvider, TtsBackend>{
+        ReadAloudProvider.native: NativeTtsBackend(),
+        ReadAloudProvider.edgeExperimental: EdgeExperimentalTtsBackend(),
+        ReadAloudProvider.openAiCompatible: OpenAiCompatibleTtsBackend(),
+      },
+    ),
+  );
   sl.registerLazySingleton(TailscaleService.new);
   sl.registerLazySingleton(
     () => CellularDataSaverService(sharedPreferences: sl()),
