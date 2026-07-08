@@ -16,9 +16,15 @@ class NativeTtsBackend implements TtsBackend {
 
   @override
   Future<bool> get isAvailable async {
+    if ((await getVoices()).isNotEmpty) {
+      return true;
+    }
+    if ((await getLanguages()).isNotEmpty) {
+      return true;
+    }
     try {
       final engines = await _tts.getEngines;
-      return engines.isNotEmpty;
+      return engines is Iterable && engines.isNotEmpty;
     } catch (_) {
       return false;
     }

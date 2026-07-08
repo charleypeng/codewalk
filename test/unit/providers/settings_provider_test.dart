@@ -1232,6 +1232,8 @@ void main() {
     );
 
     test('persists read-aloud settings with defaults', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(
         localDataSource: local,

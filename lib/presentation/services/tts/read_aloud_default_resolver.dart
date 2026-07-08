@@ -83,7 +83,12 @@ class ReadAloudDefaultResolver {
     if (trimmed == null || trimmed.isEmpty) {
       return null;
     }
-    final normalized = trimmed.replaceAll('_', '-');
+    final normalized = trimmed
+        .split('@')
+        .first
+        .split('.')
+        .first
+        .replaceAll('_', '-');
     final parts = normalized
         .split('-')
         .where((part) => part.trim().isNotEmpty)
@@ -95,8 +100,42 @@ class ReadAloudDefaultResolver {
     if (parts.length == 1) {
       return _localeByLanguage[language] ?? language;
     }
-    final region = parts[1].toUpperCase();
+    final second = parts[1];
+    if (_isScriptSubtag(second)) {
+      final script = second.toLowerCase();
+      if (language == 'zh') {
+        if (script == 'hant') {
+          return 'zh-TW';
+        }
+        if (script == 'hans') {
+          return 'zh-CN';
+        }
+      }
+      if (parts.length > 2) {
+        final region = _normalizeRegionSubtag(parts[2]);
+        if (region != null) {
+          return '$language-$region';
+        }
+      }
+      return _localeByLanguage[language] ?? language;
+    }
+    final region = _normalizeRegionSubtag(second);
+    if (region == null) {
+      return _localeByLanguage[language] ?? language;
+    }
     return '$language-$region';
+  }
+
+  static bool _isScriptSubtag(String value) {
+    return RegExp(r'^[A-Za-z]{4}$').hasMatch(value.trim());
+  }
+
+  static String? _normalizeRegionSubtag(String value) {
+    final trimmed = value.trim();
+    if (!RegExp(r'^([A-Za-z]{2}|[0-9]{3})$').hasMatch(trimmed)) {
+      return null;
+    }
+    return trimmed.toUpperCase();
   }
 }
 

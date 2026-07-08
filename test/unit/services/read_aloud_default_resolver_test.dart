@@ -69,6 +69,15 @@ void main() {
       expect(preference.locale, 'en-GB');
     });
 
+    test('strips POSIX locale suffixes before Edge voice matching', () {
+      final preference = ReadAloudDefaultResolver.edgePreferenceForLocale(
+        systemLocaleName: 'pt_PT.UTF-8@calendar=gregorian',
+      );
+
+      expect(preference.voiceId, 'pt-PT-RaquelNeural');
+      expect(preference.locale, 'pt-PT');
+    });
+
     test('falls back to same-language Edge voice for unknown region', () {
       final preference = ReadAloudDefaultResolver.edgePreferenceForLocale(
         systemLocaleName: 'es_AR',
@@ -76,6 +85,24 @@ void main() {
 
       expect(preference.voiceId, 'es-ES-ElviraNeural');
       expect(preference.locale, 'es-ES');
+    });
+
+    test('maps Traditional Chinese script locale to Taiwan Edge voice', () {
+      final preference = ReadAloudDefaultResolver.edgePreferenceForLocale(
+        systemLocaleName: 'zh_Hant_TW',
+      );
+
+      expect(preference.voiceId, 'zh-TW-HsiaoChenNeural');
+      expect(preference.locale, 'zh-TW');
+    });
+
+    test('maps Simplified Chinese script locale to mainland Edge voice', () {
+      final preference = ReadAloudDefaultResolver.edgePreferenceForLocale(
+        systemLocaleName: 'zh_Hans_SG',
+      );
+
+      expect(preference.voiceId, 'zh-CN-XiaoxiaoNeural');
+      expect(preference.locale, 'zh-CN');
     });
 
     test('falls back to English Edge voice for unknown language', () {

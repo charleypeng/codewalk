@@ -124,6 +124,25 @@ class _ThrowingFlutterTts implements FlutterTts {
   }
 }
 
+class _VoiceOnlyFlutterTts extends _FakeFlutterTts {
+  @override
+  Future<dynamic> get getEngines async {
+    throw Exception('getEngines unavailable');
+  }
+}
+
+class _EngineOnlyFlutterTts extends _FakeFlutterTts {
+  @override
+  Future<dynamic> get getVoices async {
+    return const <dynamic>[];
+  }
+
+  @override
+  Future<dynamic> get getLanguages async {
+    return const <dynamic>[];
+  }
+}
+
 class _FakeGeneratedBackend implements TtsBackend {
   _FakeGeneratedBackend({Future<TtsSynthesisResult>? result})
     : result =
@@ -552,6 +571,27 @@ void main() {
       final available = await service.isAvailable;
       // Service handles errors gracefully — should not throw.
       expect(available, isFalse);
+    });
+
+    test(
+      'isAvailable returns true when voices exist without engines',
+      () async {
+        final tts = _VoiceOnlyFlutterTts();
+        final service = ReadAloudService(tts: tts);
+
+        final available = await service.isAvailable;
+
+        expect(available, isTrue);
+      },
+    );
+
+    test('isAvailable returns true when only engines exist', () async {
+      final tts = _EngineOnlyFlutterTts();
+      final service = ReadAloudService(tts: tts);
+
+      final available = await service.isAvailable;
+
+      expect(available, isTrue);
     });
 
     test('error during speak resets state', () async {
