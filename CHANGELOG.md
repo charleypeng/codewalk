@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.172.2 - 2026-07-08
+
+- chore(agent): [Step 4/5] validate adaptive TTS defaults
+- chore(agent): [Step 3/5] document adaptive TTS defaults
+- chore(agent): [Step 2/5] wire adaptive TTS first-run defaults
+- chore(agent): [Step 1/5] add adaptive TTS default resolver
+- plan: adaptive TTS provider defaults
+
 ## v1.172.1 - 2026-07-08
 
 - chore(agent): [Step 5/6] validate Edge TTS reviews
