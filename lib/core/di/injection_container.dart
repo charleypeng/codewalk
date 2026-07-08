@@ -136,6 +136,7 @@ Future<void> init() async {
         ReadAloudProvider.openAiCompatible: OpenAiCompatibleTtsBackend(),
       },
     ),
+    dispose: (service) => service.dispose(),
   );
   sl.registerLazySingleton(TailscaleService.new);
   sl.registerLazySingleton(

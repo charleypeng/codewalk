@@ -201,6 +201,23 @@ class _FakeTtsApiKeyStorageBackend implements TtsApiKeyStorageBackend {
   }
 }
 
+class _ThrowingTtsApiKeyStorageBackend implements TtsApiKeyStorageBackend {
+  @override
+  Future<void> write({required String key, required String value}) async {
+    throw StateError('secure storage unavailable');
+  }
+
+  @override
+  Future<String?> read({required String key}) async {
+    throw StateError('secure storage unavailable');
+  }
+
+  @override
+  Future<void> delete({required String key}) async {
+    throw StateError('secure storage unavailable');
+  }
+}
+
 class _FakeTtsAudioPlayer implements TtsAudioPlayer {
   final StreamController<void> _completeController =
       StreamController<void>.broadcast(sync: true);
@@ -325,6 +342,19 @@ void main() {
       expect(tts.lastVoice!['locale'], 'en-US');
     });
 
+    test(
+      'native backend ignores unknown voice ids when voices are available',
+      () async {
+        final tts = _FakeFlutterTts();
+        final service = ReadAloudService(tts: tts);
+
+        await service.speak(messageId: 'msg_1', text: 'Test', voice: 'coral');
+
+        expect(tts.spokenTexts, contains('Test'));
+        expect(tts.lastVoice, isNull);
+      },
+    );
+
     test('generated audio backend plays returned bytes', () async {
       final backend = _FakeGeneratedBackend();
       final player = _FakeTtsAudioPlayer();
@@ -382,6 +412,32 @@ void main() {
 
       expect(backend.requests.single.apiKey, 'sk-test');
       await service.dispose();
+    });
+
+    test('reports secure storage failure as provider unavailable', () async {
+      final backend = _FakeGeneratedBackend();
+      final service = ReadAloudService(
+        backends: <ReadAloudProvider, TtsBackend>{
+          ReadAloudProvider.openAiCompatible: backend,
+        },
+        apiKeyStorage: TtsApiKeyStorage(
+          backend: _ThrowingTtsApiKeyStorageBackend(),
+        ),
+      );
+
+      await service.speak(
+        messageId: 'msg_1',
+        text: 'Hello cloud',
+        provider: ReadAloudProvider.openAiCompatible,
+      );
+
+      expect(backend.requests, isEmpty);
+      expect(service.lastErrorKind, ReadAloudErrorKind.providerUnavailable);
+      expect(service.lastErrorMessageId, 'msg_1');
+      expect(
+        service.lastErrorMessage,
+        'Secure TTS API key storage is unavailable.',
+      );
     });
 
     test('stop cancels slow generated audio before playback starts', () async {

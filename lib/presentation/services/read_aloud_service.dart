@@ -64,12 +64,17 @@ class ReadAloudService extends ChangeNotifier {
   Duration? _audioPosition;
   ReadAloudErrorKind? _lastErrorKind;
   String? _lastErrorMessage;
+  String? _lastErrorMessageId;
+  int _lastErrorSequence = 0;
+  int _consumedErrorSequence = 0;
 
   ReadAloudState get state => _state;
   String? get activeMessageId => _activeMessageId;
   bool get isSpeaking => _state == ReadAloudState.playing;
   ReadAloudErrorKind? get lastErrorKind => _lastErrorKind;
   String? get lastErrorMessage => _lastErrorMessage;
+  String? get lastErrorMessageId => _lastErrorMessageId;
+  int get lastErrorSequence => _lastErrorSequence;
 
   // Progress as a 0.0-1.0 fraction for generated audio when duration is known.
   double? get progress {
@@ -120,6 +125,7 @@ class ReadAloudService extends ChangeNotifier {
     _audioPosition = null;
     _lastErrorKind = null;
     _lastErrorMessage = null;
+    _lastErrorMessageId = null;
     _state = ReadAloudState.playing;
     notifyListeners();
 
@@ -191,6 +197,21 @@ class ReadAloudService extends ChangeNotifier {
     }
   }
 
+  bool consumeLastErrorForMessage({
+    required String messageId,
+    required String message,
+    required int sequence,
+  }) {
+    if (_consumedErrorSequence == sequence ||
+        _lastErrorSequence != sequence ||
+        _lastErrorMessageId != messageId ||
+        _lastErrorMessage != message) {
+      return false;
+    }
+    _consumedErrorSequence = sequence;
+    return true;
+  }
+
   /// Release TTS resources. Call when service is no longer needed.
   @override
   Future<void> dispose() async {
@@ -240,7 +261,14 @@ class ReadAloudService extends ChangeNotifier {
     if (provider != ReadAloudProvider.openAiCompatible) {
       return null;
     }
-    return _apiKeyStorage?.read(provider);
+    try {
+      return await _apiKeyStorage?.read(provider);
+    } on TtsApiKeyStorageException catch (error) {
+      throw TtsBackendException(
+        TtsBackendErrorKind.providerUnavailable,
+        error.message,
+      );
+    }
   }
 
   TtsAudioPlayer _ensureAudioPlayer() {
@@ -348,6 +376,8 @@ class ReadAloudService extends ChangeNotifier {
   void _setError(ReadAloudErrorKind kind, String message) {
     _lastErrorKind = kind;
     _lastErrorMessage = message;
+    _lastErrorMessageId = _activeMessageId;
+    _lastErrorSequence += 1;
     _resetPlaybackState(clearError: false);
     notifyListeners();
   }
@@ -362,6 +392,8 @@ class ReadAloudService extends ChangeNotifier {
     if (clearError) {
       _lastErrorKind = null;
       _lastErrorMessage = null;
+      _lastErrorMessageId = null;
+      _consumedErrorSequence = _lastErrorSequence;
     }
   }
 

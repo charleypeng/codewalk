@@ -81,6 +81,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   bool _loadingReadAloudApiKey = false;
   bool _hasOpenAiCompatibleApiKey = false;
   String? _readAloudApiKeyStatus;
+  int _readAloudApiKeyGeneration = 0;
 
   bool get _isLinux {
     if (kIsWeb) {
@@ -136,6 +137,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     if (!di.sl.isRegistered<TtsApiKeyStorage>()) {
       return;
     }
+    final generation = ++_readAloudApiKeyGeneration;
     setState(() {
       _loadingReadAloudApiKey = true;
       _readAloudApiKeyStatus = null;
@@ -144,13 +146,13 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       final key = await di.sl<TtsApiKeyStorage>().read(
         ReadAloudProvider.openAiCompatible,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _readAloudApiKeyGeneration) return;
       setState(() {
         _hasOpenAiCompatibleApiKey = key != null && key.isNotEmpty;
         _loadingReadAloudApiKey = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || generation != _readAloudApiKeyGeneration) return;
       setState(() {
         _loadingReadAloudApiKey = false;
         _readAloudApiKeyStatus = 'Secure API key storage is unavailable.';
@@ -166,6 +168,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return;
     }
     final value = _readAloudApiKeyController.text;
+    final generation = ++_readAloudApiKeyGeneration;
     setState(() {
       _loadingReadAloudApiKey = true;
       _readAloudApiKeyStatus = null;
@@ -176,7 +179,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         value,
       );
       _readAloudApiKeyController.clear();
-      if (!mounted) return;
+      if (!mounted || generation != _readAloudApiKeyGeneration) return;
       setState(() {
         _hasOpenAiCompatibleApiKey = value.trim().isNotEmpty;
         _loadingReadAloudApiKey = false;
@@ -185,7 +188,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             : 'API key saved securely on this device.';
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || generation != _readAloudApiKeyGeneration) return;
       setState(() {
         _loadingReadAloudApiKey = false;
         _readAloudApiKeyStatus = 'Secure API key storage is unavailable.';

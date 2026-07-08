@@ -454,6 +454,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         final tooltip = isPlaying
             ? context.l10n.msgStopReadAloud
             : context.l10n.msgReadAloud;
+        _syncReadAloudErrorSnackBar(context, readAloudService, message.id);
 
         return IconButton(
           icon: Icon(icon, size: 18),
@@ -479,8 +480,8 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
             if (text.isEmpty) {
               return;
             }
-            unawaited(() async {
-              await readAloudService.speak(
+            unawaited(
+              readAloudService.speak(
                 messageId: message.id,
                 text: text,
                 provider: settingsProvider.readAloudProvider,
@@ -492,18 +493,8 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                 model: settingsProvider.readAloudModel,
                 baseUrl: settingsProvider.readAloudBaseUrl,
                 responseFormat: settingsProvider.readAloudResponseFormat,
-              );
-              final error = readAloudService.lastErrorMessage;
-              if (!context.mounted || error == null || error.isEmpty) {
-                return;
-              }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(error),
-                  duration: const Duration(seconds: 4),
-                ),
-              );
-            }());
+              ),
+            );
           },
         );
       },

@@ -110,6 +110,9 @@ void main() {
         );
         expect(request.headers['Authorization'], 'Bearer sk-test');
         expect(request.headers['Accept'], 'audio/mpeg');
+        expect(request.connectTimeout, const Duration(seconds: 10));
+        expect(request.sendTimeout, const Duration(seconds: 10));
+        expect(request.receiveTimeout, const Duration(seconds: 30));
         final body = request.data as Map<String, dynamic>;
         expect(body['model'], 'tts-1');
         expect(body['input'], 'Hello world');

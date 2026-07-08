@@ -145,11 +145,44 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // used by MessageImageExportService to capture the bubble as a PNG.
   final GlobalKey _shareImageKey = GlobalKey();
   bool _hideShareImageButtonForCapture = false;
+  int? _lastReadAloudErrorSequence;
 
   void _setShareImageCaptureHidden(bool hidden) {
     setState(() {
       _hideShareImageButtonForCapture = hidden;
       _localUiStateVersion += 1;
+    });
+  }
+
+  void _syncReadAloudErrorSnackBar(
+    BuildContext context,
+    ReadAloudService service,
+    String messageId,
+  ) {
+    final message = service.lastErrorMessage;
+    final sequence = service.lastErrorSequence;
+    if (message == null ||
+        message.isEmpty ||
+        service.lastErrorMessageId != messageId) {
+      _lastReadAloudErrorSequence = null;
+      return;
+    }
+    if (_lastReadAloudErrorSequence == sequence) {
+      return;
+    }
+    _lastReadAloudErrorSequence = sequence;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      if (!service.consumeLastErrorForMessage(
+        messageId: messageId,
+        message: message,
+        sequence: sequence,
+      )) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+      );
     });
   }
 

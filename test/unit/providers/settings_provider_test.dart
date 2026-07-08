@@ -1392,6 +1392,27 @@ void main() {
       },
     );
 
+    test(
+      'clears provider-specific read-aloud voice when provider changes',
+      () async {
+        final local = InMemoryAppLocalDataSource();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await provider.initialize();
+        await provider.setReadAloudVoiceSelection(id: 'coral', locale: 'en-US');
+
+        await provider.setReadAloudProvider(ReadAloudProvider.openAiCompatible);
+
+        expect(provider.readAloudProvider, ReadAloudProvider.openAiCompatible);
+        expect(provider.readAloudVoice, isNull);
+        expect(provider.readAloudVoiceId, isNull);
+        expect(provider.readAloudVoiceLocale, isNull);
+      },
+    );
+
     test('read-aloud settings survive JSON roundtrip', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

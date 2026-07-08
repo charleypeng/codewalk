@@ -836,7 +836,12 @@ class SettingsProvider extends ChangeNotifier {
     if (_settings.readAloudProvider == value) {
       return;
     }
-    _settings = _settings.copyWith(readAloudProvider: value);
+    _settings = _settings.copyWith(
+      readAloudProvider: value,
+      readAloudVoice: () => null,
+      readAloudVoiceId: () => null,
+      readAloudVoiceLocale: () => null,
+    );
     notifyListeners();
     await _persist();
   }

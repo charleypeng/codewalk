@@ -31,6 +31,14 @@ void main() {
       expect(cleaned, 'Before After');
     });
 
+    test('keeps prose with comparison-like angle brackets', () {
+      final cleaned = ReadAloudTextExtractor.cleanMarkdown(
+        'Use x < y > z but remove <strong>HTML</strong>.',
+      );
+
+      expect(cleaned, 'Use x < y > z but remove HTML.');
+    });
+
     test('extracts text parts from assistant messages', () {
       final message = AssistantMessage(
         id: 'msg_1',

@@ -40,27 +40,44 @@ class NativeTtsBackend implements TtsBackend {
     await _tts.setPitch(request.pitch);
     final voiceId = request.voiceId?.trim();
     if (voiceId != null && voiceId.isNotEmpty) {
-      final locale = await _resolveVoiceLocale(voiceId, request.voiceLocale);
-      await _tts.setVoice({
-        'name': voiceId,
-        if (locale != null && locale.isNotEmpty) 'locale': locale,
-      });
+      final voice = await _resolveVoice(voiceId, request.voiceLocale);
+      if (voice == null) {
+        await _tts.speak(request.text);
+        return const NativeTtsStarted();
+      }
+      try {
+        await _tts.setVoice({
+          'name': voice.id,
+          if (voice.locale != null && voice.locale!.isNotEmpty)
+            'locale': voice.locale!,
+        });
+      } catch (_) {
+        // Voice catalogs can become stale after OS voice changes; fall back to
+        // the platform default instead of failing the whole read-aloud action.
+      }
     }
 
     await _tts.speak(request.text);
     return const NativeTtsStarted();
   }
 
-  Future<String?> _resolveVoiceLocale(String voiceId, String? locale) async {
-    final explicit = locale?.trim();
-    if (explicit != null && explicit.isNotEmpty) {
-      return explicit;
-    }
+  Future<TtsVoiceOption?> _resolveVoice(String voiceId, String? locale) async {
     final voices = await getVoices();
+    final explicit = locale?.trim();
     for (final voice in voices) {
       if (voice.id == voiceId) {
-        return voice.locale;
+        if (explicit != null && explicit.isNotEmpty) {
+          return TtsVoiceOption(
+            id: voice.id,
+            label: voice.label,
+            locale: explicit,
+          );
+        }
+        return voice;
       }
+    }
+    if (voices.isEmpty && explicit != null && explicit.isNotEmpty) {
+      return TtsVoiceOption(id: voiceId, label: voiceId, locale: explicit);
     }
     return null;
   }

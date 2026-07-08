@@ -40,7 +40,7 @@ class ReadAloudTextExtractor {
       RegExp(r'(\*|_)(.*?)\1'),
       (match) => match.group(2) ?? '',
     );
-    text = text.replaceAll(RegExp('<[^>]+>'), ' ');
+    text = text.replaceAll(RegExp('</?[A-Za-z][^>]*>'), ' ');
 
     final lines = <String>[];
     for (final rawLine in text.split('\n')) {
@@ -68,6 +68,9 @@ class ReadAloudTextExtractor {
   }
 
   static String _normalizeWhitespace(String value) {
-    return value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final collapsed = value.replaceAll(RegExp(r'\s+'), ' ');
+    return collapsed
+        .replaceAllMapped(RegExp(r'\s+([.,!?;:])'), (match) => match.group(1)!)
+        .trim();
   }
 }

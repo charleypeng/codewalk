@@ -71,6 +71,9 @@ class OpenAiCompatibleTtsBackend implements TtsBackend {
         },
         options: Options(
           responseType: ResponseType.bytes,
+          connectTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 30),
           headers: <String, String>{
             'Authorization': 'Bearer $apiKey',
             'Accept': mimeTypeForOpenAiAudioFormat(format),
