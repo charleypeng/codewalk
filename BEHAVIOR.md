@@ -1805,10 +1805,23 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Given** the user opens Settings > Speech
 - **When** the Text to speech section is visible
 - **Then** the user can select `System / Native`, `Microsoft Edge Speech (experimental)`, or `OpenAI-compatible`
-- **Then** the default provider is `System / Native`
 - **Then** the user can enable/disable read-aloud and test the selected voice
 - **Then** the user can adjust speaking speed (0.0–1.0)
 - **Then** voice pitch (0.5–2.0) is shown only for the native provider
+
+### First-run TTS defaults
+
+- **Given** no persisted `ExperienceSettings` JSON exists
+- **When** settings initialize on Linux
+- **Then** read-aloud defaults to `Microsoft Edge Speech (experimental)` because native `flutter_tts` is unavailable on Linux
+- **When** settings initialize on a platform where native TTS is available
+- **Then** read-aloud defaults to `System / Native`
+- **When** settings initialize on a non-Linux platform where native TTS is unavailable
+- **Then** read-aloud falls back to `Microsoft Edge Speech (experimental)`
+- **Then** app locale, followed by system locale, selects the closest default Edge voice/locale
+- **Given** persisted `ExperienceSettings` JSON already exists
+- **When** settings initialize
+- **Then** startup defaults do not overwrite the user's stored read-aloud provider, voice, or locale
 
 ### Native TTS provider
 

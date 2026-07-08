@@ -51,6 +51,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-045: CodeWalk Refined Visual Layer Over Material Stack
 - ADR-046: Client-Side Cloud TTS Provider Architecture ⚠️ SUPERSEDED by ADR-047
 - ADR-047: Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket
+- ADR-048: Adaptive First-Run Read-Aloud TTS Defaults
 
 ---
 
@@ -2858,13 +2859,13 @@ Cloud TTS is a client-owned read-aloud feature: CodeWalk extracts sanitized assi
 
 **Status**: Accepted
 
-**Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy), ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-046 (superseded Edge direct-synthesis block).
+**Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy), ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-046 (superseded Edge direct-synthesis block), ADR-048 (adaptive first-run read-aloud defaults).
 
 ### Context
 
 ADR-046 introduced the client-side cloud TTS architecture but intentionally blocked direct Microsoft Edge Read Aloud synthesis because it depended on an unofficial private WebSocket protocol. The new user requirement and implementation accept that risk for an explicitly experimental provider so CodeWalk can offer direct Microsoft Edge/Bing Read Aloud voices without an API key.
 
-The feature must remain client-owned and opt-in. Native TTS stays the default provider, OpenAI-compatible TTS keeps its existing `/v1/audio/speech` behavior and secure API-key storage boundary, and ADR-023 compatibility must be preserved by avoiding any OpenCode server contract change.
+The feature must remain client-owned, and persisted user choice must remain authoritative once settings exist. ADR-048 narrows the first-run default rule: existing `ExperienceSettings` are never overwritten, while fresh installs may select Edge automatically when native TTS is unavailable or platform policy requires it. OpenAI-compatible TTS keeps its existing `/v1/audio/speech` behavior and secure API-key storage boundary, and ADR-023 compatibility must be preserved by avoiding any OpenCode server contract change.
 
 Direct Edge/Bing synthesis sends sanitized assistant message text from the CodeWalk client to Microsoft. The implementation therefore needs a strict privacy boundary, no silent fallback to another provider, visible failure behavior, payload limits, and an easy rollback path if the private protocol changes or becomes unacceptable.
 
@@ -2872,8 +2873,8 @@ Direct Edge/Bing synthesis sends sanitized assistant message text from the CodeW
 
 Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft Edge/Bing Read Aloud TTS experimentally** through a client-side WebSocket implementation that follows LobeHub/edge-tts protocol details.
 
-1. **Native TTS remains the default.** `ReadAloudProvider.native` remains the default persisted provider. Edge/Bing Read Aloud is never enabled automatically for new or existing users.
-2. **Edge remains opt-in experimental.** `ReadAloudProvider.edgeExperimental` is exposed as an experimental provider with settings copy that explains the unofficial private protocol, possible breakage/rate limits, and that message text is sent to Microsoft.
+1. **Adaptive first-run provider boundary.** Persisted `ExperienceSettings` remain authoritative and are never overwritten. For fresh installs, ADR-048 controls provider selection: native TTS is preferred when a runtime availability probe succeeds, while Linux and native-unavailable fresh installs may start on `ReadAloudProvider.edgeExperimental`.
+2. **Edge remains experimental.** `ReadAloudProvider.edgeExperimental` is exposed as an experimental provider with settings copy that explains the unofficial private protocol, possible breakage/rate limits, and that message text is sent to Microsoft. Edge may be selected manually or by the ADR-048 first-run resolver only when no persisted settings exist.
 3. **No silent fallback.** If Edge voice discovery, WebSocket connection, synthesis, parsing, rate limits, or playback fail, CodeWalk reports a visible read-aloud error and does not silently switch to native TTS or OpenAI-compatible TTS. Users must manually choose another provider.
 4. **OpenAI-compatible provider unchanged.** The OpenAI-compatible backend continues to use the configured `/v1/audio/speech` endpoint and provider API key. API keys remain stored only through `TtsApiKeyStorage`/secure storage and must not enter `ExperienceSettings`, logs, normal preference payloads, or exported settings.
 5. **Client-side Edge protocol boundary.** Edge/Bing synthesis is implemented in `edge_tts_protocol.dart` and `edge_tts_websocket.dart` using conditional imports. Native IO platforms perform a manual `HttpClient` WebSocket upgrade with Edge-style headers and edge-tts/LobeHub-compatible request/response framing. Web builds use a generic connector/stub boundary for build compatibility rather than introducing `dart:io` dependencies.
@@ -2883,8 +2884,8 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 
 ### Rationale
 
-- The new product requirement values direct access to Microsoft Edge/Bing Read Aloud voices enough to accept private-protocol risk when the provider is clearly labeled experimental and remains opt-in.
-- Keeping native TTS as the default preserves offline/local behavior and avoids surprising users with third-party data transfer.
+- The new product requirement values direct access to Microsoft Edge/Bing Read Aloud voices enough to accept private-protocol risk when the provider is clearly labeled experimental and automatic selection is limited to fresh-install/native-unavailable cases.
+- Preferring native TTS whenever it is available preserves offline/local behavior and avoids surprising users with third-party data transfer on platforms with a working native engine.
 - A client-side WebSocket implementation preserves ADR-023 because it does not require new OpenCode endpoints, schemas, proxy behavior, or server-side credential handling.
 - No silent fallback keeps provider choice honest: if the user selected Edge, failures must be visible rather than quietly reading through another provider with different privacy and voice behavior.
 - Conditional imports isolate platform-specific WebSocket mechanics and keep web/build targets compatible even when direct Edge synthesis is primarily an IO-platform capability.
@@ -2893,7 +2894,7 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 ### Consequences
 
 - ✅ Users can opt into direct Microsoft Edge/Bing Read Aloud voices without configuring an API key.
-- ✅ Native read-aloud remains the safe default and manual rollback target.
+- ✅ Native read-aloud remains the safe preferred provider and manual rollback target on platforms with runtime native TTS availability; ADR-048 defines the Linux/native-unavailable fresh-install exceptions.
 - ✅ OpenAI-compatible TTS behavior and secure API-key storage remain unchanged.
 - ✅ ADR-023 compatibility is preserved: no OpenCode server endpoint, schema, lifecycle, event, model, agent, or config-contract changes.
 - ✅ Edge voice selection is user-visible through an explicit picker, with `en-US-EmmaMultilingualNeural` as the default.
@@ -2906,7 +2907,7 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 ### Risks and Mitigations
 
 - **Private protocol drift**: Microsoft may change Edge/Bing headers, tokens, frame formats, voice endpoints, or throttling. Mitigation: isolate all protocol details in `edge_tts_protocol.dart` and `edge_tts_websocket.dart`, keep the provider labeled experimental, surface visible errors, and allow users to switch back to native TTS.
-- **Third-party data exposure**: assistant text leaves the device for Microsoft when Edge is selected. Mitigation: keep Edge opt-in, show explicit privacy warning copy, send only sanitized assistant text, cap payloads at 4096 bytes, and exclude tool metadata, hidden state, logs, and credentials.
+- **Third-party data exposure**: assistant text leaves the device for Microsoft when Edge is selected. Mitigation: limit automatic Edge selection to fresh installs with no persisted settings, show explicit privacy warning copy, send only sanitized assistant text, cap payloads at 4096 bytes, and exclude tool metadata, hidden state, logs, and credentials.
 - **Silent provider mismatch**: automatic fallback could read private content through an unintended provider or confuse voice/privacy expectations. Mitigation: fail closed with a visible read-aloud error; fallback requires explicit user action in settings.
 - **Platform transport variance**: IO and web WebSocket capabilities differ. Mitigation: use conditional imports, keep the IO manual upgrade isolated, keep the web connector build-compatible, and surface unsupported/runtime failures without changing provider selection.
 - **Credential regression**: future changes might accidentally treat cloud provider secrets as normal settings. Mitigation: Edge uses no API key; OpenAI-compatible keys remain restricted to `TtsApiKeyStorage`/secure storage only.
@@ -2914,7 +2915,7 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 ### Rollback / Feature-Flag Plan
 
 - **Immediate user rollback**: switch `Settings > Speech > Text-to-Speech provider` back to `System / Native` or `OpenAI-compatible`. Edge failures never trigger automatic fallback.
-- **Product rollback**: hide or disable `ReadAloudProvider.edgeExperimental`, remove its backend registration, and keep `ReadAloudProvider.native` as the default. Existing Edge selections should be treated as unavailable and prompt the user to choose another provider, preferably native.
+- **Product rollback**: hide or disable `ReadAloudProvider.edgeExperimental`, remove its backend registration, and restore a native-preferred resolver where runtime native TTS is available. Existing Edge selections should be treated as unavailable and prompt the user to choose another provider, preferably native; Linux/native-unavailable fresh installs should prompt instead of silently choosing Edge.
 - **Protocol rollback**: leave OpenAI-compatible and native backends intact, remove or disable only the Edge WebSocket/voice-discovery path, and keep secure TTS API-key storage untouched.
 - **No data migration required**: Edge stores only non-secret provider/voice preferences. OpenAI-compatible API keys remain in secure storage and are unaffected by Edge rollback.
 
@@ -2922,7 +2923,7 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 
 This ADR is compliant with ADR-023. CodeWalk still consumes OpenCode as an official client: no OpenCode server endpoint is added, no request/response schema changes, no realtime event semantics change, no session/message/model/agent lifecycle changes, and no server-side provider routing or proxying is introduced.
 
-Edge/Bing Read Aloud is a client-owned read-aloud feature. CodeWalk extracts sanitized text from already-received assistant message content and sends it directly from the client to Microsoft only when the user has selected the experimental Edge provider.
+Edge/Bing Read Aloud is a client-owned read-aloud feature. CodeWalk extracts sanitized text from already-received assistant message content and sends it directly from the client to Microsoft only when the experimental Edge provider is selected by the user or by the ADR-048 first-run resolver.
 
 ### Key Files
 
@@ -2933,6 +2934,68 @@ Edge/Bing Read Aloud is a client-owned read-aloud feature. CodeWalk extracts san
 - `lib/presentation/services/tts/edge_tts_websocket_stub.dart` — web/build-compatible connector boundary.
 - `lib/presentation/services/tts/read_aloud_text_extractor.dart` — sanitized assistant text extraction before cloud/Edge synthesis.
 - `lib/presentation/pages/settings/sections/speech_settings_section.dart` — Edge provider warning, Edge voice picker, cloud privacy copy, and provider selection UI.
-- `lib/domain/entities/experience_settings.dart` — non-secret read-aloud provider and Edge voice preferences, including the native default.
+- `lib/domain/entities/experience_settings.dart` — persists non-secret read-aloud provider/voice preferences only; adaptive resolution belongs to ADR-048 and `read_aloud_default_resolver.dart`.
 - `lib/core/auth/tts_api_key_storage.dart` — unchanged secure-storage-only boundary for OpenAI-compatible API keys.
 - `lib/core/di/injection_container.dart` — read-aloud backend registration including `ReadAloudProvider.edgeExperimental`.
+
+---
+
+## ADR-048: Adaptive First-Run Read-Aloud TTS Defaults (2026-07-08)
+
+**Status**: Accepted
+
+**Related**: ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-047 (Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket).
+
+### Context
+
+CodeWalk now supports multiple read-aloud providers, including native platform TTS and the experimental direct Microsoft Edge/Bing Read Aloud backend. The previous ADR-047 wording treated native TTS as the universal default and stated that Edge is never enabled automatically, but the current implementation needs first-run defaults that avoid a broken read-aloud experience on platforms where native TTS is unavailable.
+
+Existing persisted `ExperienceSettings` must never be overwritten. Fresh installs are detected only when `getExperienceSettingsJson()` is missing or blank. Linux fresh installs require a non-native default because `flutter_tts` native TTS is unavailable on Linux. Windows, macOS, and other supported platforms should still prefer native TTS when it is actually available at runtime.
+
+Edge remains experimental, depends on a private/unofficial protocol, and sends sanitized assistant text to Microsoft only when Edge is the selected read-aloud provider. This defaulting behavior is client-owned and must not change any OpenCode server contract, endpoint, schema, event, provider/model contract, or ADR-023 behavior.
+
+### Decision
+
+Adopt an **adaptive first-run read-aloud provider resolver** while preserving persisted settings as authoritative user state.
+
+1. **Never overwrite persisted settings.** If `getExperienceSettingsJson()` returns a non-blank payload, CodeWalk keeps the stored `ExperienceSettings` values, including read-aloud provider, voice, locale, rate, pitch, and related non-secret provider preferences.
+2. **Fresh install detection.** Adaptive defaults run only when `getExperienceSettingsJson()` is missing or blank. Reinstalls, migrations, and existing profiles with persisted settings must not be re-defaulted.
+3. **Linux fresh-install default.** Linux fresh installs choose `ReadAloudProvider.edgeExperimental` because `flutter_tts` native TTS is unavailable on Linux.
+4. **Native-preferred runtime probe elsewhere.** Windows, macOS, and other supported platforms prefer `ReadAloudProvider.native` only when a runtime native availability probe succeeds. If native TTS is unavailable, fresh installs fall back to `ReadAloudProvider.edgeExperimental`.
+5. **Locale-aware Edge voice resolution.** When Edge is selected by the fresh-install resolver, CodeWalk maps the app locale first, then the system locale, to an Edge voice/locale.
+6. **Privacy and ADR-023 boundary.** Edge remains an experimental/private-protocol provider. Sanitized assistant text is sent to Microsoft only when Edge is selected, and no OpenCode server contract, endpoint, schema, realtime event, provider/model contract, or ADR-023 behavior changes.
+
+### Rationale
+
+- Preserving non-blank persisted `ExperienceSettings` protects explicit user choice and prevents migrations from silently changing privacy-sensitive provider behavior.
+- Missing/blank `getExperienceSettingsJson()` is the narrowest durable signal for a fresh install, avoiding platform-specific heuristics that could affect existing users.
+- Linux needs a working first-run provider because native `flutter_tts` is unavailable there; choosing native would create a broken default.
+- Runtime probing keeps native as the preferred local/offline path on platforms where it actually works, while avoiding a nonfunctional native default when it does not.
+- App-locale-first voice resolution respects the user's selected CodeWalk language before falling back to the operating system locale.
+- Keeping all provider selection and synthesis client-side preserves ADR-023 compatibility.
+
+### Consequences
+
+- ✅ Fresh installs get a working read-aloud default instead of a broken native provider on Linux or native-unavailable runtimes.
+- ✅ Existing users and migrated profiles keep their persisted `ExperienceSettings`; provider, voice, and locale choices are not overwritten.
+- ✅ Native TTS remains preferred on Windows, macOS, and other supported platforms when runtime probing confirms availability.
+- ✅ Edge voice defaults follow app locale first, then system locale, improving first-run voice fit.
+- ✅ ADR-023 remains unchanged: no OpenCode server endpoint, schema, event, provider/model, or lifecycle contract changes.
+- ⚠ Linux and other native-unavailable fresh installs may start on the experimental Edge provider, so privacy warning copy and provider switching must remain visible.
+- ⚠ Edge uses an unofficial/private protocol and may break, throttle, or change behavior outside CodeWalk's control.
+- ⚠ Runtime native probing and locale-to-Edge mapping become part of the settings defaulting contract and require regression coverage.
+- ❌ CodeWalk can no longer assume `ReadAloudProvider.native` is the universal first-run default.
+- ❌ Edge must not proxy through OpenCode or imply a stable server/provider contract.
+
+### Key Files
+
+- `lib/domain/entities/experience_settings.dart` — `ExperienceSettings` persistence for non-secret read-aloud values and default enum fields; adaptive resolution lives outside the entity.
+- `lib/data/datasources/app_local_datasource.dart` — `getExperienceSettingsJson()` fresh-install signal.
+- `lib/presentation/services/tts/read_aloud_default_resolver.dart` — adaptive first-run provider and Edge voice/locale resolution.
+- `lib/presentation/providers/settings_provider.dart` — settings hydration and no-overwrite persistence boundary using the resolver output.
+- `lib/core/di/injection_container.dart` — injects the native TTS availability probe into `SettingsProvider` for runtime first-run defaults.
+- `lib/presentation/services/tts/native_tts_backend.dart` — runtime native TTS availability probing.
+- `lib/presentation/services/tts/edge_experimental_tts_backend.dart` — experimental Edge backend and voice discovery.
+- `lib/presentation/services/tts/read_aloud_text_extractor.dart` — sanitized assistant text boundary before Edge synthesis.
+- `test/unit/services/read_aloud_default_resolver_test.dart` — adaptive default, native-probe, and locale mapping coverage.
+- `test/unit/providers/settings_provider_test.dart` — settings hydration and no-overwrite integration coverage.

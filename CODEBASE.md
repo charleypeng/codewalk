@@ -58,7 +58,8 @@ codewalk/
 │       │   ├── chat_input/             # ChatInput decomposed clusters (8 modules; consume visualStyleTokens — issue #86)
 │       │   └── math_expression_widget.dart # LaTeX math renderer with parse-failure styled fallback
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, read-aloud/TTS, terminal, etc.)
-│       │   └── tts/                    # Read-aloud TTS backend contracts, adapters, generated-audio player, and text extraction
+│       │   └── tts/                    # Read-aloud TTS backend contracts, adapters, fresh-install default resolver, generated-audio player, and text extraction
+│       │       ├── read_aloud_default_resolver.dart # Fresh-install read-aloud provider/voice default resolver
 │       │       ├── edge_tts_protocol.dart # Edge/Bing Read Aloud URL, header, frame, SSML, voice-list, and MP3 frame helpers
 │       │       ├── edge_tts_websocket.dart # Conditional Edge TTS websocket transport contract/export
 │       │       ├── edge_tts_websocket_io.dart # `dart:io` websocket upgrade transport for native targets
@@ -97,7 +98,7 @@ lib/presentation/pages/logs_page.dart           # In-app App Logs surface; gated
 ## Core Modules
 
 ```text
-lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers, TailscaleService, WorkspaceFileOperationsService, TtsApiKeyStorage, and ReadAloudService TTS backends; wires tailscaleService into AppProvider factory; _loadLocalConfig applies tailscaleEnabled on active profile
+lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers, TailscaleService, WorkspaceFileOperationsService, TtsApiKeyStorage, and ReadAloudService TTS backends; injects SettingsProvider's nativeReadAloudAvailabilityProbe from ReadAloudService.isProviderAvailable(ReadAloudProvider.native); wires tailscaleService into AppProvider factory; _loadLocalConfig applies tailscaleEnabled on active profile
 lib/core/i18n/app_locales.dart                     # Locale registry: 14 supported locales, resolution callback, native-name metadata, PT_BR normalization
 lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
 lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
@@ -142,7 +143,7 @@ lib/presentation/services/project_icon_discovery_service.dart       # Conditiona
 lib/presentation/services/project_icon_discovery_service_base.dart  # Abstract `ProjectIconDiscoveryService` contract: `isSupported` flag, `discover(Project)` returning `ProjectIconDiscoveryResult`; never mutates the project or any global state
 lib/presentation/services/project_icon_discovery_service_io.dart    # IO implementation: bounded IO icon discovery invoked by `ProjectIconProvider` auto-discovery, with existing local/remote file endpoint discovery and priority rules — Tauri `src-tauri/icons/*`, Electron direct `build/icon.*`, Flutter/React Native/native Apple `AppIcon.appiconset/*.png`, Flutter Windows `windows/runner/resources/app_icon.ico`, Flutter Linux `linux/runner/resources/app_icon.png`, Android `mipmap-*/ic_launcher*.png`, common app assets (`icon.*`, `app_icon.*`, `logo.*`), then web favicons/sized web icons; supports PNG/JPEG/SVG/WebP/ICO, 5 MB cap, shortest relative path ranking, skips heavy/generated dirs (`.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `pods`, `ephemeral`) while checking `build/icon.*` directly without traversing build output, and converts ICO to PNG via the `image` package
 lib/presentation/services/project_icon_discovery_service_stub.dart  # Non-IO platforms: returns `unsupportedPlatform`; `isSupported == false`
-lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, **Visual style**, provider-aware read-aloud settings (provider, voice id/locale, model, base URL, response format), composer tips visibility, sounds, update checks, complete OpenCode shared settings coverage, and debug logging toggles; exposes `dynamicColorAvailable`; manages update install lifecycle and logging preference sync
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, **Visual style**, provider-aware read-aloud settings (provider, voice id/locale, model, base URL, response format), fresh-install read-aloud defaults via nativeReadAloudAvailabilityProbe, composer tips visibility, sounds, update checks, complete OpenCode shared settings coverage, and debug logging toggles; exposes `dynamicColorAvailable`; manages update install lifecycle and logging preference sync
   └── settings_provider_opencode_defaults.dart # Extension for OpenCode shared defaults (part of settings_provider.dart; see commit 8759defc)
   └── settings_provider_update_install.dart # Extension for update check and install lifecycle (part of settings_provider.dart; see commit 8759defc)
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch; Codex single-window label preserved using provider name instead of raw API label (guarded by `result.providerId != 'codex'`)
@@ -172,12 +173,13 @@ lib/presentation/services/android_background_alert_worker.dart # WorkManager-bas
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
-lib/presentation/services/read_aloud_service.dart                # ReadAloudService: provider-routed read-aloud facade; native remains the default, generated-audio backends (including opt-in Edge experimental) are routed through byte playback; loads the secure OpenAI-compatible API key when needed; tracks idle/playing/paused state and per-message playback
+lib/presentation/services/read_aloud_service.dart                # ReadAloudService: provider-routed read-aloud facade; exposes isProviderAvailable for runtime native TTS probes; generated-audio backends (including Edge experimental when user-selected or chosen by fresh-install defaults) are routed through byte playback; loads the secure OpenAI-compatible API key when needed; tracks idle/playing/paused state and per-message playback
 lib/presentation/services/tts/tts_backend.dart                   # TTS backend contract, request/result models, generated-audio result, voice metadata, and normalized backend error kinds
 lib/presentation/services/tts/native_tts_backend.dart            # Native flutter_tts backend with voice/language lookup and platform speech callbacks
+lib/presentation/services/tts/read_aloud_default_resolver.dart   # Fresh-install read-aloud defaults: Linux selects Edge experimental; other platforms select native when runtime probe succeeds, otherwise Edge with locale-mapped voice
 lib/presentation/services/tts/generated_tts_audio_player.dart    # audioplayers-backed byte playback adapter for generated cloud TTS audio
 lib/presentation/services/tts/openai_compatible_tts_backend.dart # OpenAI-compatible `/audio/speech` backend with model/voice/base URL/format options and Dio error mapping
-lib/presentation/services/tts/edge_experimental_tts_backend.dart # Opt-in experimental Microsoft Edge/Bing Read Aloud backend; discovers voices, performs direct websocket synthesis, and returns generated MP3 audio bytes
+lib/presentation/services/tts/edge_experimental_tts_backend.dart # Experimental Microsoft Edge/Bing Read Aloud backend; user-selectable and used by fresh-install defaults when native TTS is unavailable; discovers voices, performs direct websocket synthesis, and returns generated MP3 audio bytes
 lib/presentation/services/tts/edge_tts_protocol.dart             # Edge/Bing Read Aloud protocol helpers for signed URLs, browser headers, SSML, frame parsing, voice catalog parsing, limits, and MP3 MIME/format constants
 lib/presentation/services/tts/edge_tts_websocket.dart            # Conditional websocket abstraction used by the Edge backend
 lib/presentation/services/tts/edge_tts_websocket_io.dart         # Native websocket transport using `dart:io` upgrade headers compatible with Edge/Bing Read Aloud
@@ -433,7 +435,7 @@ test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare M
 test/unit/auth/oauth_token_storage_test.dart # OAuth token storage tests: save/load/delete credential, hasValidCredential, OAuthTokenStorageException backend error handling, cross-profile key isolation
 test/unit/auth/tts_api_key_storage_test.dart # TTS API-key storage tests: trim/save/load/delete, per-provider isolation, secure-storage exception mapping
 test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth, sticky OpenCode `X-Session-Id` echo (echoed on later requests, cleared on base URL change, cleared on `clearAuth`)
-test/unit/providers/                   # ChatProvider split tests (8 files, parallelized with -j 12); `settings_provider_test.dart` covers visual style and provider-aware read-aloud preference persistence
+test/unit/providers/                   # ChatProvider split tests (8 files, parallelized with -j 12); `settings_provider_test.dart` covers visual style, provider-aware read-aloud preference persistence, and fresh-install read-aloud default/probe preservation behavior
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
   chat_provider_messaging_test.dart    #   15 tests — sessions, sendMessage, draft restore; delta-like SWR fallback coverage
@@ -448,6 +450,7 @@ test/unit/services/                     # Platform and runtime service unit test
   codewalk_terminal_controller_test.dart #   Terminal controller: server-side PTY lifecycle, WebSocket connectivity, resize debouncing, cursor tracking
   codewalk_terminal_url_test.dart        #   WebSocket terminal URL construction
   read_aloud_service_test.dart           #   Provider-routed read-aloud lifecycle, generated-audio playback, secure API-key lookup, options, and message tracking
+  read_aloud_default_resolver_test.dart  #   Fresh-install read-aloud provider selection and Edge locale voice fallback tests
   read_aloud_text_extractor_test.dart    #   Assistant text extraction and Markdown sanitization before TTS/cloud read-aloud
   openai_compatible_tts_backend_test.dart # OpenAI-compatible TTS request payload, response audio handling, and provider error mapping
   edge_tts_protocol_test.dart            #   Edge/Bing Read Aloud URL signing, headers, SSML, frame parsing, MP3 audio frames, and input limits
@@ -511,9 +514,10 @@ tool/release/changelog.py              # Changelog update/extract helper used by
 
 ### Read-Aloud / TTS
 
-- **Settings**: `ExperienceSettings` stores non-secret provider/model/base URL/voice/locale/format preferences; `TtsApiKeyStorage` stores the OpenAI-compatible TTS API key separately in secure storage.
+- **Settings**: `ExperienceSettings` stores non-secret provider/model/base URL/voice/locale/format preferences; existing persisted settings are preserved; `TtsApiKeyStorage` stores the OpenAI-compatible TTS API key separately in secure storage.
 - **Flow**: `chat_message_content.dart` extracts sanitized assistant text with `ReadAloudTextExtractor`, then calls `ReadAloudService.speak()` with `SettingsProvider` read-aloud options.
-- **Backends**: `ReadAloudService` keeps `ReadAloudProvider.native` as the default; OpenAI-compatible and opt-in Edge experimental providers use generated-audio `TtsBackend` adapters plus `TtsAudioPlayer` byte playback.
+- **First-run defaults**: `SettingsProvider` applies `ReadAloudDefaultResolver` only when no `ExperienceSettings` JSON exists; Linux fresh installs select Edge experimental because native `flutter_tts` is unavailable, Windows/macOS/others select native when `ReadAloudService.isProviderAvailable(ReadAloudProvider.native)` succeeds, and native-unavailable installs fall back to Edge with a locale-mapped voice.
+- **Backends**: `ReadAloudService` routes native, OpenAI-compatible, and Edge experimental providers; OpenAI-compatible and Edge use generated-audio `TtsBackend` adapters plus `TtsAudioPlayer` byte playback.
 - **Edge experimental**: `EdgeExperimentalTtsBackend` discovers Microsoft Edge/Bing Read Aloud voices, synthesizes directly over conditional websocket transport, and returns generated MP3 bytes.
 
 ### Android Background Monitoring
