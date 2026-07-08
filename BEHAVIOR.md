@@ -1832,10 +1832,12 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 - **Given** `Microsoft Edge Speech (experimental)` is selected
 - **When** Settings > Speech renders provider-specific options
-- **Then** CodeWalk shows a warning that Edge Speech is experimental and based on an unofficial Edge Read Aloud protocol
-- **Then** direct Edge synthesis is blocked in this build because the unstable transport headers are not safely supported
-- **When** the user tries to read aloud through this provider
-- **Then** CodeWalk reports a provider-unavailable read-aloud error and does not silently switch to native TTS
+- **Then** CodeWalk shows a warning that Edge Speech is experimental, uses an unofficial Edge Read Aloud protocol, and sends message text to Microsoft
+- **Then** Settings > Speech shows an Edge voice picker when Microsoft voice discovery is available
+- **Then** CodeWalk can synthesize normal-length sanitized assistant text through the direct Edge/Bing Read Aloud websocket path and play the returned MP3 audio
+- **Then** text over the Edge request size limit is rejected with a read-aloud error instead of being sent partially
+- **When** direct Edge synthesis fails because Microsoft changes or rejects the private protocol
+- **Then** CodeWalk reports a user-visible read-aloud error and does not silently switch to native TTS
 
 ### Cloud TTS privacy
 

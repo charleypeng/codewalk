@@ -49,7 +49,8 @@ This document contains only active architectural decisions that represent the cu
 - ADR-043: Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations (ADR-023 Exception)
 - ADR-044: Windows STT Final Fix — Runner-Owned WASAPI Microphone Backend and Re-Enabled On-Device Engines
 - ADR-045: CodeWalk Refined Visual Layer Over Material Stack
-- ADR-046: Client-Side Cloud TTS Provider Architecture
+- ADR-046: Client-Side Cloud TTS Provider Architecture ⚠️ SUPERSEDED by ADR-047
+- ADR-047: Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket
 
 ---
 
@@ -2770,11 +2771,13 @@ This ADR is fully compliant with ADR-023. It introduces no OpenCode server contr
 
 ---
 
-## ADR-046: Client-Side Cloud TTS Provider Architecture (2026-07-08)
+## ADR-046: Client-Side Cloud TTS Provider Architecture (2026-07-08) ⚠️ SUPERSEDED by ADR-047
 
-**Status**: Accepted
+**Status**: Superseded
 
 **Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy), ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy).
+
+**Superseded by**: ADR-047 (Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket), which replaces the ADR-046 decision to block direct Microsoft Edge Read Aloud synthesis.
 
 ### Context
 
@@ -2848,3 +2851,88 @@ Cloud TTS is a client-owned read-aloud feature: CodeWalk extracts sanitized assi
 - `lib/core/di/injection_container.dart` — registration of read-aloud backends and `TtsApiKeyStorage`.
 - `lib/presentation/widgets/chat_message_widget.dart` — assistant-message read-aloud controls using sanitized text extraction and provider settings.
 - `test/unit/auth/tts_api_key_storage_test.dart`, `test/unit/services/openai_compatible_tts_backend_test.dart`, `test/unit/services/edge_experimental_tts_backend_test.dart` — secure storage, OpenAI-compatible backend, and Edge experimental behavior coverage.
+
+---
+
+## ADR-047: Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket (2026-07-08)
+
+**Status**: Accepted
+
+**Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy), ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-046 (superseded Edge direct-synthesis block).
+
+### Context
+
+ADR-046 introduced the client-side cloud TTS architecture but intentionally blocked direct Microsoft Edge Read Aloud synthesis because it depended on an unofficial private WebSocket protocol. The new user requirement and implementation accept that risk for an explicitly experimental provider so CodeWalk can offer direct Microsoft Edge/Bing Read Aloud voices without an API key.
+
+The feature must remain client-owned and opt-in. Native TTS stays the default provider, OpenAI-compatible TTS keeps its existing `/v1/audio/speech` behavior and secure API-key storage boundary, and ADR-023 compatibility must be preserved by avoiding any OpenCode server contract change.
+
+Direct Edge/Bing synthesis sends sanitized assistant message text from the CodeWalk client to Microsoft. The implementation therefore needs a strict privacy boundary, no silent fallback to another provider, visible failure behavior, payload limits, and an easy rollback path if the private protocol changes or becomes unacceptable.
+
+### Decision
+
+Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft Edge/Bing Read Aloud TTS experimentally** through a client-side WebSocket implementation that follows LobeHub/edge-tts protocol details.
+
+1. **Native TTS remains the default.** `ReadAloudProvider.native` remains the default persisted provider. Edge/Bing Read Aloud is never enabled automatically for new or existing users.
+2. **Edge remains opt-in experimental.** `ReadAloudProvider.edgeExperimental` is exposed as an experimental provider with settings copy that explains the unofficial private protocol, possible breakage/rate limits, and that message text is sent to Microsoft.
+3. **No silent fallback.** If Edge voice discovery, WebSocket connection, synthesis, parsing, rate limits, or playback fail, CodeWalk reports a visible read-aloud error and does not silently switch to native TTS or OpenAI-compatible TTS. Users must manually choose another provider.
+4. **OpenAI-compatible provider unchanged.** The OpenAI-compatible backend continues to use the configured `/v1/audio/speech` endpoint and provider API key. API keys remain stored only through `TtsApiKeyStorage`/secure storage and must not enter `ExperienceSettings`, logs, normal preference payloads, or exported settings.
+5. **Client-side Edge protocol boundary.** Edge/Bing synthesis is implemented in `edge_tts_protocol.dart` and `edge_tts_websocket.dart` using conditional imports. Native IO platforms perform a manual `HttpClient` WebSocket upgrade with Edge-style headers and edge-tts/LobeHub-compatible request/response framing. Web builds use a generic connector/stub boundary for build compatibility rather than introducing `dart:io` dependencies.
+6. **Voice selection.** Settings expose an Edge voice picker populated from Microsoft Edge/Bing voices when discovery succeeds. The default Edge voice is `en-US-EmmaMultilingualNeural`.
+7. **Payload limit and sanitization.** Edge synthesis sends only sanitized assistant text produced by the existing read-aloud text extractor, capped to 4096 bytes before transport. Tool metadata, hidden state, logs, credentials, and raw message internals are not sent.
+8. **No server proxy or OpenCode contract change.** Edge/Bing Read Aloud traffic goes directly from the CodeWalk client to Microsoft. The OpenCode server is not involved in provider routing, synthesis, credential storage, request signing, or playback.
+
+### Rationale
+
+- The new product requirement values direct access to Microsoft Edge/Bing Read Aloud voices enough to accept private-protocol risk when the provider is clearly labeled experimental and remains opt-in.
+- Keeping native TTS as the default preserves offline/local behavior and avoids surprising users with third-party data transfer.
+- A client-side WebSocket implementation preserves ADR-023 because it does not require new OpenCode endpoints, schemas, proxy behavior, or server-side credential handling.
+- No silent fallback keeps provider choice honest: if the user selected Edge, failures must be visible rather than quietly reading through another provider with different privacy and voice behavior.
+- Conditional imports isolate platform-specific WebSocket mechanics and keep web/build targets compatible even when direct Edge synthesis is primarily an IO-platform capability.
+- The 4096-byte cap reduces private-protocol fragility, bounds third-party data exposure, and prevents oversized synthesis payloads from entering the Edge transport.
+
+### Consequences
+
+- ✅ Users can opt into direct Microsoft Edge/Bing Read Aloud voices without configuring an API key.
+- ✅ Native read-aloud remains the safe default and manual rollback target.
+- ✅ OpenAI-compatible TTS behavior and secure API-key storage remain unchanged.
+- ✅ ADR-023 compatibility is preserved: no OpenCode server endpoint, schema, lifecycle, event, model, agent, or config-contract changes.
+- ✅ Edge voice selection is user-visible through an explicit picker, with `en-US-EmmaMultilingualNeural` as the default.
+- ⚠ Sanitized assistant text is sent directly from the client to Microsoft when Edge is selected; Microsoft's privacy, retention, region, quota, and availability policies apply outside CodeWalk's control.
+- ⚠ The Edge/Bing Read Aloud WebSocket protocol is unofficial and private; headers, tokens, message framing, rate limits, or availability may change without notice.
+- ⚠ Web support is a build-compatible generic connector boundary, not a guarantee that browser synthesis will work the same as native IO platforms.
+- ❌ Edge/Bing Read Aloud is not a stable supported provider contract and must not be treated as reliable infrastructure.
+- ❌ CodeWalk must not silently fall back from Edge to native or OpenAI-compatible TTS on provider failure.
+
+### Risks and Mitigations
+
+- **Private protocol drift**: Microsoft may change Edge/Bing headers, tokens, frame formats, voice endpoints, or throttling. Mitigation: isolate all protocol details in `edge_tts_protocol.dart` and `edge_tts_websocket.dart`, keep the provider labeled experimental, surface visible errors, and allow users to switch back to native TTS.
+- **Third-party data exposure**: assistant text leaves the device for Microsoft when Edge is selected. Mitigation: keep Edge opt-in, show explicit privacy warning copy, send only sanitized assistant text, cap payloads at 4096 bytes, and exclude tool metadata, hidden state, logs, and credentials.
+- **Silent provider mismatch**: automatic fallback could read private content through an unintended provider or confuse voice/privacy expectations. Mitigation: fail closed with a visible read-aloud error; fallback requires explicit user action in settings.
+- **Platform transport variance**: IO and web WebSocket capabilities differ. Mitigation: use conditional imports, keep the IO manual upgrade isolated, keep the web connector build-compatible, and surface unsupported/runtime failures without changing provider selection.
+- **Credential regression**: future changes might accidentally treat cloud provider secrets as normal settings. Mitigation: Edge uses no API key; OpenAI-compatible keys remain restricted to `TtsApiKeyStorage`/secure storage only.
+
+### Rollback / Feature-Flag Plan
+
+- **Immediate user rollback**: switch `Settings > Speech > Text-to-Speech provider` back to `System / Native` or `OpenAI-compatible`. Edge failures never trigger automatic fallback.
+- **Product rollback**: hide or disable `ReadAloudProvider.edgeExperimental`, remove its backend registration, and keep `ReadAloudProvider.native` as the default. Existing Edge selections should be treated as unavailable and prompt the user to choose another provider, preferably native.
+- **Protocol rollback**: leave OpenAI-compatible and native backends intact, remove or disable only the Edge WebSocket/voice-discovery path, and keep secure TTS API-key storage untouched.
+- **No data migration required**: Edge stores only non-secret provider/voice preferences. OpenAI-compatible API keys remain in secure storage and are unaffected by Edge rollback.
+
+### ADR-023 Compatibility
+
+This ADR is compliant with ADR-023. CodeWalk still consumes OpenCode as an official client: no OpenCode server endpoint is added, no request/response schema changes, no realtime event semantics change, no session/message/model/agent lifecycle changes, and no server-side provider routing or proxying is introduced.
+
+Edge/Bing Read Aloud is a client-owned read-aloud feature. CodeWalk extracts sanitized text from already-received assistant message content and sends it directly from the client to Microsoft only when the user has selected the experimental Edge provider.
+
+### Key Files
+
+- `lib/presentation/services/tts/edge_experimental_tts_backend.dart` — experimental Edge provider backend, voice discovery, synthesis dispatch, no-silent-fallback error behavior.
+- `lib/presentation/services/tts/edge_tts_protocol.dart` — Edge/Bing Read Aloud protocol framing, parsing, defaults, and payload-limit handling.
+- `lib/presentation/services/tts/edge_tts_websocket.dart` — conditional WebSocket connector export boundary.
+- `lib/presentation/services/tts/edge_tts_websocket_io.dart` — IO manual `HttpClient` WebSocket upgrade with Edge-style headers.
+- `lib/presentation/services/tts/edge_tts_websocket_stub.dart` — web/build-compatible connector boundary.
+- `lib/presentation/services/tts/read_aloud_text_extractor.dart` — sanitized assistant text extraction before cloud/Edge synthesis.
+- `lib/presentation/pages/settings/sections/speech_settings_section.dart` — Edge provider warning, Edge voice picker, cloud privacy copy, and provider selection UI.
+- `lib/domain/entities/experience_settings.dart` — non-secret read-aloud provider and Edge voice preferences, including the native default.
+- `lib/core/auth/tts_api_key_storage.dart` — unchanged secure-storage-only boundary for OpenAI-compatible API keys.
+- `lib/core/di/injection_container.dart` — read-aloud backend registration including `ReadAloudProvider.edgeExperimental`.
