@@ -147,7 +147,11 @@ class ReadAloudService extends ChangeNotifier {
     } catch (error, stackTrace) {
       AppLogger.warn('TTS speak failed', error: error, stackTrace: stackTrace);
       if (_isCurrentGeneration(generation)) {
-        _setError(ReadAloudErrorKind.unknown, 'Text-to-speech failed.');
+        if (error is TtsBackendException) {
+          _setError(_mapBackendError(error.kind), error.message);
+        } else {
+          _setError(ReadAloudErrorKind.unknown, 'Text-to-speech failed.');
+        }
       }
     }
   }
@@ -348,5 +352,19 @@ class ReadAloudService extends ChangeNotifier {
       _lastErrorKind = null;
       _lastErrorMessage = null;
     }
+  }
+
+  ReadAloudErrorKind _mapBackendError(TtsBackendErrorKind kind) {
+    return switch (kind) {
+      TtsBackendErrorKind.missingApiKey => ReadAloudErrorKind.missingApiKey,
+      TtsBackendErrorKind.invalidApiKey => ReadAloudErrorKind.invalidApiKey,
+      TtsBackendErrorKind.rateLimitedOrQuota =>
+        ReadAloudErrorKind.rateLimitedOrQuota,
+      TtsBackendErrorKind.network => ReadAloudErrorKind.network,
+      TtsBackendErrorKind.providerUnavailable =>
+        ReadAloudErrorKind.providerUnavailable,
+      TtsBackendErrorKind.invalidRequest => ReadAloudErrorKind.unavailable,
+      TtsBackendErrorKind.unknown => ReadAloudErrorKind.unknown,
+    };
   }
 }

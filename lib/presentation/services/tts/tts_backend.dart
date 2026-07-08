@@ -4,6 +4,29 @@ import '../../../domain/entities/experience_settings.dart';
 
 enum TtsPlaybackMode { nativeEngine, generatedAudio }
 
+enum TtsBackendErrorKind {
+  missingApiKey,
+  invalidApiKey,
+  rateLimitedOrQuota,
+  network,
+  providerUnavailable,
+  invalidRequest,
+  unknown,
+}
+
+class TtsBackendException implements Exception {
+  const TtsBackendException(this.kind, this.message, {this.statusCode});
+
+  final TtsBackendErrorKind kind;
+  final String message;
+  final int? statusCode;
+
+  @override
+  String toString() => statusCode == null
+      ? 'TtsBackendException: $message'
+      : 'TtsBackendException: $message ($statusCode)';
+}
+
 typedef TtsVoidCallback = void Function();
 typedef TtsErrorCallback = void Function(String message);
 
