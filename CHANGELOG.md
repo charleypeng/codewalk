@@ -2,6 +2,16 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.172.0 - 2026-07-08
+
+- chore(agent): [Step 6/6] resolve cloud TTS reviews
+- chore(agent): [Step 5/6] document cloud TTS
+- chore(agent): [Step 4/6] wire read aloud UI
+- chore(agent): [Step 3/6] add cloud TTS provider backends
+- chore(agent): [Step 2/6] introduce TTS backends and audio playback
+- chore(agent): [Step 1/6] add TTS provider settings and key storage
+- plan: implement cloud TTS providers
+
 ## v1.171.1 - 2026-07-07
 
 - fix(settings): default new installs to refined visual style
