@@ -1773,8 +1773,66 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       leading: Icon(Symbols.experiment),
       title: Text('Microsoft Edge Speech is experimental'),
       subtitle: Text(
-        'Direct Edge synthesis is blocked in this build because the unofficial Edge Read Aloud protocol requires unstable Edge-specific transport headers. Use an OpenAI-compatible Edge proxy or switch providers. Message text would be sent to Microsoft when enabled by a compatible proxy.',
+        'Uses the unofficial Edge Read Aloud service directly from this device. Message text is sent to Microsoft when you use read aloud, and the service may break if Microsoft changes the private protocol.',
       ),
+    );
+  }
+
+  Widget _buildEdgeReadAloudVoicePicker(SettingsProvider settingsProvider) {
+    if (!di.sl.isRegistered<ReadAloudService>()) {
+      return const SizedBox.shrink();
+    }
+    return FutureBuilder<List<Map<String, String>>>(
+      future: di.sl<ReadAloudService>().getVoicesForProvider(
+        ReadAloudProvider.edgeExperimental,
+      ),
+      builder: (context, snapshot) {
+        final voices = snapshot.data ?? const <Map<String, String>>[];
+        if (voices.isEmpty) {
+          return const ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('Edge voice'),
+            subtitle: Text(
+              'Using the default Edge voice. Voice list could not be loaded right now.',
+            ),
+          );
+        }
+        final selected =
+            voices.any(
+              (voice) => voice['name'] == settingsProvider.readAloudVoiceId,
+            )
+            ? settingsProvider.readAloudVoiceId
+            : null;
+        return DropdownButtonFormField<String>(
+          initialValue: selected,
+          decoration: const InputDecoration(
+            labelText: 'Edge voice',
+            helperText: 'Loaded from Microsoft Edge Speech voices.',
+          ),
+          items: voices.map((voice) {
+            final id = voice['name'] ?? '';
+            final locale = voice['locale'] ?? '';
+            final label = voice['label']?.isNotEmpty == true
+                ? voice['label']!
+                : locale.isNotEmpty
+                ? '$id ($locale)'
+                : id;
+            return DropdownMenuItem<String>(value: id, child: Text(label));
+          }).toList(),
+          onChanged: (value) {
+            final selectedVoice = voices.firstWhere(
+              (voice) => voice['name'] == value,
+              orElse: () => const <String, String>{},
+            );
+            unawaited(
+              settingsProvider.setReadAloudVoiceSelection(
+                id: value,
+                locale: selectedVoice['locale'],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1913,6 +1971,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             if (readAloudProvider == ReadAloudProvider.edgeExperimental) ...[
               const Divider(height: 1),
               _buildEdgeReadAloudNotice(),
+              _buildEdgeReadAloudVoicePicker(settingsProvider),
             ],
             if (readAloudProvider == ReadAloudProvider.openAiCompatible) ...[
               const Divider(height: 1),

@@ -9,7 +9,7 @@ import 'edge_tts_protocol.dart';
 import 'edge_tts_websocket.dart';
 import 'tts_backend.dart';
 
-const String kDefaultEdgeTtsVoice = 'en-US-AriaNeural';
+const String kDefaultEdgeTtsVoice = 'en-US-EmmaMultilingualNeural';
 const Duration kEdgeTtsConnectTimeout = Duration(seconds: 10);
 const Duration kEdgeTtsSynthesisTimeout = Duration(seconds: 45);
 
@@ -52,7 +52,7 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
           responseType: ResponseType.json,
           connectTimeout: kEdgeTtsConnectTimeout,
           receiveTimeout: kEdgeTtsSynthesisTimeout,
-          headers: edgeTtsBrowserHeaders(),
+          headers: edgeTtsVoiceHeaders(),
         ),
       );
       return parseEdgeTtsVoices(response.data);

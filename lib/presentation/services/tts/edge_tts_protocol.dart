@@ -88,6 +88,26 @@ Map<String, String> edgeTtsBrowserHeaders({String? muid}) {
   };
 }
 
+Map<String, String> edgeTtsVoiceHeaders() {
+  return <String, String>{
+    'Authority': 'speech.platform.bing.com',
+    'Sec-CH-UA':
+        '" Not;A Brand";v="99", "Microsoft Edge";v="$kEdgeTtsChromiumMajorVersion", '
+        '"Chromium";v="$kEdgeTtsChromiumMajorVersion"',
+    'Sec-CH-UA-Mobile': '?0',
+    'Accept': '*/*',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+    'Accept-Encoding': 'gzip, deflate, br, zstd',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/$kEdgeTtsChromiumMajorVersion.0.0.0 '
+        'Safari/537.36 Edg/$kEdgeTtsChromiumMajorVersion.0.0.0',
+  };
+}
+
 String edgeTtsFrame({
   required Map<String, String> headers,
   required String payload,
