@@ -76,6 +76,8 @@ enum OpenCodeThemePreset {
 
 enum SpeechToTextEngine { native, sherpa, moonshine, parakeet, sensevoice }
 
+enum ReadAloudProvider { native, edgeExperimental, openAiCompatible }
+
 enum DesktopCloseBehavior { tray, minimize, close }
 
 const String kSherpaLanguageSystem = 'system';
@@ -83,6 +85,9 @@ const String kMoonshineModelTiny = 'tiny';
 const String kMoonshineModelBase = 'base';
 const String kParakeetModelDefault = 'parakeet-v3';
 const String kSenseVoiceModelDefault = 'sensevoice-2024-07-17';
+const String kDefaultOpenAiCompatibleTtsBaseUrl = 'https://api.openai.com/v1';
+const String kDefaultOpenAiCompatibleTtsModel = 'gpt-4o-mini-tts';
+const String kDefaultReadAloudResponseFormat = 'mp3';
 
 const double kMinSystemFontScale = 0.8;
 const double kMaxSystemFontScale = 1.6;
@@ -551,6 +556,28 @@ SpeechToTextEngine speechToTextEngineFromKey(String value) {
   };
 }
 
+String readAloudProviderKey(ReadAloudProvider provider) {
+  return switch (provider) {
+    ReadAloudProvider.native => 'native',
+    ReadAloudProvider.edgeExperimental => 'edge_experimental',
+    ReadAloudProvider.openAiCompatible => 'openai_compatible',
+  };
+}
+
+ReadAloudProvider readAloudProviderFromKey(String value) {
+  return switch (value.trim().toLowerCase()) {
+    'edge' ||
+    'edge_experimental' ||
+    'microsoft_edge' ||
+    'microsoft-edge' => ReadAloudProvider.edgeExperimental,
+    'openai' ||
+    'openai_compatible' ||
+    'openai-compatible' ||
+    'openai_compat' => ReadAloudProvider.openAiCompatible,
+    _ => ReadAloudProvider.native,
+  };
+}
+
 AppDensity appDensityFromKey(String value) {
   return switch (value) {
     'extra_dense' => AppDensity.extraDense,
@@ -721,9 +748,15 @@ class ExperienceSettings {
       pendingPostOnboardingChatTour: false,
       checkUpdatesOnOpen: true,
       readAloudEnabled: true,
+      readAloudProvider: ReadAloudProvider.native,
       readAloudRate: 0.5,
       readAloudPitch: 1.0,
       readAloudVoice: null,
+      readAloudVoiceId: null,
+      readAloudVoiceLocale: null,
+      readAloudModel: kDefaultOpenAiCompatibleTtsModel,
+      readAloudBaseUrl: kDefaultOpenAiCompatibleTtsBaseUrl,
+      readAloudResponseFormat: kDefaultReadAloudResponseFormat,
       systemFontScale: 1.0,
       chatFontScale: 1.0,
       terminalFontSize: kDefaultTerminalFontSize,
@@ -783,9 +816,15 @@ class ExperienceSettings {
     this.pendingPostOnboardingChatTour = false,
     this.checkUpdatesOnOpen = true,
     this.readAloudEnabled = true,
+    this.readAloudProvider = ReadAloudProvider.native,
     this.readAloudRate = 0.5,
     this.readAloudPitch = 1.0,
     this.readAloudVoice,
+    this.readAloudVoiceId,
+    this.readAloudVoiceLocale,
+    this.readAloudModel = kDefaultOpenAiCompatibleTtsModel,
+    this.readAloudBaseUrl = kDefaultOpenAiCompatibleTtsBaseUrl,
+    this.readAloudResponseFormat = kDefaultReadAloudResponseFormat,
     this.systemFontScale = 1.0,
     this.chatFontScale = 1.0,
     this.terminalFontSize = kDefaultTerminalFontSize,
@@ -844,9 +883,17 @@ class ExperienceSettings {
   final bool pendingPostOnboardingChatTour;
   final bool checkUpdatesOnOpen;
   final bool readAloudEnabled;
+  final ReadAloudProvider readAloudProvider;
   final double readAloudRate;
   final double readAloudPitch;
+  // Legacy native voice key. New provider-aware code should use
+  // readAloudVoiceId/readAloudVoiceLocale and keep this as migration input.
   final String? readAloudVoice;
+  final String? readAloudVoiceId;
+  final String? readAloudVoiceLocale;
+  final String readAloudModel;
+  final String readAloudBaseUrl;
+  final String readAloudResponseFormat;
   final double systemFontScale;
   final double chatFontScale;
   final double terminalFontSize;
@@ -905,9 +952,15 @@ class ExperienceSettings {
     bool? pendingPostOnboardingChatTour,
     bool? checkUpdatesOnOpen,
     bool? readAloudEnabled,
+    ReadAloudProvider? readAloudProvider,
     double? readAloudRate,
     double? readAloudPitch,
     String? Function()? readAloudVoice,
+    String? Function()? readAloudVoiceId,
+    String? Function()? readAloudVoiceLocale,
+    String? readAloudModel,
+    String? readAloudBaseUrl,
+    String? readAloudResponseFormat,
     double? systemFontScale,
     double? chatFontScale,
     double? terminalFontSize,
@@ -992,11 +1045,22 @@ class ExperienceSettings {
           pendingPostOnboardingChatTour ?? this.pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen ?? this.checkUpdatesOnOpen,
       readAloudEnabled: readAloudEnabled ?? this.readAloudEnabled,
+      readAloudProvider: readAloudProvider ?? this.readAloudProvider,
       readAloudRate: readAloudRate ?? this.readAloudRate,
       readAloudPitch: readAloudPitch ?? this.readAloudPitch,
       readAloudVoice: readAloudVoice != null
           ? readAloudVoice()
           : this.readAloudVoice,
+      readAloudVoiceId: readAloudVoiceId != null
+          ? readAloudVoiceId()
+          : this.readAloudVoiceId,
+      readAloudVoiceLocale: readAloudVoiceLocale != null
+          ? readAloudVoiceLocale()
+          : this.readAloudVoiceLocale,
+      readAloudModel: readAloudModel ?? this.readAloudModel,
+      readAloudBaseUrl: readAloudBaseUrl ?? this.readAloudBaseUrl,
+      readAloudResponseFormat:
+          readAloudResponseFormat ?? this.readAloudResponseFormat,
       systemFontScale: systemFontScale ?? this.systemFontScale,
       chatFontScale: chatFontScale ?? this.chatFontScale,
       terminalFontSize: terminalFontSize ?? this.terminalFontSize,
@@ -1095,9 +1159,16 @@ class ExperienceSettings {
       'pendingPostOnboardingChatTour': pendingPostOnboardingChatTour,
       'checkUpdatesOnOpen': checkUpdatesOnOpen,
       'readAloudEnabled': readAloudEnabled,
+      'readAloudProvider': readAloudProviderKey(readAloudProvider),
       'readAloudRate': readAloudRate,
       'readAloudPitch': readAloudPitch,
       if (readAloudVoice != null) 'readAloudVoice': readAloudVoice,
+      if (readAloudVoiceId != null) 'readAloudVoiceId': readAloudVoiceId,
+      if (readAloudVoiceLocale != null)
+        'readAloudVoiceLocale': readAloudVoiceLocale,
+      'readAloudModel': readAloudModel,
+      'readAloudBaseUrl': readAloudBaseUrl,
+      'readAloudResponseFormat': readAloudResponseFormat,
       'systemFontScale': systemFontScale,
       'chatFontScale': chatFontScale,
       'terminalFontSize': terminalFontSize,
@@ -1163,9 +1234,15 @@ class ExperienceSettings {
     var parakeetModelId = defaults.parakeetModelId;
     var senseVoiceModelId = defaults.senseVoiceModelId;
     var readAloudEnabled = defaults.readAloudEnabled;
+    var readAloudProvider = defaults.readAloudProvider;
     var readAloudRate = defaults.readAloudRate;
     var readAloudPitch = defaults.readAloudPitch;
     var readAloudVoice = defaults.readAloudVoice;
+    var readAloudVoiceId = defaults.readAloudVoiceId;
+    var readAloudVoiceLocale = defaults.readAloudVoiceLocale;
+    var readAloudModel = defaults.readAloudModel;
+    var readAloudBaseUrl = defaults.readAloudBaseUrl;
+    var readAloudResponseFormat = defaults.readAloudResponseFormat;
     var systemFontScale = defaults.systemFontScale;
     var chatFontScale = defaults.chatFontScale;
     var terminalFontSize = defaults.terminalFontSize;
@@ -1540,6 +1617,12 @@ class ExperienceSettings {
       readAloudEnabled = readAloudEnabledJson;
     }
 
+    final readAloudProviderJson = json['readAloudProvider'];
+    if (readAloudProviderJson is String &&
+        readAloudProviderJson.trim().isNotEmpty) {
+      readAloudProvider = readAloudProviderFromKey(readAloudProviderJson);
+    }
+
     final readAloudRateJson = json['readAloudRate'];
     if (readAloudRateJson is num) {
       readAloudRate = readAloudRateJson.toDouble().clamp(0.0, 1.0);
@@ -1553,6 +1636,42 @@ class ExperienceSettings {
     final readAloudVoiceJson = json['readAloudVoice'];
     if (readAloudVoiceJson is String && readAloudVoiceJson.trim().isNotEmpty) {
       readAloudVoice = readAloudVoiceJson.trim();
+    }
+
+    final readAloudVoiceIdJson = json['readAloudVoiceId'];
+    if (readAloudVoiceIdJson is String &&
+        readAloudVoiceIdJson.trim().isNotEmpty) {
+      readAloudVoiceId = readAloudVoiceIdJson.trim();
+    } else if (readAloudVoice != null && readAloudVoice.trim().isNotEmpty) {
+      readAloudVoiceId = readAloudVoice.trim();
+    }
+
+    final readAloudVoiceLocaleJson = json['readAloudVoiceLocale'];
+    if (readAloudVoiceLocaleJson is String &&
+        readAloudVoiceLocaleJson.trim().isNotEmpty) {
+      readAloudVoiceLocale = readAloudVoiceLocaleJson.trim();
+    }
+
+    final readAloudModelJson = json['readAloudModel'];
+    if (readAloudModelJson is String && readAloudModelJson.trim().isNotEmpty) {
+      readAloudModel = readAloudModelJson.trim();
+    }
+
+    final readAloudBaseUrlJson = json['readAloudBaseUrl'];
+    if (readAloudBaseUrlJson is String &&
+        readAloudBaseUrlJson.trim().isNotEmpty) {
+      readAloudBaseUrl = readAloudBaseUrlJson.trim().replaceFirst(
+        RegExp(r'/+$'),
+        '',
+      );
+    }
+
+    final readAloudResponseFormatJson = json['readAloudResponseFormat'];
+    if (readAloudResponseFormatJson is String &&
+        readAloudResponseFormatJson.trim().isNotEmpty) {
+      readAloudResponseFormat = readAloudResponseFormatJson
+          .trim()
+          .toLowerCase();
     }
 
     final systemFontScaleJson = json['systemFontScale'];
@@ -1624,9 +1743,15 @@ class ExperienceSettings {
       pendingPostOnboardingChatTour: pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen,
       readAloudEnabled: readAloudEnabled,
+      readAloudProvider: readAloudProvider,
       readAloudRate: readAloudRate,
       readAloudPitch: readAloudPitch,
       readAloudVoice: readAloudVoice,
+      readAloudVoiceId: readAloudVoiceId,
+      readAloudVoiceLocale: readAloudVoiceLocale,
+      readAloudModel: readAloudModel,
+      readAloudBaseUrl: readAloudBaseUrl,
+      readAloudResponseFormat: readAloudResponseFormat,
       systemFontScale: systemFontScale,
       chatFontScale: chatFontScale,
       terminalFontSize: terminalFontSize,

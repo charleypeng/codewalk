@@ -202,9 +202,15 @@ class SettingsProvider extends ChangeNotifier {
   bool get pendingPostOnboardingChatTour =>
       _settings.pendingPostOnboardingChatTour;
   bool get readAloudEnabled => _settings.readAloudEnabled;
+  ReadAloudProvider get readAloudProvider => _settings.readAloudProvider;
   double get readAloudRate => _settings.readAloudRate;
   double get readAloudPitch => _settings.readAloudPitch;
   String? get readAloudVoice => _settings.readAloudVoice;
+  String? get readAloudVoiceId => _settings.readAloudVoiceId;
+  String? get readAloudVoiceLocale => _settings.readAloudVoiceLocale;
+  String get readAloudModel => _settings.readAloudModel;
+  String get readAloudBaseUrl => _settings.readAloudBaseUrl;
+  String get readAloudResponseFormat => _settings.readAloudResponseFormat;
   double get systemFontScale => _settings.systemFontScale;
   double get chatFontScale => _settings.chatFontScale;
   double get terminalFontSize => _settings.terminalFontSize;
@@ -826,6 +832,15 @@ class SettingsProvider extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setReadAloudProvider(ReadAloudProvider value) async {
+    if (_settings.readAloudProvider == value) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudProvider: value);
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setReadAloudRate(double value) async {
     final clamped = value.clamp(0.0, 1.0);
     if (_settings.readAloudRate == clamped) {
@@ -849,10 +864,79 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setReadAloudVoice(String? value) async {
     final trimmed = value?.trim();
     final effective = (trimmed != null && trimmed.isNotEmpty) ? trimmed : null;
-    if (_settings.readAloudVoice == effective) {
+    if (_settings.readAloudVoice == effective &&
+        _settings.readAloudVoiceId == effective) {
       return;
     }
-    _settings = _settings.copyWith(readAloudVoice: () => effective);
+    _settings = _settings.copyWith(
+      readAloudVoice: () => effective,
+      readAloudVoiceId: () => effective,
+    );
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudVoiceSelection({
+    required String? id,
+    required String? locale,
+  }) async {
+    final trimmedId = id?.trim();
+    final effectiveId = (trimmedId != null && trimmedId.isNotEmpty)
+        ? trimmedId
+        : null;
+    final trimmedLocale = locale?.trim();
+    final effectiveLocale = (trimmedLocale != null && trimmedLocale.isNotEmpty)
+        ? trimmedLocale
+        : null;
+    if (_settings.readAloudVoiceId == effectiveId &&
+        _settings.readAloudVoiceLocale == effectiveLocale &&
+        _settings.readAloudVoice == effectiveId) {
+      return;
+    }
+    _settings = _settings.copyWith(
+      readAloudVoice: () => effectiveId,
+      readAloudVoiceId: () => effectiveId,
+      readAloudVoiceLocale: () => effectiveLocale,
+    );
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudModel(String? value) async {
+    final trimmed = value?.trim();
+    final effective = (trimmed != null && trimmed.isNotEmpty)
+        ? trimmed
+        : kDefaultOpenAiCompatibleTtsModel;
+    if (_settings.readAloudModel == effective) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudModel: effective);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudBaseUrl(String? value) async {
+    final trimmed = value?.trim().replaceFirst(RegExp(r'/+$'), '');
+    final effective = (trimmed != null && trimmed.isNotEmpty)
+        ? trimmed
+        : kDefaultOpenAiCompatibleTtsBaseUrl;
+    if (_settings.readAloudBaseUrl == effective) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudBaseUrl: effective);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudResponseFormat(String value) async {
+    final normalized = value.trim().toLowerCase();
+    final effective = normalized.isNotEmpty
+        ? normalized
+        : kDefaultReadAloudResponseFormat;
+    if (_settings.readAloudResponseFormat == effective) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudResponseFormat: effective);
     notifyListeners();
     await _persist();
   }

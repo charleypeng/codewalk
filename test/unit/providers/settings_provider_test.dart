@@ -1242,9 +1242,15 @@ void main() {
       await provider.initialize();
 
       expect(provider.readAloudEnabled, isTrue);
+      expect(provider.readAloudProvider, ReadAloudProvider.native);
       expect(provider.readAloudRate, 0.5);
       expect(provider.readAloudPitch, 1.0);
       expect(provider.readAloudVoice, isNull);
+      expect(provider.readAloudVoiceId, isNull);
+      expect(provider.readAloudVoiceLocale, isNull);
+      expect(provider.readAloudModel, kDefaultOpenAiCompatibleTtsModel);
+      expect(provider.readAloudBaseUrl, kDefaultOpenAiCompatibleTtsBaseUrl);
+      expect(provider.readAloudResponseFormat, kDefaultReadAloudResponseFormat);
     });
 
     test('persists read-aloud enabled change', () async {
@@ -1335,10 +1341,56 @@ void main() {
       await second.initialize();
 
       expect(second.readAloudVoice, 'en-us-x-tpf');
+      expect(second.readAloudVoiceId, 'en-us-x-tpf');
 
       await second.setReadAloudVoice(null);
       expect(second.readAloudVoice, isNull);
+      expect(second.readAloudVoiceId, isNull);
     });
+
+    test(
+      'persists provider-aware read-aloud settings without API keys',
+      () async {
+        final local = InMemoryAppLocalDataSource();
+        final first = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await first.initialize();
+        await first.setReadAloudProvider(ReadAloudProvider.openAiCompatible);
+        await first.setReadAloudVoiceSelection(id: 'coral', locale: 'en-US');
+        await first.setReadAloudModel('tts-1');
+        await first.setReadAloudBaseUrl('https://tts.example.com/v1///');
+        await first.setReadAloudResponseFormat('MP3');
+
+        final raw = local.experienceSettingsJson;
+        expect(raw, isNotNull);
+        final json = jsonDecode(raw!) as Map<String, dynamic>;
+        expect(json['readAloudProvider'], 'openai_compatible');
+        expect(json['readAloudVoiceId'], 'coral');
+        expect(json['readAloudVoiceLocale'], 'en-US');
+        expect(json['readAloudModel'], 'tts-1');
+        expect(json['readAloudBaseUrl'], 'https://tts.example.com/v1');
+        expect(json['readAloudResponseFormat'], 'mp3');
+        expect(json.containsKey('readAloudApiKey'), isFalse);
+        expect(raw, isNot(contains('sk-')));
+
+        final second = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await second.initialize();
+
+        expect(second.readAloudProvider, ReadAloudProvider.openAiCompatible);
+        expect(second.readAloudVoiceId, 'coral');
+        expect(second.readAloudVoiceLocale, 'en-US');
+        expect(second.readAloudModel, 'tts-1');
+        expect(second.readAloudBaseUrl, 'https://tts.example.com/v1');
+        expect(second.readAloudResponseFormat, 'mp3');
+      },
+    );
 
     test('read-aloud settings survive JSON roundtrip', () async {
       final local = InMemoryAppLocalDataSource();
@@ -1349,6 +1401,7 @@ void main() {
       );
       await first.initialize();
       await first.setReadAloudEnabled(false);
+      await first.setReadAloudProvider(ReadAloudProvider.edgeExperimental);
       await first.setReadAloudRate(0.9);
       await first.setReadAloudPitch(1.2);
       await first.setReadAloudVoice('pt-br-x-tpf');
@@ -1357,9 +1410,11 @@ void main() {
       expect(raw, isNotNull);
       final json = jsonDecode(raw!) as Map<String, dynamic>;
       expect(json['readAloudEnabled'], isFalse);
+      expect(json['readAloudProvider'], 'edge_experimental');
       expect(json['readAloudRate'], 0.9);
       expect(json['readAloudPitch'], 1.2);
       expect(json['readAloudVoice'], 'pt-br-x-tpf');
+      expect(json['readAloudVoiceId'], 'pt-br-x-tpf');
 
       final second = SettingsProvider(
         localDataSource: local,
@@ -1369,9 +1424,11 @@ void main() {
       await second.initialize();
 
       expect(second.readAloudEnabled, isFalse);
+      expect(second.readAloudProvider, ReadAloudProvider.edgeExperimental);
       expect(second.readAloudRate, 0.9);
       expect(second.readAloudPitch, 1.2);
       expect(second.readAloudVoice, 'pt-br-x-tpf');
+      expect(second.readAloudVoiceId, 'pt-br-x-tpf');
     });
   });
 }

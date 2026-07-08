@@ -236,6 +236,67 @@ void main() {
     });
   });
 
+  group('read-aloud provider serialization', () {
+    test('defaults to native provider and OpenAI-compatible defaults', () {
+      final defaults = ExperienceSettings.defaults();
+
+      expect(defaults.readAloudProvider, ReadAloudProvider.native);
+      expect(defaults.readAloudVoiceId, isNull);
+      expect(defaults.readAloudVoiceLocale, isNull);
+      expect(defaults.readAloudModel, kDefaultOpenAiCompatibleTtsModel);
+      expect(defaults.readAloudBaseUrl, kDefaultOpenAiCompatibleTtsBaseUrl);
+      expect(defaults.readAloudResponseFormat, kDefaultReadAloudResponseFormat);
+    });
+
+    test('serializes and deserializes provider fields without secrets', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        readAloudProvider: ReadAloudProvider.openAiCompatible,
+        readAloudVoiceId: () => 'coral',
+        readAloudVoiceLocale: () => 'en-US',
+        readAloudModel: 'tts-1',
+        readAloudBaseUrl: 'https://tts.example.com/v1',
+        readAloudResponseFormat: 'mp3',
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['readAloudProvider'], 'openai_compatible');
+      expect(json['readAloudVoiceId'], 'coral');
+      expect(json['readAloudVoiceLocale'], 'en-US');
+      expect(json['readAloudModel'], 'tts-1');
+      expect(json['readAloudBaseUrl'], 'https://tts.example.com/v1');
+      expect(json['readAloudResponseFormat'], 'mp3');
+      expect(json.containsKey('readAloudApiKey'), isFalse);
+      expect(json.containsKey('apiKey'), isFalse);
+      expect(restored.readAloudProvider, ReadAloudProvider.openAiCompatible);
+      expect(restored.readAloudVoiceId, 'coral');
+      expect(restored.readAloudVoiceLocale, 'en-US');
+      expect(restored.readAloudModel, 'tts-1');
+      expect(restored.readAloudBaseUrl, 'https://tts.example.com/v1');
+      expect(restored.readAloudResponseFormat, 'mp3');
+    });
+
+    test('migrates legacy readAloudVoice to readAloudVoiceId', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'readAloudVoice': 'pt-br-x-tpf',
+      });
+
+      expect(restored.readAloudVoice, 'pt-br-x-tpf');
+      expect(restored.readAloudVoiceId, 'pt-br-x-tpf');
+    });
+
+    test('normalizes base URL and response format while parsing', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'readAloudBaseUrl': 'https://tts.example.com/v1///',
+        'readAloudResponseFormat': 'MP3',
+      });
+
+      expect(restored.readAloudBaseUrl, 'https://tts.example.com/v1');
+      expect(restored.readAloudResponseFormat, 'mp3');
+    });
+  });
+
   group('font size fields', () {
     test('default values match safe scale center and terminal default', () {
       final defaults = ExperienceSettings.defaults();

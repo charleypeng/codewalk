@@ -72,6 +72,7 @@ import '../../presentation/services/speech_input_service_sherpa.dart';
 import '../../presentation/services/speech_input_service_stt.dart';
 import '../../presentation/services/update_check_service.dart';
 import '../../presentation/services/workspace_file_operations_service.dart';
+import '../auth/tts_api_key_storage.dart';
 import '../network/dio_client.dart';
 import '../tailscale/tailscale_service.dart';
 
@@ -120,6 +121,7 @@ Future<void> init() async {
 
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
+  sl.registerLazySingleton(TtsApiKeyStorage.new);
   sl.registerLazySingleton(ReadAloudService.new);
   sl.registerLazySingleton(TailscaleService.new);
   sl.registerLazySingleton(
