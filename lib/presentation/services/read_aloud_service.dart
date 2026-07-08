@@ -4,42 +4,87 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 import '../../core/logging/app_logger.dart';
+import '../../domain/entities/experience_settings.dart';
+import 'tts/generated_tts_audio_player.dart';
+import 'tts/native_tts_backend.dart';
+import 'tts/tts_backend.dart';
 
 enum ReadAloudState { idle, playing, paused }
 
-class ReadAloudService extends ChangeNotifier {
-  ReadAloudService({FlutterTts? tts}) : _tts = tts ?? FlutterTts();
+enum ReadAloudErrorKind {
+  unavailable,
+  missingApiKey,
+  invalidApiKey,
+  rateLimitedOrQuota,
+  network,
+  providerUnavailable,
+  cancelled,
+  unknown,
+}
 
-  final FlutterTts _tts;
+class ReadAloudService extends ChangeNotifier {
+  ReadAloudService({
+    FlutterTts? tts,
+    Map<ReadAloudProvider, TtsBackend>? backends,
+    TtsAudioPlayer? audioPlayer,
+  }) : _backends = _buildBackends(tts: tts, backends: backends),
+       _audioPlayer = audioPlayer {
+    if (_audioPlayer != null) {
+      _attachAudioPlayer(_audioPlayer!);
+    }
+  }
+
+  static Map<ReadAloudProvider, TtsBackend> _buildBackends({
+    required FlutterTts? tts,
+    required Map<ReadAloudProvider, TtsBackend>? backends,
+  }) {
+    final resolved = <ReadAloudProvider, TtsBackend>{...?backends};
+    if (!resolved.containsKey(ReadAloudProvider.native) &&
+        (backends == null || tts != null)) {
+      resolved[ReadAloudProvider.native] = NativeTtsBackend(tts: tts);
+    }
+    return resolved;
+  }
+
+  final Map<ReadAloudProvider, TtsBackend> _backends;
+  TtsAudioPlayer? _audioPlayer;
+  StreamSubscription<void>? _audioCompleteSubscription;
+  StreamSubscription<Duration>? _audioDurationSubscription;
+  StreamSubscription<Duration>? _audioPositionSubscription;
   ReadAloudState _state = ReadAloudState.idle;
   String? _activeMessageId;
-
-  // Tracks the last spoken character length for progress reporting.
-  int _lastSpokenLength = 0;
-
-  // The total character length of the current utterance.
-  int _totalUtteranceLength = 0;
+  int _generation = 0;
+  TtsBackend? _activeBackend;
+  int? _audioPlaybackGeneration;
+  Duration? _audioDuration;
+  Duration? _audioPosition;
+  ReadAloudErrorKind? _lastErrorKind;
+  String? _lastErrorMessage;
 
   ReadAloudState get state => _state;
   String? get activeMessageId => _activeMessageId;
   bool get isSpeaking => _state == ReadAloudState.playing;
+  ReadAloudErrorKind? get lastErrorKind => _lastErrorKind;
+  String? get lastErrorMessage => _lastErrorMessage;
 
-  // Progress as a 0.0–1.0 fraction when playing, null otherwise.
+  // Progress as a 0.0-1.0 fraction for generated audio when duration is known.
   double? get progress {
-    if (_totalUtteranceLength <= 0) {
+    final duration = _audioDuration;
+    final position = _audioPosition;
+    if (duration == null || position == null || duration.inMilliseconds <= 0) {
       return null;
     }
-    return (_lastSpokenLength / _totalUtteranceLength).clamp(0.0, 1.0);
+    return (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0);
   }
 
   /// Whether the platform has a TTS engine available.
   Future<bool> get isAvailable async {
-    try {
-      final engines = await _tts.getEngines;
-      return engines.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
+    return isProviderAvailable(ReadAloudProvider.native);
+  }
+
+  Future<bool> isProviderAvailable(ReadAloudProvider provider) async {
+    final backend = _backendFor(provider);
+    return backend.isAvailable;
   }
 
   /// Speak the given [text] for [messageId].
@@ -47,82 +92,63 @@ class ReadAloudService extends ChangeNotifier {
   Future<void> speak({
     required String messageId,
     required String text,
+    ReadAloudProvider provider = ReadAloudProvider.native,
     double rate = 0.5,
     double pitch = 1.0,
     String? voice,
+    String? voiceId,
+    String? voiceLocale,
+    String? model,
+    String? baseUrl,
+    String responseFormat = kDefaultReadAloudResponseFormat,
+    String? apiKey,
   }) async {
     if (text.trim().isEmpty) {
       return;
     }
 
-    await stop();
+    await _stopActiveSpeech(notify: false);
+    final generation = ++_generation;
+    final backend = _backendFor(provider);
+    _activeBackend = backend;
+    _activeMessageId = messageId;
+    _audioDuration = null;
+    _audioPosition = null;
+    _lastErrorKind = null;
+    _lastErrorMessage = null;
+    _state = ReadAloudState.playing;
+    notifyListeners();
 
     try {
-      await _tts.setSpeechRate(rate);
-      await _tts.setPitch(pitch);
-      if (voice != null && voice.isNotEmpty) {
-        await _tts.setVoice({'name': voice, 'locale': 'en-US'});
-      }
-
-      _activeMessageId = messageId;
-      _totalUtteranceLength = text.length;
-      _lastSpokenLength = 0;
-      _state = ReadAloudState.playing;
-      notifyListeners();
-
-      // Set handlers before speaking so we don't miss events.
-      _tts.setStartHandler(() {
-        _state = ReadAloudState.playing;
-        notifyListeners();
-      });
-
-      _tts.setCompletionHandler(() {
-        _state = ReadAloudState.idle;
-        _activeMessageId = null;
-        _totalUtteranceLength = 0;
-        _lastSpokenLength = 0;
-        notifyListeners();
-      });
-
-      _tts.setErrorHandler((message) {
-        AppLogger.warn('TTS error: $message');
-        _state = ReadAloudState.idle;
-        _activeMessageId = null;
-        _totalUtteranceLength = 0;
-        _lastSpokenLength = 0;
-        notifyListeners();
-      });
-
-      _tts.setCancelHandler(() {
-        _state = ReadAloudState.idle;
-        _activeMessageId = null;
-        _totalUtteranceLength = 0;
-        _lastSpokenLength = 0;
-        notifyListeners();
-      });
-
-      _tts.setPauseHandler(() {
-        _state = ReadAloudState.paused;
-        notifyListeners();
-      });
-
-      _tts.setContinueHandler(() {
-        _state = ReadAloudState.playing;
-        notifyListeners();
-      });
-
-      await _tts.speak(text);
-    } catch (error, stackTrace) {
-      AppLogger.warn(
-        'TTS speak failed',
-        error: error,
-        stackTrace: stackTrace,
+      final result = await backend.speakOrSynthesize(
+        TtsSynthesisRequest(
+          text: text,
+          rate: rate,
+          pitch: pitch,
+          voiceId: _effectiveVoiceId(voiceId: voiceId, legacyVoice: voice),
+          voiceLocale: voiceLocale,
+          model: model,
+          baseUrl: baseUrl,
+          responseFormat: responseFormat,
+          apiKey: apiKey,
+        ),
+        _callbacksFor(generation),
       );
-      _state = ReadAloudState.idle;
-      _activeMessageId = null;
-      _totalUtteranceLength = 0;
-      _lastSpokenLength = 0;
-      notifyListeners();
+      if (!_isCurrentGeneration(generation)) {
+        return;
+      }
+      if (result is GeneratedTtsAudio) {
+        _audioPlaybackGeneration = generation;
+        await _ensureAudioPlayer().playBytes(
+          result.bytes,
+          mimeType: result.mimeType,
+        );
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn('TTS speak failed', error: error, stackTrace: stackTrace);
+      if (_isCurrentGeneration(generation)) {
+        _setError(ReadAloudErrorKind.unknown, 'Text-to-speech failed.');
+      }
     }
   }
 
@@ -132,35 +158,21 @@ class ReadAloudService extends ChangeNotifier {
       return;
     }
     try {
-      await _tts.pause();
+      if (_activeBackend?.playbackMode == TtsPlaybackMode.generatedAudio) {
+        await _audioPlayer?.pause();
+        _state = ReadAloudState.paused;
+        notifyListeners();
+        return;
+      }
+      await _activeBackend?.pause();
     } catch (error, stackTrace) {
-      AppLogger.warn(
-        'TTS pause failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      AppLogger.warn('TTS pause failed', error: error, stackTrace: stackTrace);
     }
   }
 
   /// Stop current speech and reset state.
   Future<void> stop() async {
-    if (_state == ReadAloudState.idle) {
-      return;
-    }
-    try {
-      await _tts.stop();
-    } catch (error, stackTrace) {
-      AppLogger.warn(
-        'TTS stop failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-    _state = ReadAloudState.idle;
-    _activeMessageId = null;
-    _totalUtteranceLength = 0;
-    _lastSpokenLength = 0;
-    notifyListeners();
+    await _stopActiveSpeech(notify: true);
   }
 
   /// Stop playback if reading the given [messageId].
@@ -175,6 +187,13 @@ class ReadAloudService extends ChangeNotifier {
   @override
   Future<void> dispose() async {
     await stop();
+    await _audioCompleteSubscription?.cancel();
+    await _audioDurationSubscription?.cancel();
+    await _audioPositionSubscription?.cancel();
+    for (final backend in _backends.values) {
+      backend.dispose();
+    }
+    await _audioPlayer?.dispose();
     super.dispose();
   }
 
@@ -182,25 +201,152 @@ class ReadAloudService extends ChangeNotifier {
 
   /// List of available voices from the platform TTS engine.
   Future<List<Map<String, String>>> getVoices() async {
-    try {
-      final voices = await _tts.getVoices;
-      return voices
-          .map((v) => <String, String>{
-                'name': v['name']?.toString() ?? '',
-                'locale': v['locale']?.toString() ?? '',
-              })
-          .toList();
-    } catch (_) {
-      return <Map<String, String>>[];
-    }
+    return getVoicesForProvider(ReadAloudProvider.native);
+  }
+
+  Future<List<Map<String, String>>> getVoicesForProvider(
+    ReadAloudProvider provider,
+  ) async {
+    final voices = await _backendFor(provider).getVoices();
+    return voices
+        .map(
+          (voice) => <String, String>{
+            'name': voice.id,
+            'locale': voice.locale ?? '',
+            'label': voice.label,
+          },
+        )
+        .toList();
   }
 
   /// List of available languages from the platform TTS engine.
   Future<List<String>> getLanguages() async {
+    return _backendFor(ReadAloudProvider.native).getLanguages();
+  }
+
+  TtsBackend _backendFor(ReadAloudProvider provider) {
+    return _backends[provider] ?? _backends[ReadAloudProvider.native]!;
+  }
+
+  TtsAudioPlayer _ensureAudioPlayer() {
+    final existing = _audioPlayer;
+    if (existing != null) {
+      return existing;
+    }
+    final player = AudioplayersTtsAudioPlayer();
+    _audioPlayer = player;
+    _attachAudioPlayer(player);
+    return player;
+  }
+
+  void _attachAudioPlayer(TtsAudioPlayer player) {
+    _audioCompleteSubscription = player.onComplete.listen((_) {
+      final playbackGeneration = _audioPlaybackGeneration;
+      if (playbackGeneration != null) {
+        _completeGeneratedAudio(playbackGeneration);
+      }
+    });
+    _audioDurationSubscription = player.onDurationChanged.listen((value) {
+      _audioDuration = value;
+      notifyListeners();
+    });
+    _audioPositionSubscription = player.onPositionChanged.listen((value) {
+      _audioPosition = value;
+      notifyListeners();
+    });
+  }
+
+  String? _effectiveVoiceId({
+    required String? voiceId,
+    required String? legacyVoice,
+  }) {
+    final explicit = voiceId?.trim();
+    if (explicit != null && explicit.isNotEmpty) {
+      return explicit;
+    }
+    final legacy = legacyVoice?.trim();
+    return legacy != null && legacy.isNotEmpty ? legacy : null;
+  }
+
+  TtsBackendCallbacks _callbacksFor(int generation) {
+    return TtsBackendCallbacks(
+      onStart: () {
+        if (!_isCurrentGeneration(generation)) return;
+        _state = ReadAloudState.playing;
+        notifyListeners();
+      },
+      onComplete: () => _completeNativeSpeech(generation),
+      onCancel: () => _completeNativeSpeech(generation),
+      onPause: () {
+        if (!_isCurrentGeneration(generation)) return;
+        _state = ReadAloudState.paused;
+        notifyListeners();
+      },
+      onContinue: () {
+        if (!_isCurrentGeneration(generation)) return;
+        _state = ReadAloudState.playing;
+        notifyListeners();
+      },
+      onError: (message) {
+        if (!_isCurrentGeneration(generation)) return;
+        AppLogger.warn('TTS error: $message');
+        _setError(ReadAloudErrorKind.providerUnavailable, message);
+      },
+    );
+  }
+
+  Future<void> _stopActiveSpeech({required bool notify}) async {
+    if (_state == ReadAloudState.idle && _activeBackend == null) {
+      return;
+    }
+    _generation += 1;
     try {
-      return await _tts.getLanguages;
-    } catch (_) {
-      return <String>[];
+      await _activeBackend?.stop();
+      await _audioPlayer?.stop();
+    } catch (error, stackTrace) {
+      AppLogger.warn('TTS stop failed', error: error, stackTrace: stackTrace);
+    }
+    _resetPlaybackState(clearError: false);
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  bool _isCurrentGeneration(int generation) => generation == _generation;
+
+  void _completeNativeSpeech(int generation) {
+    if (!_isCurrentGeneration(generation)) {
+      return;
+    }
+    _resetPlaybackState(clearError: false);
+    notifyListeners();
+  }
+
+  void _completeGeneratedAudio(int generation) {
+    if (!_isCurrentGeneration(generation)) {
+      return;
+    }
+    _resetPlaybackState(clearError: false);
+    notifyListeners();
+  }
+
+  void _setError(ReadAloudErrorKind kind, String message) {
+    _lastErrorKind = kind;
+    _lastErrorMessage = message;
+    _resetPlaybackState(clearError: false);
+    notifyListeners();
+  }
+
+  void _resetPlaybackState({required bool clearError}) {
+    _state = ReadAloudState.idle;
+    _activeMessageId = null;
+    _activeBackend = null;
+    _audioPlaybackGeneration = null;
+    _audioDuration = null;
+    _audioPosition = null;
+    if (clearError) {
+      _lastErrorKind = null;
+      _lastErrorMessage = null;
     }
   }
 }

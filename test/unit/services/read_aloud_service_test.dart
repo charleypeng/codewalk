@@ -1,4 +1,9 @@
+import 'dart:async';
+
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/services/read_aloud_service.dart';
+import 'package:codewalk/presentation/services/tts/generated_tts_audio_player.dart';
+import 'package:codewalk/presentation/services/tts/tts_backend.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -118,6 +123,124 @@ class _ThrowingFlutterTts implements FlutterTts {
   }
 }
 
+class _FakeGeneratedBackend implements TtsBackend {
+  _FakeGeneratedBackend({Future<TtsSynthesisResult>? result})
+    : result =
+          result ??
+          Future<TtsSynthesisResult>.value(
+            GeneratedTtsAudio(
+              bytes: Uint8List.fromList(<int>[1, 2, 3]),
+              mimeType: 'audio/mpeg',
+            ),
+          );
+
+  final Future<TtsSynthesisResult> result;
+  final List<TtsSynthesisRequest> requests = <TtsSynthesisRequest>[];
+  bool stopped = false;
+  bool paused = false;
+
+  @override
+  Future<bool> get isAvailable async => true;
+
+  @override
+  TtsPlaybackMode get playbackMode => TtsPlaybackMode.generatedAudio;
+
+  @override
+  ReadAloudProvider get provider => ReadAloudProvider.edgeExperimental;
+
+  @override
+  Future<TtsSynthesisResult> speakOrSynthesize(
+    TtsSynthesisRequest request,
+    TtsBackendCallbacks callbacks,
+  ) async {
+    requests.add(request);
+    return result;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopped = true;
+  }
+
+  @override
+  Future<void> pause() async {
+    paused = true;
+  }
+
+  @override
+  Future<List<TtsVoiceOption>> getVoices() async {
+    return const <TtsVoiceOption>[];
+  }
+
+  @override
+  Future<List<String>> getLanguages() async {
+    return const <String>[];
+  }
+
+  @override
+  void dispose() {}
+}
+
+class _FakeTtsAudioPlayer implements TtsAudioPlayer {
+  final StreamController<void> _completeController =
+      StreamController<void>.broadcast(sync: true);
+  final StreamController<Duration> _durationController =
+      StreamController<Duration>.broadcast(sync: true);
+  final StreamController<Duration> _positionController =
+      StreamController<Duration>.broadcast(sync: true);
+
+  Uint8List? lastBytes;
+  String? lastMimeType;
+  int playCount = 0;
+  bool stopped = false;
+  bool paused = false;
+
+  @override
+  Stream<void> get onComplete => _completeController.stream;
+
+  @override
+  Stream<Duration> get onDurationChanged => _durationController.stream;
+
+  @override
+  Stream<Duration> get onPositionChanged => _positionController.stream;
+
+  @override
+  Future<void> playBytes(Uint8List bytes, {String? mimeType}) async {
+    playCount += 1;
+    lastBytes = bytes;
+    lastMimeType = mimeType;
+  }
+
+  @override
+  Future<void> pause() async {
+    paused = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopped = true;
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _completeController.close();
+    await _durationController.close();
+    await _positionController.close();
+  }
+
+  void complete() {
+    _completeController.add(null);
+  }
+
+  void reportProgress({
+    required Duration position,
+    required Duration duration,
+  }) {
+    _durationController.add(duration);
+    _positionController.add(position);
+  }
+}
+
 void main() {
   group('ReadAloudService', () {
     test('initial state is idle', () {
@@ -179,6 +302,78 @@ void main() {
 
       expect(tts.lastVoice, isNotNull);
       expect(tts.lastVoice!['name'], 'en-us-x-tpf');
+      expect(tts.lastVoice!['locale'], 'en-US');
+    });
+
+    test('generated audio backend plays returned bytes', () async {
+      final backend = _FakeGeneratedBackend();
+      final player = _FakeTtsAudioPlayer();
+      final service = ReadAloudService(
+        backends: <ReadAloudProvider, TtsBackend>{
+          ReadAloudProvider.edgeExperimental: backend,
+        },
+        audioPlayer: player,
+      );
+
+      await service.speak(
+        messageId: 'msg_1',
+        text: 'Hello cloud',
+        provider: ReadAloudProvider.edgeExperimental,
+      );
+
+      expect(backend.requests.single.text, 'Hello cloud');
+      expect(player.playCount, 1);
+      expect(player.lastBytes, orderedEquals(<int>[1, 2, 3]));
+      expect(player.lastMimeType, 'audio/mpeg');
+      expect(service.state, ReadAloudState.playing);
+
+      player.reportProgress(
+        position: const Duration(milliseconds: 250),
+        duration: const Duration(seconds: 1),
+      );
+      expect(service.progress, 0.25);
+
+      player.complete();
+      expect(service.state, ReadAloudState.idle);
+      expect(service.activeMessageId, isNull);
+
+      await service.dispose();
+    });
+
+    test('stop cancels slow generated audio before playback starts', () async {
+      final completer = Completer<TtsSynthesisResult>();
+      final backend = _FakeGeneratedBackend(result: completer.future);
+      final player = _FakeTtsAudioPlayer();
+      final service = ReadAloudService(
+        backends: <ReadAloudProvider, TtsBackend>{
+          ReadAloudProvider.edgeExperimental: backend,
+        },
+        audioPlayer: player,
+      );
+
+      final speakFuture = service.speak(
+        messageId: 'msg_1',
+        text: 'Slow cloud',
+        provider: ReadAloudProvider.edgeExperimental,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(service.state, ReadAloudState.playing);
+
+      await service.stop();
+      completer.complete(
+        GeneratedTtsAudio(
+          bytes: Uint8List.fromList(<int>[9]),
+          mimeType: 'audio/mpeg',
+        ),
+      );
+      await speakFuture;
+
+      expect(backend.stopped, isTrue);
+      expect(player.stopped, isTrue);
+      expect(player.playCount, 0);
+      expect(service.state, ReadAloudState.idle);
+
+      await service.dispose();
     });
 
     test('stop resets state to idle', () async {
