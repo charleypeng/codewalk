@@ -1,20 +1,208 @@
 @Tags(<String>['slow'])
 library;
 
+import 'dart:async';
+
+import 'package:codewalk/core/auth/tts_api_key_storage.dart';
+import 'package:codewalk/core/di/injection_container.dart' as di;
+import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
+import 'package:codewalk/presentation/pages/settings/sections/speech_settings_section.dart';
+import 'package:codewalk/presentation/pages/settings_page.dart';
+import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/moonshine_model_manager.dart';
+import 'package:codewalk/presentation/services/parakeet_model_manager.dart';
+import 'package:codewalk/presentation/services/read_aloud_service.dart';
+import 'package:codewalk/presentation/services/sensevoice_model_manager.dart';
+import 'package:codewalk/presentation/services/sherpa_model_manager.dart';
+import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/services/tts/tts_backend.dart';
 import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
 import 'package:codewalk/presentation/utils/chat_abort_message.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
+import '../support/fakes.dart';
 import '../support/pump_localized_app.dart';
 
+class _ControlledTtsBackend implements TtsBackend {
+  final Completer<TtsSynthesisResult> completer =
+      Completer<TtsSynthesisResult>();
+
+  @override
+  ReadAloudProvider get provider => ReadAloudProvider.edgeExperimental;
+
+  @override
+  TtsPlaybackMode get playbackMode => TtsPlaybackMode.nativeEngine;
+
+  @override
+  Future<bool> get isAvailable async => true;
+
+  @override
+  Future<List<TtsVoiceOption>> getVoices() async => const <TtsVoiceOption>[];
+
+  @override
+  Future<List<String>> getLanguages() async => const <String>[];
+
+  @override
+  Future<TtsSynthesisResult> speakOrSynthesize(
+    TtsSynthesisRequest request,
+    TtsBackendCallbacks callbacks,
+  ) {
+    return completer.future;
+  }
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  void dispose() {}
+}
+
+class _MemoryTtsApiKeyStorageBackend implements TtsApiKeyStorageBackend {
+  final Map<String, String> values = <String, String>{};
+
+  @override
+  Future<void> write({required String key, required String value}) async {
+    values[key] = value;
+  }
+
+  @override
+  Future<String?> read({required String key}) async {
+    return values[key];
+  }
+
+  @override
+  Future<void> delete({required String key}) async {
+    values.remove(key);
+  }
+}
+
+AssistantMessage _readAloudAssistantMessage(String id) {
+  return AssistantMessage(
+    id: id,
+    sessionId: 'ses_read_aloud_widget',
+    time: DateTime.fromMillisecondsSinceEpoch(1000),
+    parts: <MessagePart>[
+      TextPart(
+        id: 'part_$id',
+        messageId: id,
+        sessionId: 'ses_read_aloud_widget',
+        text: 'Read this message aloud.',
+      ),
+    ],
+  );
+}
+
+SettingsProvider _buildSettingsProviderForReadAloud() {
+  return SettingsProvider(
+    localDataSource: InMemoryAppLocalDataSource(),
+    dioClient: DioClient(),
+    soundService: SoundService(),
+  );
+}
+
+void _registerSpeechSettingsDependencies() {
+  di.sl.registerSingleton<SherpaModelManager>(SherpaModelManager());
+  di.sl.registerSingleton<MoonshineModelManager>(MoonshineModelManager());
+  di.sl.registerSingleton<ParakeetModelManager>(ParakeetModelManager());
+  di.sl.registerSingleton<SenseVoiceModelManager>(SenseVoiceModelManager());
+  di.sl.registerSingleton<TtsApiKeyStorage>(
+    TtsApiKeyStorage(backend: _MemoryTtsApiKeyStorageBackend()),
+  );
+}
+
 void main() {
+  testWidgets('shows loading indicator for active loading read-aloud message', (
+    WidgetTester tester,
+  ) async {
+    await di.sl.reset();
+    addTearDown(di.sl.reset);
+    final backend = _ControlledTtsBackend();
+    final readAloudService = ReadAloudService(
+      backends: <ReadAloudProvider, TtsBackend>{
+        ReadAloudProvider.native: _ControlledTtsBackend(),
+        ReadAloudProvider.edgeExperimental: backend,
+      },
+    );
+    di.sl.registerSingleton<ReadAloudService>(readAloudService);
+    addTearDown(readAloudService.dispose);
+    final settingsProvider = _buildSettingsProviderForReadAloud();
+    addTearDown(settingsProvider.dispose);
+    final message = _readAloudAssistantMessage('msg_read_aloud_loading');
+
+    final speakFuture = readAloudService.speak(
+      messageId: message.id,
+      text: 'Loading speech',
+      provider: ReadAloudProvider.edgeExperimental,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: localizedMaterialApp(
+          home: Scaffold(body: ChatMessageWidget(message: message)),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byIcon(Symbols.volume_up), findsNothing);
+
+    backend.completer.complete(const NativeTtsStarted());
+    await speakFuture;
+  });
+
+  testWidgets('long-pressing read-aloud button opens speech settings', (
+    WidgetTester tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    await di.sl.reset();
+    addTearDown(di.sl.reset);
+    _registerSpeechSettingsDependencies();
+    final backend = _ControlledTtsBackend();
+    final readAloudService = ReadAloudService(
+      backends: <ReadAloudProvider, TtsBackend>{
+        ReadAloudProvider.native: _ControlledTtsBackend(),
+        ReadAloudProvider.edgeExperimental: backend,
+      },
+    );
+    di.sl.registerSingleton<ReadAloudService>(readAloudService);
+    addTearDown(readAloudService.dispose);
+    final settingsProvider = _buildSettingsProviderForReadAloud();
+    addTearDown(settingsProvider.dispose);
+    final message = _readAloudAssistantMessage('msg_read_aloud_settings');
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: localizedMaterialApp(
+          home: Scaffold(body: ChatMessageWidget(message: message)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byIcon(Symbols.volume_up));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsPage), findsOneWidget);
+    expect(find.byType(SpeechSettingsSection), findsOneWidget);
+    debugDefaultTargetPlatformOverride = previousPlatform;
+  });
+
   testWidgets('renders historical revert action for user message callback', (
     WidgetTester tester,
   ) async {

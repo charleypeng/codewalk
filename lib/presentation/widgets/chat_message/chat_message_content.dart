@@ -449,6 +449,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         // Evaluate state inside builder so icon/color/onPressed react to
         // ReadAloudService notifications.
         final isActive = readAloudService.activeMessageId == message.id;
+        final isLoading = isActive && readAloudService.isLoading;
         final isPlaying = isActive && readAloudService.isSpeaking;
         final icon = isPlaying ? Symbols.stop : Symbols.volume_up;
         final tooltip = isPlaying
@@ -456,48 +457,72 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
             : context.l10n.msgReadAloud;
         _syncReadAloudErrorSnackBar(context, readAloudService, message.id);
 
-        return IconButton(
-          icon: Icon(icon, size: 18),
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          splashRadius: 18,
-          color: isActive
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurfaceVariant,
-          tooltip: tooltip,
-          onPressed: () {
-            // Guard: respect the current setting even if the button was
-            // rendered before the user toggled readAloudEnabled off.
-            if (!settingsProvider.readAloudEnabled) {
-              return;
-            }
-            if (isPlaying) {
-              unawaited(readAloudService.stop());
-              return;
-            }
-            final text = _extractReadableText(message);
-            if (text.isEmpty) {
-              return;
-            }
-            unawaited(
-              readAloudService.speak(
-                messageId: message.id,
-                text: text,
-                provider: settingsProvider.readAloudProvider,
-                rate: settingsProvider.readAloudRate,
-                pitch: settingsProvider.readAloudPitch,
-                voice: settingsProvider.readAloudVoice,
-                voiceId: settingsProvider.readAloudVoiceId,
-                voiceLocale: settingsProvider.readAloudVoiceLocale,
-                model: settingsProvider.readAloudModel,
-                baseUrl: settingsProvider.readAloudBaseUrl,
-                responseFormat: settingsProvider.readAloudResponseFormat,
+        final foregroundColor = isActive
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurfaceVariant;
+        return Tooltip(
+          message: tooltip,
+          child: InkResponse(
+            onTap: isLoading
+                ? null
+                : () {
+                    // Guard: respect the current setting even if the button was
+                    // rendered before the user toggled readAloudEnabled off.
+                    if (!settingsProvider.readAloudEnabled) {
+                      return;
+                    }
+                    if (isPlaying) {
+                      unawaited(readAloudService.stop());
+                      return;
+                    }
+                    final text = _extractReadableText(message);
+                    if (text.isEmpty) {
+                      return;
+                    }
+                    unawaited(
+                      readAloudService.speak(
+                        messageId: message.id,
+                        text: text,
+                        provider: settingsProvider.readAloudProvider,
+                        rate: settingsProvider.readAloudRate,
+                        pitch: settingsProvider.readAloudPitch,
+                        voice: settingsProvider.readAloudVoice,
+                        voiceId: settingsProvider.readAloudVoiceId,
+                        voiceLocale: settingsProvider.readAloudVoiceLocale,
+                        model: settingsProvider.readAloudModel,
+                        baseUrl: settingsProvider.readAloudBaseUrl,
+                        responseFormat:
+                            settingsProvider.readAloudResponseFormat,
+                      ),
+                    );
+                  },
+            onLongPress: () => _openReadAloudSettings(context),
+            radius: 18,
+            child: SizedBox.square(
+              dimension: 48,
+              child: Center(
+                child: isLoading
+                    ? SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                    : Icon(icon, size: 18, color: foregroundColor),
               ),
-            );
-          },
+            ),
+          ),
         );
       },
+    );
+  }
+
+  Future<void> _openReadAloudSettings(BuildContext context) async {
+    await Navigator.of(context).push(
+      AppPageRoute(
+        builder: (_) => const SettingsPage(initialSectionId: 'speech'),
+      ),
     );
   }
 
