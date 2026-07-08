@@ -49,6 +49,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-043: Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations (ADR-023 Exception)
 - ADR-044: Windows STT Final Fix — Runner-Owned WASAPI Microphone Backend and Re-Enabled On-Device Engines
 - ADR-045: CodeWalk Refined Visual Layer Over Material Stack
+- ADR-046: Client-Side Cloud TTS Provider Architecture
 
 ---
 
@@ -2766,3 +2767,84 @@ This ADR is fully compliant with ADR-023. It introduces no OpenCode server contr
 - `test/widget/settings_page_test.dart` — `VisualStyle` selector presence and persistence wiring in the appearance settings section
 - `test/widget/chat_message_widget_test.dart`, `test/widget/chat_page_test.dart` — run as regression suites over the migrated widget paths; no new explicit refined assertions were added in this pass
 - Ref: issue #86
+
+---
+
+## ADR-046: Client-Side Cloud TTS Provider Architecture (2026-07-08)
+
+**Status**: Accepted
+
+**Related**: ADR-006 (Speech Input Architecture with `SpeechInputService` and Platform Policy), ADR-007 (Modular Settings Architecture for `ExperienceSettings`), ADR-023 (Official OpenCode Contract-First Compatibility Policy).
+
+### Context
+
+CodeWalk already exposes native read-aloud TTS for assistant messages, but users also need higher-quality generated voices from cloud providers. The implementation must preserve the native engine as the safe default, avoid storing provider secrets in normal settings payloads, and remain compatible with the official OpenCode client/server contract.
+
+Cloud TTS introduces a different playback shape from native TTS: providers return generated audio bytes instead of driving the platform TTS engine directly. It also introduces privacy and reliability constraints because selected assistant text leaves the device and is sent to a configured third-party provider.
+
+Microsoft Edge Speech is attractive as an experimental voice catalog, but the direct Edge Read Aloud synthesis path depends on an unofficial WebSocket transport with unstable Edge-specific headers and tokens. Shipping direct synthesis against that protocol would create a brittle dependency on a private browser transport rather than a stable provider API.
+
+### Decision
+
+Adopt a **client-side pluggable TTS backend architecture** for read-aloud, with native TTS remaining the default provider and cloud providers implemented as optional client-owned backends.
+
+1. **Native read-aloud remains default.** `ReadAloudProvider.native` stays the default persisted provider in `ExperienceSettings`, so new and existing users keep platform-native TTS unless they explicitly choose another provider.
+2. **Pluggable `TtsBackend` contract.** `ReadAloudService` routes read-aloud through provider-specific `TtsBackend` implementations. Backends declare whether they use the native engine or generated-audio playback through `TtsPlaybackMode`, allowing a single service to manage both `flutter_tts` lifecycle and generated audio playback.
+3. **OpenAI-compatible cloud TTS.** The first active cloud backend is `ReadAloudProvider.openAiCompatible`, which sends sanitized assistant text to the configured OpenAI-compatible `/v1/audio/speech` endpoint, maps read-aloud rate to provider speed, receives generated audio bytes, and plays them through the generated-audio player path.
+4. **Secrets only in secure storage.** OpenAI-compatible TTS API keys are stored only via `lib/core/auth/tts_api_key_storage.dart`, backed by `flutter_secure_storage` and namespaced by provider. API keys must not be serialized into `ExperienceSettings`, logs, normal preference payloads, or exported non-secret settings.
+5. **Non-secret settings in `ExperienceSettings`.** Provider choice, voice ID/locale, model, base URL, response format, rate, pitch, and enablement remain ordinary non-secret read-aloud settings in `ExperienceSettings` so they can participate in the existing ADR-007 settings lifecycle.
+6. **Sanitized assistant text boundary.** Cloud read-aloud uses `ReadAloudTextExtractor` to derive the spoken text from assistant message parts before sending it to a third-party provider, stripping markdown/code/table noise that is not useful speech content.
+7. **Microsoft Edge Speech is experimental but blocked for direct synthesis.** `ReadAloudProvider.edgeExperimental` may expose voice-list discovery and settings UI as experimental, but direct synthesis is intentionally blocked in this build because the unofficial Edge Read Aloud WebSocket transport requires unstable headers/tokens. Users who need Edge-backed voices must use a stable OpenAI-compatible Edge proxy or choose another provider.
+
+### Rationale
+
+- Keeping native TTS as the default preserves offline/local behavior, platform accessibility expectations, and the least-surprise path for users who do not configure cloud credentials.
+- A provider backend contract keeps the read-aloud UI and message controls independent from provider transport details, making future providers additive instead of special-cased in widgets.
+- Generated-audio playback must be first-class because OpenAI-compatible `/v1/audio/speech` returns bytes, not a platform TTS session that can be paused/stopped through `flutter_tts`.
+- Secure storage is the only acceptable location for provider API keys; `ExperienceSettings` is deliberately limited to non-secret provider configuration.
+- Blocking direct Edge synthesis avoids shipping a feature that depends on a private, unstable browser protocol and could break without notice or require hardcoded transport tokens.
+- The client-owned path keeps the OpenCode server out of user-selected third-party TTS traffic and avoids introducing a proxy responsibility the server contract does not define.
+
+### Consequences
+
+- ✅ Users keep native read-aloud by default while gaining an opt-in cloud TTS architecture.
+- ✅ OpenAI-compatible providers can synthesize assistant-message audio through `/v1/audio/speech` without changing chat/session/model APIs.
+- ✅ API keys remain outside `ExperienceSettings` and normal preference payloads, reducing accidental secret exposure.
+- ✅ Provider settings are still durable and user-configurable through the existing settings architecture.
+- ✅ Generated-audio playback supports byte-based provider responses with progress/completion handling separate from native TTS callbacks.
+- ✅ Edge Speech can be explored safely as an experimental catalog/provider placeholder without relying on direct private WebSocket synthesis.
+- ⚠ Cloud TTS sends sanitized assistant text from the client device to the configured third-party provider; users must understand the provider's privacy, retention, billing, and regional processing policies.
+- ⚠ Provider availability, quota, latency, rate limits, response formats, and voice/model compatibility vary by provider and are surfaced as provider-specific errors.
+- ⚠ Secure storage availability is platform-dependent; if secure storage fails, cloud TTS credentials cannot be read or written and the provider must fail closed.
+- ⚠ Base URL configurability is powerful but risky: users can point the client at proxies or non-OpenAI-compatible services that may reject requests or mishandle data.
+- ❌ CodeWalk does not proxy cloud TTS through the OpenCode server and does not store TTS API keys server-side.
+- ❌ Direct Microsoft Edge Read Aloud WebSocket synthesis is intentionally not supported in this build.
+
+### Risks and Mitigations
+
+- **Third-party data exposure**: assistant text leaves the device for cloud TTS. Mitigation: make cloud TTS opt-in, keep native as default, show cloud TTS privacy copy in settings, and send only sanitized assistant text.
+- **Credential leakage**: API keys could be accidentally serialized if future code treats them like normal settings. Mitigation: centralize key persistence in `TtsApiKeyStorage` and keep `ExperienceSettings` limited to non-secret fields.
+- **Provider drift**: OpenAI-compatible providers may diverge in model, voice, format, or error semantics. Mitigation: keep the backend isolated, normalize known error categories, and avoid assuming provider-specific features outside the `/v1/audio/speech` contract.
+- **Unstable Edge transport**: direct Edge synthesis depends on unofficial headers/tokens. Mitigation: block direct synthesis until a stable supported transport or proxy contract exists.
+
+### ADR-023 Compatibility
+
+This ADR is fully compliant with ADR-023. It introduces no OpenCode server contract change, no new OpenCode endpoints, no modification to existing OpenCode request/response schemas, and no change to message lifecycle, realtime event semantics, model/agent/provider resolution, or config mutation behavior.
+
+Cloud TTS is a client-owned read-aloud feature: CodeWalk extracts sanitized assistant text from already-received message content and sends it directly from the client to the user-configured third-party TTS provider. The OpenCode server is not involved in synthesis, credential storage, provider routing, or generated-audio playback.
+
+### Key Files
+
+- `lib/domain/entities/experience_settings.dart` — `ReadAloudProvider` enum, native default, non-secret read-aloud provider/model/base URL/voice/format/rate/pitch persistence, and OpenAI-compatible defaults.
+- `lib/core/auth/tts_api_key_storage.dart` — provider-namespaced secure storage for TTS API keys; the only accepted persistence path for cloud TTS secrets.
+- `lib/presentation/services/read_aloud_service.dart` — provider routing, native/generated-audio playback state, secure API-key lookup, generated-audio lifecycle, and normalized read-aloud errors.
+- `lib/presentation/services/tts/tts_backend.dart` — backend abstraction, playback modes, synthesis request/result model, voice options, callbacks, and provider error categories.
+- `lib/presentation/services/tts/native_tts_backend.dart` — native `flutter_tts` backend and default local read-aloud path.
+- `lib/presentation/services/tts/openai_compatible_tts_backend.dart` — OpenAI-compatible `/v1/audio/speech` request/response handling, voice defaults, generated-audio bytes, MIME mapping, and provider error mapping.
+- `lib/presentation/services/tts/generated_tts_audio_player.dart` — byte-based generated-audio playback bridge over `audioplayers`.
+- `lib/presentation/services/tts/edge_experimental_tts_backend.dart` — experimental Edge voice discovery with direct synthesis blocked because the unofficial transport is unstable.
+- `lib/presentation/services/tts/read_aloud_text_extractor.dart` — assistant-message text extraction and markdown cleanup before cloud synthesis.
+- `lib/presentation/pages/settings/sections/speech_settings_section.dart` — read-aloud provider selection, cloud TTS privacy copy, non-secret provider settings UI, and secure API-key entry flow.
+- `lib/core/di/injection_container.dart` — registration of read-aloud backends and `TtsApiKeyStorage`.
+- `lib/presentation/widgets/chat_message_widget.dart` — assistant-message read-aloud controls using sanitized text extraction and provider settings.
+- `test/unit/auth/tts_api_key_storage_test.dart`, `test/unit/services/openai_compatible_tts_backend_test.dart`, `test/unit/services/edge_experimental_tts_backend_test.dart` — secure storage, OpenAI-compatible backend, and Edge experimental behavior coverage.

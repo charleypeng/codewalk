@@ -1785,7 +1785,8 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Given** the user is viewing an assistant message
 - **When** the read-aloud setting is enabled (Settings > Speech)
 - **Then** a read-aloud button (volume_up icon) appears in the assistant message header
-- **Then** tapping the button reads the message text aloud using the platform TTS engine
+- **Then** tapping the button reads the sanitized assistant message text aloud using the selected TTS provider
+- **Then** provider failures are shown to the user instead of silently falling back to a different provider
 
 ### Toggle playback off
 
@@ -1803,7 +1804,45 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 - **Given** the user opens Settings > Speech
 - **When** the Text to speech section is visible
-- **Then** the user can enable/disable read-aloud, adjust speaking speed (0.0–1.0), and adjust voice pitch (0.5–2.0)
+- **Then** the user can select `System / Native`, `Microsoft Edge Speech (experimental)`, or `OpenAI-compatible`
+- **Then** the default provider is `System / Native`
+- **Then** the user can enable/disable read-aloud and test the selected voice
+- **Then** the user can adjust speaking speed (0.0–1.0)
+- **Then** voice pitch (0.5–2.0) is shown only for the native provider
+
+### Native TTS provider
+
+- **Given** `System / Native` is selected
+- **When** the platform exposes TTS voices
+- **Then** Settings > Speech shows a native voice picker
+- **Then** selected voice locale metadata is preserved when speaking instead of forcing a hard-coded locale
+
+### OpenAI-compatible TTS provider
+
+- **Given** `OpenAI-compatible` is selected
+- **When** the user configures read-aloud settings
+- **Then** Settings > Speech exposes base URL, model, voice, and API key controls
+- **Then** the API key is saved only in secure storage on the device
+- **Then** the API key is not persisted in `ExperienceSettings` JSON
+- **When** a message is read aloud with this provider
+- **Then** CodeWalk calls the configured `/v1/audio/speech` endpoint with the sanitized message text and plays the returned audio bytes
+- **Then** missing, invalid, rate-limited, network, or provider errors are mapped to user-visible read-aloud errors
+
+### Microsoft Edge Speech experimental provider
+
+- **Given** `Microsoft Edge Speech (experimental)` is selected
+- **When** Settings > Speech renders provider-specific options
+- **Then** CodeWalk shows a warning that Edge Speech is experimental and based on an unofficial Edge Read Aloud protocol
+- **Then** direct Edge synthesis is blocked in this build because the unstable transport headers are not safely supported
+- **When** the user tries to read aloud through this provider
+- **Then** CodeWalk reports a provider-unavailable read-aloud error and does not silently switch to native TTS
+
+### Cloud TTS privacy
+
+- **Given** a cloud TTS provider is selected
+- **When** the user reads an assistant message aloud
+- **Then** the selected assistant message text is sent to the configured third-party provider
+- **Then** API keys are never sent to OpenCode servers, stored in normal settings JSON, or shown in logs
 
 ### Read-aloud disabled
 
@@ -1815,7 +1854,7 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 - **Given** a message contains Markdown formatting
 - **When** the message is read aloud
-- **Then** bold, italic, inline code, links, images, headings, and blockquote markers are stripped so only natural text is spoken
+- **Then** fenced code blocks, Markdown tables, links, images, headings, blockquote/list markers, and formatting markers are stripped or reduced so only natural text is spoken
 
 ---
 
