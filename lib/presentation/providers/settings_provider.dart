@@ -20,6 +20,7 @@ import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/cellular_data_saver_service.dart';
 import '../services/sound_service.dart';
+import '../services/tts/read_aloud_default_resolver.dart';
 import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
 import '../utils/shortcut_l10n.dart';
@@ -55,6 +56,8 @@ enum OpenCodeAutoupdateMode { automatic, notify, disabled }
 
 enum OpenCodeShareMode { manual, automatic, disabled }
 
+typedef NativeReadAloudAvailabilityProbe = Future<bool> Function();
+
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
     required AppLocalDataSource localDataSource,
@@ -62,10 +65,12 @@ class SettingsProvider extends ChangeNotifier {
     required SoundService soundService,
     UpdateCheckService? updateCheckService,
     CellularDataSaverService? cellularDataSaverService,
+    NativeReadAloudAvailabilityProbe? nativeReadAloudAvailabilityProbe,
   }) : _localDataSource = localDataSource,
        _dioClient = dioClient,
        _soundService = soundService,
        _updateCheckService = updateCheckService ?? UpdateCheckService(),
+       _nativeReadAloudAvailabilityProbe = nativeReadAloudAvailabilityProbe,
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled() {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
@@ -75,6 +80,7 @@ class SettingsProvider extends ChangeNotifier {
   final DioClient _dioClient;
   final SoundService _soundService;
   final UpdateCheckService _updateCheckService;
+  final NativeReadAloudAvailabilityProbe? _nativeReadAloudAvailabilityProbe;
   final CellularDataSaverService _cellularDataSaverService;
 
   ExperienceSettings _settings = ExperienceSettings.defaults();
@@ -244,7 +250,8 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> _initializeInternal() async {
     final raw = await _localDataSource.getExperienceSettingsJson();
-    if (raw != null && raw.trim().isNotEmpty) {
+    final hasStoredExperienceSettings = raw != null && raw.trim().isNotEmpty;
+    if (hasStoredExperienceSettings) {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is Map<String, dynamic>) {
@@ -257,6 +264,12 @@ class SettingsProvider extends ChangeNotifier {
           stackTrace: stackTrace,
         );
       }
+    }
+    var shouldPersistPlatformSettings = false;
+    if (!hasStoredExperienceSettings) {
+      shouldPersistPlatformSettings =
+          await _applyFirstRunReadAloudDefaults() ||
+          shouldPersistPlatformSettings;
     }
 
     // Platform STT policy migration:
@@ -276,7 +289,7 @@ class SettingsProvider extends ChangeNotifier {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.parakeet,
       );
-      unawaited(_persist());
+      shouldPersistPlatformSettings = true;
     } else if (isAndroid &&
         (_settings.speechToTextEngine == SpeechToTextEngine.sherpa ||
             _settings.speechToTextEngine == SpeechToTextEngine.moonshine ||
@@ -285,13 +298,13 @@ class SettingsProvider extends ChangeNotifier {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.native,
       );
-      unawaited(_persist());
+      shouldPersistPlatformSettings = true;
     } else if (isWindows &&
         _settings.speechToTextEngine == SpeechToTextEngine.native) {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.parakeet,
       );
-      unawaited(_persist());
+      shouldPersistPlatformSettings = true;
     } else if ((kIsWeb || isIos) &&
         (_settings.speechToTextEngine == SpeechToTextEngine.moonshine ||
             _settings.speechToTextEngine == SpeechToTextEngine.parakeet ||
@@ -299,6 +312,10 @@ class SettingsProvider extends ChangeNotifier {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.native,
       );
+      shouldPersistPlatformSettings = true;
+    }
+
+    if (shouldPersistPlatformSettings) {
       unawaited(_persist());
     }
 
@@ -317,6 +334,47 @@ class SettingsProvider extends ChangeNotifier {
     _configureAutomaticUpdateChecks();
     _initialized = true;
     notifyListeners();
+  }
+
+  Future<bool> _applyFirstRunReadAloudDefaults() async {
+    final nativeAvailable = await _isNativeReadAloudAvailableForFirstRun();
+    final selection = ReadAloudDefaultResolver.resolve(
+      ReadAloudDefaultEnvironment(
+        isWeb: kIsWeb,
+        targetPlatform: defaultTargetPlatform,
+        nativeTtsAvailable: nativeAvailable,
+        appLocaleCode: _settings.localeCode,
+        systemLocaleName: kIsWeb ? null : Platform.localeName,
+      ),
+    );
+    if (_settings.readAloudProvider == selection.provider &&
+        _settings.readAloudVoiceId == selection.voiceId &&
+        _settings.readAloudVoiceLocale == selection.voiceLocale &&
+        _settings.readAloudVoice == selection.voiceId) {
+      return false;
+    }
+    _settings = _settings.copyWith(
+      readAloudProvider: selection.provider,
+      readAloudVoice: () => selection.voiceId,
+      readAloudVoiceId: () => selection.voiceId,
+      readAloudVoiceLocale: () => selection.voiceLocale,
+    );
+    return true;
+  }
+
+  Future<bool> _isNativeReadAloudAvailableForFirstRun() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux) {
+      return false;
+    }
+    final probe = _nativeReadAloudAvailabilityProbe;
+    if (probe == null) {
+      return true;
+    }
+    try {
+      return await probe();
+    } catch (_) {
+      return false;
+    }
   }
 
   void _configureAutomaticUpdateChecks() {

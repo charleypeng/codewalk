@@ -290,6 +290,8 @@ Future<void> init() async {
       soundService: sl(),
       updateCheckService: sl(),
       cellularDataSaverService: sl(),
+      nativeReadAloudAvailabilityProbe: () =>
+          sl<ReadAloudService>().isProviderAvailable(ReadAloudProvider.native),
     ),
   );
 

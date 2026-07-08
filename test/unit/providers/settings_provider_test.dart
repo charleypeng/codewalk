@@ -1253,6 +1253,104 @@ void main() {
       expect(provider.readAloudResponseFormat, kDefaultReadAloudResponseFormat);
     });
 
+    test(
+      'first-run Linux defaults read-aloud to Edge in system locale',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        final local = InMemoryAppLocalDataSource();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          nativeReadAloudAvailabilityProbe: () async => true,
+        );
+
+        await provider.initialize();
+
+        expect(provider.readAloudProvider, ReadAloudProvider.edgeExperimental);
+        expect(provider.readAloudVoiceId, isNotNull);
+        expect(provider.readAloudVoiceLocale, isNotNull);
+        final raw = local.experienceSettingsJson;
+        expect(raw, isNotNull);
+        final json = jsonDecode(raw!) as Map<String, dynamic>;
+        expect(json['readAloudProvider'], 'edge_experimental');
+        expect(json['readAloudVoiceId'], provider.readAloudVoiceId);
+      },
+    );
+
+    test(
+      'first-run Windows keeps native when native TTS is available',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        final local = InMemoryAppLocalDataSource();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          nativeReadAloudAvailabilityProbe: () async => true,
+        );
+
+        await provider.initialize();
+
+        expect(provider.readAloudProvider, ReadAloudProvider.native);
+        expect(provider.readAloudVoiceId, isNull);
+        expect(provider.readAloudVoiceLocale, isNull);
+      },
+    );
+
+    test(
+      'first-run macOS falls back to Edge when native TTS unavailable',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        final local = InMemoryAppLocalDataSource();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          nativeReadAloudAvailabilityProbe: () async => false,
+        );
+
+        await provider.initialize();
+
+        expect(provider.readAloudProvider, ReadAloudProvider.edgeExperimental);
+        expect(provider.readAloudVoiceId, isNotNull);
+        expect(provider.readAloudVoiceLocale, isNotNull);
+      },
+    );
+
+    test(
+      'first-run adaptive default does not overwrite persisted provider',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        final local = InMemoryAppLocalDataSource()
+          ..experienceSettingsJson = jsonEncode(
+            ExperienceSettings.defaults()
+                .copyWith(
+                  readAloudProvider: ReadAloudProvider.openAiCompatible,
+                  readAloudVoiceId: () => 'coral',
+                  readAloudVoiceLocale: () => 'en-US',
+                )
+                .toJson(),
+          );
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          nativeReadAloudAvailabilityProbe: () async => false,
+        );
+
+        await provider.initialize();
+
+        expect(provider.readAloudProvider, ReadAloudProvider.openAiCompatible);
+        expect(provider.readAloudVoiceId, 'coral');
+        expect(provider.readAloudVoiceLocale, 'en-US');
+      },
+    );
+
     test('persists read-aloud enabled change', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(
