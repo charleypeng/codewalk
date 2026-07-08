@@ -2881,6 +2881,7 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 6. **Voice selection.** Settings expose an Edge voice picker populated from Microsoft Edge/Bing voices when discovery succeeds. The default Edge voice is `en-US-EmmaMultilingualNeural`.
 7. **Payload limit and sanitization.** Edge synthesis sends only sanitized assistant text produced by the existing read-aloud text extractor, capped to 4096 bytes before transport. Tool metadata, hidden state, logs, credentials, and raw message internals are not sent.
 8. **No server proxy or OpenCode contract change.** Edge/Bing Read Aloud traffic goes directly from the CodeWalk client to Microsoft. The OpenCode server is not involved in provider routing, synthesis, credential storage, request signing, or playback.
+9. **Client-owned playback lifecycle and control state.** `ReadAloudService` exposes a preparation/loading state before actual playback starts, and chat message controls render that state as a loading indicator while synthesis or native preparation is in progress. App/window lifecycle transitions away from `resumed` do not automatically stop read-aloud playback; playback continues when the user switches windows/apps unless it is explicitly stopped by the user, a session/message change, or another read-aloud action. Long-pressing the read-aloud control opens `Settings > Speech` so provider, voice, and privacy settings remain discoverable from the control itself.
 
 ### Rationale
 
@@ -2890,6 +2891,8 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 - No silent fallback keeps provider choice honest: if the user selected Edge, failures must be visible rather than quietly reading through another provider with different privacy and voice behavior.
 - Conditional imports isolate platform-specific WebSocket mechanics and keep web/build targets compatible even when direct Edge synthesis is primarily an IO-platform capability.
 - The 4096-byte cap reduces private-protocol fragility, bounds third-party data exposure, and prevents oversized synthesis payloads from entering the Edge transport.
+- Keeping playback alive across app/window focus changes matches the user expectation that read-aloud behaves like media playback, while explicit stop paths preserve user/session/message ownership over when speech ends.
+- A distinct preparation/loading state prevents ambiguous idle-looking controls during provider synthesis, native engine startup, or generated-audio buffering.
 
 ### Consequences
 
@@ -2898,9 +2901,12 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 - ✅ OpenAI-compatible TTS behavior and secure API-key storage remain unchanged.
 - ✅ ADR-023 compatibility is preserved: no OpenCode server endpoint, schema, lifecycle, event, model, agent, or config-contract changes.
 - ✅ Edge voice selection is user-visible through an explicit picker, with `en-US-EmmaMultilingualNeural` as the default.
+- ✅ Read-aloud playback continues across app/window switches unless explicitly stopped by user, session, or message actions.
+- ✅ Message controls can show a loading indicator while speech is being prepared, and long-press gives a direct path to `Settings > Speech`.
 - ⚠ Sanitized assistant text is sent directly from the client to Microsoft when Edge is selected; Microsoft's privacy, retention, region, quota, and availability policies apply outside CodeWalk's control.
 - ⚠ The Edge/Bing Read Aloud WebSocket protocol is unofficial and private; headers, tokens, message framing, rate limits, or availability may change without notice.
 - ⚠ Web support is a build-compatible generic connector boundary, not a guarantee that browser synthesis will work the same as native IO platforms.
+- ⚠ Lifecycle changes must not become an implicit stop path again; any future automatic stop must be tied to explicit user/session/message ownership, not app focus alone.
 - ❌ Edge/Bing Read Aloud is not a stable supported provider contract and must not be treated as reliable infrastructure.
 - ❌ CodeWalk must not silently fall back from Edge to native or OpenAI-compatible TTS on provider failure.
 
@@ -2921,7 +2927,7 @@ Supersede ADR-046's direct Edge synthesis block and support **direct Microsoft E
 
 ### ADR-023 Compatibility
 
-This ADR is compliant with ADR-023. CodeWalk still consumes OpenCode as an official client: no OpenCode server endpoint is added, no request/response schema changes, no realtime event semantics change, no session/message/model/agent lifecycle changes, and no server-side provider routing or proxying is introduced.
+This ADR is compliant with ADR-023. CodeWalk still consumes OpenCode as an official client: no OpenCode server endpoint is added, no request/response schema changes, no realtime event semantics change, no session/message/model/agent lifecycle changes, and no server-side provider routing or proxying is introduced. The read-aloud loading state, app/window lifecycle playback continuity, message-control loading indicator, and long-press settings shortcut are purely client-side UI/service behavior.
 
 Edge/Bing Read Aloud is a client-owned read-aloud feature. CodeWalk extracts sanitized text from already-received assistant message content and sends it directly from the client to Microsoft only when the experimental Edge provider is selected by the user or by the ADR-048 first-run resolver.
 
@@ -2934,6 +2940,9 @@ Edge/Bing Read Aloud is a client-owned read-aloud feature. CodeWalk extracts san
 - `lib/presentation/services/tts/edge_tts_websocket_stub.dart` — web/build-compatible connector boundary.
 - `lib/presentation/services/tts/read_aloud_text_extractor.dart` — sanitized assistant text extraction before cloud/Edge synthesis.
 - `lib/presentation/pages/settings/sections/speech_settings_section.dart` — Edge provider warning, Edge voice picker, cloud privacy copy, and provider selection UI.
+- `lib/presentation/pages/chat_page/chat_page_lifecycle.dart` — app/window lifecycle handling that does not stop read-aloud playback merely because the app leaves `resumed`.
+- `lib/presentation/services/read_aloud_service.dart` — read-aloud playback orchestration, explicit stop ownership, and preparation/loading state before actual playback.
+- `lib/presentation/widgets/chat_message_widget.dart` — message read-aloud control loading indicator and long-press shortcut to `Settings > Speech`.
 - `lib/domain/entities/experience_settings.dart` — persists non-secret read-aloud provider/voice preferences only; adaptive resolution belongs to ADR-048 and `read_aloud_default_resolver.dart`.
 - `lib/core/auth/tts_api_key_storage.dart` — unchanged secure-storage-only boundary for OpenAI-compatible API keys.
 - `lib/core/di/injection_container.dart` — read-aloud backend registration including `ReadAloudProvider.edgeExperimental`.

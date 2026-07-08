@@ -1786,6 +1786,8 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **When** the read-aloud setting is enabled (Settings > Speech)
 - **Then** a read-aloud button (volume_up icon) appears in the assistant message header
 - **Then** tapping the button reads the sanitized assistant message text aloud using the selected TTS provider
+- **Then** while the selected provider is preparing or loading audio for that message, the read-aloud control shows an inline loading indicator instead of the play/stop icon
+- **Then** long-pressing the read-aloud control opens Settings > Speech
 - **Then** provider failures are shown to the user instead of silently falling back to a different provider
 
 ### Toggle playback off
@@ -1797,8 +1799,10 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 ### Auto-stop behavior
 
 - **Given** read-aloud is actively playing
-- **When** the user sends a new message, switches sessions, or backgrounds the app
+- **When** the user sends a new message or switches sessions
 - **Then** playback stops automatically
+- **When** the user switches app/window focus or the app enters a non-resumed lifecycle state
+- **Then** CodeWalk does not explicitly stop read-aloud playback
 
 ### TTS settings
 
