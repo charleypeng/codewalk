@@ -306,6 +306,7 @@ void main() {
       expect(service.state, ReadAloudState.idle);
       expect(service.activeMessageId, isNull);
       expect(service.isSpeaking, isFalse);
+      expect(service.isLoading, isFalse);
       expect(service.progress, isNull);
     });
 
@@ -459,6 +460,49 @@ void main() {
       );
     });
 
+    test(
+      'slow generated audio reports loading before playback starts',
+      () async {
+        final completer = Completer<TtsSynthesisResult>();
+        final backend = _FakeGeneratedBackend(result: completer.future);
+        final player = _FakeTtsAudioPlayer();
+        final service = ReadAloudService(
+          backends: <ReadAloudProvider, TtsBackend>{
+            ReadAloudProvider.edgeExperimental: backend,
+          },
+          audioPlayer: player,
+        );
+
+        final speakFuture = service.speak(
+          messageId: 'msg_1',
+          text: 'Slow cloud',
+          provider: ReadAloudProvider.edgeExperimental,
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(service.activeMessageId, 'msg_1');
+        expect(service.state, ReadAloudState.loading);
+        expect(service.isLoading, isTrue);
+        expect(service.isSpeaking, isFalse);
+        expect(player.playCount, 0);
+
+        completer.complete(
+          GeneratedTtsAudio(
+            bytes: Uint8List.fromList(<int>[9]),
+            mimeType: 'audio/mpeg',
+          ),
+        );
+        await speakFuture;
+
+        expect(service.state, ReadAloudState.playing);
+        expect(service.isLoading, isFalse);
+        expect(service.isSpeaking, isTrue);
+        expect(player.playCount, 1);
+
+        await service.dispose();
+      },
+    );
+
     test('stop cancels slow generated audio before playback starts', () async {
       final completer = Completer<TtsSynthesisResult>();
       final backend = _FakeGeneratedBackend(result: completer.future);
@@ -476,7 +520,7 @@ void main() {
         provider: ReadAloudProvider.edgeExperimental,
       );
       await Future<void>.delayed(Duration.zero);
-      expect(service.state, ReadAloudState.playing);
+      expect(service.state, ReadAloudState.loading);
 
       await service.stop();
       completer.complete(

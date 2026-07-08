@@ -804,11 +804,6 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Stop read-aloud when app goes to background.
-    if (state != AppLifecycleState.resumed &&
-        di.sl.isRegistered<ReadAloudService>()) {
-      unawaited(di.sl<ReadAloudService>().stop());
-    }
     _isAppInForeground = state == AppLifecycleState.resumed;
     final provider = _chatProvider;
     if (provider != null) {

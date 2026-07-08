@@ -10,7 +10,7 @@ import 'tts/generated_tts_audio_player.dart';
 import 'tts/native_tts_backend.dart';
 import 'tts/tts_backend.dart';
 
-enum ReadAloudState { idle, playing, paused }
+enum ReadAloudState { idle, loading, playing, paused }
 
 enum ReadAloudErrorKind {
   unavailable,
@@ -71,6 +71,7 @@ class ReadAloudService extends ChangeNotifier {
   ReadAloudState get state => _state;
   String? get activeMessageId => _activeMessageId;
   bool get isSpeaking => _state == ReadAloudState.playing;
+  bool get isLoading => _state == ReadAloudState.loading;
   ReadAloudErrorKind? get lastErrorKind => _lastErrorKind;
   String? get lastErrorMessage => _lastErrorMessage;
   String? get lastErrorMessageId => _lastErrorMessageId;
@@ -126,7 +127,7 @@ class ReadAloudService extends ChangeNotifier {
     _lastErrorKind = null;
     _lastErrorMessage = null;
     _lastErrorMessageId = null;
-    _state = ReadAloudState.playing;
+    _state = ReadAloudState.loading;
     notifyListeners();
 
     try {
@@ -147,12 +148,22 @@ class ReadAloudService extends ChangeNotifier {
       if (!_isCurrentGeneration(generation)) {
         return;
       }
-      if (result is GeneratedTtsAudio) {
+      if (result is NativeTtsStarted) {
+        if (_state == ReadAloudState.loading) {
+          _state = ReadAloudState.playing;
+          notifyListeners();
+        }
+      } else if (result is GeneratedTtsAudio) {
         _audioPlaybackGeneration = generation;
         await _ensureAudioPlayer().playBytes(
           result.bytes,
           mimeType: result.mimeType,
         );
+        if (!_isCurrentGeneration(generation)) {
+          return;
+        }
+        _state = ReadAloudState.playing;
+        notifyListeners();
       }
     } catch (error, stackTrace) {
       AppLogger.warn('TTS speak failed', error: error, stackTrace: stackTrace);

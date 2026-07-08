@@ -54,7 +54,9 @@ import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/quota_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
+import 'package:codewalk/presentation/services/read_aloud_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/services/tts/tts_backend.dart';
 import 'package:codewalk/presentation/services/workspace_file_operations_service.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
@@ -152,6 +154,46 @@ class _SlashCommandFallbackDioClient extends DioClient {
 
   final List<dynamic> _remoteCommands;
   final List<Map<String, dynamic>> _projectCommandFiles;
+}
+
+class _ControlledTtsBackend implements TtsBackend {
+  final Completer<TtsSynthesisResult> completer =
+      Completer<TtsSynthesisResult>();
+  bool stopped = false;
+
+  @override
+  ReadAloudProvider get provider => ReadAloudProvider.edgeExperimental;
+
+  @override
+  TtsPlaybackMode get playbackMode => TtsPlaybackMode.nativeEngine;
+
+  @override
+  Future<bool> get isAvailable async => true;
+
+  @override
+  Future<List<TtsVoiceOption>> getVoices() async => const <TtsVoiceOption>[];
+
+  @override
+  Future<List<String>> getLanguages() async => const <String>[];
+
+  @override
+  Future<TtsSynthesisResult> speakOrSynthesize(
+    TtsSynthesisRequest request,
+    TtsBackendCallbacks callbacks,
+  ) {
+    return completer.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopped = true;
+  }
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  void dispose() {}
 }
 
 void main() {
@@ -2248,6 +2290,76 @@ void main() {
           findsNothing,
         );
       }
+    });
+
+    testWidgets('does not stop read-aloud on lifecycle changes', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await di.sl.reset();
+      di.sl.registerLazySingleton<DioClient>(DioClient.new);
+      addTearDown(di.sl.reset);
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final backend = _ControlledTtsBackend();
+      final readAloudService = ReadAloudService(
+        backends: <ReadAloudProvider, TtsBackend>{
+          ReadAloudProvider.edgeExperimental: backend,
+        },
+      );
+      di.sl.registerSingleton<ReadAloudService>(readAloudService);
+      addTearDown(readAloudService.dispose);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final speakFuture = readAloudService.speak(
+        messageId: 'msg_1',
+        text: 'Keep playing',
+        provider: ReadAloudProvider.edgeExperimental,
+      );
+      await tester.pump();
+      expect(readAloudService.state, ReadAloudState.loading);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 650));
+      await tester.pump();
+
+      expect(backend.stopped, isFalse);
+      expect(readAloudService.activeMessageId, 'msg_1');
+      expect(readAloudService.state, ReadAloudState.loading);
+
+      backend.completer.complete(const NativeTtsStarted());
+      await speakFuture;
+      expect(readAloudService.state, ReadAloudState.playing);
     });
 
     testWidgets('suppresses unhealthy warning UI during foreground grace', (
