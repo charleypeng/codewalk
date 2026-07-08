@@ -91,6 +91,11 @@ class _IoEdgeTtsWebSocketConnection implements EdgeTtsWebSocketConnection {
   _IoEdgeTtsWebSocketConnection(this._socketFuture);
 
   final Future<WebSocket> _socketFuture;
+  late final Stream<dynamic> _stream =
+      Stream<WebSocket>.fromFuture(_socketFuture).asyncExpand((socket) {
+        _socket = socket;
+        return socket;
+      });
   WebSocket? _socket;
   bool _closed = false;
 
@@ -100,12 +105,7 @@ class _IoEdgeTtsWebSocketConnection implements EdgeTtsWebSocketConnection {
   }
 
   @override
-  Stream<dynamic> get stream {
-    return Stream<WebSocket>.fromFuture(_socketFuture).asyncExpand((socket) {
-      _socket = socket;
-      return socket;
-    });
-  }
+  Stream<dynamic> get stream => _stream;
 
   @override
   void sendText(String data) {
@@ -120,12 +120,18 @@ class _IoEdgeTtsWebSocketConnection implements EdgeTtsWebSocketConnection {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
-    final socket =
-        _socket ??
-        await _socketFuture.timeout(
-          const Duration(seconds: 2),
-          onTimeout: () => throw TimeoutException('websocket close timeout'),
-        );
-    await socket.close();
+    final existing = _socket;
+    if (existing != null) {
+      await existing.close();
+      return;
+    }
+    unawaited(
+      _socketFuture
+          .then((socket) {
+            _socket = socket;
+            return socket.close();
+          })
+          .catchError((_) {}),
+    );
   }
 }

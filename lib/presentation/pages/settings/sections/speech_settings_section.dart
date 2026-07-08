@@ -82,6 +82,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   bool _hasOpenAiCompatibleApiKey = false;
   String? _readAloudApiKeyStatus;
   int _readAloudApiKeyGeneration = 0;
+  Future<List<Map<String, String>>>? _edgeReadAloudVoicesFuture;
 
   bool get _isLinux {
     if (kIsWeb) {
@@ -1783,9 +1784,9 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return const SizedBox.shrink();
     }
     return FutureBuilder<List<Map<String, String>>>(
-      future: di.sl<ReadAloudService>().getVoicesForProvider(
-        ReadAloudProvider.edgeExperimental,
-      ),
+      future: _edgeReadAloudVoicesFuture ??= di
+          .sl<ReadAloudService>()
+          .getVoicesForProvider(ReadAloudProvider.edgeExperimental),
       builder: (context, snapshot) {
         final voices = snapshot.data ?? const <Map<String, String>>[];
         if (voices.isEmpty) {

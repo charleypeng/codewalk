@@ -23,11 +23,13 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
     EdgeTtsNowProvider? nowProvider,
     EdgeTtsIdProvider? idProvider,
   }) : _dio = dio ?? Dio(),
+       _ownsDio = dio == null,
        _connector = connector ?? openEdgeTtsWebSocket,
        _nowProvider = nowProvider ?? DateTime.now,
        _idProvider = idProvider ?? edgeTtsConnectionId;
 
   final Dio _dio;
+  final bool _ownsDio;
   final EdgeTtsWebSocketConnector _connector;
   final EdgeTtsNowProvider _nowProvider;
   final EdgeTtsIdProvider _idProvider;
@@ -103,6 +105,12 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
 
     try {
       await connection.ready.timeout(kEdgeTtsConnectTimeout);
+      if (_cancelled) {
+        throw const TtsBackendException(
+          TtsBackendErrorKind.providerUnavailable,
+          'Microsoft Edge Speech was cancelled.',
+        );
+      }
       final voice = _effectiveVoice(request.voiceId);
       final locale = _effectiveLocale(request.voiceLocale, voice);
       connection.sendText(
@@ -116,12 +124,13 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
             voice: voice,
             locale: locale,
             rate: edgeTtsRateAttribute(request.rate),
-            pitch: edgeTtsPitchAttribute(request.pitch),
+            pitch: edgeTtsPitchAttribute(1.0),
           ),
           nowUtc: _nowProvider().toUtc(),
         ),
       );
       callbacks.onStart?.call();
+      var receivedTurnEnd = false;
 
       await for (final event in connection.stream.timeout(
         kEdgeTtsSynthesisTimeout,
@@ -135,6 +144,7 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
         if (event is String) {
           final frame = parseEdgeTtsTextFrame(event);
           if (frame.path == 'turn.end') {
+            receivedTurnEnd = true;
             break;
           }
           continue;
@@ -144,8 +154,16 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
           if (frame.path != 'audio') {
             continue;
           }
-          if (frame.contentType != null &&
-              frame.contentType != kEdgeTtsAudioMimeType) {
+          if (frame.contentType == null) {
+            if (frame.audioBytes.isEmpty) {
+              continue;
+            }
+            throw const TtsBackendException(
+              TtsBackendErrorKind.providerUnavailable,
+              'Microsoft Edge Speech returned malformed audio data.',
+            );
+          }
+          if (frame.contentType != kEdgeTtsAudioMimeType) {
             throw const TtsBackendException(
               TtsBackendErrorKind.providerUnavailable,
               'Microsoft Edge Speech returned unsupported audio data.',
@@ -162,6 +180,18 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
         );
       }
 
+      if (_cancelled) {
+        throw const TtsBackendException(
+          TtsBackendErrorKind.providerUnavailable,
+          'Microsoft Edge Speech was cancelled.',
+        );
+      }
+      if (!receivedTurnEnd) {
+        throw const TtsBackendException(
+          TtsBackendErrorKind.providerUnavailable,
+          'Microsoft Edge Speech ended before synthesis completed.',
+        );
+      }
       final bytes = audio.takeBytes();
       if (bytes.isEmpty) {
         throw const TtsBackendException(
@@ -186,6 +216,12 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
     } on TtsBackendException {
       rethrow;
     } catch (_) {
+      if (_cancelled) {
+        throw const TtsBackendException(
+          TtsBackendErrorKind.providerUnavailable,
+          'Microsoft Edge Speech was cancelled.',
+        );
+      }
       throw const TtsBackendException(
         TtsBackendErrorKind.network,
         'Microsoft Edge Speech could not be reached.',
@@ -218,7 +254,12 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
   Future<void> pause() async {}
 
   @override
-  void dispose() {}
+  void dispose() {
+    unawaited(stop());
+    if (_ownsDio) {
+      _dio.close(force: true);
+    }
+  }
 
   String _effectiveVoice(String? voiceId) {
     final trimmed = voiceId?.trim();

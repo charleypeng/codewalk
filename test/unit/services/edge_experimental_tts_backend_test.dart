@@ -163,6 +163,54 @@ void main() {
       );
     });
 
+    test(
+      'rejects partial audio when Edge stream ends before turn end',
+      () async {
+        final connection = _FakeEdgeTtsConnection();
+        final ids = _IdSequence(<String>[
+          '11111111111111111111111111111111',
+          '22222222222222222222222222222222',
+        ]);
+        final backend = EdgeExperimentalTtsBackend(
+          connector: (_) => connection,
+          idProvider: ids.next,
+        );
+
+        final resultFuture = backend.speakOrSynthesize(
+          const TtsSynthesisRequest(text: 'Hello Edge', rate: 0.5, pitch: 1.0),
+          const TtsBackendCallbacks(),
+        );
+        await Future<void>.delayed(Duration.zero);
+        connection.add(
+          buildEdgeTtsBinaryFrameForTest(
+            headers: const <String, String>{
+              'Path': 'audio',
+              'Content-Type': kEdgeTtsAudioMimeType,
+            },
+            audioBytes: const <int>[1, 2, 3],
+          ),
+        );
+        await connection.close();
+
+        await expectLater(
+          resultFuture,
+          throwsA(
+            isA<TtsBackendException>()
+                .having(
+                  (error) => error.kind,
+                  'kind',
+                  TtsBackendErrorKind.providerUnavailable,
+                )
+                .having(
+                  (error) => error.message,
+                  'message',
+                  'Microsoft Edge Speech ended before synthesis completed.',
+                ),
+          ),
+        );
+      },
+    );
+
     test('rejects Edge text over direct protocol limit', () async {
       final backend = EdgeExperimentalTtsBackend();
       final tooLong = List<String>.filled(
@@ -205,7 +253,16 @@ void main() {
       await backend.stop();
 
       expect(connection.closed, isTrue);
-      await expectLater(resultFuture, throwsA(isA<TtsBackendException>()));
+      await expectLater(
+        resultFuture,
+        throwsA(
+          isA<TtsBackendException>().having(
+            (error) => error.message,
+            'message',
+            'Microsoft Edge Speech was cancelled.',
+          ),
+        ),
+      );
     });
   });
 }
