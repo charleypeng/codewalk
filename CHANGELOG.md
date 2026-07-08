@@ -2,6 +2,15 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.172.1 - 2026-07-08
+
+- chore(agent): [Step 5/6] validate Edge TTS reviews
+- chore(agent): [Step 4/6] document direct Edge TTS
+- chore(agent): [Step 3/6] wire Edge TTS voices
+- chore(agent): [Step 2/6] implement direct Edge websocket TTS
+- chore(agent): [Step 1/6] add Edge TTS protocol primitives
+- plan: implement direct Edge TTS
+
 ## v1.172.0 - 2026-07-08
 
 - chore(agent): [Step 6/6] resolve cloud TTS reviews
