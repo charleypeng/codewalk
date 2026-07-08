@@ -47,9 +47,13 @@ void main() {
       );
 
       expect(speechConfig, contains('Path:speech.config\r\n'));
+      expect(speechConfig, contains('Wed Jul 08 2026 16:00:00 GMT+0000'));
       expect(speechConfig, contains('\r\n\r\n'));
       expect(speechConfig, contains(kEdgeTtsAudioOutputFormat));
+      expect(speechConfig, contains('"sentenceBoundaryEnabled":"false"'));
+      expect(speechConfig.endsWith('\r\n'), isTrue);
       expect(ssml, contains('Path:ssml\r\n'));
+      expect(ssml, contains('(Coordinated Universal Time)Z\r\n'));
       expect(
         ssml,
         contains('X-RequestId:abcdefabcdefabcdefabcdefabcdefab\r\n'),
@@ -63,13 +67,14 @@ void main() {
         voice: 'en-US-AriaNeural',
         locale: 'en-US',
         rate: '+10%',
-        pitch: '-5%',
+        pitch: '-5Hz',
       );
 
-      expect(ssml, contains('xmlns:mstts='));
-      expect(ssml, contains('<voice name="en-US-AriaNeural">'));
-      expect(ssml, contains('rate="+10%"'));
-      expect(ssml, contains('pitch="-5%"'));
+      expect(ssml, isNot(contains('xmlns:mstts=')));
+      expect(ssml, contains("<voice name='en-US-AriaNeural'>"));
+      expect(ssml, contains("rate='+10%'"));
+      expect(ssml, contains("pitch='-5Hz'"));
+      expect(ssml, contains("volume='+0%'"));
       expect(ssml, contains('Hello &lt;world&gt; &amp; &quot;friends&quot;'));
       expect(ssml, isNot(contains('\u0001')));
     });
@@ -78,9 +83,9 @@ void main() {
       expect(edgeTtsRateAttribute(0.0), '-50%');
       expect(edgeTtsRateAttribute(0.5), '+0%');
       expect(edgeTtsRateAttribute(1.0), '+50%');
-      expect(edgeTtsPitchAttribute(0.5), '-25%');
-      expect(edgeTtsPitchAttribute(1.0), '+0%');
-      expect(edgeTtsPitchAttribute(2.0), '+50%');
+      expect(edgeTtsPitchAttribute(0.5), '-25Hz');
+      expect(edgeTtsPitchAttribute(1.0), '+0Hz');
+      expect(edgeTtsPitchAttribute(2.0), '+50Hz');
     });
 
     test('parses text frames and turn.end path', () {

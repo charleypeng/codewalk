@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 const String kEdgeTtsTrustedClientToken = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+const String kEdgeTtsChromiumMajorVersion = '143';
+const String kEdgeTtsChromiumFullVersion = '143.0.3650.75';
 const String kEdgeTtsSecMsGecVersion = '1-143.0.3650.75';
 const String kEdgeTtsWebSocketBaseUrl =
     'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
@@ -28,9 +31,21 @@ String edgeTtsConnectionId([String? value]) {
   if (value != null && value.trim().isNotEmpty) {
     return value.replaceAll('-', '');
   }
-  final now = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
-  final hash = sha256.convert(utf8.encode('$now:${identityHashCode(now)}'));
-  return hash.toString().substring(0, 32).toUpperCase();
+  return edgeTtsRandomHex32();
+}
+
+String edgeTtsRandomHex32() {
+  final random = Random.secure();
+  final buffer = StringBuffer();
+  for (var i = 0; i < 16; i += 1) {
+    buffer.write(random.nextInt(256).toRadixString(16).padLeft(2, '0'));
+  }
+  return buffer.toString();
+}
+
+String edgeTtsWebSocketKey() {
+  final random = Random.secure();
+  return base64Encode(List<int>.generate(16, (_) => random.nextInt(256)));
 }
 
 Uri edgeTtsWebSocketUri({
@@ -59,12 +74,17 @@ Uri edgeTtsVoicesUri({required DateTime nowUtc}) {
 
 Map<String, String> edgeTtsBrowserHeaders({String? muid}) {
   return <String, String>{
+    'Pragma': 'no-cache',
+    'Cache-Control': 'no-cache',
+    'Accept-Encoding': 'gzip, deflate, br, zstd',
     'Accept-Language': 'en-US,en;q=0.9',
     'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+    'Sec-WebSocket-Version': '13',
     'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-        '(KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.3650.75',
-    if (muid != null && muid.isNotEmpty) 'Cookie': 'MUID=$muid',
+        '(KHTML, like Gecko) Chrome/$kEdgeTtsChromiumMajorVersion.0.0.0 '
+        'Safari/537.36 Edg/$kEdgeTtsChromiumMajorVersion.0.0.0',
+    if (muid != null && muid.isNotEmpty) 'Cookie': 'muid=$muid;',
   };
 }
 
@@ -90,8 +110,8 @@ String edgeTtsSpeechConfigFrame({DateTime? nowUtc}) {
       'synthesis': <String, Object>{
         'audio': <String, Object>{
           'metadataoptions': <String, Object>{
-            'sentenceBoundaryEnabled': false,
-            'wordBoundaryEnabled': true,
+            'sentenceBoundaryEnabled': 'false',
+            'wordBoundaryEnabled': 'true',
           },
           'outputFormat': kEdgeTtsAudioOutputFormat,
         },
@@ -104,7 +124,7 @@ String edgeTtsSpeechConfigFrame({DateTime? nowUtc}) {
       'Path': 'speech.config',
       'X-Timestamp': edgeTtsTimestamp(nowUtc ?? DateTime.now().toUtc()),
     },
-    payload: config,
+    payload: '$config\r\n',
   );
 }
 
@@ -118,14 +138,33 @@ String edgeTtsSsmlFrame({
       'Content-Type': 'application/ssml+xml',
       'Path': 'ssml',
       'X-RequestId': requestId.replaceAll('-', ''),
-      'X-Timestamp': edgeTtsTimestamp(nowUtc ?? DateTime.now().toUtc()),
+      'X-Timestamp': '${edgeTtsTimestamp(nowUtc ?? DateTime.now().toUtc())}Z',
     },
     payload: ssml,
   );
 }
 
 String edgeTtsTimestamp(DateTime utc) {
-  return utc.toUtc().toIso8601String();
+  final value = utc.toUtc();
+  const weekdays = <String>['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const months = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  String two(int number) => number.toString().padLeft(2, '0');
+  return '${weekdays[value.weekday - 1]} ${months[value.month - 1]} '
+      '${two(value.day)} ${value.year} ${two(value.hour)}:${two(value.minute)}:'
+      '${two(value.second)} GMT+0000 (Coordinated Universal Time)';
 }
 
 String buildEdgeTtsSsml({
@@ -135,11 +174,11 @@ String buildEdgeTtsSsml({
   String rate = '+0%',
   String pitch = '+0Hz',
 }) {
-  return '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
-      'xmlns:mstts="https://www.w3.org/2001/mstts" '
-      'xml:lang="${escapeEdgeTtsXml(locale)}"><voice name="${escapeEdgeTtsXml(voice)}">'
-      '<prosody rate="${escapeEdgeTtsXml(rate)}" pitch="${escapeEdgeTtsXml(pitch)}">'
-      '${escapeEdgeTtsXml(stripEdgeTtsControlChars(text))}</prosody></voice></speak>';
+  return "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' "
+      "xml:lang='${escapeEdgeTtsXml(locale)}'><voice name='${escapeEdgeTtsXml(voice)}'>"
+      "<prosody pitch='${escapeEdgeTtsXml(pitch)}' rate='${escapeEdgeTtsXml(rate)}' "
+      "volume='+0%'>${escapeEdgeTtsXml(stripEdgeTtsControlChars(text))}"
+      '</prosody></voice></speak>';
 }
 
 String stripEdgeTtsControlChars(String value) {
@@ -177,7 +216,7 @@ String edgeTtsRateAttribute(double rate) {
 
 String edgeTtsPitchAttribute(double pitch) {
   final percent = ((pitch.clamp(0.5, 2.0) - 1.0) * 50).round();
-  return percent >= 0 ? '+$percent%' : '$percent%';
+  return percent >= 0 ? '+${percent}Hz' : '${percent}Hz';
 }
 
 class EdgeTtsTextFrame {

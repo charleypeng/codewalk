@@ -1,17 +1,38 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../domain/entities/experience_settings.dart';
+import 'edge_tts_protocol.dart';
+import 'edge_tts_websocket.dart';
 import 'tts_backend.dart';
 
-const String kEdgeTtsTrustedClientToken = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const String kEdgeTtsVoicesUrl =
-    'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list';
+const String kDefaultEdgeTtsVoice = 'en-US-AriaNeural';
+const Duration kEdgeTtsConnectTimeout = Duration(seconds: 10);
+const Duration kEdgeTtsSynthesisTimeout = Duration(seconds: 45);
+
+typedef EdgeTtsNowProvider = DateTime Function();
+typedef EdgeTtsIdProvider = String Function();
 
 class EdgeExperimentalTtsBackend implements TtsBackend {
-  EdgeExperimentalTtsBackend({Dio? dio}) : _dio = dio ?? Dio();
+  EdgeExperimentalTtsBackend({
+    Dio? dio,
+    EdgeTtsWebSocketConnector? connector,
+    EdgeTtsNowProvider? nowProvider,
+    EdgeTtsIdProvider? idProvider,
+  }) : _dio = dio ?? Dio(),
+       _connector = connector ?? openEdgeTtsWebSocket,
+       _nowProvider = nowProvider ?? DateTime.now,
+       _idProvider = idProvider ?? edgeTtsConnectionId;
 
   final Dio _dio;
+  final EdgeTtsWebSocketConnector _connector;
+  final EdgeTtsNowProvider _nowProvider;
+  final EdgeTtsIdProvider _idProvider;
+  EdgeTtsWebSocketConnection? _activeConnection;
+  bool _cancelled = false;
 
   @override
   ReadAloudProvider get provider => ReadAloudProvider.edgeExperimental;
@@ -20,17 +41,19 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
   TtsPlaybackMode get playbackMode => TtsPlaybackMode.generatedAudio;
 
   @override
-  Future<bool> get isAvailable async => false;
+  Future<bool> get isAvailable async => true;
 
   @override
   Future<List<TtsVoiceOption>> getVoices() async {
     try {
       final response = await _dio.get<dynamic>(
-        kEdgeTtsVoicesUrl,
-        queryParameters: <String, String>{
-          'trustedclienttoken': kEdgeTtsTrustedClientToken,
-        },
-        options: Options(responseType: ResponseType.json),
+        edgeTtsVoicesUri(nowUtc: _nowProvider().toUtc()).toString(),
+        options: Options(
+          responseType: ResponseType.json,
+          connectTimeout: kEdgeTtsConnectTimeout,
+          receiveTimeout: kEdgeTtsSynthesisTimeout,
+          headers: edgeTtsBrowserHeaders(),
+        ),
       );
       return parseEdgeTtsVoices(response.data);
     } catch (_) {
@@ -53,20 +76,168 @@ class EdgeExperimentalTtsBackend implements TtsBackend {
     TtsSynthesisRequest request,
     TtsBackendCallbacks callbacks,
   ) async {
-    throw const TtsBackendException(
-      TtsBackendErrorKind.providerUnavailable,
-      'Microsoft Edge Speech is experimental and direct synthesis is blocked in this build because the unofficial Edge Read Aloud protocol requires unstable Edge-specific transport headers. Use an OpenAI-compatible Edge proxy or switch providers.',
+    final text = stripEdgeTtsControlChars(request.text).trim();
+    if (text.isEmpty) {
+      throw const TtsBackendException(
+        TtsBackendErrorKind.invalidRequest,
+        'There is no text to read aloud.',
+      );
+    }
+    if (isEdgeTtsInputTooLong(text)) {
+      throw const TtsBackendException(
+        TtsBackendErrorKind.invalidRequest,
+        'Microsoft Edge Speech can read up to 4096 bytes at a time.',
+      );
+    }
+
+    final connectionId = _idProvider().replaceAll('-', '');
+    final requestId = _idProvider().replaceAll('-', '');
+    final uri = edgeTtsWebSocketUri(
+      connectionId: connectionId,
+      nowUtc: _nowProvider().toUtc(),
     );
+    final connection = _connector(uri);
+    _cancelled = false;
+    _activeConnection = connection;
+    final audio = BytesBuilder(copy: false);
+
+    try {
+      await connection.ready.timeout(kEdgeTtsConnectTimeout);
+      final voice = _effectiveVoice(request.voiceId);
+      final locale = _effectiveLocale(request.voiceLocale, voice);
+      connection.sendText(
+        edgeTtsSpeechConfigFrame(nowUtc: _nowProvider().toUtc()),
+      );
+      connection.sendText(
+        edgeTtsSsmlFrame(
+          requestId: requestId,
+          ssml: buildEdgeTtsSsml(
+            text: text,
+            voice: voice,
+            locale: locale,
+            rate: edgeTtsRateAttribute(request.rate),
+            pitch: edgeTtsPitchAttribute(request.pitch),
+          ),
+          nowUtc: _nowProvider().toUtc(),
+        ),
+      );
+      callbacks.onStart?.call();
+
+      await for (final event in connection.stream.timeout(
+        kEdgeTtsSynthesisTimeout,
+      )) {
+        if (_cancelled) {
+          throw const TtsBackendException(
+            TtsBackendErrorKind.providerUnavailable,
+            'Microsoft Edge Speech was cancelled.',
+          );
+        }
+        if (event is String) {
+          final frame = parseEdgeTtsTextFrame(event);
+          if (frame.path == 'turn.end') {
+            break;
+          }
+          continue;
+        }
+        if (event is List<int>) {
+          final frame = parseEdgeTtsBinaryFrame(event);
+          if (frame.path != 'audio') {
+            continue;
+          }
+          if (frame.contentType != null &&
+              frame.contentType != kEdgeTtsAudioMimeType) {
+            throw const TtsBackendException(
+              TtsBackendErrorKind.providerUnavailable,
+              'Microsoft Edge Speech returned unsupported audio data.',
+            );
+          }
+          if (frame.audioBytes.isNotEmpty) {
+            audio.add(frame.audioBytes);
+          }
+          continue;
+        }
+        throw const TtsBackendException(
+          TtsBackendErrorKind.providerUnavailable,
+          'Microsoft Edge Speech returned an unsupported websocket frame.',
+        );
+      }
+
+      final bytes = audio.takeBytes();
+      if (bytes.isEmpty) {
+        throw const TtsBackendException(
+          TtsBackendErrorKind.providerUnavailable,
+          'Microsoft Edge Speech returned an empty audio response.',
+        );
+      }
+      return GeneratedTtsAudio(
+        bytes: Uint8List.fromList(bytes),
+        mimeType: kEdgeTtsAudioMimeType,
+      );
+    } on TimeoutException catch (_) {
+      throw const TtsBackendException(
+        TtsBackendErrorKind.network,
+        'Microsoft Edge Speech timed out.',
+      );
+    } on FormatException catch (_) {
+      throw const TtsBackendException(
+        TtsBackendErrorKind.providerUnavailable,
+        'Microsoft Edge Speech returned malformed audio data.',
+      );
+    } on TtsBackendException {
+      rethrow;
+    } catch (_) {
+      throw const TtsBackendException(
+        TtsBackendErrorKind.network,
+        'Microsoft Edge Speech could not be reached.',
+      );
+    } finally {
+      if (identical(_activeConnection, connection)) {
+        _activeConnection = null;
+      }
+      try {
+        await connection.close().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {},
+        );
+      } catch (_) {}
+    }
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    _cancelled = true;
+    final connection = _activeConnection;
+    _activeConnection = null;
+    await connection?.close().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () {},
+    );
+  }
 
   @override
   Future<void> pause() async {}
 
   @override
   void dispose() {}
+
+  String _effectiveVoice(String? voiceId) {
+    final trimmed = voiceId?.trim();
+    return trimmed != null && trimmed.isNotEmpty
+        ? trimmed
+        : kDefaultEdgeTtsVoice;
+  }
+
+  String _effectiveLocale(String? locale, String voice) {
+    final trimmed = locale?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      return trimmed;
+    }
+    final parts = voice.split('-');
+    if (parts.length >= 2) {
+      return '${parts[0]}-${parts[1]}';
+    }
+    return 'en-US';
+  }
 }
 
 @visibleForTesting
@@ -102,28 +273,4 @@ List<TtsVoiceOption> parseEdgeTtsVoices(dynamic data) {
       })
       .whereType<TtsVoiceOption>()
       .toList(growable: false);
-}
-
-@visibleForTesting
-String buildEdgeTtsSsml({
-  required String text,
-  required String voice,
-  String locale = 'en-US',
-  String rate = '+0%',
-  String pitch = '+0Hz',
-}) {
-  return '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
-      'xml:lang="${escapeEdgeTtsXml(locale)}"><voice name="${escapeEdgeTtsXml(voice)}">'
-      '<prosody rate="${escapeEdgeTtsXml(rate)}" pitch="${escapeEdgeTtsXml(pitch)}">'
-      '${escapeEdgeTtsXml(text)}</prosody></voice></speak>';
-}
-
-@visibleForTesting
-String escapeEdgeTtsXml(String value) {
-  return value
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&apos;');
 }
