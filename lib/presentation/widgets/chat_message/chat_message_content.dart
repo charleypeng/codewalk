@@ -463,39 +463,40 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         return Tooltip(
           message: tooltip,
           child: InkResponse(
-            onTap: isLoading
-                ? null
-                : () {
-                    // Guard: respect the current setting even if the button was
-                    // rendered before the user toggled readAloudEnabled off.
-                    if (!settingsProvider.readAloudEnabled) {
-                      return;
-                    }
-                    if (isPlaying) {
-                      unawaited(readAloudService.stop());
-                      return;
-                    }
-                    final text = _extractReadableText(message);
-                    if (text.isEmpty) {
-                      return;
-                    }
-                    unawaited(
-                      readAloudService.speak(
-                        messageId: message.id,
-                        text: text,
-                        provider: settingsProvider.readAloudProvider,
-                        rate: settingsProvider.readAloudRate,
-                        pitch: settingsProvider.readAloudPitch,
-                        voice: settingsProvider.readAloudVoice,
-                        voiceId: settingsProvider.readAloudVoiceId,
-                        voiceLocale: settingsProvider.readAloudVoiceLocale,
-                        model: settingsProvider.readAloudModel,
-                        baseUrl: settingsProvider.readAloudBaseUrl,
-                        responseFormat:
-                            settingsProvider.readAloudResponseFormat,
-                      ),
-                    );
-                  },
+            onTap: () {
+              // Guard: respect the current setting even if the button was
+              // rendered before the user toggled readAloudEnabled off.
+              if (!settingsProvider.readAloudEnabled) {
+                return;
+              }
+              if (isLoading) {
+                unawaited(readAloudService.stop());
+                return;
+              }
+              if (isPlaying) {
+                unawaited(readAloudService.stop());
+                return;
+              }
+              final text = _extractReadableText(message);
+              if (text.isEmpty) {
+                return;
+              }
+              unawaited(
+                readAloudService.speak(
+                  messageId: message.id,
+                  text: text,
+                  provider: settingsProvider.readAloudProvider,
+                  rate: settingsProvider.readAloudRate,
+                  pitch: settingsProvider.readAloudPitch,
+                  voice: settingsProvider.readAloudVoice,
+                  voiceId: settingsProvider.readAloudVoiceId,
+                  voiceLocale: settingsProvider.readAloudVoiceLocale,
+                  model: settingsProvider.readAloudModel,
+                  baseUrl: settingsProvider.readAloudBaseUrl,
+                  responseFormat: settingsProvider.readAloudResponseFormat,
+                ),
+              );
+            },
             onLongPress: () => _openReadAloudSettings(context),
             radius: 18,
             child: SizedBox.square(

@@ -35,6 +35,7 @@ import '../support/pump_localized_app.dart';
 class _ControlledTtsBackend implements TtsBackend {
   final Completer<TtsSynthesisResult> completer =
       Completer<TtsSynthesisResult>();
+  bool stopped = false;
 
   @override
   ReadAloudProvider get provider => ReadAloudProvider.edgeExperimental;
@@ -60,7 +61,9 @@ class _ControlledTtsBackend implements TtsBackend {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    stopped = true;
+  }
 
   @override
   Future<void> pause() async {}
@@ -159,6 +162,12 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byIcon(Symbols.volume_up), findsNothing);
+
+    await tester.tap(find.byType(CircularProgressIndicator));
+    await tester.pump();
+
+    expect(backend.stopped, isTrue);
+    expect(readAloudService.state, ReadAloudState.idle);
 
     backend.completer.complete(const NativeTtsStarted());
     await speakFuture;

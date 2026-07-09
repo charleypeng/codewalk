@@ -144,17 +144,20 @@ class _EngineOnlyFlutterTts extends _FakeFlutterTts {
 }
 
 class _FakeGeneratedBackend implements TtsBackend {
-  _FakeGeneratedBackend({Future<TtsSynthesisResult>? result})
-    : result =
-          result ??
-          Future<TtsSynthesisResult>.value(
-            GeneratedTtsAudio(
-              bytes: Uint8List.fromList(<int>[1, 2, 3]),
-              mimeType: 'audio/mpeg',
-            ),
-          );
+  _FakeGeneratedBackend({
+    Future<TtsSynthesisResult>? result,
+    this.callOnStart = false,
+  }) : result =
+           result ??
+           Future<TtsSynthesisResult>.value(
+             GeneratedTtsAudio(
+               bytes: Uint8List.fromList(<int>[1, 2, 3]),
+               mimeType: 'audio/mpeg',
+             ),
+           );
 
   final Future<TtsSynthesisResult> result;
+  final bool callOnStart;
   final List<TtsSynthesisRequest> requests = <TtsSynthesisRequest>[];
   bool stopped = false;
   bool paused = false;
@@ -174,6 +177,9 @@ class _FakeGeneratedBackend implements TtsBackend {
     TtsBackendCallbacks callbacks,
   ) async {
     requests.add(request);
+    if (callOnStart) {
+      callbacks.onStart?.call();
+    }
     return result;
   }
 
@@ -505,7 +511,10 @@ void main() {
 
     test('stop cancels slow generated audio before playback starts', () async {
       final completer = Completer<TtsSynthesisResult>();
-      final backend = _FakeGeneratedBackend(result: completer.future);
+      final backend = _FakeGeneratedBackend(
+        result: completer.future,
+        callOnStart: true,
+      );
       final player = _FakeTtsAudioPlayer();
       final service = ReadAloudService(
         backends: <ReadAloudProvider, TtsBackend>{

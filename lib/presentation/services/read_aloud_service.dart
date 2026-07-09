@@ -143,7 +143,7 @@ class ReadAloudService extends ChangeNotifier {
           responseFormat: responseFormat,
           apiKey: apiKey ?? await _apiKeyForProvider(provider),
         ),
-        _callbacksFor(generation),
+        _callbacksFor(generation, backend.playbackMode),
       );
       if (!_isCurrentGeneration(generation)) {
         return;
@@ -322,10 +322,15 @@ class ReadAloudService extends ChangeNotifier {
     return legacy != null && legacy.isNotEmpty ? legacy : null;
   }
 
-  TtsBackendCallbacks _callbacksFor(int generation) {
+  TtsBackendCallbacks _callbacksFor(
+    int generation,
+    TtsPlaybackMode playbackMode,
+  ) {
     return TtsBackendCallbacks(
       onStart: () {
         if (!_isCurrentGeneration(generation)) return;
+        if (playbackMode != TtsPlaybackMode.nativeEngine) return;
+        if (_state != ReadAloudState.loading) return;
         _state = ReadAloudState.playing;
         notifyListeners();
       },
