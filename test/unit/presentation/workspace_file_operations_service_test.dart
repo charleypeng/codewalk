@@ -64,6 +64,9 @@ void main() {
       expect(second.shellFileOpsSupported, isTrue);
       expect(fakeServer.shellCallCount, 1);
       expect(fakeServer.deletedSessions, <String>['ses_1']);
+      expect(fakeServer.createdSessionDirectories, <String?>['/repo/a']);
+      expect(fakeServer.shellDirectories, <String?>['/repo/a']);
+      expect(fakeServer.deletedSessionDirectories, <String?>['/repo/a']);
     });
 
     test('invalid names fail before any shell call', () async {
@@ -220,6 +223,15 @@ void main() {
         contains(r'cw_copy_mode "$target" "$tmp"'),
       );
       expect(fakeServer.commands.last, contains(r'mv -- "$tmp" "$target"'));
+      expect(fakeServer.createdSessionDirectories, <String?>[
+        '/repo/a',
+        '/repo/a',
+      ]);
+      expect(fakeServer.shellDirectories, <String?>['/repo/a', '/repo/a']);
+      expect(fakeServer.deletedSessionDirectories, <String?>[
+        '/repo/a',
+        '/repo/a',
+      ]);
     });
 
     test('write file rejects paths outside root before shell calls', () async {
@@ -364,6 +376,9 @@ class _FakeShellServer {
           if (options.method == 'POST' && path == '/session') {
             final id = 'ses_${createdSessions.length + 1}';
             createdSessions.add(id);
+            createdSessionDirectories.add(
+              options.queryParameters['directory'] as String?,
+            );
             handler.resolve(
               Response<dynamic>(
                 requestOptions: options,
@@ -376,6 +391,9 @@ class _FakeShellServer {
 
           if (options.method == 'POST' && path.endsWith('/shell')) {
             shellCallCount += 1;
+            shellDirectories.add(
+              options.queryParameters['directory'] as String?,
+            );
             final data = Map<String, dynamic>.from(options.data as Map);
             commands.add(data['command'] as String? ?? '');
             final payload = _shellPayloads.isEmpty
@@ -398,6 +416,9 @@ class _FakeShellServer {
 
           if (options.method == 'DELETE' && path.startsWith('/session/')) {
             deletedSessions.add(path.substring('/session/'.length));
+            deletedSessionDirectories.add(
+              options.queryParameters['directory'] as String?,
+            );
             handler.resolve(
               Response<dynamic>(requestOptions: options, statusCode: 200),
             );
@@ -419,6 +440,9 @@ class _FakeShellServer {
   final List<String?> _shellPayloads;
   final List<String> createdSessions = <String>[];
   final List<String> deletedSessions = <String>[];
+  final List<String?> createdSessionDirectories = <String?>[];
+  final List<String?> shellDirectories = <String?>[];
+  final List<String?> deletedSessionDirectories = <String?>[];
   final List<String> commands = <String>[];
   int shellCallCount = 0;
 }

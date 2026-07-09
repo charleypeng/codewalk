@@ -6158,12 +6158,25 @@ void main() {
           content: 'void before() {}',
           isBinary: false,
         );
-    final fileOperations = FakeWorkspaceFileOperationsService(
-      capabilities: const WorkspaceFileOperationsCapabilities(
-        shellFileOpsSupported: true,
-        message: 'ok',
-      ),
-    );
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onWriteFile =
+              ({
+                required rootDirectory,
+                required path,
+                required content,
+              }) async {
+                projectRepository.fileContentsByPath[path] = FileContent(
+                  path: path,
+                  content: content,
+                  isBinary: false,
+                );
+              };
 
     final provider = _buildChatProvider(
       localDataSource: localDataSource,
@@ -6219,6 +6232,31 @@ void main() {
       findsNothing,
     );
     expect(find.text('File saved.'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_close_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<CodeEditor>(editorFinder).controller!.text,
+      'void after() {}',
+    );
   });
 
   testWidgets('file editor preserves CRLF line endings when saving', (
@@ -7456,6 +7494,82 @@ void main() {
       find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('file tree keeps a deleted row removed when refresh fails', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_delete_refresh_failed',
+        name: 'Project Files Delete Refresh Failed',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_delete_refresh_failed',
+          name: 'Project Files Delete Refresh Failed',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: 'docs/note.md', name: 'note.md', type: FileNodeType.file),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onDelete =
+              ({
+                required rootDirectory,
+                required parentDirectory,
+                required name,
+              }) async {
+                projectRepository.directoryFailure = const ServerFailure(
+                  'refresh failed',
+                );
+              };
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_delete')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.deleteCallCount, 1);
+    expect(
+      find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
+      findsNothing,
+    );
+    expect(find.text('Deleted.'), findsOneWidget);
   });
 
   testWidgets(
