@@ -574,7 +574,7 @@ class WorkspaceFileOperationsServiceImpl
   }) async {
     String? sessionId;
     try {
-      sessionId = await _createEphemeralSession();
+      sessionId = await _createEphemeralSession(directory: directory);
       if (sessionId == null) {
         return _result(WorkspaceFileOperationCode.unavailable);
       }
@@ -604,7 +604,10 @@ class WorkspaceFileOperationsServiceImpl
     } finally {
       if (sessionId != null) {
         try {
-          await _dio.delete<dynamic>('/session/$sessionId');
+          await _dio.delete<dynamic>(
+            '/session/$sessionId',
+            queryParameters: <String, String>{'directory': directory},
+          );
         } catch (_) {}
         final ephemeralId = sessionId;
         Future<void>.delayed(const Duration(seconds: 5), () {
@@ -614,12 +617,13 @@ class WorkspaceFileOperationsServiceImpl
     }
   }
 
-  Future<String?> _createEphemeralSession() async {
+  Future<String?> _createEphemeralSession({required String directory}) async {
     final response = await _dio.post<dynamic>(
       '/session',
       data: <String, dynamic>{
         'title': ChatTitleGenerator.ephemeralSessionTitle,
       },
+      queryParameters: <String, String>{'directory': directory},
     );
     final data = response.data;
     if (data is! Map) {

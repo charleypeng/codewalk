@@ -1334,6 +1334,20 @@ extension _ChatPageFileRuntime on _ChatPageState {
   }) {
     final normalized = _normalizeFilePath(path);
     _setState(() {
+      for (final cacheKey in fileState.directoryChildren.keys.toList()) {
+        final children = fileState.directoryChildren[cacheKey]!;
+        final remaining = children
+            .where(
+              (node) => !_pathEqualsOrIsChild(
+                _normalizeFilePath(node.path),
+                normalized,
+              ),
+            )
+            .toList(growable: false);
+        if (remaining.length != children.length) {
+          fileState.directoryChildren[cacheKey] = remaining;
+        }
+      }
       fileState.tabsByPath.removeWhere(
         (path, _) => _pathEqualsOrIsChild(path, normalized),
       );
