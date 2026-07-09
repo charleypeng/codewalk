@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.173.0 - 2026-07-09
+
+- chore(agent): [Step 4/5] validate read-aloud playback UX changes
+- chore(agent): [Step 3/5] document read-aloud playback UX changes
+- chore(agent): [Step 2/5] add read-aloud button loading and settings shortcut
+- chore(agent): [Step 1/5] preserve TTS playback across lifecycle changes
+- plan: keep TTS playback across window switches
+
 ## v1.172.2 - 2026-07-08
 
 - chore(agent): [Step 4/5] validate adaptive TTS defaults
