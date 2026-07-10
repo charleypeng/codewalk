@@ -360,11 +360,14 @@
 - **When** the user opens a non-binary text file from the file tree, Quick Open, or a tapped assistant file path
 - **Then** the open-files surface renders a focused code editor with line numbers, syntax highlighting, tabbed open files, and the same desktop/mobile dialog behavior as the file viewer
 - **Then** editing a file marks its tab dirty with `*` and enables the viewer `Save` action
-- **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service, not through a local client filesystem write
-- **Then** a successful save preserves the file's LF, CRLF, or CR line-ending style, clears the dirty marker, updates the open tab's saved content, and shows a save confirmation
-- **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces the operation error inline and via snackbar
+- **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service scoped to the active project directory, not through a local client filesystem write
+- **Then** a successful save preserves the file's LF, CRLF, or CR line-ending style, clears the dirty marker, updates the open tab's saved content, shows a save confirmation, and remains visible after closing and reopening the file
+- **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces an actionable operation error inline and via snackbar
 - **Then** selecting editor gutter lines and choosing Add to chat sends the current draft text for the selected line ranges, including LF, CRLF, and CR files
 - **Then** if a dirty open tab would be closed, reloaded by manual retry, or reloaded by diff-aware refresh, the action is skipped so unsaved edits are not overwritten
+- **Then** a confirmed successful delete runs in the active project directory, removes the deleted file or folder row from the tree immediately, and does not let failed, stale, or racing relists restore that row
+- **Then** while a delete is pending, matching and descendant editors become read-only and overlapping create, rename, delete, and save actions for the same path subtree are blocked to prevent data loss
+- **Then** failed delete, create, rename, and save operations keep the current draft or tree state and surface actionable errors instead of silently reverting or dropping state
 - **Then** rename and delete actions for a file or containing folder are blocked while a matching editor draft is dirty or saving, including relative and absolute file-tree path aliases
 - **Then** empty non-binary text files open as blank editable drafts and can become dirty before the first save
 - **Then** binary files keep their existing non-editing fallback state
