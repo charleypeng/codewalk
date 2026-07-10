@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.174.0 - 2026-07-10
+
+- chore(agent): [Step 4/5] document race-safe file operations
+- chore(agent): [Step 3/5] validate and harden file operations
+- chore(agent): [Step 2/5] add file save and delete regressions
+- chore(agent): [Step 1/5] scope file mutations and reconcile deletes
+- plan: fix workspace file save and delete
+
 ## v1.173.0 - 2026-07-09
 
 - chore(agent): [Step 4/5] validate read-aloud playback UX changes
