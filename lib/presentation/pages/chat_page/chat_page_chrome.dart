@@ -1106,7 +1106,7 @@ extension _ChatPageChrome on _ChatPageState {
                 ),
               ),
               body: StatefulBuilder(
-                builder: (context, setDialogState) {
+                builder: (statefulContext, setDialogState) {
                   return Consumer3<ProjectProvider, AppProvider, ChatProvider>(
                     builder:
                         (
@@ -1131,7 +1131,12 @@ extension _ChatPageChrome on _ChatPageState {
                               fileState: fileState,
                               projectProvider: projectProvider,
                               isMobileLayout: true,
-                              onStateChanged: () => setDialogState(() {}),
+                              onStateChanged: () {
+                                if (!statefulContext.mounted) {
+                                  return;
+                                }
+                                setDialogState(() {});
+                              },
                             ),
                           );
                         },

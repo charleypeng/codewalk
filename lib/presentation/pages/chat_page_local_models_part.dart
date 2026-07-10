@@ -14,6 +14,7 @@ class _FileExplorerContextState {
       <String, _FileTabViewState>{};
   final Map<String, _FileEditorDraftState> editorDraftsByPath =
       <String, _FileEditorDraftState>{};
+  final Set<String> pendingMutationPaths = <String>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
   WorkspaceFileOperationsCapabilities? fileOperationCapabilities;
   bool fileOperationCapabilitiesLoading = false;
@@ -38,6 +39,7 @@ class _FileExplorerContextState {
     directoryErrors.clear();
     tabsByPath.clear();
     _disposeEditorDrafts();
+    pendingMutationPaths.clear();
     fileOperationCapabilities = null;
     fileOperationCapabilitiesLoading = false;
     fileOperationCapabilitiesLoad = null;

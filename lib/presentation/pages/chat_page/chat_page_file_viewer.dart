@@ -11,6 +11,8 @@ extension _ChatPageFileViewer on _ChatPageState {
       'Save changes before changing this path.';
   static const String _savingPathMutationBlockedMessage =
       'Wait for the file save to finish before changing this path.';
+  static const String _pathMutationInProgressMessage =
+      'Wait for the file operation to finish.';
 
   Widget _buildFileViewerPanel({
     required _FileExplorerContextState fileState,
@@ -331,6 +333,7 @@ extension _ChatPageFileViewer on _ChatPageState {
       content: content,
     );
     final readOnlyReason = _editorReadOnlyReason(
+      path: normalizedPath,
       content: content,
       fileState: fileState,
     );
@@ -342,7 +345,11 @@ extension _ChatPageFileViewer on _ChatPageState {
       fileState: fileState,
       readOnly: readOnlyReason != null,
       readOnlyReason: readOnlyReason,
-      canSave: _canSaveFileDraft(fileState: fileState, draft: draft),
+      canSave: _canSaveFileDraft(
+        fileState: fileState,
+        path: normalizedPath,
+        draft: draft,
+      ),
       onSave: () => unawaited(
         _saveFileEditorDraft(
           fileState: fileState,
@@ -430,7 +437,11 @@ extension _ChatPageFileViewer on _ChatPageState {
     final canSave =
         active.status == _FileTabLoadStatus.ready &&
         draft != null &&
-        _canSaveFileDraft(fileState: fileState, draft: draft);
+        _canSaveFileDraft(
+          fileState: fileState,
+          path: normalizedPath,
+          draft: draft,
+        );
     final isSaving = draft?.isSaving == true;
     return TextButton.icon(
       key: const ValueKey<String>('file_viewer_save_button'),
@@ -457,6 +468,7 @@ extension _ChatPageFileViewer on _ChatPageState {
 
   bool _canSaveFileDraft({
     required _FileExplorerContextState fileState,
+    required String path,
     required _FileEditorDraftState draft,
   }) {
     if (!draft.isDirty || draft.isSaving) {
@@ -466,6 +478,7 @@ extension _ChatPageFileViewer on _ChatPageState {
       return false;
     }
     return _editorReadOnlyReason(
+          path: path,
           content: draft.savedContent,
           fileState: fileState,
         ) ==
@@ -473,9 +486,16 @@ extension _ChatPageFileViewer on _ChatPageState {
   }
 
   String? _editorReadOnlyReason({
+    required String path,
     required String content,
     required _FileExplorerContextState fileState,
   }) {
+    if (_hasPendingFileTreeMutation(
+      fileState,
+      _fileTreePathAliases(fileState, path),
+    )) {
+      return _pathMutationInProgressMessage;
+    }
     if (_isEditorContentTooLarge(content)) {
       return 'Large files open read-only to keep editing responsive.';
     }

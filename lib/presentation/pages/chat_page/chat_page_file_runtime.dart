@@ -610,7 +610,12 @@ extension _ChatPageFileRuntime on _ChatPageState {
                     projectProvider: projectProvider,
                     height: double.infinity,
                     margin: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                    onStateChanged: () => setDialogState(() {}),
+                    onStateChanged: () {
+                      if (!dialogContext.mounted) {
+                        return;
+                      }
+                      setDialogState(() {});
+                    },
                     onContextAdded: () {
                       // Pop both the file viewer dialog and the mobile
                       // Files dialog behind it (two stacked routes).
@@ -665,7 +670,12 @@ extension _ChatPageFileRuntime on _ChatPageState {
                           projectProvider: projectProvider,
                           height: double.infinity,
                           margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                          onStateChanged: () => setDialogState(() {}),
+                          onStateChanged: () {
+                            if (!dialogContext.mounted) {
+                              return;
+                            }
+                            setDialogState(() {});
+                          },
                           onContextAdded: () {
                             Navigator.of(dialogContext).pop();
                             _inputFocusNode.requestFocus();
@@ -861,6 +871,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final successMessage = createFolder
         ? context.l10n.filesFolderCreated
         : context.l10n.filesFileCreated;
+    if (_isInsidePendingFileTreeMutation(
+      fileState,
+      _fileTreePathAliases(fileState, parentDirectory),
+    )) {
+      _showFileOperationSnackBar(
+        _ChatPageFileViewer._pathMutationInProgressMessage,
+      );
+      return;
+    }
     final name = await _showFileNameDialog(
       title: createFolder
           ? context.l10n.filesCreateFolderTitle
@@ -870,6 +889,16 @@ extension _ChatPageFileRuntime on _ChatPageState {
           : context.l10n.filesNewFile,
     );
     if (name == null || !mounted) {
+      return;
+    }
+    final targetPath = _joinFilePath(parentDirectory, name);
+    if (_hasPendingFileTreeMutation(
+      fileState,
+      _fileTreePathAliases(fileState, targetPath),
+    )) {
+      _showFileOperationSnackBar(
+        _ChatPageFileViewer._pathMutationInProgressMessage,
+      );
       return;
     }
     final service = di.sl<WorkspaceFileOperationsService>();
@@ -988,12 +1017,12 @@ extension _ChatPageFileRuntime on _ChatPageState {
     VoidCallback? onUpdated,
   }) async {
     final successMessage = context.l10n.filesDeleted;
+    final nodePathAliases = _fileTreePathAliases(fileState, node.path);
     final nodePath = _absoluteFileTreePath(fileState, node.path);
-    final originalNodePath = _normalizeFilePath(node.path);
     if (_blockPathMutationForActiveEditorDrafts(
       fileState: fileState,
       path: nodePath,
-      alternatePath: originalNodePath,
+      alternatePath: node.path,
       onUpdated: onUpdated,
     )) {
       return;
@@ -1003,6 +1032,10 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     final parentDirectory = _parentDirectoryForFilePath(nodePath);
+    _setState(() {
+      fileState.pendingMutationPaths.addAll(nodePathAliases);
+    });
+    onUpdated?.call();
     final result = await di.sl<WorkspaceFileOperationsService>().delete(
       serverScopeKey: projectProvider.contextKey,
       rootDirectory: fileState.rootDirectory,
@@ -1010,20 +1043,21 @@ extension _ChatPageFileRuntime on _ChatPageState {
       name: node.name,
     );
     if (!mounted) {
+      fileState.pendingMutationPaths.removeAll(nodePathAliases);
       return;
     }
+    _setState(() {
+      fileState.pendingMutationPaths.removeAll(nodePathAliases);
+    });
+    onUpdated?.call();
     if (!result.ok) {
       _showFileOperationSnackBar(
         _fileOperationErrorLabel(result.code, message: result.message),
       );
       return;
     }
-    _reconcileDeletedFileTreePath(fileState: fileState, path: nodePath);
-    if (originalNodePath != nodePath) {
-      _reconcileDeletedFileTreePath(
-        fileState: fileState,
-        path: originalNodePath,
-      );
+    for (final path in nodePathAliases) {
+      _reconcileDeletedFileTreePath(fileState: fileState, path: path);
     }
     await _refreshFileTreeDirectory(
       fileState: fileState,
@@ -1037,6 +1071,13 @@ extension _ChatPageFileRuntime on _ChatPageState {
       ),
       onUpdated: onUpdated,
     );
+    if (!mounted) {
+      return;
+    }
+    for (final path in nodePathAliases) {
+      _reconcileDeletedFileTreePath(fileState: fileState, path: path);
+    }
+    onUpdated?.call();
     _showFileOperationSnackBar(successMessage);
   }
 
@@ -1046,10 +1087,18 @@ extension _ChatPageFileRuntime on _ChatPageState {
     String? alternatePath,
     VoidCallback? onUpdated,
   }) {
-    final normalizedPaths = <String>{
-      _normalizeFilePath(path),
-      if (alternatePath != null) _normalizeFilePath(alternatePath),
-    };
+    final normalizedPaths = <String>{};
+    for (final candidate in <String?>[path, alternatePath]) {
+      if (candidate != null) {
+        normalizedPaths.addAll(_fileTreePathAliases(fileState, candidate));
+      }
+    }
+    if (_hasPendingFileTreeMutation(fileState, normalizedPaths)) {
+      _showFileOperationSnackBar(
+        _ChatPageFileViewer._pathMutationInProgressMessage,
+      );
+      return true;
+    }
     final blockedDrafts = fileState.editorDraftsByPath.entries
         .where(
           (entry) =>
@@ -1146,6 +1195,18 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final normalizedPath = _normalizeFilePath(path);
     final draft = fileState.editorDraftsByPath[normalizedPath];
     if (draft == null || !draft.isDirty || draft.isSaving) {
+      return;
+    }
+    if (_hasPendingFileTreeMutation(
+      fileState,
+      _fileTreePathAliases(fileState, normalizedPath),
+    )) {
+      const message = _ChatPageFileViewer._pathMutationInProgressMessage;
+      _setState(() {
+        draft.saveErrorMessage = message;
+      });
+      onUpdated?.call();
+      _showFileOperationSnackBar(message);
       return;
     }
     if (!di.sl.isRegistered<WorkspaceFileOperationsService>() ||
@@ -1248,6 +1309,45 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return _normalizeFilePath('/$normalized');
     }
     return _normalizeFilePath('$root/$normalized');
+  }
+
+  Set<String> _fileTreePathAliases(
+    _FileExplorerContextState fileState,
+    String path,
+  ) {
+    final normalized = _normalizeFilePath(path);
+    final absolute = _absoluteFileTreePath(fileState, normalized);
+    final root = _normalizeFilePath(fileState.rootDirectory);
+    return <String>{
+      normalized,
+      absolute,
+      if (root.isNotEmpty && root != '/' && absolute.startsWith('$root/'))
+        absolute.substring(root.length + 1),
+    };
+  }
+
+  bool _hasPendingFileTreeMutation(
+    _FileExplorerContextState fileState,
+    Iterable<String> paths,
+  ) {
+    return paths.any(
+      (path) => fileState.pendingMutationPaths.any(
+        (pendingPath) =>
+            _pathEqualsOrIsChild(path, pendingPath) ||
+            _pathEqualsOrIsChild(pendingPath, path),
+      ),
+    );
+  }
+
+  bool _isInsidePendingFileTreeMutation(
+    _FileExplorerContextState fileState,
+    Iterable<String> paths,
+  ) {
+    return paths.any(
+      (path) => fileState.pendingMutationPaths.any(
+        (pendingPath) => _pathEqualsOrIsChild(path, pendingPath),
+      ),
+    );
   }
 
   String _joinFilePath(String parentDirectory, String name) {

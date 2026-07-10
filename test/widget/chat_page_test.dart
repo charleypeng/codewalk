@@ -7343,7 +7343,7 @@ void main() {
     expect(find.text('Save changes before changing this path.'), findsWidgets);
   });
 
-  testWidgets('file tree delete action confirms and refreshes a relative row', (
+  testWidgets('file tree locks a child editor while folder delete is pending', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1300, 900));
@@ -7368,12 +7368,16 @@ void main() {
       ],
     );
     projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: 'lib', name: 'lib', type: FileNodeType.directory),
+    ];
+    projectRepository.filesByPath['lib'] = const <FileNode>[
       FileNode(
         path: 'lib/main.dart',
         name: 'main.dart',
         type: FileNodeType.file,
       ),
     ];
+    final deleteGate = Completer<void>();
     final fileOperations =
         FakeWorkspaceFileOperationsService(
             capabilities: const WorkspaceFileOperationsCapabilities(
@@ -7387,6 +7391,7 @@ void main() {
                 required parentDirectory,
                 required name,
               }) async {
+                await deleteGate.future;
                 projectRepository.filesByPath['.'] = const <FileNode>[];
               };
 
@@ -7401,8 +7406,26 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey<String>('file_tree_item_lib')));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
+    );
+    await tester.pumpAndSettle();
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_lib/main.dart'),
+    );
+    expect(tester.widget<CodeEditor>(editorFinder).readOnly, isFalse);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_lib')),
       buttons: kSecondaryMouseButton,
     );
     await tester.pumpAndSettle();
@@ -7413,11 +7436,54 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Delete'));
     await tester.pumpAndSettle();
 
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_open_files_button')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<CodeEditor>(editorFinder).readOnly, isTrue);
+    expect(find.text('Wait for the file operation to finish.'), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_lib')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_new_file')),
+    );
+    await tester.pumpAndSettle();
+    expect(fileOperations.createFileCallCount, 0);
+    expect(find.text('Wait for the file operation to finish.'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_new_button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_new_folder')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'lib');
+    await tester.tap(find.widgetWithText(TextButton, 'New folder'));
+    await tester.pumpAndSettle();
+    expect(fileOperations.createFolderCallCount, 0);
+    expect(find.text('Wait for the file operation to finish.'), findsWidgets);
+
+    deleteGate.complete();
+    await tester.pumpAndSettle();
+
     expect(fileOperations.deleteCallCount, 1);
-    expect(fileOperations.lastParentDirectory, '/repo/a/lib');
-    expect(fileOperations.lastName, 'main.dart');
+    expect(fileOperations.lastParentDirectory, '/repo/a');
+    expect(fileOperations.lastName, 'lib');
     expect(
-      find.byKey(const ValueKey<String>('file_tree_item_lib/main.dart')),
+      find.byKey(const ValueKey<String>('file_tree_item_lib')),
       findsNothing,
     );
   });
@@ -7447,6 +7513,9 @@ void main() {
       ],
     );
     projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: 'docs', name: 'docs', type: FileNodeType.directory),
+    ];
+    projectRepository.filesByPath['docs'] = const <FileNode>[
       FileNode(path: 'docs/note.md', name: 'note.md', type: FileNodeType.file),
     ];
     final fileOperations =
@@ -7473,6 +7542,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey<String>('file_tree_item_docs')));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
       buttons: kSecondaryMouseButton,
@@ -7496,7 +7567,7 @@ void main() {
     );
   });
 
-  testWidgets('file tree keeps a deleted row removed when refresh fails', (
+  testWidgets('file tree keeps a deleted row removed after a stale refresh', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1300, 900));
@@ -7521,25 +7592,17 @@ void main() {
       ],
     );
     projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(path: 'docs', name: 'docs', type: FileNodeType.directory),
+    ];
+    projectRepository.filesByPath['docs'] = const <FileNode>[
       FileNode(path: 'docs/note.md', name: 'note.md', type: FileNodeType.file),
     ];
-    final fileOperations =
-        FakeWorkspaceFileOperationsService(
-            capabilities: const WorkspaceFileOperationsCapabilities(
-              shellFileOpsSupported: true,
-              message: 'ok',
-            ),
-          )
-          ..onDelete =
-              ({
-                required rootDirectory,
-                required parentDirectory,
-                required name,
-              }) async {
-                projectRepository.directoryFailure = const ServerFailure(
-                  'refresh failed',
-                );
-              };
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
 
     final provider = _buildChatProvider(
       localDataSource: localDataSource,
@@ -7552,6 +7615,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey<String>('file_tree_item_docs')));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('file_tree_item_docs/note.md')),
       buttons: kSecondaryMouseButton,
