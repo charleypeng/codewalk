@@ -300,6 +300,34 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     });
   }
 
+  void _goToReadyFromManagedLocal() {
+    if (!mounted ||
+        context.read<AppProvider>().localServerStatus !=
+            LocalServerRuntimeStatus.running) {
+      return;
+    }
+    setState(() {
+      _connectionSuccess = true;
+      _connectionError = null;
+      _step = 2;
+    });
+  }
+
+  Future<void> _startManagedLocalServer() async {
+    final appProvider = context.read<AppProvider>();
+    final ok = await appProvider.startLocalServer();
+    if (!mounted) {
+      return;
+    }
+    if (!ok) {
+      _showMessage(appProvider.errorMessage);
+      return;
+    }
+    if (_isFirstRunFlow) {
+      _goToReadyFromManagedLocal();
+    }
+  }
+
   Future<void> _runLocalDiagnostics() async {
     final appProvider = context.read<AppProvider>();
     await appProvider.runLocalServerDiagnostics();
@@ -1780,12 +1808,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     FilledButton.icon(
                       onPressed: (isBusy || isRunning)
                           ? null
-                          : () async {
-                              final ok = await appProvider.startLocalServer();
-                              if (!ok) {
-                                _showMessage(appProvider.errorMessage);
-                              }
-                            },
+                          : () => unawaited(_startManagedLocalServer()),
                       icon: const Icon(Symbols.play_arrow_rounded),
                       label: Text(context.l10n.onboardingStart),
                     ),
@@ -1853,16 +1876,27 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () => unawaited(_complete()),
-                icon: const Icon(Symbols.check_circle_rounded),
-                label: Text(
-                  widget.showSkipAction
-                      ? context.l10n.onboardingContinue
-                      : context.l10n.onboardingDone,
+              if (!_isFirstRunFlow || isRunning) ...[
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  key: _isFirstRunFlow
+                      ? const ValueKey('first_run_managed_continue_to_ready')
+                      : null,
+                  onPressed: _isFirstRunFlow
+                      ? _goToReadyFromManagedLocal
+                      : () => unawaited(_complete()),
+                  icon: Icon(
+                    _isFirstRunFlow
+                        ? Symbols.arrow_forward_rounded
+                        : Symbols.check_circle_rounded,
+                  ),
+                  label: Text(
+                    _isFirstRunFlow
+                        ? context.l10n.onboardingContinue
+                        : context.l10n.onboardingDone,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         );

@@ -103,6 +103,23 @@ void main() {
     );
   }
 
+  Future<AppProvider> createManagedProvider(
+    FakeLocalOpencodeServerRuntime localServerRuntime,
+  ) async {
+    final provider = AppProvider(
+      getAppInfo: GetAppInfo(FakeAppRepository()),
+      checkConnection: CheckConnection(FakeAppRepository()),
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      localServerRuntime: localServerRuntime,
+      serverHealthProbe: (_) async => ServerHealthStatus.healthy,
+      localServerHealthProbe: (_) async => ServerHealthStatus.healthy,
+      enableHealthPolling: false,
+    );
+    await provider.initialize();
+    return provider;
+  }
+
   group('welcome step', () {
     testWidgets('shows beginner-friendly welcome options', (
       WidgetTester tester,
@@ -599,6 +616,156 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('OpenCode Setup Debug'), findsOneWidget);
+  });
+
+  group('managed local first-run completion', () {
+    testWidgets('requires a running server and completes through Ready', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      var completed = false;
+      final localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+      );
+      final managedProvider = await createManagedProvider(localServerRuntime);
+
+      await tester.pumpWidget(
+        buildWizard(
+          providerOverride: managedProvider,
+          onComplete: () => completed = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_local_setup')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+        findsNothing,
+      );
+      expect(completed, isFalse);
+
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Start'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_ready_success')), findsOneWidget);
+      expect(
+        managedProvider.localServerStatus,
+        LocalServerRuntimeStatus.running,
+      );
+      expect(managedProvider.activeServer?.url, 'http://127.0.0.1:4096');
+      expect(settingsProvider.pendingPostOnboardingChatTour, isFalse);
+
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Start using CodeWalk'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(completed, isTrue);
+      expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+    });
+
+    testWidgets('keeps failed managed startup in the local setup step', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      var completed = false;
+      final localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+        startResult: const LocalOpencodeServerStartResult(
+          ok: false,
+          errorMessage: 'opencode command was not found',
+        ),
+      );
+      final managedProvider = await createManagedProvider(localServerRuntime);
+
+      await tester.pumpWidget(
+        buildWizard(
+          providerOverride: managedProvider,
+          onComplete: () => completed = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Start'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_local_setup')), findsOneWidget);
+      expect(find.text('opencode command was not found'), findsWidgets);
+      expect(managedProvider.serverProfiles, isEmpty);
+      expect(settingsProvider.pendingPostOnboardingChatTour, isFalse);
+      expect(completed, isFalse);
+    });
+
+    testWidgets('already running managed server can continue to Ready', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      final localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+      );
+      final managedProvider = await createManagedProvider(localServerRuntime);
+      expect(await managedProvider.startLocalServer(), isTrue);
+
+      await tester.pumpWidget(buildWizard(providerOverride: managedProvider));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_ready_success')), findsOneWidget);
+    });
+
+    testWidgets('settings completion does not arm the chat tour', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      var completed = false;
+      final localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+      );
+      final managedProvider = await createManagedProvider(localServerRuntime);
+
+      await tester.pumpWidget(
+        buildWizard(
+          providerOverride: managedProvider,
+          initialFlow: SetupWizardInitialFlow.managedLocalServer,
+          showSkipAction: false,
+          onComplete: () => completed = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Done'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Done'));
+      await tester.pumpAndSettle();
+
+      expect(completed, isTrue);
+      expect(settingsProvider.pendingPostOnboardingChatTour, isFalse);
+    });
   });
 
   group('oauth toggle', () {
