@@ -48,12 +48,34 @@
 - **When** the app starts
 - **Then** a setup wizard is displayed requiring the user to configure at least one OpenCode server
 
+### First-run setup choices adapt to local-server capability
+
+- **Given** the first-run welcome step is visible
+- **When** the runtime supports CodeWalk-managed local OpenCode setup
+- **Then** the single primary action prioritizes managed local setup; connecting to an existing server remains secondary, and guided setup steps remain available
+- **When** the runtime does not support managed local setup
+- **Then** the single primary action prioritizes guided setup steps; connecting to an existing server remains secondary, and no disabled managed-local option is shown
+- **Then** the welcome step keeps the CodeWalk/OpenCode relationship and its detailed explanation visible or discoverable
+- **Then** server-management entry points outside first run, including Settings, retain the complete shared setup chooser
+
 ### Successful onboarding stays in the wizard through Ready
 
 - **Given** the user finishes server setup successfully during onboarding
 - **When** the connection is saved and the wizard advances to the final success state
 - **Then** the onboarding flow remains visible through the `Ready` step instead of dismissing immediately when the first server profile is created
 - **Then** the user gets an explicit action to continue into the main chat experience
+
+### First-run managed local setup only completes while running
+
+- **Given** the user chooses managed local setup during first-run onboarding
+- **When** the local server is stopped or startup fails
+- **Then** onboarding remains on local setup and cannot complete
+- **When** startup succeeds, or an already-running local server continues
+- **Then** the wizard goes through `Ready` before it can complete, revalidating that the server is still running around completion
+- **Then** only that final successful first-run completion arms the post-onboarding chat tour; completing the same flow from Settings does not
+- **When** the user goes back from `Ready`
+- **Then** the wizard returns to local setup
+- **Then** a delayed startup result cannot override navigation the user made after starting it
 
 ### Successful onboarding can trigger a first-use chat tour
 
