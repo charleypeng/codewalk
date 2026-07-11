@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/core/tailscale/tailscale_service.dart';
@@ -41,6 +43,44 @@ class _NoopTailscaleService extends TailscaleService {
 
   @override
   Future<void> down() async {}
+}
+
+class _DelayedLocalOpencodeServerRuntime
+    extends FakeLocalOpencodeServerRuntime {
+  _DelayedLocalOpencodeServerRuntime() : super(supported: true);
+
+  final Completer<void> _startGate = Completer<void>();
+
+  void finishStart() => _startGate.complete();
+
+  @override
+  Future<LocalOpencodeServerStartResult> start({
+    required String host,
+    required int port,
+    String? commandPath,
+  }) async {
+    await _startGate.future;
+    return super.start(host: host, port: port, commandPath: commandPath);
+  }
+}
+
+class _DelayedExperienceSettingsDataSource extends InMemoryAppLocalDataSource {
+  Completer<void>? _saveGate;
+
+  void delayNextSave() {
+    _saveGate = Completer<void>();
+  }
+
+  void finishSave() {
+    _saveGate?.complete();
+    _saveGate = null;
+  }
+
+  @override
+  Future<void> saveExperienceSettingsJson(String settingsJson) async {
+    await _saveGate?.future;
+    await super.saveExperienceSettingsJson(settingsJson);
+  }
 }
 
 void main() {
@@ -259,6 +299,36 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets(
+      'supports large text and accessible tap targets on compact UI',
+      (WidgetTester tester) async {
+        await _setCompactSurface(tester);
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        final unsupportedProvider = AppProvider(
+          getAppInfo: GetAppInfo(FakeAppRepository()),
+          checkConnection: CheckConnection(FakeAppRepository()),
+          localDataSource: localDataSource,
+          dioClient: DioClient(),
+          localServerRuntime: FakeLocalOpencodeServerRuntime(supported: false),
+          enableHealthPolling: false,
+        );
+        await unsupportedProvider.initialize();
+
+        await tester.pumpWidget(
+          buildWizard(providerOverride: unsupportedProvider),
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('what_is_opencode_tile')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(tester, meetsGuideline(androidTapTargetGuideline));
+      },
+    );
   });
 
   group('skip flow', () {
@@ -737,6 +807,162 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('step_ready_success')), findsOneWidget);
+
+      await tester.tap(find.byIcon(Symbols.arrow_back));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_local_setup')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('does not complete after managed server exits from Ready', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      var completed = false;
+      final localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+      );
+      final managedProvider = await createManagedProvider(localServerRuntime);
+      expect(await managedProvider.startLocalServer(), isTrue);
+
+      await tester.pumpWidget(
+        buildWizard(
+          providerOverride: managedProvider,
+          onComplete: () => completed = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('step_ready_success')), findsOneWidget);
+
+      localServerRuntime.emitExit(1);
+      await tester.pumpAndSettle();
+      expect(
+        managedProvider.localServerStatus,
+        LocalServerRuntimeStatus.failed,
+      );
+
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Start using CodeWalk'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_local_setup')), findsOneWidget);
+      expect(settingsProvider.pendingPostOnboardingChatTour, isFalse);
+      expect(completed, isFalse);
+    });
+
+    testWidgets('pending managed start does not override later navigation', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      final localServerRuntime = _DelayedLocalOpencodeServerRuntime();
+      final managedProvider = await createManagedProvider(localServerRuntime);
+
+      await tester.pumpWidget(buildWizard(providerOverride: managedProvider));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Start'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Symbols.arrow_back));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('step_welcome')), findsOneWidget);
+
+      localServerRuntime.finishStart();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_welcome')), findsOneWidget);
+      expect(find.byKey(const ValueKey('step_ready_success')), findsNothing);
+    });
+
+    testWidgets('serializes Ready completion while tour state persists', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      var completionCount = 0;
+      final delayedDataSource = _DelayedExperienceSettingsDataSource();
+      localDataSource = delayedDataSource;
+      settingsProvider.dispose();
+      settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      final localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+      );
+      final managedProvider = await createManagedProvider(localServerRuntime);
+      expect(await managedProvider.startLocalServer(), isTrue);
+
+      await tester.pumpWidget(
+        buildWizard(
+          providerOverride: managedProvider,
+          onComplete: () => completionCount += 1,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_managed_continue_to_ready')),
+      );
+      await tester.pumpAndSettle();
+
+      delayedDataSource.delayNextSave();
+      final readyAction = find.widgetWithText(
+        FilledButton,
+        'Start using CodeWalk',
+      );
+      await tester.tap(readyAction);
+      await tester.pump();
+
+      expect(tester.widget<FilledButton>(readyAction).onPressed, isNull);
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, 'Choose another path'),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.byIcon(Symbols.arrow_back));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('step_ready_success')), findsOneWidget);
+      expect(completionCount, 0);
+
+      delayedDataSource.finishSave();
+      await tester.pumpAndSettle();
+
+      expect(completionCount, 1);
+      expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      settingsProvider.dispose();
     });
 
     testWidgets('settings completion does not arm the chat tour', (

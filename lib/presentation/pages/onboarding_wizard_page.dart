@@ -59,6 +59,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   int _step = 0;
   bool _showQuickGuide = false;
   bool _connectionSuccess = false;
+  bool _readyFromManagedLocal = false;
+  bool _completing = false;
   String? _connectionError;
   bool _testing = false;
   bool _completingWithSavedServer = false;
@@ -144,6 +146,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   }
 
   void _handleBack() {
+    if (_completing) {
+      return;
+    }
     if (_step == 0) {
       if (widget.showSkipAction) {
         _handleSkip();
@@ -154,8 +159,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     }
     setState(() {
       if (_step == 2) {
+        final previousStep = _readyFromManagedLocal ? 3 : 1;
         _connectionSuccess = false;
+        _readyFromManagedLocal = false;
         _connectionError = null;
+        _step = previousStep;
+        return;
       }
       if (_step == 3) {
         _step = 0;
@@ -235,13 +244,35 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   }
 
   Future<void> _complete() async {
+    if (!mounted || _completing) {
+      return;
+    }
+    setState(() {
+      _completing = true;
+    });
+
+    final completingManagedLocal = _readyFromManagedLocal;
+    final appProvider = context.read<AppProvider>();
+    if (completingManagedLocal &&
+        appProvider.localServerStatus != LocalServerRuntimeStatus.running) {
+      _returnToManagedLocalSetup();
+      return;
+    }
+
     if (_connectionSuccess &&
         widget.showSkipAction &&
         _editingServerId == null) {
-      await context.read<SettingsProvider>().setPendingPostOnboardingChatTour(
-        true,
-      );
+      final settingsProvider = context.read<SettingsProvider>();
+      await settingsProvider.setPendingPostOnboardingChatTour(true);
       if (!mounted) {
+        return;
+      }
+      if (completingManagedLocal &&
+          appProvider.localServerStatus != LocalServerRuntimeStatus.running) {
+        await settingsProvider.setPendingPostOnboardingChatTour(false);
+        if (mounted) {
+          _returnToManagedLocalSetup();
+        }
         return;
       }
     }
@@ -252,6 +283,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     final navigator = Navigator.of(context);
     if (navigator.canPop()) {
       navigator.pop();
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _completing = false;
+      });
     }
     // When launched from AppShellPage gate, navigation happens automatically
     // via the Consumer2 rebuild when server profiles change.
@@ -263,6 +300,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       message: 'User chose to connect to an existing OpenCode server.',
     );
     setState(() {
+      _readyFromManagedLocal = false;
       _showQuickGuide = false;
       _step = 1;
     });
@@ -274,6 +312,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       message: 'User opened the guided OpenCode setup path.',
     );
     setState(() {
+      _readyFromManagedLocal = false;
       _showQuickGuide = true;
       _step = 1;
     });
@@ -285,6 +324,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       message: 'User opened managed local OpenCode setup.',
     );
     setState(() {
+      _readyFromManagedLocal = false;
       _step = 3;
       _connectionError = null;
     });
@@ -308,6 +348,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     }
     setState(() {
       _connectionSuccess = true;
+      _readyFromManagedLocal = true;
       _connectionError = null;
       _step = 2;
     });
@@ -323,9 +364,22 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       _showMessage(appProvider.errorMessage);
       return;
     }
-    if (_isFirstRunFlow) {
+    if (_isFirstRunFlow && _step == 3) {
       _goToReadyFromManagedLocal();
     }
+  }
+
+  void _returnToManagedLocalSetup() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _completing = false;
+      _connectionSuccess = false;
+      _readyFromManagedLocal = false;
+      _connectionError = null;
+      _step = 3;
+    });
   }
 
   Future<void> _runLocalDiagnostics() async {
@@ -419,6 +473,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       _aiGeneratedTitlesEnabled = true;
       _showQuickGuide = false;
       _connectionSuccess = false;
+      _readyFromManagedLocal = false;
       _connectionError = null;
       _step = 1;
     });
@@ -507,6 +562,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
+        _readyFromManagedLocal = false;
         _connectionError = health == ServerHealthStatus.unhealthy
             ? context.l10n.onboardingHealthCheckFailedMayBeStarting
             : null;
@@ -579,6 +635,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
+        _readyFromManagedLocal = false;
         _connectionError = health == ServerHealthStatus.unhealthy
             ? context.l10n.onboardingAddedButHealthCheckFailed
             : null;
@@ -2000,19 +2057,22 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           ),
           const SizedBox(height: 40),
           FilledButton.icon(
-            onPressed: () => unawaited(_complete()),
+            onPressed: _completing ? null : () => unawaited(_complete()),
             icon: const Icon(Symbols.arrow_forward_rounded),
             label: Text(actionLabel),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () {
-              setState(() {
-                _step = 0;
-                _connectionSuccess = false;
-                _connectionError = null;
-              });
-            },
+            onPressed: _completing
+                ? null
+                : () {
+                    setState(() {
+                      _step = 0;
+                      _connectionSuccess = false;
+                      _readyFromManagedLocal = false;
+                      _connectionError = null;
+                    });
+                  },
             icon: const Icon(Symbols.swap_horiz_rounded),
             label: Text(context.l10n.onboardingChooseAnotherPath),
           ),
@@ -2089,6 +2149,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               setState(() {
                 _step = 1;
                 _connectionSuccess = false;
+                _readyFromManagedLocal = false;
                 _connectionError = null;
               });
             },
@@ -2100,6 +2161,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               setState(() {
                 _step = 0;
                 _connectionSuccess = false;
+                _readyFromManagedLocal = false;
                 _connectionError = null;
               });
             },
