@@ -94,6 +94,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
   bool get _tailscaleSupported => AppProvider.supportsTailscale;
 
+  bool get _isFirstRunFlow =>
+      widget.showSkipAction &&
+      widget.initialFlow == SetupWizardInitialFlow.choose &&
+      widget.initialServerProfile == null;
+
   void _configureInitialFlow() {
     final initialProfile = widget.initialServerProfile;
     if (initialProfile != null) {
@@ -685,11 +690,126 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   // -- Step 0: Welcome --
 
   Widget _buildWelcomeStep() {
-    final colorScheme = Theme.of(context).colorScheme;
     final supportsLocalManaged = context.select<AppProvider, bool>(
       (provider) => provider.localServerSupported,
     );
 
+    if (_isFirstRunFlow) {
+      return _buildFirstRunWelcomeStep(supportsLocalManaged);
+    }
+    return _buildSetupChooserStep(supportsLocalManaged);
+  }
+
+  Widget _buildFirstRunWelcomeStep(bool supportsLocalManaged) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final primaryButtonStyle = FilledButton.styleFrom(
+      minimumSize: const Size.fromHeight(48),
+    );
+    final secondaryButtonStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size.fromHeight(48),
+    );
+    final tertiaryButtonStyle = TextButton.styleFrom(
+      minimumSize: const Size.fromHeight(48),
+    );
+
+    return SingleChildScrollView(
+      key: const ValueKey('step_welcome'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            child: Icon(
+              Symbols.code_rounded,
+              size: 56,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            context.l10n.onboardingWelcomeTo(AppConstants.appName),
+            style: textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.l10n.onboardingNeedsOpenCodeServer(AppConstants.appName),
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.l10n.onboardingCodeWalkAppOpenCode,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          if (supportsLocalManaged) ...[
+            FilledButton.icon(
+              key: const ValueKey('first_run_primary_setup_action'),
+              onPressed: _goToLocalManagedSetup,
+              style: primaryButtonStyle,
+              icon: const Icon(Symbols.computer),
+              label: Text(context.l10n.onboardingLetCodeWalkSet),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              key: const ValueKey('first_run_connect_server_action'),
+              onPressed: _goToConnectServer,
+              style: secondaryButtonStyle,
+              icon: const Icon(Symbols.dns_rounded),
+              label: Text(context.l10n.onboardingConnectRunningServer),
+            ),
+            const SizedBox(height: 4),
+            TextButton.icon(
+              key: const ValueKey('first_run_guided_setup_action'),
+              onPressed: _goToNeedHelp,
+              style: tertiaryButtonStyle,
+              icon: const Icon(Symbols.help_outline_rounded),
+              label: Text(context.l10n.onboardingShowSetupSteps),
+            ),
+          ] else ...[
+            FilledButton.icon(
+              key: const ValueKey('first_run_primary_setup_action'),
+              onPressed: _goToNeedHelp,
+              style: primaryButtonStyle,
+              icon: const Icon(Symbols.help_outline_rounded),
+              label: Text(context.l10n.onboardingShowSetupSteps),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              key: const ValueKey('first_run_connect_server_action'),
+              onPressed: _goToConnectServer,
+              style: secondaryButtonStyle,
+              icon: const Icon(Symbols.dns_rounded),
+              label: Text(context.l10n.onboardingConnectRunningServer),
+            ),
+          ],
+          const SizedBox(height: 16),
+          ExpansionTile(
+            key: const ValueKey('what_is_opencode_tile'),
+            tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+            childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+            leading: Icon(Symbols.info_rounded, color: colorScheme.primary),
+            title: Text(context.l10n.onboardingOpenCode),
+            children: [
+              Text(
+                context.l10n.onboardingOpenCodeRunsLocally,
+                style: textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetupChooserStep(bool supportsLocalManaged) {
+    final colorScheme = Theme.of(context).colorScheme;
     final title = widget.showSkipAction
         ? context.l10n.onboardingWelcomeTo(AppConstants.appName)
         : context.l10n.onboardingChooseHowToSetup;
@@ -1069,8 +1189,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       onChanged: (_) => setState(() {}),
                       validator: (value) {
                         final raw = value?.trim() ?? '';
-                        if (raw.isEmpty)
+                        if (raw.isEmpty) {
                           return context.l10n.onboardingEnterServerUrl;
+                        }
                         try {
                           AppProvider.normalizeServerUrl(raw);
                           return null;
@@ -1301,15 +1422,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       FilledButton.icon(
                         onPressed: () async {
                           final messenger = ScaffoldMessenger.of(context);
+                          final openLoginMessage =
+                              context.l10n.onboardingOpenTailscaleLogin;
                           final ok = await appProvider.authenticateTailscale();
                           if (!mounted) return;
                           if (!ok) {
                             messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context.l10n.onboardingOpenTailscaleLogin,
-                                ),
-                              ),
+                              SnackBar(content: Text(openLoginMessage)),
                             );
                           }
                         },
@@ -1471,11 +1590,15 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(statusLabel),
-                      const Spacer(),
-                      Text(
-                        appProvider.localServerUrl,
-                        style: Theme.of(context).textTheme.bodySmall,
+                      Expanded(child: Text(statusLabel)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          appProvider.localServerUrl,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ),
                     ],
                   ),
@@ -1564,9 +1687,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   runSpacing: 8,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: setupBusy
-                          ? null
-                          : () => _runLocalDiagnostics(),
+                      onPressed: setupBusy ? null : _runLocalDiagnostics,
                       icon: const Icon(Symbols.refresh_rounded),
                       label: Text(context.l10n.onboardingRefreshChecks),
                     ),
@@ -1575,15 +1696,15 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           setupBusy || !(report?.opencode.available ?? false)
                           ? null
                           : () async {
+                              final detectedCommandMessage =
+                                  context.l10n.onboardingUsingDetectedCommand;
                               final ok = await appProvider
                                   .useDetectedLocalServerCommand();
                               if (!ok) {
                                 _showMessage(appProvider.errorMessage);
                                 return;
                               }
-                              _showMessage(
-                                context.l10n.onboardingUsingDetectedCommand,
-                              );
+                              _showMessage(detectedCommandMessage);
                             },
                       icon: const Icon(Symbols.check_circle_outline),
                       label: Text(context.l10n.onboardingExisting),

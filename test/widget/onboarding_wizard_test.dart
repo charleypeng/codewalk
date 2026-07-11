@@ -117,6 +117,131 @@ void main() {
       expect(find.text('What is OpenCode?'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
     });
+
+    testWidgets('prioritizes guided setup when local setup is unsupported', (
+      WidgetTester tester,
+    ) async {
+      await _setCompactSurface(tester);
+      final unsupportedProvider = AppProvider(
+        getAppInfo: GetAppInfo(FakeAppRepository()),
+        checkConnection: CheckConnection(FakeAppRepository()),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: FakeLocalOpencodeServerRuntime(supported: false),
+        enableHealthPolling: false,
+      );
+      await unsupportedProvider.initialize();
+
+      await tester.pumpWidget(
+        buildWizard(providerOverride: unsupportedProvider),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey('first_run_primary_setup_action')),
+        ),
+        isA<FilledButton>(),
+      );
+      expect(find.text('Show me the setup steps'), findsOneWidget);
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey('first_run_connect_server_action')),
+        ),
+        isA<OutlinedButton>(),
+      );
+      expect(find.text('Connect to a running server'), findsOneWidget);
+      expect(find.text('Let CodeWalk set it up locally'), findsNothing);
+      expect(
+        find.text('Available only on desktop (Linux/macOS/Windows).'),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_server_setup')), findsOneWidget);
+      expect(find.text('Quick setup'), findsOneWidget);
+    });
+
+    testWidgets('prioritizes managed setup by capability on narrow windows', (
+      WidgetTester tester,
+    ) async {
+      await _setCompactSurface(tester);
+      final supportedProvider = AppProvider(
+        getAppInfo: GetAppInfo(FakeAppRepository()),
+        checkConnection: CheckConnection(FakeAppRepository()),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: FakeLocalOpencodeServerRuntime(supported: true),
+        enableHealthPolling: false,
+      );
+      await supportedProvider.initialize();
+
+      await tester.pumpWidget(buildWizard(providerOverride: supportedProvider));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey('first_run_primary_setup_action')),
+        ),
+        isA<FilledButton>(),
+      );
+      expect(find.text('Let CodeWalk set it up locally'), findsOneWidget);
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey('first_run_connect_server_action')),
+        ),
+        isA<OutlinedButton>(),
+      );
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey('first_run_guided_setup_action')),
+        ),
+        isA<TextButton>(),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('step_local_setup')), findsOneWidget);
+    });
+
+    testWidgets('preserves the complete chooser outside first run', (
+      WidgetTester tester,
+    ) async {
+      await _setLargeSurface(tester);
+      final unsupportedProvider = AppProvider(
+        getAppInfo: GetAppInfo(FakeAppRepository()),
+        checkConnection: CheckConnection(FakeAppRepository()),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: FakeLocalOpencodeServerRuntime(supported: false),
+        enableHealthPolling: false,
+      );
+      await unsupportedProvider.initialize();
+
+      await tester.pumpWidget(
+        buildWizard(
+          providerOverride: unsupportedProvider,
+          showSkipAction: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connect to a running server'), findsOneWidget);
+      expect(find.text('Show me the setup steps'), findsOneWidget);
+      expect(find.text('Let CodeWalk set it up locally'), findsOneWidget);
+      expect(find.text('Skip'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('first_run_primary_setup_action')),
+        findsNothing,
+      );
+    });
   });
 
   group('skip flow', () {
@@ -631,6 +756,11 @@ void main() {
 
 Future<void> _setLargeSurface(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(const Size(1200, 900));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+}
+
+Future<void> _setCompactSurface(WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(360, 640));
   addTearDown(() => tester.binding.setSurfaceSize(null));
 }
 
