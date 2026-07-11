@@ -360,18 +360,19 @@
 - **When** the user opens a non-binary text file from the file tree, Quick Open, or a tapped assistant file path
 - **Then** the open-files surface renders a focused code editor with line numbers, syntax highlighting, tabbed open files, and the same desktop/mobile dialog behavior as the file viewer
 - **Then** editing a file marks its tab dirty with `*` and enables the viewer `Save` action
-- **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service scoped to the active project directory, not through a local client filesystem write
+- **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service scoped to the active project directory, using one negotiated single-pipeline shell transport rather than a local client filesystem write
 - **Then** a successful save preserves the file's LF, CRLF, or CR line-ending style, clears the dirty marker, updates the open tab's saved content, shows a save confirmation, and remains visible after closing and reopening the file
-- **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces an actionable operation error inline and via snackbar
+- **Then** save content is UTF-8 encoded, base64 chunked across the shell transport, and decoded with the cached supported shell decoder for the active project root before the server-side atomic replace completes
+- **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces an actionable bounded operation error inline and via snackbar
 - **Then** selecting editor gutter lines and choosing Add to chat sends the current draft text for the selected line ranges, including LF, CRLF, and CR files
 - **Then** if a dirty open tab would be closed, reloaded by manual retry, or reloaded by diff-aware refresh, the action is skipped so unsaved edits are not overwritten
 - **Then** a confirmed successful delete runs in the active project directory, removes the deleted file or folder row from the tree immediately, and does not let failed, stale, or racing relists restore that row
 - **Then** while a delete is pending, matching and descendant editors become read-only and overlapping create, rename, delete, and save actions for the same path subtree are blocked to prevent data loss
-- **Then** failed delete, create, rename, and save operations keep the current draft or tree state and surface actionable errors instead of silently reverting or dropping state
+- **Then** failed delete, create, rename, and save operations keep the current draft or tree state and surface actionable bounded errors instead of silently reverting or dropping state
 - **Then** rename and delete actions for a file or containing folder are blocked while a matching editor draft is dirty or saving, including relative and absolute file-tree path aliases
 - **Then** empty non-binary text files open as blank editable drafts and can become dirty before the first save
 - **Then** binary files keep their existing non-editing fallback state
-- **Then** files larger than 1 MiB and servers without supported shell file operations open read-only with the existing safe fallback behavior
+- **Then** files or editor drafts larger than 64 KiB UTF-8 open read-only or become unsaveable so editing stays responsive, while servers without supported shell file operations keep the existing safe fallback behavior
 
 ### Composer mentions include workspace symbols
 
@@ -1272,9 +1273,10 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **When** the active server and project directory support shell-backed file operations
 - **Then** desktop secondary-click and mobile long-press open row actions for `New file`, `New folder`, `Rename`, `Delete`, `Copy path`, and `Refresh files` as applicable
 - **Then** the file explorer header exposes a root-level `New` menu for creating files or folders at the project root
-- **Then** create, rename, and delete operations run in hidden ephemeral OpenCode shell sessions scoped to the active project root, validate leaf names, parse only the `CW_FILE_OP_JSON:` sentinel result, refresh affected tree caches, and reconcile open file tabs
+- **Then** create, rename, delete, and save mutations run in hidden ephemeral OpenCode shell sessions scoped to the active project root, validate leaf names, use one negotiated single-pipeline transport per mutation, cache the supported decoder per active project root, parse official shell tool output/error completion states, extract the final `CW_FILE_OP_JSON:` sentinel result, refresh affected tree caches, and reconcile open file tabs
 - **Then** delete requires confirmation before mutating the server filesystem
-- **Then** failed delete operations surface bounded shell diagnostic detail when available instead of only the generic failure label
+- **Then** failed delete operations surface bounded actionable diagnostic detail when available instead of only the generic failure label
+- **Then** diagnostics for failed mutations log only the operation code and hashed path identifiers; raw shell stderr and filesystem paths are not logged
 - **Then** mutating actions are hidden when the shell probe is unavailable, the current directory is missing, or the project root is `/`; read-only actions remain available
 
 ### File preview
