@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.174.1 - 2026-07-11
+
+- chore(agent): [Step 4/5] document negotiated shell file transport
+- chore(agent): [Step 3/5] validate and bound shell file saves
+- chore(agent): [Step 2/5] run file mutations in one shell pipeline
+- chore(agent): [Step 1/5] parse official shell tool responses
+- plan: harden workspace shell transport responses
+
 ## v1.174.0 - 2026-07-10
 
 - chore(agent): [Step 4/5] document race-safe file operations
