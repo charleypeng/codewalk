@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.175.0 - 2026-07-11
+
+- chore(agent): [Step 4/5] document adaptive onboarding
+- chore(agent): [Step 3/5] validate and review onboarding
+- chore(agent): [Step 2/5] harden managed onboarding completion
+- chore(agent): [Step 1/5] simplify first-run welcome
+- plan: simplify first-run welcome
+
 ## v1.174.1 - 2026-07-11
 
 - chore(agent): [Step 4/5] document negotiated shell file transport
