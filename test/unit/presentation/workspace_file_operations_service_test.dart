@@ -26,6 +26,80 @@ void main() {
       expect(payload, '{"ok":true,"code":"ok"}');
     });
 
+    test('prefers the last valid official completed tool output', () {
+      final payload = WorkspaceFileOperationsServiceImpl.extractSentinelPayload(
+        <String, dynamic>{
+          'info': <String, dynamic>{'role': 'assistant'},
+          'parts': <dynamic>[
+            <String, dynamic>{
+              'type': 'tool',
+              'state': <String, dynamic>{
+                'status': 'completed',
+                'output': 'CW_FILE_OP_JSON:{not json}\n',
+              },
+            },
+            <String, dynamic>{
+              'type': 'tool',
+              'state': <String, dynamic>{
+                'status': 'completed',
+                'output':
+                    'noise\nCW_FILE_OP_JSON:{"ok":false,"code":"missing"}\n',
+              },
+            },
+          ],
+        },
+      );
+
+      expect(payload, '{"ok":false,"code":"missing"}');
+    });
+
+    test('reassembles a sentinel split across official tool outputs', () {
+      final payload = WorkspaceFileOperationsServiceImpl.extractSentinelPayload(
+        <String, dynamic>{
+          'parts': <dynamic>[
+            <String, dynamic>{
+              'state': <String, dynamic>{
+                'status': 'completed',
+                'output': 'CW_FILE_OP_',
+              },
+            },
+            <String, dynamic>{
+              'state': <String, dynamic>{
+                'status': 'completed',
+                'output': 'JSON:{"ok":true,"code":"ok"}\n',
+              },
+            },
+          ],
+        },
+      );
+
+      expect(payload, '{"ok":true,"code":"ok"}');
+    });
+
+    test('maps official tool errors without exposing raw shell output', () {
+      final message =
+          WorkspaceFileOperationsServiceImpl.extractShellFailureMessage(<
+            String,
+            dynamic
+          >{
+            'parts': <dynamic>[
+              <String, dynamic>{
+                'state': <String, dynamic>{
+                  'status': 'error',
+                  'error':
+                      '/secret/project/file: unexpected end of file near token',
+                },
+              },
+            ],
+          });
+
+      expect(
+        message,
+        'File operation shell command was truncated by the server.',
+      );
+      expect(message, isNot(contains('/secret/project/file')));
+    });
+
     test('parses malformed sentinel payloads as malformed responses', () {
       final result = WorkspaceFileOperationsServiceImpl.parseSentinelPayload(
         '{not json',

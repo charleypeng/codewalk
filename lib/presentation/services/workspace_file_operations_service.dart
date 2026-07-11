@@ -587,11 +587,13 @@ class WorkspaceFileOperationsServiceImpl
       if (response.statusCode != 200 || response.data is! Map) {
         return _result(WorkspaceFileOperationCode.failed);
       }
-      final payload = extractSentinelPayload(
-        Map<String, dynamic>.from(response.data as Map),
-      );
+      final envelope = Map<String, dynamic>.from(response.data as Map);
+      final payload = extractSentinelPayload(envelope);
       if (payload == null) {
-        return _result(WorkspaceFileOperationCode.malformedResponse);
+        return _result(
+          WorkspaceFileOperationCode.malformedResponse,
+          message: extractShellFailureMessage(envelope),
+        );
       }
       return parseSentinelPayload(payload);
     } on DioException catch (error) {
@@ -643,37 +645,149 @@ class WorkspaceFileOperationsServiceImpl
 
   @visibleForTesting
   static String? extractSentinelPayload(Map<String, dynamic> envelope) {
-    return _searchStringValues(envelope);
-  }
-
-  static String? _searchStringValues(dynamic data) {
-    if (data is String && data.trim().isNotEmpty) {
-      for (final line in data.split('\n').reversed) {
-        final trimmed = line.trim();
-        if (trimmed.startsWith(_shellPrefix)) {
-          return trimmed.substring(_shellPrefix.length);
+    final officialOutputs = <String>[];
+    final parts = envelope['parts'];
+    if (parts is List) {
+      for (final part in parts) {
+        if (part is! Map) {
+          continue;
+        }
+        final state = part['state'];
+        if (state is! Map) {
+          continue;
+        }
+        final output = state['output'];
+        if (output is String && output.isNotEmpty) {
+          officialOutputs.add(output);
+          continue;
+        }
+        final metadata = state['metadata'];
+        if (metadata is Map) {
+          final metadataOutput = metadata['output'];
+          if (metadataOutput is String && metadataOutput.isNotEmpty) {
+            officialOutputs.add(metadataOutput);
+          }
         }
       }
+    }
+
+    final officialPayload = _lastValidSentinelPayload(officialOutputs);
+    if (officialPayload != null) {
+      return officialPayload;
+    }
+
+    final legacyStrings = <String>[];
+    _collectStringValues(envelope, legacyStrings);
+    return _lastValidSentinelPayload(legacyStrings);
+  }
+
+  @visibleForTesting
+  static String extractShellFailureMessage(Map<String, dynamic> envelope) {
+    final parts = envelope['parts'];
+    if (parts is List) {
+      for (final part in parts.reversed) {
+        if (part is! Map) {
+          continue;
+        }
+        final state = part['state'];
+        if (state is! Map) {
+          continue;
+        }
+        final status = state['status'];
+        if (status == 'error') {
+          return _safeShellFailureMessage(state['error']);
+        }
+        if (status == 'pending' || status == 'running') {
+          return 'File operation shell command did not complete.';
+        }
+      }
+    }
+
+    final info = envelope['info'];
+    if (info is Map) {
+      final error = info['error'];
+      if (error is Map) {
+        final data = error['data'];
+        if (data is Map && data['message'] != null) {
+          return _safeShellFailureMessage(data['message']);
+        }
+      }
+    }
+
+    return 'File operation shell command returned no result.';
+  }
+
+  static String _safeShellFailureMessage(dynamic raw) {
+    final normalized = raw is String ? raw.trim().toLowerCase() : '';
+    if (normalized.contains('unexpected end of file') ||
+        normalized.contains('unexpected eof')) {
+      return 'File operation shell command was truncated by the server.';
+    }
+    if (normalized.contains('syntax error')) {
+      return 'File operation shell command failed with a syntax error.';
+    }
+    if (normalized.contains('not found')) {
+      return 'A required shell utility was not found.';
+    }
+    return 'File operation shell command failed before returning a result.';
+  }
+
+  static String? _lastValidSentinelPayload(Iterable<String> values) {
+    String? lastPayload;
+    final combined = StringBuffer();
+    for (final value in values) {
+      combined.write(value);
+      for (final line in value.split('\n')) {
+        final payload = _sentinelPayloadFromLine(line);
+        if (payload != null && _isValidSentinelPayload(payload)) {
+          lastPayload = payload;
+        }
+      }
+    }
+    for (final line in combined.toString().split('\n')) {
+      final payload = _sentinelPayloadFromLine(line);
+      if (payload != null && _isValidSentinelPayload(payload)) {
+        lastPayload = payload;
+      }
+    }
+    return lastPayload;
+  }
+
+  static String? _sentinelPayloadFromLine(String line) {
+    final trimmed = line.trim();
+    if (!trimmed.startsWith(_shellPrefix)) {
       return null;
+    }
+    return trimmed.substring(_shellPrefix.length);
+  }
+
+  static bool _isValidSentinelPayload(String payload) {
+    try {
+      final decoded = jsonDecode(payload);
+      return decoded is Map &&
+          decoded['code'] is String &&
+          _codeFromWire(decoded['code'] as String?) != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static void _collectStringValues(dynamic data, List<String> values) {
+    if (data is String && data.trim().isNotEmpty) {
+      values.add(data);
+      return;
     }
     if (data is Map) {
       for (final value in data.values) {
-        final found = _searchStringValues(value);
-        if (found != null) {
-          return found;
-        }
+        _collectStringValues(value, values);
       }
-      return null;
+      return;
     }
     if (data is List) {
       for (final value in data) {
-        final found = _searchStringValues(value);
-        if (found != null) {
-          return found;
-        }
+        _collectStringValues(value, values);
       }
     }
-    return null;
   }
 
   @visibleForTesting
