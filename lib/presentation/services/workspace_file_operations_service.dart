@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -111,6 +112,7 @@ class WorkspaceFileOperationsServiceImpl
   WorkspaceFileOperationsServiceImpl({required Dio dio}) : _dio = dio;
 
   static const String _shellPrefix = 'CW_FILE_OP_JSON:';
+  static const int _contentEnvironmentChunkSize = 48 * 1024;
   static const List<String> _shellDecoders = <String>[
     'base64 -d',
     'base64 -D',
@@ -396,11 +398,6 @@ class WorkspaceFileOperationsServiceImpl
           'newPathHash': newPath == null
               ? null
               : AppLogger.safeContextId(newPath),
-          'message': _redactOperationMessage(
-            result.message,
-            path: path,
-            newPath: newPath,
-          ),
         },
       );
     }
@@ -453,25 +450,6 @@ class WorkspaceFileOperationsServiceImpl
       parentDirectory: parent,
       name: preparedName.name,
     );
-  }
-
-  static String _redactOperationMessage(
-    String message, {
-    String? path,
-    String? newPath,
-  }) {
-    var redacted = message;
-    for (final candidate in <String?>[path, newPath]) {
-      if (candidate == null || candidate.isEmpty) {
-        continue;
-      }
-      redacted = redacted.replaceAll(candidate, '<path>');
-    }
-    const maxLength = 240;
-    if (redacted.length <= maxLength) {
-      return redacted;
-    }
-    return '${redacted.substring(0, maxLength)}...';
   }
 
   Future<_PreparedLeafOperation> _preparePathOperation({
@@ -1161,7 +1139,21 @@ cw_fail failed
       variables['CW_NEW_NAME'] = newName;
     }
     if (contentBase64 != null) {
-      variables['CW_CONTENT_B64'] = contentBase64;
+      final chunkCount =
+          (contentBase64.length + _contentEnvironmentChunkSize - 1) ~/
+          _contentEnvironmentChunkSize;
+      variables['CW_CONTENT_CHUNK_COUNT'] = '$chunkCount';
+      for (var index = 0; index < chunkCount; index += 1) {
+        final start = index * _contentEnvironmentChunkSize;
+        final end = min(
+          start + _contentEnvironmentChunkSize,
+          contentBase64.length,
+        );
+        variables['CW_CONTENT_B64_$index'] = contentBase64.substring(
+          start,
+          end,
+        );
+      }
     }
     final script = 'set -u\n${_shellHelpers()}${body.trim()}\n';
     return _singleShellCommand(
@@ -1216,13 +1208,22 @@ cw_validate_name() {
     ''|'.'|'..'|*/*|*\\*) cw_fail invalidName ;;
   esac
 }
+cw_content_base64() {
+  index=0
+  while [ "$index" -lt "${CW_CONTENT_CHUNK_COUNT:-0}" ]; do
+    eval "chunk=\${CW_CONTENT_B64_$index-}"
+    printf '%s' "$chunk"
+    index=$((index + 1))
+  done
+}
 cw_decode_content() {
   if command -v base64 >/dev/null 2>&1; then
-    if printf '%s' "$CW_CONTENT_B64" | base64 -d > "$1" 2>/dev/null; then return 0; fi
-    if printf '%s' "$CW_CONTENT_B64" | base64 --decode > "$1" 2>/dev/null; then return 0; fi
+    if cw_content_base64 | base64 -d > "$1" 2>/dev/null; then return 0; fi
+    if cw_content_base64 | base64 -D > "$1" 2>/dev/null; then return 0; fi
+    if cw_content_base64 | base64 --decode > "$1" 2>/dev/null; then return 0; fi
   fi
   if command -v python3 >/dev/null 2>&1; then
-    if python3 -c 'import base64, os, sys; os.write(1, base64.b64decode(sys.argv[1]))' "$CW_CONTENT_B64" > "$1" 2>/dev/null; then return 0; fi
+    if cw_content_base64 | python3 -c 'import base64,sys;sys.stdout.buffer.write(base64.b64decode(sys.stdin.buffer.read()))' > "$1" 2>/dev/null; then return 0; fi
   fi
   return 1
 }

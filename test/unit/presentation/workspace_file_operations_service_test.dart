@@ -129,7 +129,8 @@ void main() {
         });
         final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
         const name = 'sample.txt';
-        const content = 'first\r\nsecond\n';
+        final content =
+            'first\r\nsecond\n${List<String>.filled(60 * 1024, 'x').join()}';
 
         final createCommand = service.buildCreateFileCommandForTest(
           rootDirectory: root.path,
@@ -155,12 +156,7 @@ void main() {
         ]) {
           expect(command, isNot(contains('\n')));
         }
-        expect(
-          RegExp(
-            RegExp.escape(base64Encode(utf8.encode(content))),
-          ).allMatches(writeCommand),
-          hasLength(1),
-        );
+        expect(writeCommand, contains("CW_CONTENT_CHUNK_COUNT='2'"));
 
         final createResult = await Process.run('/bin/sh', <String>[
           '-c',
@@ -189,6 +185,27 @@ void main() {
       },
       skip: Platform.isWindows ? 'requires a POSIX shell' : false,
     );
+
+    test('chunks large editor content below environment entry limits', () {
+      final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
+      final content = List<String>.filled(200 * 1024, 'x').join();
+      final expectedBase64 = base64Encode(utf8.encode(content));
+
+      final command = service.buildWriteFileCommandForTest(
+        rootDirectory: '/repo/a',
+        parentDirectory: '/repo/a',
+        name: 'large.txt',
+        content: content,
+      );
+      final chunks = RegExp(
+        r"CW_CONTENT_B64_\d+='([^']*)'",
+      ).allMatches(command).map((match) => match.group(1)!).toList();
+
+      expect(chunks.length, greaterThan(1));
+      expect(chunks.every((chunk) => chunk.length <= 48 * 1024), isTrue);
+      expect(chunks.join(), expectedBase64);
+      expect(command, isNot(contains("CW_CONTENT_B64='")));
+    });
 
     test('probes capabilities once and caches the result', () async {
       final fakeServer = _FakeShellServer(
@@ -385,11 +402,13 @@ void main() {
       expect(
         fakeServer.commands.last,
         contains(
-          "CW_CONTENT_B64='${base64Encode(utf8.encode("void main() {\n  print('hello');\n}\n"))}'",
+          "CW_CONTENT_B64_0='${base64Encode(utf8.encode("void main() {\n  print('hello');\n}\n"))}'",
         ),
       );
+      expect(fakeServer.commands.last, contains("CW_CONTENT_CHUNK_COUNT='1'"));
       final script = _decodedMutationScript(fakeServer.commands.last);
       expect(script, contains(r'cw_decode_content "$tmp"'));
+      expect(script, contains('cw_content_base64 | base64 -D'));
       expect(script, contains('mktemp -d'));
       expect(script, contains('.cw-write.XXXXXX'));
       expect(script, isNot(contains(r'.cw-write-$$.tmp')));

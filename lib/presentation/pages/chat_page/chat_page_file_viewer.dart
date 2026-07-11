@@ -2,7 +2,7 @@ part of '../chat_page.dart';
 
 extension _ChatPageFileViewer on _ChatPageState {
   static const int _maxHighlightedFileLength = 160000;
-  static const int _maxEditableFileLength = 1024 * 1024;
+  static const int _maxEditableFileLength = 64 * 1024;
   static const String _draftTooLargeSaveMessage =
       'Draft is too large to save from the editor.';
   static const String _dirtyCloseBlockedMessage =

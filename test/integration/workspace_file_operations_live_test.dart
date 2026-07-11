@@ -20,6 +20,7 @@ void main() {
       );
       final name =
           '.codewalk-live-${DateTime.now().microsecondsSinceEpoch}.txt';
+      final content = List<String>.filled(64 * 1024, 'x').join();
 
       final capabilities = await service.getCapabilities(
         serverScopeKey: 'live-test',
@@ -43,9 +44,10 @@ void main() {
         serverScopeKey: 'live-test',
         rootDirectory: root,
         path: '$root/$name',
-        content: 'CodeWalk live shell transport\n',
+        content: content,
       );
       expect(written.ok, isTrue, reason: written.message);
+      expect(File('$root/$name').readAsStringSync(), content);
 
       final deleted = await service.delete(
         serverScopeKey: 'live-test',
