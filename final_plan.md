@@ -1,968 +1,578 @@
-# Plano Autoritário — TTS Cloud no CodeWalk
+# Issue #95 — Simplify the First-Run Welcome Screen
 
 ## Status
 
 Ready.
 
-Este plano é autocontido e deve ser executado sem depender do histórico da conversa, de outputs de planners, ou de qualquer contexto externo não citado aqui. A implementação deve seguir exatamente a direção definida neste documento: manter o TTS nativo como padrão, adicionar Microsoft Edge Speech como provedor experimental sem chave, e adicionar suporte inicial a provedores com chave por meio de um provedor OpenAI-compatible.
+This plan is complete and authoritative. Execute it as written without relying on prior chat history. Before editing, complete the execution preflight in the final section. If another `AGENT_PLAN_ANCHOR` is still active, finish or explicitly pause that work before starting this issue.
 
-## Problema
+## Problem
 
-O CodeWalk atualmente lê mensagens em voz alta usando apenas o TTS nativo/plataforma via `flutter_tts`, encapsulado em `ReadAloudService`. O usuário quer ampliar o recurso para incluir serviços cloud, começando por opções gratuitas, especialmente Microsoft Edge Speech experimental sem chave, e também preparar suporte a serviços com API key como OpenAI e outros compatíveis.
+CodeWalk currently presents a visually dense first-run Welcome screen before server setup. The screen gives similar prominence to three setup paths, always emphasizes “Connect to a running server,” places an explanatory card before the actions, and renders the managed-local option as a disabled full-size card on unsupported platforms.
 
-O sistema atual é limitado porque:
+This conflicts with the intended beginner experience for GitHub issue [#95](https://github.com/verseles/codewalk/issues/95): the first post-install screen must be simpler, welcoming, mobile-first, responsive on desktop, Material You aligned, and centered on one obvious next action.
 
-- `ReadAloudService` está acoplado diretamente a `FlutterTts`.
-- O caminho atual assume que o motor TTS fala diretamente; provedores cloud retornam áudio binário que precisa ser tocado por um player.
-- A configuração de voz é apenas `String? readAloudVoice` e ainda usa `locale: 'en-US'` hardcoded no TTS nativo.
-- Chaves API não existem hoje e não podem ser armazenadas em JSON/settings comuns.
-- O botão de read-aloud não diferencia falhas de engine nativo, falhas de rede, chave ausente, quota, ou provider experimental quebrado.
-- A extração de texto para fala usa stripping Markdown básico, suficiente para o TTS nativo atual mas fraco para vozes cloud de maior qualidade/custo.
+The managed-local path has an additional correctness problem that becomes critical when promoted to the primary desktop action. Its final `Continue` button currently calls `_complete()` even when no local server is running. It does not set `_connectionSuccess`, does not pass through the `Ready` step, and therefore does not arm `pendingPostOnboardingChatTour` after a successful first-run setup.
 
-## Objetivo
+## Objective
 
-Ao fim da implementação:
+Deliver a first-run Welcome screen with one capability-appropriate primary action:
 
-1. O TTS nativo atual continua funcionando como padrão e sem regressões.
-2. A arquitetura de TTS passa a aceitar provedores plugáveis.
-3. O usuário pode selecionar `Sistema/Nativo`, `Microsoft Edge Speech (experimental)` ou `OpenAI-compatible` em `Settings > Speech`.
-4. O provedor Edge experimental funciona sem chave API, é opt-in, mostra aviso claro de privacidade/instabilidade, e possui fallback manual para nativo quando falhar.
-5. O provedor OpenAI-compatible aceita `baseUrl`, `apiKey`, `model`, `voice`, `responseFormat=mp3` e `speed`, usando `POST /v1/audio/speech` e tocando o áudio retornado.
-6. API keys são armazenadas somente em secure storage, nunca em `ExperienceSettings.toJson()` ou logs.
-7. Síntese assíncrona e playback remoto respeitam cancelamento: stop, troca de sessão, background e novo envio impedem áudio antigo de começar depois.
-8. O texto enviado ao TTS é melhor sanitizado para Markdown complexo.
-9. `BEHAVIOR.md`, testes e, se necessário, `ADR.md` documentam o novo comportamento e os riscos do Edge experimental/cloud TTS.
+- On runtimes where `AppProvider.localServerSupported` is `true`, prioritize managed local OpenCode setup.
+- On runtimes where `AppProvider.localServerSupported` is `false`, prioritize the guided OpenCode setup path.
+- Keep connection to an existing server available as a secondary action on every platform.
+- Do not show a disabled managed-local action on unsupported platforms.
+- Preserve the complete setup chooser when the shared wizard is opened from Settings.
+- Require a healthy running managed local server before first-run completion.
+- Route successful first-run managed setup through the existing `Ready` step and arm the post-onboarding chat tour on final completion.
+- Add regression coverage for capability adaptation, first-run/settings isolation, managed-local completion, accessibility, and compact layouts.
 
-## Contexto do Projeto
+## Context and Constraints
 
-Projeto: CodeWalk, cliente Flutter mobile/desktop para servidores OpenCode-compatible.
+### Product constraints
 
-Regras relevantes:
+- CodeWalk is a mobile and desktop OpenCode client. Prioritize touch/mobile usability while retaining complete desktop, pointer, and keyboard behavior.
+- Use Material You / Material 3 components and the existing theme. Do not introduce a custom palette, hard-coded card colors, or a new design system.
+- Base setup priority on runtime capability (`localServerSupported`), not viewport width or a phone/desktop heuristic. A narrow desktop window must still prioritize managed local setup; a wide web/mobile viewport must not expose it.
+- Keep the first-run wizard intentionally linear and compatible with ADR-011.
+- Do not change OpenCode API, event, provider, model, or session semantics. This client-only UI change remains compatible with ADR-023 and requires no ADR exception.
+- Reuse existing localization keys. Do not introduce English-only strings and do not run the destructive global ARB generation script.
+- Do not redesign chat empty states, server failure recovery, authentication, local runtime internals, or the post-onboarding tour itself.
 
-- Mobile e desktop devem continuar suportados; priorizar UX mobile.
-- `BEHAVIOR.md` descreve comportamento implementado e deve ser atualizado após a mudança.
-- Mudanças de comportamento precisam preservar ADR-023: o cliente não deve alterar semântica oficial de servidor/API/eventos OpenCode.
-- Esta feature é client-side e não altera endpoints OpenCode; portanto é compatível com ADR-023 se não enviar dados ao servidor OpenCode nem modificar lifecycle de chat.
-- Cloud TTS envia texto do assistente a terceiros; isso exige aviso de privacidade e preferencialmente uma ADR/nota explícita por causa de Edge experimental não oficial.
-- Não usar `tool/i18n/generate_arb.dart` globalmente. Ao adicionar strings, seguir workflow seguro de tradução já usado no projeto.
+### Existing implementation
 
-Arquivos atuais relevantes:
+- `lib/presentation/pages/app_shell_page.dart:83-117` gates first run. It shows `OnboardingWizardPage` when no server profile exists, `skipOnboardingWizard` is false, and the wizard has not been dismissed for the current session.
+- `lib/presentation/pages/onboarding_wizard_page.dart:23-129` defines `SetupWizardInitialFlow`, widget parameters, wizard state, and initial-flow selection.
+- `lib/presentation/pages/onboarding_wizard_page.dart:232-253` completes the wizard. `_complete()` arms `pendingPostOnboardingChatTour` only when `_connectionSuccess`, `showSkipAction`, and a non-edit flow are all true.
+- `lib/presentation/pages/onboarding_wizard_page.dart:255-287` defines `_goToConnectServer`, `_goToNeedHelp`, and `_goToLocalManagedSetup`. These callbacks record setup-debug events and must remain the entry points for their respective flows.
+- `lib/presentation/pages/onboarding_wizard_page.dart:596-683` builds the shell and selects the current step.
+- `lib/presentation/pages/onboarding_wizard_page.dart:687-919` builds the current Welcome step.
+- `lib/presentation/pages/onboarding_wizard_page.dart:1398-1749` builds managed local setup.
+- `lib/presentation/pages/onboarding_wizard_page.dart:1808-1963` builds successful and failed `Ready` states.
+- `lib/presentation/providers/app_provider.dart:1281-1370` starts the local server. A successful `startLocalServer()` health-checks the process, creates/activates the managed local server profile through `_ensureLocalServerProfileActive()`, sets `LocalServerRuntimeStatus.running`, and returns `true`.
+- `lib/presentation/pages/settings_page.dart:356-364` and `lib/presentation/pages/settings/sections/servers_settings_section.dart:568-580` open the shared wizard with `showSkipAction: false`.
+- `lib/presentation/pages/chat_page/chat_page_timeline_viewport.dart:245-264` opens the wizard directly in `connectServer` flow from the no-server chat state; this call bypasses Welcome and must remain unchanged.
+- `test/widget/onboarding_wizard_test.dart` contains the primary wizard widget tests and reusable fake providers/runtimes.
+- `test/widget/app_shell_page_test.dart` protects first-run shell gating.
+- `test/widget/chat_page_test.dart` protects the post-onboarding tour and no-server chat behavior.
+- `test/unit/providers/app_provider_test.dart:406-477` already verifies managed local profile creation and launch failures at provider level.
+- `BEHAVIOR.md:43-161` documents current onboarding, CodeWalk/OpenCode explanation, Ready behavior, tour handoff, health failure recovery, and no-server behavior.
+- `ADR.md:457-492` is ADR-011, the unified linear server setup wizard decision.
+- `ADR.md:998-1051` is ADR-023, the official OpenCode contract-first policy.
 
-- `lib/presentation/services/read_aloud_service.dart`
-  - Define `ReadAloudService extends ChangeNotifier`.
-  - Usa `FlutterTts` diretamente.
-  - API atual: `state`, `activeMessageId`, `isSpeaking`, `progress`, `isAvailable`, `speak({messageId, text, rate, pitch, voice})`, `pause()`, `stop()`, `stopIfReading(messageId)`, `dispose()`, `getVoices()`, `getLanguages()`.
-  - Aplica voz com `setVoice({'name': voice, 'locale': 'en-US'})`; isso deve ser corrigido.
+### Existing state that must remain authoritative
 
-- `lib/presentation/widgets/chat_message/chat_message_content.dart`
-  - Renderiza o botão de read-aloud para mensagens do assistente.
-  - Extrai texto de `TextPart` e remove Markdown básico.
-  - Chama `readAloudService.speak(...)` com `readAloudRate`, `readAloudPitch` e `readAloudVoice`.
+- `skipOnboardingWizard` controls persistent first-run wizard suppression.
+- `_wizardDismissedThisSession` controls temporary dismissal in `AppShellPage`.
+- `pendingPostOnboardingChatTour` controls the tour handoff after successful first-run setup.
+- Server profiles and `AppProvider.localServerStatus` determine whether a managed local server is available and running.
+- Do not add `welcomeSeen`, `firstRunWelcomeSeen`, `onboardingVariant`, or any equivalent state field.
 
-- `lib/domain/entities/experience_settings.dart`
-  - Campos atuais: `readAloudEnabled`, `readAloudRate`, `readAloudPitch`, `readAloudVoice`.
-  - Serializa settings em JSON. Não adicionar secrets/API keys aqui.
+## Decisions (Resolved)
 
-- `lib/presentation/providers/settings_provider.dart`
-  - Getters/setters e persistência dos campos de read-aloud.
+1. Change only the first-run Welcome presentation. Preserve the complete current chooser used by Settings and server management.
+2. Detect the first-run wizard context explicitly from existing widget inputs; do not add a new public constructor parameter or persisted state.
+3. Use `AppProvider.localServerSupported` as the sole primary-action capability signal.
+4. Keep a single-column, maximum-width-560 layout on all sizes. Do not introduce a desktop multi-column layout; it would add complexity without improving the core decision.
+5. Replace equal-weight actionable cards with one full-width `FilledButton`, one full-width `OutlinedButton`, and one optional low-emphasis `TextButton`.
+6. Keep the CodeWalk/OpenCode relationship visible as concise inline text. Keep the detailed “What is OpenCode?” explanation available in a compact expansion placed after the setup actions.
+7. Hide managed-local setup completely when unsupported. Do not render it disabled.
+8. Reuse `_goToLocalManagedSetup`, `_goToNeedHelp`, and `_goToConnectServer` so setup-debug events and existing flow semantics remain intact.
+9. On first run, require `LocalServerRuntimeStatus.running` before leaving managed local setup.
+10. After first-run managed local setup succeeds, transition to the existing successful `Ready` step with `_connectionSuccess = true`; call `_complete()` only from `Ready`.
+11. Preserve Settings-mode managed setup behavior and labels. Settings completion must not arm the post-onboarding tour.
+12. Reuse existing localization strings and generated localization code. Add no new ARB keys unless compilation proves an existing key cannot express an explicitly required label; this plan expects no new keys.
+13. Keep the existing AppBar Skip behavior unchanged and visually secondary.
 
-- `lib/presentation/pages/settings/sections/speech_settings_section.dart`
-  - `_buildReadAloudCard` hoje mostra enable, speed e pitch.
-  - Não possui voice picker visível apesar de existirem strings/fields.
+## Why This Plan
 
-- `lib/core/di/injection_container.dart`
-  - Registra `ReadAloudService.new` como lazy singleton.
+This plan reduces the first decision to one recommended action without removing valid alternatives. It uses an existing capability signal instead of device or viewport guesses, protects the shared Settings wizard from first-run-specific changes, and avoids unnecessary state migration. It also resolves the managed-local completion asymmetry before that path becomes the desktop default, preventing users from exiting setup without a running server and preserving the established Ready/tour handoff.
 
-- `lib/presentation/services/sound_service.dart`
-  - Usa `audioplayers` com `UrlSource` e `BytesSource` para sons curtos.
-  - Não reutilizar `SoundService` diretamente para TTS longo; criar player próprio gerenciado por `ReadAloudService` ou backend de áudio TTS.
+## Execution Plan (Synthesized)
 
-- `pubspec.yaml`
-  - Já possui `flutter_tts: ^4.2.5`.
-  - Já possui `audioplayers: ^6.6.0`.
-  - Já possui HTTP/Dio usados pelo app.
+### Step 1 — Establish a first-run-only Welcome branch
 
-- `test/unit/services/read_aloud_service_test.dart`
-  - Testa o wrapper atual com fake `FlutterTts`.
+**Files:**
 
-- `test/unit/providers/settings_provider_test.dart`
-  - Testa persistência/clamping dos settings.
+- `lib/presentation/pages/onboarding_wizard_page.dart`
+
+**Changes:**
+
+1. Add a private computed getter to `_OnboardingWizardPageState`:
+
+```dart
+bool get _isFirstRunFlow =>
+    widget.showSkipAction &&
+    widget.initialFlow == SetupWizardInitialFlow.choose &&
+    widget.initialServerProfile == null;
+```
+
+2. Keep `_buildStep()` unchanged: step `0` must continue calling `_buildWelcomeStep()`.
+3. Refactor `_buildWelcomeStep()` into a dispatcher. Read `localServerSupported` once with the existing `context.select<AppProvider, bool>`, then return either the new first-run presentation or the preserved full chooser:
+
+```dart
+Widget _buildWelcomeStep() {
+  final supportsLocalManaged = context.select<AppProvider, bool>(
+    (provider) => provider.localServerSupported,
+  );
+  if (_isFirstRunFlow) {
+    return _buildFirstRunWelcomeStep(supportsLocalManaged);
+  }
+  return _buildSetupChooserStep(supportsLocalManaged);
+}
+```
+
+4. Move the existing Welcome implementation into `_buildSetupChooserStep(bool supportsLocalManaged)` without changing its labels, order, callbacks, card rendering, key `step_welcome`, or Settings behavior.
+5. Ensure only one widget in each branch owns `const ValueKey('step_welcome')`.
+
+**Risk:** Medium. The wizard is shared across first-run, Settings, server management, and direct initial flows.
+
+**Mitigation:** Gate the new presentation with `_isFirstRunFlow` and add explicit tests for `showSkipAction: false` and non-`choose` initial flows.
+
+**Validation:** Run the existing onboarding widget tests before changing assertions. Confirm the Settings chooser still contains all three current options and its existing title/subtitle.
+
+### Step 2 — Build the simplified first-run Welcome presentation
+
+**Files:**
+
+- `lib/presentation/pages/onboarding_wizard_page.dart`
+
+**Changes:**
+
+1. Add `_buildFirstRunWelcomeStep(bool supportsLocalManaged)`.
+2. Return `SingleChildScrollView(key: const ValueKey('step_welcome'))` containing a centered `Column` with `crossAxisAlignment: CrossAxisAlignment.stretch`.
+3. Keep the outer scaffold’s existing 560-pixel maximum width and default padding. Do not add a new breakpoint or multi-column layout.
+4. Render the existing `Symbols.code_rounded` icon at 56 pixels, centered, using `colorScheme.primary`.
+5. Render `onboardingWelcomeTo(AppConstants.appName)` with `headlineSmall`, centered.
+6. Render `onboardingNeedsOpenCodeServer(AppConstants.appName)` with `bodyMedium`, centered, using `onSurfaceVariant`.
+7. Render `onboardingCodeWalkAppOpenCode` directly below it with `bodySmall`, centered, using `onSurfaceVariant`. This makes the CodeWalk-client/OpenCode-engine relationship visible without requiring expansion.
+8. Use vertical spacing of 24 pixels after the icon, 8 pixels between text blocks, and 24 pixels before the primary action.
+9. Add stable keys for tests:
+
+```dart
+const ValueKey('first_run_primary_setup_action')
+const ValueKey('first_run_connect_server_action')
+const ValueKey('first_run_guided_setup_action')
+```
+
+10. When `supportsLocalManaged` is `true`, render actions in this exact order:
+
+```text
+FilledButton.icon: onboardingLetCodeWalkSet → _goToLocalManagedSetup
+OutlinedButton.icon: onboardingConnectRunningServer → _goToConnectServer
+TextButton.icon: onboardingShowSetupSteps → _goToNeedHelp
+```
+
+11. Use `Symbols.computer`, `Symbols.dns_rounded`, and `Symbols.help_outline_rounded` respectively.
+12. When `supportsLocalManaged` is `false`, render actions in this exact order:
+
+```text
+FilledButton.icon: onboardingShowSetupSteps → _goToNeedHelp
+OutlinedButton.icon: onboardingConnectRunningServer → _goToConnectServer
+```
+
+13. Do not render `onboardingLetCodeWalkSet`, `onboardingAvailableOnlyDesktop`, or a disabled managed-local control when unsupported.
+14. Make the filled and outlined actions full-width through the stretched column. Apply `minimumSize: const Size.fromHeight(48)` through local button styles if the default theme does not guarantee a 48-pixel target.
+15. Insert 12 pixels between high- and medium-emphasis actions and 4–8 pixels before a tertiary text action.
+16. Place a compact `ExpansionTile` after the actions, separated by 16 pixels. Preserve `const ValueKey('what_is_opencode_tile')`, use `onboardingOpenCode` as its title, and show `onboardingOpenCodeRunsLocally` in its children.
+17. Do not wrap the first-run expansion in a full-size `Card`. Do not repeat `onboardingCodeWalkAppOpenCode` as the expansion subtitle because it is already visible above.
+18. Use theme typography, shapes, colors, focus, hover, splash, and disabled behavior from standard Material controls. Add no custom gesture detector or custom semantic wrapper unless an accessibility test proves it necessary.
+19. Keep the AppBar title and Skip action unchanged.
+
+**Risk:** Medium. Localization length and large text can expand the vertical layout.
+
+**Mitigation:** Keep the screen scrollable, use full-width controls, avoid fixed heights other than minimum touch targets, and test at 360×640 with 2.0 text scale.
+
+**Validation:** Verify action type, label, order, callback destination, absence of unsupported controls, keyboard focus, and no render overflow.
+
+### Step 3 — Harden first-run managed local completion
+
+**Files:**
+
+- `lib/presentation/pages/onboarding_wizard_page.dart`
+
+**Changes:**
+
+1. Add a private transition method:
+
+```dart
+void _goToReadyFromManagedLocal() {
+  if (!mounted) return;
+  setState(() {
+    _connectionSuccess = true;
+    _connectionError = null;
+    _step = 2;
+  });
+}
+```
+
+2. Add a private async start method that calls `AppProvider.startLocalServer()` and preserves current error reporting:
+
+```dart
+Future<void> _startManagedLocalServer() async {
+  final appProvider = context.read<AppProvider>();
+  final ok = await appProvider.startLocalServer();
+  if (!mounted) return;
+  if (!ok) {
+    _showMessage(appProvider.errorMessage);
+    return;
+  }
+  if (_isFirstRunFlow) {
+    _goToReadyFromManagedLocal();
+  }
+}
+```
+
+3. Replace the inline `startLocalServer()` closure in `_buildLocalSetupStep()` with `() => unawaited(_startManagedLocalServer())`. Preserve its busy/running disable conditions, icon, label, diagnostics, and failure messaging.
+4. In the final action region of `_buildLocalSetupStep()`, branch by `_isFirstRunFlow`:
+
+- In first-run flow, render no completion button while `isRunning` is false.
+- In first-run flow, when `isRunning` is true, render `FilledButton.icon` with `onboardingContinue`, `Symbols.arrow_forward_rounded`, and `_goToReadyFromManagedLocal`.
+- In non-first-run/Settings flow, preserve the existing `FilledButton.icon` that labels itself `onboardingDone` and calls `_complete()`.
+
+5. Do not call `_complete()` directly from managed local setup during first run.
+6. Do not set `_connectionSuccess` before `startLocalServer()` returns `true` or before an already-running status is observed.
+7. Keep launch/install failures on the local setup step. Preserve logs, diagnostics, setup-debug navigation, Start/Stop actions, and error messages.
+8. Let the existing successful `Ready` button call `_complete()`. Because `_connectionSuccess` and `showSkipAction` are true, `_complete()` will set `pendingPostOnboardingChatTour` before invoking `onComplete`.
+9. Leave `_complete()`, `AppShellPage`, `SettingsProvider`, `ExperienceSettings`, and `AppProvider.startLocalServer()` unchanged.
+
+**Risk:** High. Incorrect completion sequencing can exit onboarding without a usable server or suppress the post-onboarding tour.
+
+**Mitigation:** Require `running`, route through `Ready`, test both fresh start and already-running cases, and verify the pending tour flag before and after final completion.
+
+**Validation:** Confirm failed start remains on step 3, successful start reaches `step_ready_success`, the tour flag remains false before final Ready completion, and becomes true after the user completes Ready.
+
+### Step 4 — Add focused widget regression tests
+
+**Files:**
+
+- `test/widget/onboarding_wizard_test.dart`
+- `test/widget/app_shell_page_test.dart` only if existing shell-gate coverage cannot assert the new first-run entry without duplicating setup
+- `test/widget/chat_page_test.dart` only for running existing targeted tour tests; do not edit unless a real uncovered regression requires it
+
+**Changes:**
+
+1. Extend the test builder only as needed to inject `FakeLocalOpencodeServerRuntime`, `localServerHealthProbe`, and platform capability deterministically.
+2. Add a compact unsupported-capability test using a 360×640 test surface and an `AppProvider` whose fake local runtime reports `supported: false`. Assert:
+
+- `first_run_primary_setup_action` is a `FilledButton` containing `Show me the setup steps`.
+- `first_run_connect_server_action` is an `OutlinedButton` containing `Connect to a running server`.
+- `Let CodeWalk set it up locally` and `Available only on desktop` are absent.
+- `What is OpenCode?` remains available.
+- No overflow exception occurs.
+
+3. Add a supported-capability test using a fake local runtime with `supported: true`. Assert:
+
+- `first_run_primary_setup_action` is a `FilledButton` containing `Let CodeWalk set it up locally`.
+- `first_run_connect_server_action` is secondary.
+- `first_run_guided_setup_action` is present as the tertiary guide action.
+
+4. Run the supported-capability test on a narrow surface as well. Assert managed local remains primary. This proves capability, not width, controls priority.
+5. Add callback destination tests:
+
+- Unsupported primary opens `step_server_setup` with the Quick setup guide visible.
+- Existing-server secondary opens `step_server_setup` without initially showing the Quick setup guide.
+- Supported primary opens `step_local_setup` and schedules diagnostics.
+
+6. Add a Settings isolation test with `showSkipAction: false` and `initialFlow: choose`. Assert the preserved chooser still shows all existing setup options, uses the Settings title/subtitle, has no Skip action, and does not use the first-run primary-action keys.
+7. Add a non-`choose` initial-flow test proving `connectServer`, `guidedServerSetup`, and `managedLocalServer` continue entering their target steps directly.
+8. Add a first-run managed-local success test with:
+
+- Fake local runtime `supported: true`.
+- Successful runtime start result.
+- `localServerHealthProbe` returning `ServerHealthStatus.healthy`.
+- A completion callback flag.
+
+Assert this exact sequence:
+
+```text
+Open first-run Welcome.
+Tap first_run_primary_setup_action.
+Wait for local diagnostics.
+Tap Start.
+Wait for start and health completion.
+Observe step_ready_success.
+Confirm a managed local server profile exists and is active.
+Confirm pendingPostOnboardingChatTour is false before final completion.
+Tap Start using CodeWalk.
+Confirm pendingPostOnboardingChatTour is true.
+Confirm onComplete was called.
+```
+
+9. Add a first-run managed-local failure test. Configure the fake runtime start result with `ok: false` and a deterministic error. Assert the wizard remains on `step_local_setup`, displays the failure, creates no active managed profile, does not arm the tour, and does not call completion.
+10. Add an already-running first-run test. Start the fake managed server successfully before entering or simulate a running provider state, open managed local setup, assert `Continue` is enabled, tap it, and verify the successful Ready step.
+11. Add a Settings managed-local regression test. With `showSkipAction: false`, verify `Done` preserves the existing close behavior and never arms `pendingPostOnboardingChatTour`.
+12. Add a large-text test at a 360×640 surface and 2.0 text scale. Pump the first-run Welcome, scroll to the last control, and assert no `RenderFlex` overflow or uncaught framework exception.
+13. Add accessibility assertions using Flutter’s available guidelines:
+
+- Android tap target guideline for at least 48×48 controls.
+- Labeled tappable controls.
+- Logical focus order matching visual action order.
+
+14. Update the original “shows beginner-friendly welcome options” test to assert the new first-run hierarchy rather than only text presence.
+15. Preserve all existing skip, connection, failed-health recovery, duplicate-profile, OAuth, and setup-debug tests.
+
+**Risk:** Medium. Platform overrides and async managed-runtime tests can leak state between tests.
+
+**Mitigation:** Reset `debugDefaultTargetPlatformOverride`, test surface size, device pixel ratio, and text scale in `addTearDown`; use fake runtime and health-probe seams instead of real processes or network calls.
+
+**Validation:** Run the onboarding test file independently until stable, then run the related shell and tour tests.
+
+### Step 5 — Update current-behavior documentation
+
+**Files:**
 
 - `BEHAVIOR.md`
-  - Tem seção `Text-to-Speech (TTS)` com botão read-aloud, toggle, auto-stop, settings de speed/pitch, disabled state e Markdown stripping.
 
-Referências externas que moldam a decisão:
+**Changes:**
 
-- OpenChamber usa Kokoro local para read-aloud recente, não Edge/Microsoft no changelog pesquisado.
-- LobeHub/LobeChat possui `EdgeSpeechTTS`, `MicrosoftTTS`, `OpenAITTS`, `OpenAISTT`, cache local e configuração de TTS.
-- Edge TTS usa endpoint não oficial/reverse-engineered do Microsoft Edge Read Aloud, sem SLA e com risco de quebra/rate-limit/ToS.
-- OpenAI-compatible TTS usa `POST /v1/audio/speech` com `model`, `input`, `voice`, `response_format`, `speed` e `Authorization: Bearer <key>`, retornando áudio binário.
+1. Update only the first-run onboarding section after the implementation and tests pass.
+2. Document that first-run Welcome uses a capability-adaptive primary action:
 
-## Decisões Resolvidas
+- Managed local setup is primary when the current runtime supports it.
+- Guided setup is primary when managed local setup is unsupported.
+- Existing-server connection remains available as the secondary path.
+- Unsupported managed-local setup is not shown.
 
-1. **Manter o TTS nativo como padrão.** Novas instalações e usuários existentes continuam em `native` até optarem por outro provedor.
-2. **Adicionar Edge como experimental e opt-in.** O rótulo deve ser `Microsoft Edge Speech (experimental)` e deve explicar que é não oficial, pode parar de funcionar, e envia texto à Microsoft.
-3. **Adicionar `OpenAI-compatible` como primeiro provedor com chave.** Ele cobre OpenAI oficial e proxies/serviços compatíveis com `/v1/audio/speech`.
-4. **Não implementar ElevenLabs/Azure oficial nesta primeira entrega.** Apenas preparar a arquitetura para adicionar esses provedores depois. Não criar UI morta para eles neste primeiro PR.
-5. **Não armazenar API keys em `ExperienceSettings`.** Secrets ficam em secure storage por provider.
-6. **Separar síntese e playback.** O backend nativo fala internamente via `flutter_tts`; backends cloud sintetizam áudio e o `ReadAloudService` toca bytes com `AudioPlayer`.
-7. **Não implementar streaming progressivo no primeiro passo.** A primeira versão baixa/sintetiza o áudio completo e depois toca. Isso reduz risco em Edge/OpenAI-compatible e simplifica cancelamento.
-8. **Progressão de UI simples no v1.** Botão no chat continua play/stop. Pausa, seekbar e cache podem ser entregas posteriores.
-9. **Corrigir o contrato de voz.** Substituir o uso simples de `readAloudVoice` por metadados suficientes: provider, voice id, locale e model/base URL quando necessário.
-10. **Implementar cancelamento por geração.** Cada chamada `speak()` deve receber um generation id interno; se `stop()` ou outra chamada invalidar a geração, resultados tardios devem ser descartados.
+3. Document that Settings retains the complete unified setup chooser.
+4. Document that successful first-run managed local setup reaches the same Ready completion and post-onboarding tour handoff as successful server connection.
+5. Preserve all existing documentation for skip behavior, failed health checks, setup-debug visibility, no-server fallback, and the chat tour.
+6. Do not modify `ADR.md`; the implementation remains within ADR-011 and ADR-023.
+7. Do not modify `CODEBASE.md`; no module, entry point, or structural map changes.
 
-## Plano de Execução
+**Risk:** Low.
 
-### Passo 1 — Criar modelo de provedor TTS em settings sem secrets
+**Validation:** Compare the updated statements with widget behavior and tests. Do not document planned or unimplemented behavior.
 
-Arquivos:
+### Step 6 — Validate and review the completed change
 
-- `lib/domain/entities/experience_settings.dart`
-- `lib/presentation/providers/settings_provider.dart`
-- `test/unit/domain/experience_settings_test.dart` se existir; caso não exista, criar ou adicionar no conjunto de testes apropriado.
-- `test/unit/providers/settings_provider_test.dart`
+**Files:** All changed source, tests, and behavior documentation.
 
-Executar:
+**Commands:**
 
-1. Em `experience_settings.dart`, adicionar enum:
-
-```dart
-enum ReadAloudProvider {
-  native,
-  edgeExperimental,
-  openAiCompatible,
-}
-```
-
-2. Adicionar helpers:
-
-```dart
-String readAloudProviderKey(ReadAloudProvider provider) {
-  return switch (provider) {
-    ReadAloudProvider.native => 'native',
-    ReadAloudProvider.edgeExperimental => 'edge_experimental',
-    ReadAloudProvider.openAiCompatible => 'openai_compatible',
-  };
-}
-
-ReadAloudProvider readAloudProviderFromKey(String value) {
-  return switch (value.trim().toLowerCase()) {
-    'edge_experimental' || 'edge' || 'microsoft_edge' =>
-      ReadAloudProvider.edgeExperimental,
-    'openai_compatible' || 'openai' || 'openai-compatible' =>
-      ReadAloudProvider.openAiCompatible,
-    _ => ReadAloudProvider.native,
-  };
-}
-```
-
-3. Adicionar campos persistidos não secretos a `ExperienceSettings`:
-
-```dart
-final ReadAloudProvider readAloudProvider;
-final String? readAloudVoiceId;
-final String? readAloudVoiceLocale;
-final String? readAloudModel;
-final String? readAloudBaseUrl;
-final String readAloudResponseFormat;
-```
-
-4. Defaults obrigatórios:
-
-```dart
-readAloudProvider: ReadAloudProvider.native,
-readAloudVoiceId: null,
-readAloudVoiceLocale: null,
-readAloudModel: 'gpt-4o-mini-tts',
-readAloudBaseUrl: 'https://api.openai.com/v1',
-readAloudResponseFormat: 'mp3',
-```
-
-5. Manter `readAloudVoice` temporariamente para migração/compatibilidade se remover de uma vez quebrar muitos testes. Se mantido, tratar como alias legado e migrar seu valor para `readAloudVoiceId` quando `readAloudVoiceId` estiver ausente.
-
-6. Atualizar constructor, `copyWith`, `toJson` e `fromJson`.
-
-7. Garantir que `toJson()` nunca inclua API key.
-
-8. Em `SettingsProvider`, adicionar getters/setters:
-
-```dart
-ReadAloudProvider get readAloudProvider => _settings.readAloudProvider;
-String? get readAloudVoiceId => _settings.readAloudVoiceId;
-String? get readAloudVoiceLocale => _settings.readAloudVoiceLocale;
-String? get readAloudModel => _settings.readAloudModel;
-String? get readAloudBaseUrl => _settings.readAloudBaseUrl;
-String get readAloudResponseFormat => _settings.readAloudResponseFormat;
-```
-
-9. Adicionar setters com trim, normalização e persistência:
-
-- `setReadAloudProvider(ReadAloudProvider value)`
-- `setReadAloudVoice({String? id, String? locale})`
-- `setReadAloudModel(String? value)`
-- `setReadAloudBaseUrl(String? value)`
-- `setReadAloudResponseFormat(String value)`
-
-10. Normalizar `baseUrl` removendo `/` final. Valor vazio volta para `https://api.openai.com/v1`.
-
-Validação:
-
-- Testar default provider `native`.
-- Testar roundtrip JSON para provider/model/baseUrl/voice/locale/format.
-- Testar que nenhuma API key aparece em `ExperienceSettings.toJson()`.
-- Testar migração de `readAloudVoice` legado para `readAloudVoiceId` se o alias for mantido.
-
-### Passo 2 — Criar secure storage específico para TTS API keys
-
-Arquivos:
-
-- Novo: `lib/core/auth/tts_api_key_storage.dart`
-- `lib/core/di/injection_container.dart`
-- Teste novo: `test/unit/core/auth/tts_api_key_storage_test.dart`
-
-Executar:
-
-1. Criar classe baseada no padrão de `OAuthTokenStorage`, mas com namespace próprio:
-
-```dart
-abstract class TtsApiKeyStorageBackend {
-  Future<String?> read({required String key});
-  Future<void> write({required String key, required String value});
-  Future<void> delete({required String key});
-}
-
-class TtsApiKeyStorage {
-  TtsApiKeyStorage({required TtsApiKeyStorageBackend backend})
-      : _backend = backend;
-
-  final TtsApiKeyStorageBackend _backend;
-
-  String _key(ReadAloudProvider provider) {
-    return '${AppConstants.secureStorageNamespace}::tts_api_key::${readAloudProviderKey(provider)}';
-  }
-
-  Future<String?> read(ReadAloudProvider provider) async {
-    return _backend.read(key: _key(provider));
-  }
-
-  Future<void> write(ReadAloudProvider provider, String value) async {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      await delete(provider);
-      return;
-    }
-    await _backend.write(key: _key(provider), value: trimmed);
-  }
-
-  Future<void> delete(ReadAloudProvider provider) async {
-    await _backend.delete(key: _key(provider));
-  }
-}
-```
-
-2. Implementar backend com `FlutterSecureStorage`, igual ao padrão existente.
-
-3. Registrar em DI.
-
-4. Garantir que exceções não loguem o valor da chave.
-
-Validação:
-
-- Testar write/read/delete.
-- Testar trim.
-- Testar valor vazio apaga a chave.
-- Testar namespace por provider.
-
-### Passo 3 — Criar abstração de backend TTS e manter nativo funcionando
-
-Arquivos:
-
-- Novo: `lib/presentation/services/tts/tts_backend.dart`
-- Novo: `lib/presentation/services/tts/native_tts_backend.dart`
-- Atualizar: `lib/presentation/services/read_aloud_service.dart`
-- Atualizar: `lib/core/di/injection_container.dart`
-- Atualizar: `test/unit/services/read_aloud_service_test.dart`
-
-Executar:
-
-1. Criar modelos:
-
-```dart
-enum TtsPlaybackMode {
-  nativeEngine,
-  generatedAudio,
-}
-
-class TtsVoiceOption {
-  const TtsVoiceOption({
-    required this.id,
-    required this.label,
-    this.locale,
-    this.providerMetadata = const <String, String>{},
-  });
-
-  final String id;
-  final String label;
-  final String? locale;
-  final Map<String, String> providerMetadata;
-}
-
-class TtsSynthesisRequest {
-  const TtsSynthesisRequest({
-    required this.text,
-    required this.rate,
-    required this.pitch,
-    this.voiceId,
-    this.voiceLocale,
-    this.model,
-    this.baseUrl,
-    this.responseFormat = 'mp3',
-    this.apiKey,
-  });
-
-  final String text;
-  final double rate;
-  final double pitch;
-  final String? voiceId;
-  final String? voiceLocale;
-  final String? model;
-  final String? baseUrl;
-  final String responseFormat;
-  final String? apiKey;
-}
-
-sealed class TtsSynthesisResult {
-  const TtsSynthesisResult();
-}
-
-class NativeTtsStarted extends TtsSynthesisResult {
-  const NativeTtsStarted();
-}
-
-class GeneratedTtsAudio extends TtsSynthesisResult {
-  const GeneratedTtsAudio({required this.bytes, required this.mimeType});
-
-  final Uint8List bytes;
-  final String mimeType;
-}
-
-abstract class TtsBackend {
-  ReadAloudProvider get provider;
-  TtsPlaybackMode get playbackMode;
-  Future<bool> get isAvailable;
-  Future<List<TtsVoiceOption>> getVoices();
-  Future<TtsSynthesisResult> speakOrSynthesize(TtsSynthesisRequest request);
-  Future<void> stop();
-  Future<void> pause();
-  void dispose();
-}
-```
-
-2. Implement `NativeTtsBackend` using `FlutterTts`.
-
-3. Move all direct `_tts.*` calls out of `ReadAloudService` into `NativeTtsBackend`.
-
-4. Fix voice locale:
-
-```dart
-if (request.voiceId != null) {
-  await _tts.setVoice({
-    'name': request.voiceId!,
-    if (request.voiceLocale != null) 'locale': request.voiceLocale!,
-  });
-}
-```
-
-If `voiceLocale` is null and backend voice list contains the selected id, derive locale from that list before calling `setVoice`.
-
-5. Refactor `ReadAloudService` so it no longer imports `flutter_tts` directly.
-
-6. Keep external `ReadAloudService.speak(...)` compatible initially, but extend parameters to include provider/config or make it receive provider/config from `SettingsProvider` call site in a later step.
-
-7. Preserve state behavior for native provider.
-
-Validação:
-
-- Existing `ReadAloudService` tests still pass after updating fakes to fake `TtsBackend` instead of `FlutterTts`.
-- Test selected voice passes locale when provided.
-- Test native backend handles empty voice locale without hardcoded `en-US`.
-
-### Passo 4 — Adicionar playback de áudio gerado no `ReadAloudService`
-
-Arquivos:
-
-- `lib/presentation/services/read_aloud_service.dart`
-- Testes em `test/unit/services/read_aloud_service_test.dart`
-
-Executar:
-
-1. Adicionar `AudioPlayer` dedicado ao `ReadAloudService` para backends `generatedAudio`.
-
-2. Não reutilizar `SoundService`, pois TTS longo precisa de estado, cancelamento, active message id e dispose próprio.
-
-3. Em `ReadAloudService`, adicionar contador interno:
-
-```dart
-int _generation = 0;
-```
-
-4. Em cada `speak()`:
-
-- Incrementar `_generation`.
-- Guardar `final generation = _generation`.
-- Parar playback anterior.
-- Definir `_activeMessageId`.
-- Definir estado de carregamento se for necessário adicionar enum `loading`; se não adicionar, manter `playing` apenas quando áudio começar e usar uma flag privada `_isPreparing` para evitar UI complexa.
-- Chamar backend.
-- Antes de tocar áudio retornado, checar `if (generation != _generation) return;`.
-- Se for `GeneratedTtsAudio`, tocar com `AudioPlayer.play(BytesSource(result.bytes))`.
-- Ao completar player, checar geração e resetar estado.
-
-5. Em `stop()`:
-
-- Incrementar `_generation`.
-- Chamar `backend.stop()`.
-- Chamar `_audioPlayer.stop()`.
-- Resetar estado para idle e limpar active message id.
-
-6. Em `pause()`:
-
-- Para native, delegar `backend.pause()`.
-- Para generated audio, chamar `_audioPlayer.pause()` e estado `paused` se existir UI para retomar; se a UI continua play/stop, `pause()` pode permanecer apenas para testes/compatibilidade.
-
-7. Escutar eventos do `AudioPlayer`:
-
-- completion → idle.
-- error → idle + lastError.
-- duration/position se disponíveis → progress por tempo, não por caracteres.
-
-8. Redefinir `progress`:
-
-- Native: manter null ou melhor esforço se `flutter_tts` fornecer progress real.
-- Generated audio: `position / duration` quando duration > 0.
-- Nunca usar character count para providers cloud.
-
-Validação:
-
-- Testar backend lento: `stop()` antes de retornar áudio impede playback.
-- Testar duas chamadas `speak()` seguidas: apenas a segunda toca.
-- Testar completion reseta active message.
-- Testar erro de player reseta estado e não crasha.
-
-### Passo 5 — Implementar OpenAI-compatible backend
-
-Arquivos:
-
-- Novo: `lib/presentation/services/tts/openai_compatible_tts_backend.dart`
-- Atualizar DI.
-- Testes novos em `test/unit/services/openai_compatible_tts_backend_test.dart`
-
-Contrato obrigatório:
-
-- Endpoint: `POST {baseUrl}/audio/speech`
-- Se `baseUrl` default for `https://api.openai.com/v1`, endpoint final é `https://api.openai.com/v1/audio/speech`.
-- Headers:
-  - `Authorization: Bearer <apiKey>`
-  - `Content-Type: application/json`
-  - `Accept: audio/mpeg` quando responseFormat for `mp3`.
-- Body:
-
-```json
-{
-  "model": "gpt-4o-mini-tts",
-  "input": "texto a sintetizar",
-  "voice": "alloy",
-  "response_format": "mp3",
-  "speed": 1.0
-}
-```
-
-Mapeamento:
-
-- `model`: `request.model ?? 'gpt-4o-mini-tts'`
-- `input`: `request.text`
-- `voice`: `request.voiceId ?? 'alloy'`
-- `response_format`: `request.responseFormat`, default `mp3`
-- `speed`: mapear `readAloudRate` atual para range OpenAI-compatible.
-
-Decisão de speed:
-
-- O slider atual `readAloudRate` vai de 0.0 a 1.0.
-- Para OpenAI-compatible, converter para `speed` de 0.5 a 2.0 inicialmente:
-
-```dart
-double openAiSpeedFromReadAloudRate(double rate) {
-  return (0.5 + (rate.clamp(0.0, 1.0) * 1.5)).clamp(0.5, 2.0);
-}
-```
-
-- Não usar `pitch` em OpenAI-compatible; o controle deve aparecer desabilitado/oculto para esse provider na UI.
-
-Erros:
-
-- 401/403 → `invalidApiKey`.
-- 429 → `rateLimitedOrQuota`.
-- 400 → `invalidRequest` com mensagem sanitizada.
-- 5xx/network → `providerUnavailable`.
-- Nunca incluir texto completo nem API key em logs/erros.
-
-Validação:
-
-- Testar body exato.
-- Testar baseUrl com e sem slash final.
-- Testar API key ausente retorna erro configurável antes da chamada HTTP.
-- Testar status 401/429/500 mapeados.
-- Testar bytes retornados viram `GeneratedTtsAudio` com mime `audio/mpeg` para mp3.
-
-### Passo 6 — Implementar Edge experimental backend
-
-Arquivos:
-
-- Novo: `lib/presentation/services/tts/edge_experimental_tts_backend.dart`
-- Testes: `test/unit/services/edge_experimental_tts_backend_test.dart`
-
-Decisão:
-
-- Implementar Edge como provider experimental, opt-in, sem chave do usuário.
-- Usar endpoint público reverse-engineered do Edge Read Aloud conforme libs conhecidas.
-- Encapsular todos os detalhes em backend isolado.
-- Nunca tornar Edge default.
-
-Contrato técnico mínimo:
-
-- Voices list endpoint conhecido por bibliotecas Edge TTS:
-  - `https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list`
-- WebSocket synthesis endpoint conhecido por bibliotecas Edge TTS:
-  - `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?...`
-- O backend deve construir SSML com texto escapado.
-- O backend deve receber frames binários de áudio e montar `Uint8List` final.
-- O backend deve ignorar/metadados de word boundary na primeira versão.
-
-Regras de segurança:
-
-- Escapar XML/SSML: `&`, `<`, `>`, `"`, `'`.
-- Limitar tamanho por request; se texto for muito longo, dividir em chunks seguros e concatenar áudio somente se isso for confiável. Na primeira versão, preferir limitar e retornar erro amigável para texto muito longo em Edge, em vez de implementar chunking frágil.
-- Definir timeout de conexão e síntese.
-- Tratar 403/close inesperado como `edgeUnavailable`.
-
-UI/label obrigatório:
-
-- Label: `Microsoft Edge Speech (experimental)`.
-- Descrição: `Uses an unofficial Microsoft Edge Read Aloud endpoint. It may stop working, be rate-limited, or fail without notice. Text is sent to Microsoft.`
-
-Validação:
-
-- Testar SSML escaping.
-- Testar parsing de frames em unidade com frames fake.
-- Testar timeout.
-- Testar erro quando endpoint fecha antes de áudio.
-- Testar que nenhuma credencial é esperada.
-
-Observação importante:
-
-- Se a implementação direta do protocolo Edge em Dart se mostrar grande demais ou instável, a entrega deve parar após a arquitetura + OpenAI-compatible, e Edge deve ser marcado como bloqueado por protocolo/ToS até decisão explícita. Não criar implementação parcial que pareça funcionar mas falhe silenciosamente.
-
-### Passo 7 — Selecionar backend no `ReadAloudService` e call site
-
-Arquivos:
-
-- `lib/presentation/services/read_aloud_service.dart`
-- `lib/presentation/widgets/chat_message/chat_message_content.dart`
-- `lib/core/di/injection_container.dart`
-
-Executar:
-
-1. Registrar backends no DI por provider.
-
-2. `ReadAloudService` deve escolher backend com base em provider passado na chamada ou provider configurado via dependência de settings. A mudança mais explícita e testável é passar config na chamada a partir do widget.
-
-3. Atualizar chamada em `chat_message_content.dart`:
-
-```dart
-readAloudService.speak(
-  messageId: message.id,
-  text: text,
-  provider: settingsProvider.readAloudProvider,
-  rate: settingsProvider.readAloudRate,
-  pitch: settingsProvider.readAloudPitch,
-  voiceId: settingsProvider.readAloudVoiceId,
-  voiceLocale: settingsProvider.readAloudVoiceLocale,
-  model: settingsProvider.readAloudModel,
-  baseUrl: settingsProvider.readAloudBaseUrl,
-  responseFormat: settingsProvider.readAloudResponseFormat,
-);
-```
-
-4. `ReadAloudService` busca API key em `TtsApiKeyStorage` quando provider for `openAiCompatible`.
-
-5. Se provider exigir key e key estiver ausente, não chamar HTTP; setar erro amigável e resetar estado.
-
-6. Se provider cloud falhar, não cair automaticamente para nativo sem informar. A queda automática pode vazar comportamento inesperado; a UI deve mostrar erro e o usuário pode mudar provider para nativo.
-
-Validação:
-
-- Testar seleção de backend por provider.
-- Testar provider com key ausente.
-- Testar provider nativo continua igual.
-
-### Passo 8 — Melhorar extração de texto para fala
-
-Arquivos:
-
-- Novo: `lib/presentation/services/tts/read_aloud_text_extractor.dart`
-- Atualizar: `lib/presentation/widgets/chat_message/chat_message_content.dart`
-- Testes: `test/unit/services/read_aloud_text_extractor_test.dart`
-
-Executar:
-
-1. Mover a lógica de `_extractReadableText` e regex para helper testável.
-
-2. O helper deve:
-
-- Remover fenced code blocks inteiros ou substituí-los por frase curta `Code block omitted.` dependendo de preferência UX. Decisão: omitir code blocks no v1 para reduzir ruído/custo.
-- Remover inline code preservando texto interno curto somente se tiver menos de 80 chars; caso maior, omitir.
-- Converter links `[label](url)` para `label`.
-- Remover imagens `![alt](url)` ou usar `alt` quando existir.
-- Remover headings markers.
-- Remover blockquote markers.
-- Remover listas `-`, `*`, `1.` mantendo conteúdo.
-- Remover tabelas Markdown ou convertê-las para frases simples. Decisão v1: omitir linhas de tabela quando contiverem múltiplos `|`.
-- Remover HTML tags simples.
-- Decodificar/normalizar whitespace.
-- Escapar SSML/XML no backend que usar SSML, não no extractor geral.
-
-3. `chat_message_content.dart` passa a chamar o helper.
-
-Validação:
-
-- Testar bold/italic/link/image/headings/blockquote existentes.
-- Testar fenced code block.
-- Testar tabela.
-- Testar lista numerada e bullet.
-- Testar texto vazio após stripping não chama TTS.
-
-### Passo 9 — Atualizar Settings > Speech com progressive disclosure
-
-Arquivos:
-
-- `lib/presentation/pages/settings/sections/speech_settings_section.dart`
-- `lib/l10n/app_en.arb` e demais ARB conforme workflow seguro.
-- `lib/presentation/providers/settings_provider.dart`
-
-Executar:
-
-1. Em `_buildReadAloudCard`, adicionar seletor de provider acima dos sliders:
-
-- `System / Native`
-- `Microsoft Edge Speech (experimental)`
-- `OpenAI-compatible`
-
-2. Para `native`:
-
-- Mostrar speed.
-- Mostrar pitch.
-- Mostrar voice picker quando `ReadAloudService.getVoices()` retornar vozes.
-- Voice picker deve salvar id e locale.
-
-3. Para `edgeExperimental`:
-
-- Mostrar card de aviso experimental/privacidade.
-- Mostrar voice picker Edge quando a lista de vozes carregar.
-- Mostrar speed.
-- Ocultar ou desabilitar pitch se o backend não mapear pitch com segurança.
-- Mostrar botão `Test voice`.
-
-4. Para `openAiCompatible`:
-
-- Mostrar base URL.
-- Mostrar API key field com valor mascarado.
-- Mostrar botão `Save key` ou salvar on submit.
-- Mostrar model field default `gpt-4o-mini-tts`.
-- Mostrar voice field/dropdown com defaults: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
-- Mostrar response format `mp3` inicialmente. Não expor outros formatos no v1.
-- Mostrar speed.
-- Ocultar/desabilitar pitch com explicação `Pitch is not supported by this provider.`
-- Mostrar botão `Test voice`.
-
-5. Mobile UX:
-
-- Usar cards expansíveis ou seções condicionais; não mostrar todos os campos de todos os providers ao mesmo tempo.
-- Evitar layout horizontal largo.
-
-6. Erros:
-
-- Mostrar SnackBar ou texto inline para key ausente, key inválida, quota/rate limit, network/provider unavailable.
-
-Validação:
-
-- Widget test ou golden simples em mobile width para provider selector e campos condicionais.
-- Testar que trocar provider persiste.
-- Testar API key não aparece em settings JSON.
-
-### Passo 10 — Adicionar mensagens de erro e aviso de privacidade
-
-Arquivos:
-
-- `lib/presentation/services/read_aloud_service.dart`
-- `lib/presentation/widgets/chat_message/chat_message_content.dart`
-- `lib/presentation/pages/settings/sections/speech_settings_section.dart`
-- ARB files.
-
-Executar:
-
-1. Adicionar ao `ReadAloudService`:
-
-```dart
-String? get lastErrorMessage;
-ReadAloudErrorKind? get lastErrorKind;
-```
-
-2. Definir enum:
-
-```dart
-enum ReadAloudErrorKind {
-  unavailable,
-  missingApiKey,
-  invalidApiKey,
-  rateLimitedOrQuota,
-  network,
-  providerUnavailable,
-  cancelled,
-  unknown,
-}
-```
-
-3. Não mostrar erro para `cancelled`.
-
-4. No botão de mensagem, quando `speak()` falhar imediatamente ou `lastErrorKind` for setado, mostrar SnackBar curto.
-
-5. Textos obrigatórios:
-
-- Edge warning: `Microsoft Edge Speech is experimental and uses an unofficial Microsoft Edge Read Aloud endpoint. It may stop working or be rate-limited. Message text is sent to Microsoft.`
-- Cloud warning: `Cloud TTS sends the selected assistant message text to the configured provider.`
-- Missing key: `Add an API key in Settings > Speech to use this TTS provider.`
-- Invalid key: `The TTS API key was rejected by the provider.`
-- Quota/rate limit: `The TTS provider reported a quota or rate limit. Try again later or switch providers.`
-
-Validação:
-
-- Testar erro sem key.
-- Testar 401.
-- Testar 429.
-- Testar cancelamento sem SnackBar.
-
-### Passo 11 — Documentar comportamento e ADR
-
-Arquivos:
-
-- `BEHAVIOR.md`
-- `ADR.md` via fluxo/adrkeeper se disponível.
-
-Executar:
-
-1. Atualizar `BEHAVIOR.md` seção TTS:
-
-- Provider selection.
-- Native default.
-- Edge experimental opt-in e warning.
-- OpenAI-compatible API key provider.
-- Secrets stored securely.
-- Cloud privacy warning.
-- Auto-stop/cancelamento para síntese em andamento.
-- Markdown cleanup ampliado.
-
-2. Criar ADR ou adicionar nota em ADR existente:
-
-- Título sugerido: `Cloud Text-to-Speech Providers with Experimental Edge Speech`.
-- Decisão: client-only TTS providers; Edge experimental opt-in; OpenAI-compatible with secure storage.
-- ADR-023 compatibility: no OpenCode server contract changes.
-- Riscos: Edge unofficial, ToS/SLA/rate limits, third-party text egress, API key handling.
-- Mitigações: opt-in, warnings, secure storage, no default Edge, native fallback available, no automatic silent fallback.
-
-Validação:
-
-- Docs refletem comportamento implementado, não promessa futura.
-
-### Passo 12 — Validação final
-
-Executar validação na ordem:
-
-1. Formatação/análise focada:
+Run focused formatting first:
 
 ```bash
-export PATH="$HOME/flutter/bin:$PATH" && dart format lib test
-export PATH="$HOME/flutter/bin:$PATH" && flutter analyze lib/presentation/services/read_aloud_service.dart lib/presentation/services/tts lib/domain/entities/experience_settings.dart lib/presentation/providers/settings_provider.dart lib/presentation/pages/settings/sections/speech_settings_section.dart
+export PATH="$HOME/flutter/bin:$PATH" && \
+dart format \
+  lib/presentation/pages/onboarding_wizard_page.dart \
+  test/widget/onboarding_wizard_test.dart
 ```
 
-2. Testes unitários focados:
+Run focused analysis:
 
 ```bash
-export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/services/read_aloud_service_test.dart
-export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/services/read_aloud_text_extractor_test.dart
-export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/providers/settings_provider_test.dart
+export PATH="$HOME/flutter/bin:$PATH" && \
+flutter analyze \
+  lib/presentation/pages/onboarding_wizard_page.dart \
+  test/widget/onboarding_wizard_test.dart
 ```
 
-3. Testes adicionais criados:
+Run focused wizard and shell tests:
 
 ```bash
-export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/services/openai_compatible_tts_backend_test.dart
-export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/services/edge_experimental_tts_backend_test.dart
-export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/core/auth/tts_api_key_storage_test.dart
+export PATH="$HOME/flutter/bin:$PATH" && \
+flutter test \
+  test/widget/onboarding_wizard_test.dart \
+  test/widget/app_shell_page_test.dart
 ```
 
-4. Gate completo quando código estiver estável:
+Run the existing post-onboarding tour regressions from `test/widget/chat_page_test.dart` using their exact test names or the smallest matching name filter. Include at minimum:
+
+```text
+pending tour flag survives startup retries
+passive tour dismiss keeps the pending flag armed
+explicit skip clears the pending tour flag
+finishing the tour clears the pending flag
+pending tour renders desktop intro overlay on startup
+```
+
+Run the provider managed-local tests:
 
 ```bash
-make check
+export PATH="$HOME/flutter/bin:$PATH" && \
+flutter test test/unit/providers/app_provider_test.dart \
+  --plain-name "startLocalServer"
 ```
 
-Não usar `make precommit` neste projeto para validação normal; o projeto orienta usar `make check` e `make android` separadamente.
+Run the repository validation gate after focused checks pass:
 
-## Riscos e Mitigações
+```bash
+export PATH="$HOME/flutter/bin:$PATH" && make check
+```
 
-### Risco crítico — API keys vazarem em settings/logs
+Do not run `make precommit` for CodeWalk. Do not run `dart tool/i18n/generate_arb.dart`; it is destructive to newer ARB keys.
 
-Mitigação: API keys só em `TtsApiKeyStorage` com `flutter_secure_storage`; nunca adicionar keys a `ExperienceSettings.toJson()`; sanitizar erros/logs; criar teste que serializa settings e confirma ausência da key.
+After tests pass, run the project reviewer loop for the final code diff. Give reviewers the issue objective, the first-run-only scope, the capability-based decision, the managed-local Ready/tour invariant, relevant ADRs, changed files, and test evidence. Fix only technically valid findings, run focused validation for reviewer micro-fixes, and rerun `make check` only if a fix invalidates the prior full check.
 
-### Risco crítico — Edge experimental quebrar por endpoint não oficial
+Build an Android artifact only when explicitly requested and supported:
 
-Mitigação: Edge opt-in, label experimental, warning explícito, timeout, erro claro, nunca default, ADR documentando risco. Não criar fallback automático silencioso; usuário escolhe nativo se quiser estabilidade.
+```bash
+export PATH="$HOME/flutter/bin:$PATH" && \
+HEY_CAPTION="Simplified first-run setup for issue 95" make android
+```
 
-### Risco alto — corrida entre cancelamento e síntese assíncrona
+Android APK builds are unreliable on ARM64 Linux; use GitHub Actions when the current host is ARM64.
 
-Mitigação: generation id obrigatório; toda resposta tardia é descartada se geração mudou; testes com backend lento e stop/session switch.
+## Risks & Mitigations
 
-### Risco alto — UI de settings ficar confusa no mobile
+### High — First-run managed setup exits without a running server
 
-Mitigação: progressive disclosure por provider; cards condicionais; campos de API key/model/baseUrl apenas para OpenAI-compatible.
+**Cause:** The current local step’s final button always calls `_complete()`.
 
-### Risco médio — pitch/rate não mapearem entre providers
+**Mitigation:** Suppress first-run completion unless the status is running, route success through `_connectionSuccess = true` and `Ready`, and verify profile/tour state in widget tests.
 
-Mitigação: mostrar/desabilitar controles conforme provider. OpenAI-compatible usa speed derivado de rate; pitch oculto/desabilitado. Native mantém pitch.
+### High — Shared wizard regression in Settings
 
-### Risco médio — Markdown complexo soar ruim ou custar caro
+**Cause:** Welcome is reused by first-run and Settings.
 
-Mitigação: helper testável; omitir code blocks/tabelas no v1; normalizar listas/links/headings.
+**Mitigation:** Gate the simplified screen with `_isFirstRunFlow`, preserve the current chooser in a separate helper, and test `showSkipAction: false` explicitly.
 
-### Risco médio — `audioplayers` não suportar perfeitamente long-form em todas as plataformas
+### Medium — Primary action selected from viewport instead of capability
 
-Mitigação: v1 toca bytes completos; testar Android e desktop; se houver problemas graves, trocar para `just_audio` em mudança separada, não misturar sem necessidade.
+**Cause:** Responsive UI work may incorrectly infer platform from width.
+
+**Mitigation:** Use only `localServerSupported`; test a narrow supported desktop-capability provider and a wide unsupported provider.
+
+### Medium — Post-onboarding tour is not armed
+
+**Cause:** `_complete()` checks `_connectionSuccess`.
+
+**Mitigation:** Set `_connectionSuccess` only after confirmed local success, transition to Ready, and assert the flag changes only after final Ready completion.
+
+### Medium — Localization overflow
+
+**Cause:** Existing translations vary significantly in length.
+
+**Mitigation:** Keep controls full-width and scrollable, use no fixed text height, test compact width with 2.0 scaling, and avoid new copy.
+
+### Medium — Accessibility hierarchy differs from visual hierarchy
+
+**Cause:** Reordered actions may retain an unexpected focus/semantic order.
+
+**Mitigation:** Keep widget order identical to visual order, use standard Material buttons, preserve 48-pixel targets, and run accessibility guidelines.
+
+### Low — Diagnostic and observability regression
+
+**Cause:** Replacing callbacks could bypass setup-debug events.
+
+**Mitigation:** Reuse the existing `_goTo*` callbacks without changing their event recording.
+
+### Low — Scope expansion into chat onboarding or server internals
+
+**Cause:** “Initial screen” can be interpreted broadly.
+
+**Mitigation:** Restrict edits to first-run Welcome, managed first-run completion, its tests, and `BEHAVIOR.md`.
 
 ## Assumptions to Validate
 
-1. `audioplayers` consegue tocar `BytesSource` MP3 retornado por OpenAI-compatible em Android e desktop.
-   - Validação: teste manual com áudio curto real ou fake integration.
-   - Fallback: se falhar, adicionar `just_audio` em PR separado e adaptar apenas o playback gerado.
+1. **Assumption:** `AppProvider.localServerSupported` is a stable runtime capability signal.
+   **Validation:** Inspect the injected local runtime in tests and verify supported/unsupported fakes drive the Welcome hierarchy independently of viewport.
+   **Fallback:** If the signal can change during startup, keep the UI reactive through `context.select`; do not replace it with platform constants or width checks.
 
-2. Edge protocol pode ser implementado em Dart com escopo aceitável.
-   - Validação: spike isolado do backend com voz curta.
-   - Fallback: entregar arquitetura + OpenAI-compatible e marcar Edge bloqueado por protocolo/ToS até decisão explícita.
+2. **Assumption:** Successful `startLocalServer()` creates and activates the managed local profile.
+   **Validation:** Preserve and run `app_provider_test.dart` coverage at lines 406-432 and assert profile state in the new widget test.
+   **Fallback:** If the provider test fails, fix the existing provider contract before allowing Ready transition; do not synthesize a profile in the page.
 
-3. Existing settings migration tolera novos campos nullable/default.
-   - Validação: unit test com JSON antigo sem novos campos.
-   - Fallback: adicionar parsing defensivo e defaults explícitos.
+3. **Assumption:** Existing localization keys are sufficient.
+   **Validation:** Compile every referenced key and inspect English and Portuguese rendering at compact width.
+   **Fallback:** Add the smallest required key to the canonical ARB workflow, translate all supported locales through the project’s safe missing-key/merge-back process, and never run the destructive global generator.
 
-4. Cloud TTS deve enviar apenas texto visível do assistente, não tool metadata, hidden state, logs ou API keys.
-   - Validação: testes do extractor com diferentes message parts.
-   - Fallback: restringir a `TextPart` sanitizado e omitir qualquer parte não reconhecida.
+4. **Assumption:** Settings users still need the complete chooser.
+   **Validation:** Confirm all current Settings entry points pass `showSkipAction: false` and add the isolation test.
+   **Fallback:** If a new entry point does not fit either context, add an explicit non-persisted presentation-mode parameter only after documenting the call-site contract; do not overload viewport or server-profile state.
 
-## Blockers e Perguntas em Aberto
+5. **Assumption:** The existing 560-pixel max width remains appropriate.
+   **Validation:** Manually inspect compact, medium, and expanded windows and run no-overflow tests.
+   **Fallback:** Change only the Welcome max width to a single documented constant if controls or translations are visibly cramped; do not introduce a multi-pane layout.
 
-None.
+## Decisions and Nuances
 
-O plano está pronto para implementação. A única condição de parada durante execução é se o protocolo Edge experimental se mostrar instável/grande demais para implementar com segurança; nesse caso, a execução deve entregar a arquitetura + OpenAI-compatible e registrar Edge como bloqueado, sem shippar implementação parcial.
+- Treat `showSkipAction` as more than a visual flag: it affects back behavior, skip behavior, completion, title/subtitle, and tour handoff. Use `_isFirstRunFlow` only for presentation and managed-first-run completion; preserve all other semantics.
+- Keep the first-run and Settings views in the same widget to honor ADR-011, but give them separate private presentation helpers to prevent accidental scope leakage.
+- Keep “Connect to a running server” as the secondary action because OpenCode can run locally, remotely, or elsewhere on the network. Do not imply a fixed localhost endpoint in Welcome copy.
+- Keep “What is OpenCode?” discoverable because `BEHAVIOR.md` requires the relationship to be explained. Reduce visual weight rather than removing it.
+- Keep Skip unchanged. Skipping without “Don’t show again” remains session-only; selecting “Don’t show again” remains persistent.
+- Do not auto-start managed local setup merely because the Welcome primary action was tapped. Continue to show diagnostics and let the user explicitly start/install OpenCode.
+- Auto-transition to Ready only after an explicit Start succeeds. If the server is already running, require the user to tap Continue.
+- Never arm the chat tour from Settings or profile-edit flows.
+- Do not change `AppProvider.startLocalServer()` because its provider contract and unit tests already establish healthy profile creation.
+- Preserve all setup-debug events and diagnostic navigation.
+- Do not use planner rankings or candidate comparisons during implementation; this file is the sole execution directive.
+
+## Blockers and Open Questions
+
+None in the product or technical design.
+
+The execution preflight is mandatory. If another plan-anchored sequence remains active, do not begin implementation until it is completed or explicitly paused. Do not overwrite, restore, stage, or commit pre-existing user changes.
 
 ## Testing Strategy
 
-Testes obrigatórios:
+The implementation is complete only when all of the following are true:
 
-1. `ExperienceSettings`:
-   - defaults antigos continuam válidos;
-   - provider default native;
-   - JSON roundtrip provider/model/baseUrl/voice/locale/format;
-   - API key ausente do JSON.
+1. Unsupported capability shows guided setup as the only filled primary action.
+2. Supported capability shows managed local setup as the only filled primary action.
+3. Existing-server connection remains an outlined secondary action in both cases.
+4. Unsupported managed local setup is absent, not disabled.
+5. Narrow width does not change capability-based priority.
+6. Settings retains the complete chooser and does not render first-run keys.
+7. Direct initial flows continue to bypass Welcome correctly.
+8. First-run managed local setup cannot complete while stopped or failed.
+9. Successful managed local start creates/activates a profile and displays Ready.
+10. The tour flag is false before Ready completion and true afterward.
+11. Settings completion never arms the tour.
+12. Existing skip behavior remains unchanged.
+13. Existing failed-health recovery remains unchanged.
+14. The screen has no overflow at 360×640 with 2.0 text scale.
+15. Tappable actions meet 48×48 guidance and have readable labels/focus order.
+16. Focused analysis, focused tests, provider tests, tour regressions, and `make check` all pass.
+17. Reviewer findings contain no unresolved judge-approved critical or warning issue.
 
-2. `TtsApiKeyStorage`:
-   - write/read/delete;
-   - trim;
-   - empty deletes;
-   - namespace por provider.
+## Execution Handoff
 
-3. `ReadAloudService`:
-   - native speak ainda funciona;
-   - generated audio toca bytes;
-   - stop cancela síntese lenta;
-   - segunda chamada invalida primeira;
-   - completion reseta estado;
-   - erro reseta estado e define erro amigável;
-   - cancelamento não mostra erro.
+Perform these actions in order before implementation:
 
-4. `OpenAiCompatibleTtsBackend`:
-   - request body correto;
-   - headers corretos;
-   - baseUrl normalizado;
-   - status 401/429/500 mapeados;
-   - bytes retornados viram áudio.
+1. Run `git status --short --branch` and record every pre-existing change. Do not modify, stage, restore, or include unrelated deleted files.
+2. Recover the latest plan anchor:
 
-5. `EdgeExperimentalTtsBackend`:
-   - SSML escaping;
-   - timeout;
-   - close/error mapping;
-   - voices parsing se implementado.
+```bash
+PLAN_HASH=$(git log --grep="AGENT_PLAN_ANCHOR" -n 1 --pretty=format:%H)
+git show "$PLAN_HASH"
+git log --grep="PLAN_REF: $PLAN_HASH" --oneline
+```
 
-6. `ReadAloudTextExtractor`:
-   - markdown básico existente;
-   - fenced code blocks;
-   - tables;
-   - lists;
-   - headings;
-   - links/images;
-   - whitespace.
-
-7. UI/settings:
-   - provider selector aparece;
-   - campos condicionais por provider;
-   - key field não mostra segredo;
-   - warning Edge/cloud aparece;
-   - pitch oculto/desabilitado para OpenAI-compatible.
-
-## Handoff de Execução
-
-Comece por estes arquivos, nesta ordem:
-
-1. `lib/domain/entities/experience_settings.dart` — adicionar enum/config não secreto.
-2. `lib/presentation/providers/settings_provider.dart` — getters/setters.
-3. `lib/core/auth/tts_api_key_storage.dart` — secure storage.
-4. `lib/presentation/services/tts/tts_backend.dart` — interface/modelos.
-5. `lib/presentation/services/tts/native_tts_backend.dart` — wrapper de `flutter_tts` com locale corrigido.
-6. `lib/presentation/services/read_aloud_service.dart` — controlador com generation cancel e generated-audio playback.
-7. `lib/presentation/services/tts/openai_compatible_tts_backend.dart` — provider com API key.
-8. `lib/presentation/services/tts/edge_experimental_tts_backend.dart` — provider experimental, se spike confirmar viabilidade.
-9. `lib/presentation/services/tts/read_aloud_text_extractor.dart` — helper sanitizador.
-10. `lib/presentation/widgets/chat_message/chat_message_content.dart` — call site e extractor.
-11. `lib/presentation/pages/settings/sections/speech_settings_section.dart` — UI.
-12. `lib/core/di/injection_container.dart` — DI.
-13. Testes.
-14. `BEHAVIOR.md` e ADR.
-
-Strict sequencing:
-
-- Não implemente Edge antes da abstração e do cancelamento por generation id.
-- Não implemente OpenAI-compatible antes do secure storage.
-- Não adicione API key a settings JSON em nenhum momento.
-- Não exponha Edge como default.
-- Não silencie erros cloud.
+3. If that anchor still has an incomplete step, finish it or obtain explicit instruction to pause it. Do not create a competing plan sequence silently.
+4. Re-read `AGENTS.md`, `BEHAVIOR.md`, ADR-011, ADR-023, and the exact source/test regions listed in this file.
+5. Create an immutable `plan:` commit containing `AGENT_PLAN_ANCHOR` and a self-contained execution brief derived from this file before editing code, because this is multi-step resumable work.
+6. Implement each numbered execution step as a separate `chore(agent): [Step X/Y] ...` progress commit that references the plan hash through `PLAN_REF` and the previous step through `PREVIOUS_STEP`.
+7. Begin code work in `lib/presentation/pages/onboarding_wizard_page.dart`. Do not start in `AppShellPage`, providers, persistence, chat UI, or localization.
+8. Add and run focused tests immediately after the widget change and managed completion change.
+9. Update `BEHAVIOR.md` only after implementation behavior is verified.
+10. Run all validation and reviewer gates before declaring delivery complete.
 
 ## Out of Scope
 
-- Cache local de áudio por hash.
-- Streaming progressivo real.
-- Seekbar/progress UI avançado.
-- ElevenLabs provider específico.
-- Azure Speech provider específico.
-- Google Cloud TTS.
-- Amazon Polly.
-- Per-agent TTS settings.
-- Sumarização automática de respostas longas com modelo local/remoto.
-- Envio de TTS através do servidor OpenCode.
-- Mudanças no protocolo/API/event stream OpenCode.
+- Redesigning the chat empty state, session list, composer, or post-onboarding tour UI.
+- Adding a carousel, marketing page, demo session, starter prompts, or illustration assets.
+- Changing the AppShell first-run gate.
+- Changing skip persistence or reset-app behavior.
+- Adding first-use persistence or migrations.
+- Changing server URL defaults, authentication, OAuth, Tailscale, or health-check behavior.
+- Changing managed local installation/runtime internals in `AppProvider` or runtime services.
+- Changing OpenCode API, event, provider, model, or session contracts.
+- Changing the complete Settings setup chooser beyond moving its existing implementation into a private helper.
+- Introducing responsive multi-column Welcome layouts.
+- Rewriting localization copy or regenerating all ARB files.
+- Updating `ADR.md` or `CODEBASE.md` without a separate, evidence-based need discovered during implementation.
+- Committing or restoring unrelated pre-existing workspace changes.
+
+## Definition of Done
+
+- The first-run Welcome screen presents one capability-appropriate filled primary action and one existing-server secondary action.
+- Unsupported managed local setup is absent.
+- The Settings chooser remains functionally and visually equivalent to its pre-change behavior.
+- First-run managed local setup cannot complete without a running healthy server.
+- Successful managed local setup reaches Ready and arms the post-onboarding tour only after final completion.
+- No new persistence, ADR exception, OpenCode contract change, or unrelated UI redesign is introduced.
+- All targeted tests, provider tests, tour regressions, `make check`, and reviewer gates pass.
+- `BEHAVIOR.md` describes only the verified delivered behavior.
