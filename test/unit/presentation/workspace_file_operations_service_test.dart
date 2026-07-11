@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
 import 'package:codewalk/presentation/services/workspace_file_operations_service.dart';
@@ -117,6 +118,78 @@ void main() {
       expect(quoted, "'folder/John'\\''s notes'");
     });
 
+    test(
+      'single-line mutation commands execute create write and delete',
+      () async {
+        final root = Directory.systemTemp.createTempSync('codewalk-file-op-');
+        addTearDown(() {
+          if (root.existsSync()) {
+            root.deleteSync(recursive: true);
+          }
+        });
+        final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
+        const name = 'sample.txt';
+        const content = 'first\r\nsecond\n';
+
+        final createCommand = service.buildCreateFileCommandForTest(
+          rootDirectory: root.path,
+          parentDirectory: root.path,
+          name: name,
+        );
+        final writeCommand = service.buildWriteFileCommandForTest(
+          rootDirectory: root.path,
+          parentDirectory: root.path,
+          name: name,
+          content: content,
+        );
+        final deleteCommand = service.buildDeleteCommandForTest(
+          rootDirectory: root.path,
+          parentDirectory: root.path,
+          name: name,
+        );
+
+        for (final command in <String>[
+          createCommand,
+          writeCommand,
+          deleteCommand,
+        ]) {
+          expect(command, isNot(contains('\n')));
+        }
+        expect(
+          RegExp(
+            RegExp.escape(base64Encode(utf8.encode(content))),
+          ).allMatches(writeCommand),
+          hasLength(1),
+        );
+
+        final createResult = await Process.run('/bin/sh', <String>[
+          '-c',
+          createCommand,
+        ]);
+        expect(createResult.exitCode, 0, reason: '${createResult.stderr}');
+        expect(_parsedShellStdout(createResult.stdout).ok, isTrue);
+        final file = File('${root.path}/$name');
+        expect(file.existsSync(), isTrue);
+
+        final writeResult = await Process.run('/bin/sh', <String>[
+          '-c',
+          writeCommand,
+        ]);
+        expect(writeResult.exitCode, 0, reason: '${writeResult.stderr}');
+        expect(_parsedShellStdout(writeResult.stdout).ok, isTrue);
+        expect(file.readAsStringSync(), content);
+
+        final deleteResult = await Process.run('/bin/sh', <String>[
+          '-c',
+          deleteCommand,
+        ]);
+        expect(deleteResult.exitCode, 0, reason: '${deleteResult.stderr}');
+        expect(_parsedShellStdout(deleteResult.stdout).ok, isTrue);
+        expect(file.existsSync(), isFalse);
+      },
+      skip: Platform.isWindows ? 'requires a POSIX shell' : false,
+    );
+
     test('probes capabilities once and caches the result', () async {
       final fakeServer = _FakeShellServer(
         shellPayloads: <String>[
@@ -141,6 +214,32 @@ void main() {
       expect(fakeServer.createdSessionDirectories, <String?>['/repo/a']);
       expect(fakeServer.shellDirectories, <String?>['/repo/a']);
       expect(fakeServer.deletedSessionDirectories, <String?>['/repo/a']);
+    });
+
+    test('negotiates and reuses the first working shell decoder', () async {
+      final fakeServer = _FakeShellServer(
+        shellPayloads: <String?>[
+          null,
+          null,
+          '{"ok":true,"code":"ok","message":"available"}',
+          '{"ok":true,"code":"ok","message":"created"}',
+        ],
+      );
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final result = await service.createFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        parentDirectory: '/repo/a',
+        name: 'new.txt',
+      );
+
+      expect(result.ok, isTrue);
+      expect(fakeServer.shellCallCount, 4);
+      expect(fakeServer.commands[0], contains('| base64 -d |'));
+      expect(fakeServer.commands[1], contains('| base64 -D |'));
+      expect(fakeServer.commands[2], contains('| base64 --decode |'));
+      expect(fakeServer.commands[3], contains('| base64 --decode |'));
     });
 
     test('invalid names fail before any shell call', () async {
@@ -197,8 +296,9 @@ void main() {
 
         expect(capabilities.shellFileOpsSupported, isFalse);
         expect(fakeServer.shellCallCount, 1);
-        expect(fakeServer.commands.single, contains('pwd -P'));
-        expect(fakeServer.commands.single, contains(r'if [ "$root" = / ]'));
+        final script = _decodedMutationScript(fakeServer.commands.single);
+        expect(script, contains('pwd -P'));
+        expect(script, contains(r'if [ "$root" = / ]'));
       },
     );
 
@@ -224,7 +324,7 @@ void main() {
         expect(result.code, WorkspaceFileOperationCode.outsideRoot);
         expect(fakeServer.shellCallCount, 2);
         expect(
-          fakeServer.commands.last,
+          _decodedMutationScript(fakeServer.commands.last),
           contains(r'if [ "$root" = "/" ]; then cw_fail outsideRoot; fi'),
         );
       },
@@ -288,15 +388,13 @@ void main() {
           "CW_CONTENT_B64='${base64Encode(utf8.encode("void main() {\n  print('hello');\n}\n"))}'",
         ),
       );
-      expect(fakeServer.commands.last, contains(r'cw_decode_content "$tmp"'));
-      expect(fakeServer.commands.last, contains('mktemp -d'));
-      expect(fakeServer.commands.last, contains('.cw-write.XXXXXX'));
-      expect(fakeServer.commands.last, isNot(contains(r'.cw-write-$$.tmp')));
-      expect(
-        fakeServer.commands.last,
-        contains(r'cw_copy_mode "$target" "$tmp"'),
-      );
-      expect(fakeServer.commands.last, contains(r'mv -- "$tmp" "$target"'));
+      final script = _decodedMutationScript(fakeServer.commands.last);
+      expect(script, contains(r'cw_decode_content "$tmp"'));
+      expect(script, contains('mktemp -d'));
+      expect(script, contains('.cw-write.XXXXXX'));
+      expect(script, isNot(contains(r'.cw-write-$$.tmp')));
+      expect(script, contains(r'cw_copy_mode "$target" "$tmp"'));
+      expect(script, contains(r'mv -- "$tmp" "$target"'));
       expect(fakeServer.createdSessionDirectories, <String?>[
         '/repo/a',
         '/repo/a',
@@ -378,7 +476,10 @@ void main() {
         expect(writeResult.code, WorkspaceFileOperationCode.malformedResponse);
         expect(createResult.ok, isTrue);
         expect(fakeServer.shellCallCount, 4);
-        expect(fakeServer.commands[2], contains('pwd -P'));
+        expect(
+          _decodedMutationScript(fakeServer.commands[2]),
+          contains('pwd -P'),
+        );
       },
     );
 
@@ -402,27 +503,16 @@ void main() {
       expect(result.code, WorkspaceFileOperationCode.failed);
       expect(result.message, contains('Operation not permitted'));
       expect(fakeServer.shellCallCount, 2);
-      expect(fakeServer.commands.last, contains('mktemp -d'));
-      expect(fakeServer.commands.last, contains('.cw-delete.XXXXXX'));
-      expect(fakeServer.commands.last, contains(r'status="$errdir/status"'));
-      expect(
-        fakeServer.commands.last,
-        contains(r'rm -- "$CW_NAME" >/dev/null; printf'),
-      );
-      expect(
-        fakeServer.commands.last,
-        contains(r'rm -r -- "$CW_NAME" >/dev/null; printf'),
-      );
-      expect(fakeServer.commands.last, contains('sed -n '));
-      expect(fakeServer.commands.last, contains(r'cut -c 1-240 > "$err"'));
-      expect(
-        fakeServer.commands.last,
-        contains(r"tr -d '\000-\011\013-\037\177'"),
-      );
-      expect(
-        fakeServer.commands.last,
-        contains(r'cw_fail_message failed "$rm_error"'),
-      );
+      final script = _decodedMutationScript(fakeServer.commands.last);
+      expect(script, contains('mktemp -d'));
+      expect(script, contains('.cw-delete.XXXXXX'));
+      expect(script, contains(r'status="$errdir/status"'));
+      expect(script, contains(r'rm -- "$CW_NAME" >/dev/null; printf'));
+      expect(script, contains(r'rm -r -- "$CW_NAME" >/dev/null; printf'));
+      expect(script, contains('sed -n '));
+      expect(script, contains(r'cut -c 1-240 > "$err"'));
+      expect(script, contains(r"tr -d '\000-\011\013-\037\177'"));
+      expect(script, contains(r'cw_fail_message failed "$rm_error"'));
     });
 
     test('malformed probe disables shell file operations', () async {
@@ -435,9 +525,32 @@ void main() {
       );
 
       expect(capabilities.shellFileOpsSupported, isFalse);
-      expect(fakeServer.shellCallCount, 1);
+      expect(fakeServer.shellCallCount, 4);
     });
   });
+}
+
+WorkspaceFileOperationResult _parsedShellStdout(dynamic stdout) {
+  final payload = WorkspaceFileOperationsServiceImpl.extractSentinelPayload(
+    <String, dynamic>{
+      'parts': <dynamic>[
+        <String, dynamic>{
+          'state': <String, dynamic>{
+            'status': 'completed',
+            'output': stdout.toString(),
+          },
+        },
+      ],
+    },
+  );
+  expect(payload, isNotNull);
+  return WorkspaceFileOperationsServiceImpl.parseSentinelPayload(payload!);
+}
+
+String _decodedMutationScript(String command) {
+  final match = RegExp("printf '%s' '([^']+)'").firstMatch(command);
+  expect(match, isNotNull);
+  return utf8.decode(base64Decode(match!.group(1)!));
 }
 
 class _FakeShellServer {

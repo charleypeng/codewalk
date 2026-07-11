@@ -111,10 +111,17 @@ class WorkspaceFileOperationsServiceImpl
   WorkspaceFileOperationsServiceImpl({required Dio dio}) : _dio = dio;
 
   static const String _shellPrefix = 'CW_FILE_OP_JSON:';
+  static const List<String> _shellDecoders = <String>[
+    'base64 -d',
+    'base64 -D',
+    'base64 --decode',
+    "python3 -c 'import base64,sys;sys.stdout.buffer.write(base64.b64decode(sys.stdin.buffer.read()))'",
+  ];
 
   final Dio _dio;
   final Map<String, WorkspaceFileOperationsCapabilities> _capabilityCache =
       <String, WorkspaceFileOperationsCapabilities>{};
+  final Map<String, String> _shellDecoderCache = <String, String>{};
 
   @override
   Future<WorkspaceFileOperationsCapabilities> getCapabilities({
@@ -133,10 +140,21 @@ class WorkspaceFileOperationsServiceImpl
       return cached;
     }
 
-    final result = await _runShellScript(
-      directory: normalizeFilePath(directory),
-      command: _buildProbeCommand(),
-    );
+    WorkspaceFileOperationResult? result;
+    for (final decoder in _shellDecoders) {
+      result = await _runShellScript(
+        directory: normalizeFilePath(directory),
+        command: _buildProbeCommand(decoder),
+      );
+      if (result.ok) {
+        _shellDecoderCache[key] = decoder;
+        break;
+      }
+      if (result.code == WorkspaceFileOperationCode.outsideRoot) {
+        break;
+      }
+    }
+    result ??= _result(WorkspaceFileOperationCode.unavailable);
     final capabilities = WorkspaceFileOperationsCapabilities(
       shellFileOpsSupported: result.ok,
       message: result.message,
@@ -150,7 +168,9 @@ class WorkspaceFileOperationsServiceImpl
     required String serverScopeKey,
     required String directory,
   }) async {
-    _capabilityCache.remove(_capabilityKey(serverScopeKey, directory));
+    final key = _capabilityKey(serverScopeKey, directory);
+    _capabilityCache.remove(key);
+    _shellDecoderCache.remove(key);
   }
 
   @override
@@ -174,10 +194,11 @@ class WorkspaceFileOperationsServiceImpl
     return _runMutation(
       serverScopeKey: serverScopeKey,
       rootDirectory: prepared.rootDirectory,
-      command: _buildCreateFileCommand(
+      commandBuilder: (decoder) => _buildCreateFileCommand(
         rootDirectory: prepared.rootDirectory,
         parentDirectory: prepared.parentDirectory,
         name: prepared.name,
+        decoder: decoder,
       ),
       path: target,
     );
@@ -204,10 +225,11 @@ class WorkspaceFileOperationsServiceImpl
     return _runMutation(
       serverScopeKey: serverScopeKey,
       rootDirectory: prepared.rootDirectory,
-      command: _buildCreateFolderCommand(
+      commandBuilder: (decoder) => _buildCreateFolderCommand(
         rootDirectory: prepared.rootDirectory,
         parentDirectory: prepared.parentDirectory,
         name: prepared.name,
+        decoder: decoder,
       ),
       path: target,
     );
@@ -246,11 +268,12 @@ class WorkspaceFileOperationsServiceImpl
     return _runMutation(
       serverScopeKey: serverScopeKey,
       rootDirectory: root,
-      command: _buildRenameCommand(
+      commandBuilder: (decoder) => _buildRenameCommand(
         rootDirectory: root,
         parentDirectory: parent,
         oldName: preparedOld.name,
         newName: preparedNew.name,
+        decoder: decoder,
       ),
       path: source,
       newPath: destination,
@@ -295,10 +318,11 @@ class WorkspaceFileOperationsServiceImpl
     return _runMutation(
       serverScopeKey: serverScopeKey,
       rootDirectory: prepared.rootDirectory,
-      command: _buildDeleteCommand(
+      commandBuilder: (decoder) => _buildDeleteCommand(
         rootDirectory: prepared.rootDirectory,
         parentDirectory: prepared.parentDirectory,
         name: prepared.name,
+        decoder: decoder,
       ),
       path: target,
     );
@@ -324,11 +348,12 @@ class WorkspaceFileOperationsServiceImpl
     return _runMutation(
       serverScopeKey: serverScopeKey,
       rootDirectory: prepared.rootDirectory,
-      command: _buildWriteFileCommand(
+      commandBuilder: (decoder) => _buildWriteFileCommand(
         rootDirectory: prepared.rootDirectory,
         parentDirectory: prepared.parentDirectory,
         name: prepared.name,
         contentBase64: base64Encode(utf8.encode(content)),
+        decoder: decoder,
       ),
       path: target,
     );
@@ -337,7 +362,7 @@ class WorkspaceFileOperationsServiceImpl
   Future<WorkspaceFileOperationResult> _runMutation({
     required String serverScopeKey,
     required String rootDirectory,
-    required String command,
+    required String Function(String decoder) commandBuilder,
     String? path,
     String? newPath,
   }) async {
@@ -351,10 +376,15 @@ class WorkspaceFileOperationsServiceImpl
         message: capabilities.message,
       );
     }
+    final decoder =
+        _shellDecoderCache[_capabilityKey(serverScopeKey, rootDirectory)];
+    if (decoder == null) {
+      return _result(WorkspaceFileOperationCode.unavailable);
+    }
 
     final result = await _runShellScript(
       directory: rootDirectory,
-      command: command,
+      command: commandBuilder(decoder),
     );
     if (!result.ok) {
       AppLogger.warn(
@@ -883,10 +913,15 @@ class WorkspaceFileOperationsServiceImpl
   }
 
   @visibleForTesting
-  static String buildProbeCommandForTest() => _buildProbeCommand();
+  static String buildProbeCommandForTest() =>
+      _buildProbeCommand(_shellDecoders.first);
 
-  static String _buildProbeCommand() {
-    return "root=\$(pwd -P 2>/dev/null || printf /); if [ \"\$root\" = / ]; then printf '%s\\n' '$_shellPrefix{\"ok\":false,\"code\":\"outsideRoot\",\"message\":\"Path is outside the project root.\"}'; else printf '%s\\n' '$_shellPrefix{\"ok\":true,\"code\":\"ok\",\"message\":\"shell file operations available\"}'; fi";
+  static String _buildProbeCommand(String decoder) {
+    return _singleShellCommand(
+      script:
+          "root=\$(pwd -P 2>/dev/null || printf /)\nif [ \"\$root\" = / ]; then\n  printf '%s\\n' '$_shellPrefix{\"ok\":false,\"code\":\"outsideRoot\",\"message\":\"Path is outside the project root.\"}'\nelse\n  printf '%s\\n' '$_shellPrefix{\"ok\":true,\"code\":\"ok\",\"message\":\"shell file operations available\"}'\nfi\n",
+      decoder: decoder,
+    );
   }
 
   @visibleForTesting
@@ -896,15 +931,61 @@ class WorkspaceFileOperationsServiceImpl
     return "'${value.replaceAll("'", "'\\''")}'";
   }
 
+  @visibleForTesting
+  String buildCreateFileCommandForTest({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  }) {
+    return _buildCreateFileCommand(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+      decoder: _shellDecoders.first,
+    );
+  }
+
+  @visibleForTesting
+  String buildDeleteCommandForTest({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+  }) {
+    return _buildDeleteCommand(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+      decoder: _shellDecoders.first,
+    );
+  }
+
+  @visibleForTesting
+  String buildWriteFileCommandForTest({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String name,
+    required String content,
+  }) {
+    return _buildWriteFileCommand(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: name,
+      contentBase64: base64Encode(utf8.encode(content)),
+      decoder: _shellDecoders.first,
+    );
+  }
+
   String _buildCreateFileCommand({
     required String rootDirectory,
     required String parentDirectory,
     required String name,
+    required String decoder,
   }) {
     return _buildScript(
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      decoder: decoder,
       body: r'''
 cw_validate_name "$CW_NAME"
 cw_prepare_parent
@@ -921,11 +1002,13 @@ cw_fail failed
     required String rootDirectory,
     required String parentDirectory,
     required String name,
+    required String decoder,
   }) {
     return _buildScript(
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      decoder: decoder,
       body: r'''
 cw_validate_name "$CW_NAME"
 cw_prepare_parent
@@ -943,12 +1026,14 @@ cw_fail failed
     required String parentDirectory,
     required String oldName,
     required String newName,
+    required String decoder,
   }) {
     return _buildScript(
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: oldName,
       newName: newName,
+      decoder: decoder,
       body: r'''
 cw_validate_name "$CW_NAME"
 cw_validate_name "$CW_NEW_NAME"
@@ -969,11 +1054,13 @@ cw_fail failed
     required String rootDirectory,
     required String parentDirectory,
     required String name,
+    required String decoder,
   }) {
     return _buildScript(
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      decoder: decoder,
       body: r'''
 cw_validate_name "$CW_NAME"
 cw_prepare_parent
@@ -1024,12 +1111,14 @@ cw_fail failed
     required String parentDirectory,
     required String name,
     required String contentBase64,
+    required String decoder,
   }) {
     return _buildScript(
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
       contentBase64: contentBase64,
+      decoder: decoder,
       body: r'''
 cw_validate_name "$CW_NAME"
 cw_prepare_parent
@@ -1061,22 +1150,39 @@ cw_fail failed
     required String body,
     String? newName,
     String? contentBase64,
+    required String decoder,
   }) {
-    final buffer = StringBuffer()
-      ..writeln('set -u')
-      ..writeln('CW_ROOT_INPUT=${_shQuote(rootDirectory)}')
-      ..writeln('CW_PARENT_INPUT=${_shQuote(parentDirectory)}')
-      ..writeln('CW_NAME=${_shQuote(name)}');
+    final variables = <String, String>{
+      'CW_ROOT_INPUT': rootDirectory,
+      'CW_PARENT_INPUT': parentDirectory,
+      'CW_NAME': name,
+    };
     if (newName != null) {
-      buffer.writeln('CW_NEW_NAME=${_shQuote(newName)}');
+      variables['CW_NEW_NAME'] = newName;
     }
     if (contentBase64 != null) {
-      buffer.writeln('CW_CONTENT_B64=${_shQuote(contentBase64)}');
+      variables['CW_CONTENT_B64'] = contentBase64;
     }
-    buffer
-      ..write(_shellHelpers())
-      ..writeln(body.trim());
-    return buffer.toString();
+    final script = 'set -u\n${_shellHelpers()}${body.trim()}\n';
+    return _singleShellCommand(
+      script: script,
+      variables: variables,
+      decoder: decoder,
+    );
+  }
+
+  static String _singleShellCommand({
+    required String script,
+    required String decoder,
+    Map<String, String> variables = const <String, String>{},
+  }) {
+    final assignments = variables.entries
+        .map((entry) => '${entry.key}=${_shQuote(entry.value)}')
+        .join(' ');
+    final encodedScript = base64Encode(utf8.encode(script));
+    final environment = assignments.isEmpty ? '' : '$assignments ';
+    return "printf '%s' ${_shQuote(encodedScript)} | $decoder | "
+        '${environment}sh';
   }
 
   String _shellHelpers() {
