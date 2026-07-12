@@ -1,0 +1,169 @@
+import 'package:codewalk/domain/entities/session_attention_overlay/session_attention_models.dart';
+import 'package:codewalk/presentation/widgets/session_attention_overlay/session_attention_overlay.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+SessionAttentionItem _item({
+  String id = 'session-a',
+  RootSessionAttentionKind kind = RootSessionAttentionKind.completed,
+  String displayText = 'Final response',
+  String speechText = 'Final response',
+  SessionAttentionTransportCapability transport =
+      SessionAttentionTransportCapability.live,
+}) {
+  return SessionAttentionItem(
+    schemaVersion: 1,
+    revision: 1,
+    identity: SessionAttentionIdentity(
+      serverId: 'server-a',
+      directory: '/repo/a',
+      rootSessionId: id,
+    ),
+    title: 'Session $id',
+    projectLabel: 'Project A',
+    kind: kind,
+    startedAtEpochMs: 1,
+    lastObservedAtEpochMs: 2,
+    observableBusyElapsedMs: 3,
+    assistantMessageId: 'message-$id',
+    displayText: displayText,
+    speechText: speechText,
+    displayTruncated: false,
+    speechTruncated: false,
+    completedAtEpochMs: 4,
+    opened: false,
+    dismissed: false,
+    transportCapability: transport,
+    contentDigest: 'digest-$id',
+  );
+}
+
+Widget _app({
+  required List<SessionAttentionItem> items,
+  required bool expanded,
+  ValueChanged<SessionAttentionItem>? onOpen,
+  ValueChanged<SessionAttentionItem>? onRead,
+  ValueChanged<SessionAttentionItem>? onDismiss,
+  VoidCallback? onToggle,
+  VoidCallback? onStop,
+}) {
+  return MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: SessionAttentionOverlay(
+          items: items,
+          expanded: expanded,
+          semanticLabel: '${items.length} sessions need attention',
+          stateLabelBuilder: (kind) => kind.name,
+          openLabel: 'Open',
+          expandLabel: 'Expand',
+          collapseLabel: 'Collapse',
+          readLabel: 'Read',
+          stopReadingLabel: 'Stop reading',
+          dismissLabel: 'Dismiss',
+          stopOverlayLabel: 'Stop overlay',
+          onOpen: onOpen ?? (_) {},
+          onRead: onRead,
+          onDismiss: onDismiss ?? (_) {},
+          onToggleExpanded: onToggle ?? () {},
+          onStopOverlay: onStop ?? () {},
+        ),
+      ),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('bubble exposes count semantics and opens primary item', (
+    tester,
+  ) async {
+    SessionAttentionItem? opened;
+    final items = <SessionAttentionItem>[
+      _item(id: 'receiving', kind: RootSessionAttentionKind.receiving),
+      _item(id: 'error', kind: RootSessionAttentionKind.error),
+    ];
+    await tester.pumpWidget(
+      _app(items: items, expanded: false, onOpen: (item) => opened = item),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('session_attention_bubble')),
+      findsOneWidget,
+    );
+    expect(find.text('2'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'error, 2, 2 sessions need attention',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('session_attention_bubble')),
+    );
+    expect(opened?.kind, RootSessionAttentionKind.error);
+  });
+
+  testWidgets('panel exposes open read dismiss collapse and stop actions', (
+    tester,
+  ) async {
+    final item = _item();
+    var opened = false;
+    var read = false;
+    var dismissed = false;
+    var collapsed = false;
+    var stopped = false;
+    await tester.pumpWidget(
+      _app(
+        items: <SessionAttentionItem>[item],
+        expanded: true,
+        onOpen: (_) => opened = true,
+        onRead: (_) => read = true,
+        onDismiss: (_) => dismissed = true,
+        onToggle: () => collapsed = true,
+        onStop: () => stopped = true,
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('session_attention_panel')),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Open'));
+    await tester.tap(find.widgetWithText(TextButton, 'Read'));
+    await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('session_attention_collapse')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('session_attention_stop')),
+    );
+
+    expect(opened, isTrue);
+    expect(read, isTrue);
+    expect(dismissed, isTrue);
+    expect(collapsed, isTrue);
+    expect(stopped, isTrue);
+  });
+
+  testWidgets('reopen-required completion disables Read', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        items: <SessionAttentionItem>[
+          _item(transport: SessionAttentionTransportCapability.reopenRequired),
+        ],
+        expanded: true,
+        onRead: (_) {},
+      ),
+    );
+
+    expect(
+      tester
+          .widget<TextButton>(find.widgetWithText(TextButton, 'Read'))
+          .onPressed,
+      isNull,
+    );
+  });
+}

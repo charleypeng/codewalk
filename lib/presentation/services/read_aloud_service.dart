@@ -9,6 +9,7 @@ import '../../domain/entities/experience_settings.dart';
 import 'tts/generated_tts_audio_player.dart';
 import 'tts/native_tts_backend.dart';
 import 'tts/tts_backend.dart';
+import 'tts/tts_executor.dart';
 
 enum ReadAloudState { idle, loading, playing, paused }
 
@@ -30,8 +31,8 @@ class ReadAloudService extends ChangeNotifier {
     TtsAudioPlayer? audioPlayer,
     TtsApiKeyStorage? apiKeyStorage,
   }) : _backends = _buildBackends(tts: tts, backends: backends),
-       _audioPlayer = audioPlayer,
-       _apiKeyStorage = apiKeyStorage {
+       _audioPlayer = audioPlayer {
+    _executor = TtsExecutor(backends: _backends, apiKeyStorage: apiKeyStorage);
     if (_audioPlayer != null) {
       _attachAudioPlayer(_audioPlayer!);
     }
@@ -50,7 +51,7 @@ class ReadAloudService extends ChangeNotifier {
   }
 
   final Map<ReadAloudProvider, TtsBackend> _backends;
-  final TtsApiKeyStorage? _apiKeyStorage;
+  late final TtsExecutor _executor;
   TtsAudioPlayer? _audioPlayer;
   StreamSubscription<void>? _audioCompleteSubscription;
   StreamSubscription<Duration>? _audioDurationSubscription;
@@ -58,7 +59,6 @@ class ReadAloudService extends ChangeNotifier {
   ReadAloudState _state = ReadAloudState.idle;
   String? _activeMessageId;
   int _generation = 0;
-  TtsBackend? _activeBackend;
   int? _audioPlaybackGeneration;
   Duration? _audioDuration;
   Duration? _audioPosition;
@@ -119,8 +119,7 @@ class ReadAloudService extends ChangeNotifier {
 
     await _stopActiveSpeech(notify: false);
     final generation = ++_generation;
-    final backend = _backendFor(provider);
-    _activeBackend = backend;
+    final backend = _executor.backendFor(provider);
     _activeMessageId = messageId;
     _audioDuration = null;
     _audioPosition = null;
@@ -131,19 +130,28 @@ class ReadAloudService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await backend.speakOrSynthesize(
-        TtsSynthesisRequest(
-          text: text,
-          rate: rate,
-          pitch: pitch,
-          voiceId: _effectiveVoiceId(voiceId: voiceId, legacyVoice: voice),
-          voiceLocale: voiceLocale,
-          model: model,
-          baseUrl: baseUrl,
-          responseFormat: responseFormat,
-          apiKey: apiKey ?? await _apiKeyForProvider(provider),
-        ),
-        _callbacksFor(generation, backend.playbackMode),
+      final configuration = TtsConfiguration(
+        provider: provider,
+        rate: rate,
+        pitch: pitch,
+        voiceId: _effectiveVoiceId(voiceId: voiceId, legacyVoice: voice),
+        voiceLocale: voiceLocale,
+        model: model,
+        baseUrl: baseUrl,
+        responseFormat: responseFormat,
+      );
+      final job = SpeechJob(
+        jobId: '$messageId:$generation',
+        snapshotId: messageId,
+        textDigest: Object.hash(text, text.length).toString(),
+        speechText: text,
+        configurationRevision: configuration.revision,
+        configuration: configuration,
+      );
+      final result = await _executor.play(
+        job,
+        _callbacksFor(generation, backend.playbackMode, job.jobId),
+        apiKeyOverride: apiKey,
       );
       if (!_isCurrentGeneration(generation)) {
         return;
@@ -183,13 +191,17 @@ class ReadAloudService extends ChangeNotifier {
       return;
     }
     try {
-      if (_activeBackend?.playbackMode == TtsPlaybackMode.generatedAudio) {
+      if (_executor.activeJob != null &&
+          _executor
+                  .backendFor(_executor.activeJob!.configuration.provider)
+                  .playbackMode ==
+              TtsPlaybackMode.generatedAudio) {
         await _audioPlayer?.pause();
         _state = ReadAloudState.paused;
         notifyListeners();
         return;
       }
-      await _activeBackend?.pause();
+      await _executor.pause();
     } catch (error, stackTrace) {
       AppLogger.warn('TTS pause failed', error: error, stackTrace: stackTrace);
     }
@@ -230,9 +242,7 @@ class ReadAloudService extends ChangeNotifier {
     await _audioCompleteSubscription?.cancel();
     await _audioDurationSubscription?.cancel();
     await _audioPositionSubscription?.cancel();
-    for (final backend in _backends.values) {
-      backend.dispose();
-    }
+    _executor.dispose();
     await _audioPlayer?.dispose();
     super.dispose();
   }
@@ -266,20 +276,6 @@ class ReadAloudService extends ChangeNotifier {
 
   TtsBackend _backendFor(ReadAloudProvider provider) {
     return _backends[provider] ?? _backends[ReadAloudProvider.native]!;
-  }
-
-  Future<String?> _apiKeyForProvider(ReadAloudProvider provider) async {
-    if (provider != ReadAloudProvider.openAiCompatible) {
-      return null;
-    }
-    try {
-      return await _apiKeyStorage?.read(provider);
-    } on TtsApiKeyStorageException catch (error) {
-      throw TtsBackendException(
-        TtsBackendErrorKind.providerUnavailable,
-        error.message,
-      );
-    }
   }
 
   TtsAudioPlayer _ensureAudioPlayer() {
@@ -325,6 +321,7 @@ class ReadAloudService extends ChangeNotifier {
   TtsBackendCallbacks _callbacksFor(
     int generation,
     TtsPlaybackMode playbackMode,
+    String jobId,
   ) {
     return TtsBackendCallbacks(
       onStart: () {
@@ -334,8 +331,8 @@ class ReadAloudService extends ChangeNotifier {
         _state = ReadAloudState.playing;
         notifyListeners();
       },
-      onComplete: () => _completeNativeSpeech(generation),
-      onCancel: () => _completeNativeSpeech(generation),
+      onComplete: () => _completeNativeSpeech(generation, jobId),
+      onCancel: () => _completeNativeSpeech(generation, jobId),
       onPause: () {
         if (!_isCurrentGeneration(generation)) return;
         _state = ReadAloudState.paused;
@@ -355,12 +352,12 @@ class ReadAloudService extends ChangeNotifier {
   }
 
   Future<void> _stopActiveSpeech({required bool notify}) async {
-    if (_state == ReadAloudState.idle && _activeBackend == null) {
+    if (_state == ReadAloudState.idle && _executor.activeJob == null) {
       return;
     }
     _generation += 1;
     try {
-      await _activeBackend?.stop();
+      await _executor.stop();
       await _audioPlayer?.stop();
     } catch (error, stackTrace) {
       AppLogger.warn('TTS stop failed', error: error, stackTrace: stackTrace);
@@ -373,10 +370,11 @@ class ReadAloudService extends ChangeNotifier {
 
   bool _isCurrentGeneration(int generation) => generation == _generation;
 
-  void _completeNativeSpeech(int generation) {
+  void _completeNativeSpeech(int generation, String jobId) {
     if (!_isCurrentGeneration(generation)) {
       return;
     }
+    _executor.complete(jobId);
     _resetPlaybackState(clearError: false);
     notifyListeners();
   }
@@ -385,6 +383,7 @@ class ReadAloudService extends ChangeNotifier {
     if (!_isCurrentGeneration(generation)) {
       return;
     }
+    _executor.completeActive();
     _resetPlaybackState(clearError: false);
     notifyListeners();
   }
@@ -394,6 +393,7 @@ class ReadAloudService extends ChangeNotifier {
     _lastErrorMessage = message;
     _lastErrorMessageId = _activeMessageId;
     _lastErrorSequence += 1;
+    _executor.completeActive();
     _resetPlaybackState(clearError: false);
     notifyListeners();
   }
@@ -401,7 +401,6 @@ class ReadAloudService extends ChangeNotifier {
   void _resetPlaybackState({required bool clearError}) {
     _state = ReadAloudState.idle;
     _activeMessageId = null;
-    _activeBackend = null;
     _audioPlaybackGeneration = null;
     _audioDuration = null;
     _audioPosition = null;
