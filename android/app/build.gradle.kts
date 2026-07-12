@@ -97,6 +97,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Required by flutter_appauth for custom-scheme redirect support.
         // Loopback-based OAuth (used by Cloudflare Access) does not use this
         // scheme, but the manifest merger requires the placeholder to resolve.
@@ -145,4 +146,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    androidTestImplementation("androidx.test:core-ktx:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit-ktx:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 }
