@@ -84,7 +84,7 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter build apk --debug
+      - run: flutter build apk --config-only
       - name: Install emulator system image
         shell: bash
         run: |
