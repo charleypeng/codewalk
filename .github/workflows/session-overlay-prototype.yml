@@ -27,6 +27,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build apk --debug
+      - run: ./android/gradlew -p android app:assembleDebugAndroidTest
 
   desktop-compile:
     strategy:
@@ -60,67 +61,3 @@ jobs:
         run: flutter build ${{ matrix.target }} --debug
       - if: matrix.target == 'macos'
         run: MACOSX_DEPLOYMENT_TARGET=11.0 flutter build macos --debug
-
-  android-runtime:
-    runs-on: macos-15-intel
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        api-level: [34, 35, 36]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: flutter build apk --config-only
-      - name: Install emulator system image
-        shell: bash
-        run: |
-          sdkmanager=""
-          sdk_root=""
-          for root in "${ANDROID_SDK_ROOT:-}" "${ANDROID_HOME:-}" "$HOME/Library/Android/sdk"; do
-            if [ -x "$root/cmdline-tools/latest/bin/sdkmanager" ]; then
-              sdkmanager="$root/cmdline-tools/latest/bin/sdkmanager"
-              sdk_root="$root"
-              break
-            fi
-          done
-          if [ -z "$sdkmanager" ]; then
-            echo "::error::sdkmanager not found under known Android SDK roots"
-            exit 1
-          fi
-
-          package="system-images;android-${{ matrix.api-level }};google_apis;x86_64"
-          image_dir="$sdk_root/system-images/android-${{ matrix.api-level }}/google_apis/x86_64"
-          for attempt in 1 2 3; do
-            if "$sdkmanager" --channel=0 "$package"; then
-              exit 0
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              exit 1
-            fi
-            rm -rf "$image_dir" "$sdk_root/.temp" "$HOME/.android/cache"
-            sleep $((attempt * 20))
-          done
-      - uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
-          pre-emulator-launch-script: adb start-server
-          script: ./android/gradlew -p android app:connectedDebugAndroidTest

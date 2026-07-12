@@ -347,7 +347,9 @@ Create a separate non-secret dismissal index inside the encrypted payload. Do no
 6. Remove throwaway prototype code after documenting results. Preserve only reusable platform adapters that pass production standards.
 7. If Android service-engine plugin registration, API 35/36 lifecycle, or the tri-platform desktop prototype fails, mark implementation blocked and report the failed invariant. Do not replace the architecture without an ADR/user decision.
 
-**Validation gate:** ADR accepted; both prototypes pass; dependency resolution passes; no existing build/test regression.
+**User-approved Step 1 exception (2026-07-12):** Hosted API 34–36 emulator execution is not a blocking Step 1 gate. GitHub's standard Linux runners exposed KVM inconsistently, while standard Intel macOS runners started the emulator but never completed guest boot. The prototype workflow must still compile the Android app, service-engine integration, and instrumentation APK (`assembleDebugAndroidTest`), plus all desktop targets. This exception permits broad implementation to proceed; it does not claim that API 34–36 runtime behavior passed, and it does not waive the Step 9 runtime validation required before release.
+
+**Validation gate:** ADR accepted; Android app and instrumentation sources compile; the desktop prototype passes on all three targets; dependency resolution passes; no existing build/test regression. Android API 34–36 runtime validation remains deferred to Step 9 under the explicit exception above.
 
 ### Step 2 — Add persisted settings and capability state
 
@@ -964,7 +966,7 @@ Technical execution is blocked if either mandatory Step 1 prototype fails. Recor
 1. Read repository `AGENTS.md`, `BEHAVIOR.md`, ADR-003, ADR-023, ADR-046, ADR-047, official local OpenCode anchors, and this file.
 2. Inspect `git status`, latest `AGENT_PLAN_ANCHOR`, its `PLAN_REF` commits, and current remote state. Preserve all user changes.
 3. Create a new immutable `plan:` commit with `AGENT_PLAN_ANCHOR` containing this full request, decisions, constraints, risks, and step checklist before implementation.
-4. Execute Step 1 as a blocking spike/ADR step. Do not begin broad source changes until both Android and desktop prototypes pass.
+4. Execute Step 1 as a blocking spike/ADR step, applying its explicit compile-only Android exception. Broad source changes may begin only after the ADR, Android app/instrumentation compilation, desktop prototype gates, and dependency checks pass; API 34–36 runtime validation remains Step 9 and release blocking.
 5. Use one `chore(agent): [Step X/Y] ...` progress commit per completed implementation step, with `PLAN_REF` and `PREVIOUS_STEP`.
 6. Delegate ADR/CODEBASE/documentation changes to their required subagents.
 7. Use focused analysis/tests while iterating; run `make check` at the stable gate.
