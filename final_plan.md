@@ -351,6 +351,8 @@ Create a separate non-secret dismissal index inside the encrypted payload. Do no
 
 **Validation gate:** ADR accepted; Android app and instrumentation sources compile; the desktop prototype passes on all three targets; dependency resolution passes; no existing build/test regression. Android API 34–36 runtime validation remains deferred to Step 9 under the explicit exception above.
 
+**Execution result (2026-07-12):** Step 1 passed under the approved exception. ADR-049 is accepted, ADR-003 contains the bounded root-session completion-fetch exception, `cryptography 2.9.0` and `desktop_multi_window 0.3.0` resolve, and GitHub Actions run `29195855387` passed the Android debug app, Android instrumentation APK, Linux, Windows, and macOS compile gates. API 34–36 runtime behavior was not validated and remains explicitly release blocking in Step 9.
+
 ### Step 2 — Add persisted settings and capability state
 
 **Files:**
