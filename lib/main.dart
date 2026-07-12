@@ -24,41 +24,40 @@ import 'presentation/providers/project_provider.dart';
 import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/services/android_background_alert_worker.dart';
+import 'presentation/services/session_attention/session_overlay_entrypoint.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/opencode_theme_presets.dart';
 
-void main() {
-  runZonedGuarded(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
-      AppLogger.installGlobalHandlers();
+Future<void> main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (await runSessionAttentionDesktopChildIfNeeded()) {
+    return;
+  }
+  await runZonedGuarded<Future<void>>(() async {
+    AppLogger.installGlobalHandlers();
 
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          systemNavigationBarColor: Colors.transparent,
-          systemNavigationBarDividerColor: Colors.transparent,
-        ),
-      );
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
 
-      if (_isDesktopRuntime()) {
-        await windowManager.ensureInitialized();
-      }
+    if (_isDesktopRuntime()) {
+      await windowManager.ensureInitialized();
+    }
 
-      if (_isAndroidRuntime()) {
-        await AndroidBackgroundAlertWorker.syncRegistrationFromPersistedSettings();
-      }
+    if (_isAndroidRuntime()) {
+      await AndroidBackgroundAlertWorker.syncRegistrationFromPersistedSettings();
+    }
 
-      // Initialize dependency injection
-      await di.init();
+    // Initialize dependency injection
+    await di.init();
 
-      runApp(const MyApp());
-    },
-    (error, stackTrace) {
-      AppLogger.recordZoneError(error, stackTrace);
-    },
-  );
+    runApp(const MyApp());
+  }, AppLogger.recordZoneError);
 }
 
 class MyApp extends StatelessWidget {
@@ -127,30 +126,26 @@ class MyApp extends StatelessWidget {
 
               final presetLightScheme = openCodeLightSchemeFor(themePreset);
               final presetDarkScheme = openCodeDarkSchemeFor(themePreset);
-              final usePresetSchemes =
-                  themePreset != null &&
-                  presetLightScheme != null &&
-                  presetDarkScheme != null;
 
               // Use dynamic platform colors when available and enabled
-              final lightScheme = usePresetSchemes
-                  ? presetLightScheme!
-                  : useDynamic && lightDynamic != null
-                  ? lightDynamic
-                  : ColorScheme.fromSeed(
-                      seedColor: seedColor,
-                      brightness: Brightness.light,
-                      contrastLevel: contrastLevel,
-                    );
-              final darkScheme = usePresetSchemes
-                  ? presetDarkScheme!
-                  : useDynamic && darkDynamic != null
-                  ? darkDynamic
-                  : ColorScheme.fromSeed(
-                      seedColor: seedColor,
-                      brightness: Brightness.dark,
-                      contrastLevel: contrastLevel,
-                    );
+              final lightScheme =
+                  presetLightScheme ??
+                  (useDynamic && lightDynamic != null
+                      ? lightDynamic
+                      : ColorScheme.fromSeed(
+                          seedColor: seedColor,
+                          brightness: Brightness.light,
+                          contrastLevel: contrastLevel,
+                        ));
+              final darkScheme =
+                  presetDarkScheme ??
+                  (useDynamic && darkDynamic != null
+                      ? darkDynamic
+                      : ColorScheme.fromSeed(
+                          seedColor: seedColor,
+                          brightness: Brightness.dark,
+                          contrastLevel: contrastLevel,
+                        ));
               final resolvedDarkScheme = useAmoledDark
                   ? _applyAmoledDarkScheme(darkScheme)
                   : darkScheme;

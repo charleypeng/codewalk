@@ -52,6 +52,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-046: Client-Side Cloud TTS Provider Architecture ⚠️ SUPERSEDED by ADR-047
 - ADR-047: Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket
 - ADR-048: Adaptive First-Run Read-Aloud TTS Defaults
+- ADR-049: Cross-Platform Attention Surfaces and Secure Background Continuity
 
 ---
 
@@ -169,6 +170,8 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 **Note** (commit `161b9ce`): Tightened current-session active-turn detection — incomplete `assistant`/`current` sending state remains active even if idle status arrives early, preventing premature turn completion detection. Also narrowed unsupported global `message.*` fallback reconcile — only the visible current session can trigger active-session refresh when no active local stream/compaction guard is in effect.
 
 **Note** (issue #83): Per-session event-scope policy — the realtime stream remains authoritative, but event application is now scoped by whether the session is the current one. The **active session keeps full realtime** behavior (full messages, diffs, todos applied as they arrive). **Non-current sessions do not fetch or apply full message payloads, message diffs, or todos from SSE**; their status signals are summarized/deduped by event type rather than expanded into per-message work, keeping background contexts cheap to track. The following categories remain **alertable/indicator-producing across all sessions** (including non-current): permission/question requests (v1 and v2), `session.error`, and `session.idle` / final-completion transitions. **Inactive context snapshots now receive `session.error` and permission/question state**, so background context indicators stay coherent when the user returns. **Re-entering a session relies on cache-first SWR plus active revalidation** — see ADR-020. This is a pure client-side routing/filtering layer over existing OpenCode SSE events: no server contract changes, no new endpoints, no semantic drift from the official event stream (ADR-023 compliant).
+
+**Note** (issue #98): ADR-049 permits the sole exception to the non-current full-message-fetch rule: after an authoritative `session.idle`, a bounded, directory-scoped final message fetch may run only for the matching root session on the active server, identified by the exact `serverId`, directory, and session ID. It is for secure attention display/speech snapshots only; it does not apply diffs, fetch child sessions, or broaden background sync.
 
 ### Key Files
 
@@ -3026,3 +3029,79 @@ Adopt an **adaptive first-run read-aloud provider resolver** while preserving pe
 - `lib/presentation/services/tts/read_aloud_text_extractor.dart` — sanitized assistant text boundary before Edge synthesis.
 - `test/unit/services/read_aloud_default_resolver_test.dart` — adaptive default, native-probe, and locale mapping coverage.
 - `test/unit/providers/settings_provider_test.dart` — settings hydration and no-overwrite integration coverage.
+
+---
+
+## ADR-049: Cross-Platform Attention Surfaces and Secure Background Continuity (2026-07-12)
+
+**Status**: Accepted
+
+**Related**: GitHub issue #98; ADR-001 (secure credential storage), ADR-003 (realtime/background lifecycle), ADR-017 (Android foreground monitoring), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-046/ADR-047/ADR-048 (read-aloud provider policy).
+
+### Context
+
+Issue #98 requires an optional cross-platform attention surface for completed or attention-required root sessions without turning CodeWalk into a separate server-side notification system. The feature must remain disabled by default, preserve strict multi-server and directory/session isolation, survive only the background cases that can be restored safely, and keep display and speech data bounded and encrypted.
+
+Android overlays require `SYSTEM_ALERT_WINDOW` and a policy-compliant foreground service. Desktop requires an independent window/engine lifecycle, while iOS cannot provide an out-of-app overlay. Network constraints, Data Saver, host reachability, authentication, and tunnel lifecycle must not be conflated. The implementation must also preserve ADR-003's low-cost non-current-session policy and fully comply with ADR-023.
+
+### Decision
+
+1. **Default-off presentation mode.** Add an `Off` / `Bubble` / `Panel` attention-surface preference, defaulting to `Off`. `Bubble` and `Panel` are explicit user opt-ins; rollback is always available by returning the preference to `Off`, which stops attention presentation and removes any active surface. iOS supports the feature in-app only and never attempts an out-of-app overlay.
+
+2. **Root-only, active-server attention across known contexts.** Evaluate attention only for root sessions on the active server across its known directory contexts. Every candidate, snapshot, display action, speech action, and final fetch is bound to the exact `(serverId, directory, rootSessionId)` identity; a display label, project fallback, descendant/subsession ID, or stale active context is never a substitute. Child sessions and inactive-server sessions do not independently produce attention surfaces.
+
+3. **Narrow ADR-003 final-fetch exception.** Keep ADR-003's realtime-first and non-current-session filtering intact. The only exception is one bounded, directory-scoped final message fetch after an authoritative `session.idle` for the matching root session identity on the active server. The result is used only to produce the final attention display/speech snapshot; it neither applies background message diffs nor starts child-session, global, or unbounded polling. Fetch multiplicity, payload size, retained entries, and retention time are bounded.
+
+4. **Encrypted bounded snapshots and explicit read-aloud.** Persist display and speech snapshots only as AES-256-GCM encrypted, size- and retention-bounded records scoped to the exact identity. They contain no credentials, OAuth material, Tailscale state, raw logs, or unbounded message history. Speech is never automatic: only an explicit user `Read` action invokes the currently configured native, experimental Edge, or OpenAI-compatible TTS provider. Existing secure-storage-only handling for OpenAI-compatible secrets remains mandatory; secrets never enter snapshots, normal preferences, overlays, logs, or exported settings.
+
+5. **Android isolated overlay host.** Android `Bubble`/`Panel` requires user-granted `SYSTEM_ALERT_WINDOW` and a dedicated, non-exported `specialUse` foreground service. That service owns a narrow overlay-only `FlutterEngine` and `FlutterView`; it is separate from, and must not share lifecycle or responsibilities with, the existing `dataSync` foreground service. The manifest declaration, runtime permission flow, foreground-service notification, and service start behavior must satisfy current Android and Play policy requirements.
+
+6. **Desktop isolated window behind an app-owned boundary.** Define an app-owned desktop attention-surface abstraction whose implementation creates a separate Flutter engine/window. Use `desktop_multi_window` **0.3.0** only after a compatibility gate validates supported desktop builds, startup, teardown, inter-window messaging, and no main-window lifecycle regression. No alternative window package or shared-main-engine shortcut is accepted without a new ADR decision.
+
+7. **Separate host and network lifecycle.** Track host/profile lifecycle (configured server, authentication state, transport/tunnel availability, and reachable host) independently from network lifecycle (connectivity, metering, cellular Data Saver, and scheduling permission). A foreground service remains background work for cellular Data Saver purposes and must not claim a foreground exemption merely because Android requires an FGS notification. Delayed attention timers expose their deadline, remaining duration, and pause reason; constrained or unavailable lifecycle states pause time observably rather than silently consuming delayed time.
+
+8. **Process-death fallback is intentionally narrow.** After process death, the service may restore only a plain/unauthenticated or Basic-authenticated host through the dedicated service fallback. OAuth and Tailscale-backed contexts are frozen after process death and shown as reopen-required; the service must not refresh OAuth, recreate a tunnel, infer credentials, or silently reconnect those contexts. Opening CodeWalk is required to re-establish their app-owned lifecycle.
+
+9. **Platform and policy capability gates.** Wayland overlay/window-manager limitations and Google Play restrictions on `SYSTEM_ALERT_WINDOW` and `specialUse` foreground services are first-class availability constraints. If the required platform capability or policy approval is absent, the affected Bubble/Panel path remains unavailable and CodeWalk falls back to its normal in-app behavior or `Off`; it does not emulate an overlay through unsupported background execution.
+
+### Rationale
+
+- Default-off, explicit modes, and explicit Read preserve user agency for privacy-sensitive overlays and speech.
+- Exact server/directory/root-session identity prevents multi-server or descendant-session attention from leaking into the wrong workspace.
+- The single post-idle bounded fetch provides a reliable final snapshot without undoing ADR-003's cheap non-current-session handling.
+- AES-256-GCM bounded storage protects transient display/speech content without creating a second durable chat archive or credential path.
+- Separate Android and desktop engine/window ownership avoids coupling overlays to the primary app UI or the existing data-sync service.
+- Keeping host, network, Data Saver, OAuth, and Tailscale states distinct makes degraded behavior honest and recoverable instead of silently attempting unsafe reconnection.
+
+### Consequences
+
+- ✅ Attention surfaces are opt-in, reversible, and default to `Off` on every platform.
+- ✅ Final attention data remains scoped, bounded, encrypted, and limited to root sessions on the active server.
+- ✅ Android overlay ownership is isolated from the existing `dataSync` service, and desktop windows are isolated behind an app-owned abstraction.
+- ✅ TTS respects the configured provider but requires an explicit Read action; OpenAI-compatible secrets retain their secure-storage boundary.
+- ✅ ADR-003 keeps its non-current-session performance policy except for the single bounded post-idle root-session fetch.
+- ⚠ Android overlays require user permission, a visible foreground-service notification, OEM-compatible behavior, and ongoing Play-policy review.
+- ⚠ Wayland compositors may not support the required window behavior consistently; feature availability must be reported rather than assumed.
+- ⚠ OAuth and Tailscale attention cannot resume after process death until the user reopens CodeWalk.
+- ⚠ Compatibility with `desktop_multi_window` 0.3.0 is a release gate, not an assumption.
+- ❌ No automatic speech, inactive-server attention, child-session overlay, unbounded background history, OAuth refresh, or Tailscale reconnection is supported by this feature.
+- ❌ An FGS is not treated as a cellular Data Saver foreground exemption.
+
+### Full ADR-023 Compatibility
+
+This ADR is fully compliant with ADR-023 and is **not** an ADR-023 exception. It adds no OpenCode server endpoint, request/response schema, server-side proxy, authentication contract, session/message mutation, agent/model/provider behavior, configuration mutation, or realtime-event semantic. CodeWalk continues to consume official server events and existing authoritative read paths only.
+
+The bounded final root-session fetch is solely the explicit ADR-003 event-scope exception documented above: it occurs after official `session.idle`, uses the exact server/directory/session identity, and produces client-owned encrypted display/speech snapshots. It neither changes the OpenCode contract nor substitutes client state for server authority. Overlay presentation, desktop windows, Android service lifecycle, encryption, TTS dispatch, Data Saver handling, and process-death gating are client-owned behavior.
+
+### Key Files / Planned Areas
+
+- `lib/domain/entities/experience_settings.dart` — default-off `Off` / `Bubble` / `Panel` preference and non-secret attention settings.
+- `lib/presentation/services/attention/` — planned identity validation, bounded AES-256-GCM snapshot store, lifecycle coordinator, delayed-time observability, and platform capability gates.
+- `lib/presentation/providers/chat_provider/` — planned root-session `session.idle` coordination and the narrow ADR-003 final-fetch guard.
+- `lib/presentation/services/read_aloud_service.dart` and `lib/presentation/services/tts/` — explicit Read-only dispatch through configured native, Edge, or OpenAI-compatible providers; no secret persistence changes.
+- `lib/core/auth/` and `lib/data/datasources/` — secure key access and exact server/directory/session-scoped persistence boundaries.
+- `android/app/src/main/AndroidManifest.xml` — `SYSTEM_ALERT_WINDOW`, `specialUse` FGS declaration, and non-exported service configuration.
+- `android/app/src/main/kotlin/com/verseles/codewalk/` — planned dedicated overlay `specialUse` FGS, narrow Flutter engine/view host, and Android capability bridge; separate from the `dataSync` service.
+- `lib/presentation/services/attention/desktop/` and `pubspec.yaml` — planned app-owned desktop window abstraction and `desktop_multi_window` 0.3.0 compatibility gate.
+- `ios/Runner/` and in-app presentation widgets — in-app-only iOS capability path.
+- `test/unit/`, `test/widget/`, and Android/desktop integration coverage — identity isolation, post-idle fetch bounds, encryption, pause observability, permission/policy gates, process-death fallback, and rollback-to-Off behavior.

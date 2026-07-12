@@ -9,11 +9,13 @@ import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.verseles.codewalk.overlay.SessionOverlayService
 
 class MainActivity : FlutterActivity() {
     companion object {
         private const val SYSTEM_SOUNDS_CHANNEL = "codewalk/system_sounds"
         private const val SYSTEM_CHANNEL = "codewalk/system"
+        private const val SESSION_OVERLAY_CHANNEL = "codewalk/session_overlay_host"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -25,6 +27,20 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "listNotificationSounds" -> result.success(listNotificationSounds())
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            SESSION_OVERLAY_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "canDrawOverlays" -> result.success(Settings.canDrawOverlays(this))
+                "requestOverlayPermission" -> result.success(requestOverlayPermission())
+                "startOverlayService" -> result.success(startSessionOverlayService())
+                "stopOverlayService" -> result.success(stopSessionOverlayService())
+                "isOverlayServiceRunning" -> result.success(SessionOverlayService.isRunning())
                 else -> result.notImplemented()
             }
         }
@@ -61,6 +77,45 @@ class MainActivity : FlutterActivity() {
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun requestOverlayPermission(): Boolean {
+        if (Settings.canDrawOverlays(this)) return true
+        return try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName"),
+                ),
+            )
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun startSessionOverlayService(): Boolean {
+        if (!Settings.canDrawOverlays(this)) return false
+        return try {
+            val intent = Intent(this, SessionOverlayService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun stopSessionOverlayService(): Boolean {
+        return try {
+            stopService(Intent(this, SessionOverlayService::class.java))
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

@@ -99,6 +99,8 @@ dependencies:
   material_symbols_icons: ^4.2928.1
   open_filex: ^4.6.0
   crypto: ^3.0.6
+  cryptography: 2.9.0
+  desktop_multi_window: 0.3.0
   simple_icons:
     git:
       url: https://github.com/jlnrrg/simple_icons.git
