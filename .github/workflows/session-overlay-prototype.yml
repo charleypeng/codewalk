@@ -62,7 +62,7 @@ jobs:
         run: MACOSX_DEPLOYMENT_TARGET=11.0 flutter build macos --debug
 
   android-runtime:
-    runs-on: ubuntu-24.04
+    runs-on: macos-15-intel
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -85,26 +85,33 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build apk --debug
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-          test -r /dev/kvm
-          test -w /dev/kvm
       - name: Install emulator system image
         shell: bash
         run: |
+          sdkmanager=""
+          sdk_root=""
+          for root in "${ANDROID_SDK_ROOT:-}" "${ANDROID_HOME:-}" "$HOME/Library/Android/sdk"; do
+            if [ -x "$root/cmdline-tools/latest/bin/sdkmanager" ]; then
+              sdkmanager="$root/cmdline-tools/latest/bin/sdkmanager"
+              sdk_root="$root"
+              break
+            fi
+          done
+          if [ -z "$sdkmanager" ]; then
+            echo "::error::sdkmanager not found under known Android SDK roots"
+            exit 1
+          fi
+
           package="system-images;android-${{ matrix.api-level }};google_apis;x86_64"
-          image_dir="$ANDROID_SDK_ROOT/system-images/android-${{ matrix.api-level }}/google_apis/x86_64"
+          image_dir="$sdk_root/system-images/android-${{ matrix.api-level }}/google_apis/x86_64"
           for attempt in 1 2 3; do
-            if sdkmanager --channel=0 "$package"; then
+            if "$sdkmanager" --channel=0 "$package"; then
               exit 0
             fi
             if [ "$attempt" -eq 3 ]; then
               exit 1
             fi
-            rm -rf "$image_dir" "$ANDROID_SDK_ROOT/.temp" "$HOME/.android/cache"
+            rm -rf "$image_dir" "$sdk_root/.temp" "$HOME/.android/cache"
             sleep $((attempt * 20))
           done
       - uses: reactivecircus/android-emulator-runner@v2
@@ -113,7 +120,6 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          disable-linux-hw-accel: false
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: ./android/gradlew -p android app:connectedDebugAndroidTest
