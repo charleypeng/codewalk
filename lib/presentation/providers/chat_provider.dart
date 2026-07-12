@@ -60,6 +60,7 @@ import '../services/chat_title_generator.dart';
 import '../services/event_feedback_dispatcher.dart';
 import '../services/read_aloud_service.dart';
 import '../services/session_attention/session_attention_coordinator.dart';
+import '../services/session_attention/session_attention_completion_resolver.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_assistant_settlement.dart';
 import '../utils/chat_event_property_extractors.dart';
@@ -162,6 +163,7 @@ class ChatProvider extends ChangeNotifier {
     this.dioClient,
     CellularDataSaverService? cellularDataSaverService,
     SessionAttentionCoordinator? sessionAttentionCoordinator,
+    SessionAttentionCompletionResolver? sessionAttentionCompletionResolver,
     this.eventFeedbackDispatcher,
     this.titleGenerator,
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
@@ -185,6 +187,7 @@ class ChatProvider extends ChangeNotifier {
         SessionAttentionCoordinator(
           cellularDataSaverService: _cellularDataSaverService,
         );
+    _sessionAttentionCompletionResolver = sessionAttentionCompletionResolver;
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
@@ -271,6 +274,8 @@ class ChatProvider extends ChangeNotifier {
   final DioClient? dioClient;
   late final CellularDataSaverService _cellularDataSaverService;
   late final SessionAttentionCoordinator _sessionAttentionCoordinator;
+  late final SessionAttentionCompletionResolver?
+  _sessionAttentionCompletionResolver;
   late final bool _ownsSessionAttentionCoordinator;
   final EventFeedbackDispatcher? eventFeedbackDispatcher;
   final ChatTitleGenerator? titleGenerator;

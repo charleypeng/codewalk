@@ -20,6 +20,7 @@ import '../../domain/entities/server_profile.dart';
 import '../../domain/usecases/check_connection.dart';
 import '../../domain/usecases/get_app_info.dart';
 import '../services/cellular_data_saver_service.dart';
+import '../services/session_attention/session_attention_completion_resolver.dart';
 import '../services/local_opencode_server_runtime.dart';
 import '../services/local_opencode_server_runtime_types.dart';
 
@@ -54,6 +55,7 @@ class AppProvider extends ChangeNotifier {
     TailscaleService? tailscaleService,
     Future<bool> Function(Uri authUrl)? tailscaleAuthLauncher,
     CellularDataSaverService? cellularDataSaverService,
+    SessionAttentionCompletionResolver? sessionAttentionCompletionResolver,
     LocalOpencodeServerRuntime? localServerRuntime,
     Future<ServerHealthStatus> Function(ServerProfile profile)?
     serverHealthProbe,
@@ -71,6 +73,7 @@ class AppProvider extends ChangeNotifier {
                launchUrl(authUrl, mode: LaunchMode.externalApplication)),
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled(),
+       _sessionAttentionCompletionResolver = sessionAttentionCompletionResolver,
        _localServerRuntime =
            localServerRuntime ?? createLocalOpencodeServerRuntime(),
        _serverHealthProbe = serverHealthProbe,
@@ -88,6 +91,7 @@ class AppProvider extends ChangeNotifier {
   final TailscaleService _tailscaleService;
   final Future<bool> Function(Uri authUrl) _tailscaleAuthLauncher;
   final CellularDataSaverService _cellularDataSaverService;
+  final SessionAttentionCompletionResolver? _sessionAttentionCompletionResolver;
   final LocalOpencodeServerRuntime _localServerRuntime;
   final Future<ServerHealthStatus> Function(ServerProfile profile)?
   _serverHealthProbe;
@@ -899,6 +903,7 @@ class AppProvider extends ChangeNotifier {
     if (removed.oauthEnabled) {
       await _clearOAuthCredentialForProfile(removed);
     }
+    await _sessionAttentionCompletionResolver?.removeServer(id);
 
     _serverProfiles = _serverProfiles.where((p) => p.id != id).toList();
     _serverHealthById.remove(id);

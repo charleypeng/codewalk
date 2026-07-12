@@ -11,6 +11,7 @@ import '../../../../core/i18n/l10n_context.dart';
 import '../../../../data/datasources/app_local_datasource.dart';
 import '../../../providers/app_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/session_attention/session_attention_completion_resolver.dart';
 import '../../../widgets/settings_update_available_card.dart';
 import '../../app_shell_page.dart';
 
@@ -204,6 +205,9 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
 
     // Clear all persisted data.
     final localDataSource = di.sl<AppLocalDataSource>();
+    if (di.sl.isRegistered<SessionAttentionCompletionResolver>()) {
+      await di.sl<SessionAttentionCompletionResolver>().clear();
+    }
     await localDataSource.clearAll();
 
     if (!context.mounted) return;

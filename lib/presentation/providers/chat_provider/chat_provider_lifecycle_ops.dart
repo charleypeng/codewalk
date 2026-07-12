@@ -353,6 +353,10 @@ extension ChatProviderLifecycleOps on ChatProvider {
     final previousCurrent = _currentSession;
     final previousMessages = List<ChatMessage>.from(_messages);
     final wasCurrent = previousCurrent?.id == sessionId;
+    final attentionIdentity = _sessionAttentionIdentityFor(
+      contextKey: _activeContextKey,
+      sessionId: sessionId,
+    );
 
     _removeSessionMessagesCache(sessionId);
     unawaited(_clearSessionMessagesSnapshotBestEffort(sessionId));
@@ -401,6 +405,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
         _handleFailure(failure);
       },
       (_) async {
+        if (attentionIdentity != null) {
+          _deleteSessionAttentionSnapshotIdentity(attentionIdentity);
+        }
         if (wasCurrent && _currentSession != null) {
           await loadMessages(_currentSession!.id);
           await loadSessionInsights(_currentSession!.id, silent: true);

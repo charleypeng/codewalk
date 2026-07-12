@@ -193,6 +193,10 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
             properties['sessionID'] as String? ??
             properties['id'] as String?;
         if (sessionId != null && sessionId.isNotEmpty) {
+          _deleteSessionAttentionSnapshot(
+            contextKey: _activeContextKey,
+            sessionId: sessionId,
+          );
           final deletedCurrent = _currentSession?.id == sessionId;
           _removeSessionById(sessionId);
           if (deletedCurrent && _currentSession != null) {
@@ -228,6 +232,11 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
               (previousStatusType == SessionStatusType.busy ||
                   previousStatusType == SessionStatusType.retry)) {
             _markSessionUnreadCompletion(sessionId);
+            _resolveSessionAttentionCompletion(
+              contextKey: _activeContextKey,
+              sessionId: sessionId,
+              completedAt: DateTime.now(),
+            );
           }
           if (isVisibleCurrentSession) {
             _clearSessionAttentionForSession(sessionId);
@@ -331,6 +340,16 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
           final hadErrorAttention = _sessionErrorAttentionIds.contains(
             sessionId,
           );
+          final shouldPersistCompletion =
+              !isVisibleCurrentSession &&
+              (wasBusyBeforeIdle || previousStatusType == null);
+          if (shouldPersistCompletion) {
+            _resolveSessionAttentionCompletion(
+              contextKey: _activeContextKey,
+              sessionId: sessionId,
+              completedAt: DateTime.now(),
+            );
+          }
           if (!isCurrentSession &&
               previousStatusType == SessionStatusType.idle &&
               !hadErrorAttention) {

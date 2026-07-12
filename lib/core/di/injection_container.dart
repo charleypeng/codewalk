@@ -13,6 +13,7 @@ import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../data/repositories/app_repository_impl.dart';
 import '../../data/repositories/chat_repository_impl.dart';
 import '../../data/repositories/project_repository_impl.dart';
+import '../../data/session_attention/session_attention_snapshot_store.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../../domain/repositories/app_repository.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -65,6 +66,7 @@ import '../../presentation/services/project_icon_store.dart';
 import '../../presentation/services/read_aloud_service.dart';
 import '../../presentation/services/sensevoice_model_manager.dart';
 import '../../presentation/services/session_attention/session_attention_coordinator.dart';
+import '../../presentation/services/session_attention/session_attention_completion_resolver.dart';
 import '../../presentation/services/session_attention/session_attention_host_service.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
 import '../../presentation/services/sound_service.dart';
@@ -129,6 +131,13 @@ Future<void> init() async {
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
   sl.registerLazySingleton(TtsApiKeyStorage.new);
+  sl.registerLazySingleton(SessionAttentionSnapshotStore.new);
+  sl.registerLazySingleton(
+    () => SessionAttentionCompletionResolver(
+      getChatMessages: sl(),
+      snapshotStore: sl(),
+    ),
+  );
   sl.registerLazySingleton(
     () => ReadAloudService(
       apiKeyStorage: sl<TtsApiKeyStorage>(),
@@ -242,6 +251,7 @@ Future<void> init() async {
       dioClient: sl(),
       tailscaleService: sl(),
       cellularDataSaverService: sl(),
+      sessionAttentionCompletionResolver: sl(),
     ),
   );
 
@@ -280,6 +290,7 @@ Future<void> init() async {
       dioClient: sl(),
       cellularDataSaverService: sl(),
       sessionAttentionCoordinator: sl(),
+      sessionAttentionCompletionResolver: sl(),
       eventFeedbackDispatcher: sl(),
       titleGenerator: sl(),
     ),

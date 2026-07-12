@@ -1,6 +1,155 @@
 part of '../chat_provider.dart';
 
 extension ChatProviderSessionAttentionOps on ChatProvider {
+  void _resolveSessionAttentionCompletion({
+    required String contextKey,
+    required String sessionId,
+    required DateTime completedAt,
+  }) {
+    final resolver = _sessionAttentionCompletionResolver;
+    if (resolver == null) {
+      return;
+    }
+    final snapshot = contextKey == _activeContextKey
+        ? null
+        : _contextSnapshots[contextKey];
+    final sessions = snapshot?.sessions ?? _sessions;
+    final messages = snapshot?.messages ?? _messages;
+    final session = sessions
+        .where((candidate) => candidate.id == sessionId)
+        .firstOrNull;
+    final parentId = session?.parentId?.trim();
+    if (session == null ||
+        session.archived ||
+        (parentId != null && parentId.isNotEmpty)) {
+      return;
+    }
+    final activePrefix = '$_activeServerId::';
+    final contextDirectory = contextKey.startsWith(activePrefix)
+        ? contextKey.substring(activePrefix.length).trim()
+        : '';
+    final directory = session.directory?.trim().isNotEmpty == true
+        ? session.directory!.trim()
+        : contextDirectory;
+    if (directory.isEmpty) {
+      return;
+    }
+    DateTime? latestUserAt;
+    for (final message in messages.whereType<UserMessage>()) {
+      if (message.sessionId == sessionId &&
+          (latestUserAt == null || message.time.isAfter(latestUserAt))) {
+        latestUserAt = message.time;
+      }
+    }
+    String? baselineAssistantMessageId;
+    DateTime? baselineAssistantCompletedAt;
+    for (final message in messages.whereType<AssistantMessage>()) {
+      final messageCompletedAt = message.completedTime ?? message.time;
+      if (message.sessionId == sessionId &&
+          message.isCompleted &&
+          latestUserAt != null &&
+          messageCompletedAt.isBefore(latestUserAt) &&
+          (baselineAssistantCompletedAt == null ||
+              messageCompletedAt.isAfter(baselineAssistantCompletedAt))) {
+        baselineAssistantMessageId = message.id;
+        baselineAssistantCompletedAt = messageCompletedAt;
+      }
+    }
+    unawaited(
+      resolver
+          .resolve(
+            identity: SessionAttentionIdentity(
+              serverId: _activeServerId,
+              directory: directory,
+              rootSessionId: sessionId,
+            ),
+            title: session.title?.trim().isNotEmpty == true
+                ? session.title!.trim()
+                : sessionId,
+            projectLabel: session.workspaceId.trim().isNotEmpty
+                ? session.workspaceId.trim()
+                : directory,
+            completedAt: completedAt,
+            baselineAssistantMessageId: baselineAssistantMessageId,
+          )
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stackTrace) {
+              AppLogger.warn(
+                'Failed to resolve encrypted session completion snapshot',
+                error: error,
+                stackTrace: stackTrace,
+              );
+            },
+          ),
+    );
+  }
+
+  void _deleteSessionAttentionSnapshot({
+    required String contextKey,
+    required String sessionId,
+  }) {
+    final identity = _sessionAttentionIdentityFor(
+      contextKey: contextKey,
+      sessionId: sessionId,
+    );
+    if (identity == null) {
+      return;
+    }
+    _deleteSessionAttentionSnapshotIdentity(identity);
+  }
+
+  SessionAttentionIdentity? _sessionAttentionIdentityFor({
+    required String contextKey,
+    required String sessionId,
+  }) {
+    final activePrefix = '$_activeServerId::';
+    if (!contextKey.startsWith(activePrefix)) {
+      return null;
+    }
+    final snapshot = contextKey == _activeContextKey
+        ? null
+        : _contextSnapshots[contextKey];
+    final session = (snapshot?.sessions ?? _sessions)
+        .where((candidate) => candidate.id == sessionId)
+        .firstOrNull;
+    final contextDirectory = contextKey.substring(activePrefix.length).trim();
+    final directory = session?.directory?.trim().isNotEmpty == true
+        ? session!.directory!.trim()
+        : contextDirectory;
+    if (directory.isEmpty) {
+      return null;
+    }
+    return SessionAttentionIdentity(
+      serverId: _activeServerId,
+      directory: directory,
+      rootSessionId: sessionId,
+    ).normalized();
+  }
+
+  void _deleteSessionAttentionSnapshotIdentity(
+    SessionAttentionIdentity identity,
+  ) {
+    final resolver = _sessionAttentionCompletionResolver;
+    if (resolver == null) {
+      return;
+    }
+    unawaited(
+      resolver
+          .removeIdentity(identity)
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stackTrace) {
+              AppLogger.warn(
+                'Failed to delete encrypted session completion snapshot',
+                error: error,
+                stackTrace: stackTrace,
+              );
+            },
+          ),
+    );
+  }
+
   SessionAttentionAggregate rootSessionAttentionAggregate({
     bool fullResynchronization = false,
   }) {

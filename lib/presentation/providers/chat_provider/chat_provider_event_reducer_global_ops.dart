@@ -209,6 +209,10 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
         if (sessionId == null || sessionId.trim().isEmpty) {
           return false;
         }
+        _deleteSessionAttentionSnapshot(
+          contextKey: contextKey,
+          sessionId: sessionId,
+        );
         nextSessions = snapshot.sessions
             .where((session) => session.id != sessionId)
             .toList(growable: false);
@@ -248,6 +252,11 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
           nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
             snapshot.sessionUnreadCompletionTimestamps,
           )..[sessionId] = DateTime.now();
+          _resolveSessionAttentionCompletion(
+            contextKey: contextKey,
+            sessionId: sessionId,
+            completedAt: DateTime.now(),
+          );
         }
         break;
       case 'session.idle':
@@ -281,6 +290,11 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
           nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
             snapshot.sessionUnreadCompletionTimestamps,
           )..[sessionId] = DateTime.now();
+          _resolveSessionAttentionCompletion(
+            contextKey: contextKey,
+            sessionId: sessionId,
+            completedAt: DateTime.now(),
+          );
         }
         break;
       case 'session.error':
