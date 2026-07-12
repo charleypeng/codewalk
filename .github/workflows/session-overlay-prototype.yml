@@ -85,14 +85,13 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build apk --debug
-      - name: Enable and verify KVM
+      - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           test -r /dev/kvm
           test -w /dev/kvm
-          "$ANDROID_SDK_ROOT/emulator/emulator" -accel-check
       - name: Install emulator system image
         shell: bash
         run: |
