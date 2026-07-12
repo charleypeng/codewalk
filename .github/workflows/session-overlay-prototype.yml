@@ -25,9 +25,6 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
       - run: flutter pub get
       - run: flutter build apk --debug
 
@@ -51,6 +48,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
       - if: matrix.target == 'linux'
         run: |
           sudo apt-get update
