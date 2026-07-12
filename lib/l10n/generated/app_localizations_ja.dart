@@ -4554,5 +4554,39 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'セッション通知';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'ルートセッションの状態を任意のバブルまたはパネルに表示します。';
+
+  @override
+  String get settingsSessionAttentionOff => 'オフ';
+
+  @override
+  String get settingsSessionAttentionBubble => 'バブル';
+
+  @override
+  String get settingsSessionAttentionPanel => 'パネル';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Android で有効にすると、永続的なフォアグラウンドサービスが開始されます。応答テキストは暗号化して保存され、クラウド TTS には「読み上げ」を押した後にのみ送信されます。';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'このプラットフォームではセッション通知を利用できません。';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => '表示設定を開く';
+
+  @override
+  String get settingsSessionAttentionStop => 'セッション通知を停止';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      '「読み上げ」を押すと、応答テキストが設定済みの外部 TTS プロバイダーに送信される場合があります。';
+
+  @override
   String get workspaceSuggestions => '提案';
 }

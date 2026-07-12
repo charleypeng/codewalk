@@ -672,6 +672,12 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
         _pendingRefreshActiveSession || refreshActiveSession;
     _globalRefreshDebounce?.cancel();
     _globalRefreshDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        _pendingRefreshSessions = false;
+        _pendingRefreshStatus = false;
+        _pendingRefreshActiveSession = false;
+        return;
+      }
       final shouldRefreshSessions = _pendingRefreshSessions;
       final shouldRefreshStatus = _pendingRefreshStatus;
       final shouldRefreshActiveSession = _pendingRefreshActiveSession;

@@ -5830,6 +5830,26 @@
     "placeholders": {
       "name": { "type": "String" }
     }  },
+  "settingsSessionAttentionTitle": "Session attention",
+  "@settingsSessionAttentionTitle": {"description": "Title for the opt-in floating session attention setting"},
+  "settingsSessionAttentionDescription": "Show root-session status in an opt-in bubble or panel.",
+  "@settingsSessionAttentionDescription": {"description": "Description for floating session attention modes"},
+  "settingsSessionAttentionOff": "Off",
+  "@settingsSessionAttentionOff": {"description": "Disabled session attention mode"},
+  "settingsSessionAttentionBubble": "Bubble",
+  "@settingsSessionAttentionBubble": {"description": "Compact session attention mode"},
+  "settingsSessionAttentionPanel": "Panel",
+  "@settingsSessionAttentionPanel": {"description": "Expanded session attention mode"},
+  "settingsSessionAttentionPrivacy": "On Android, enabling this starts a persistent foreground service. Response text is stored encrypted; cloud TTS sends text only after you press Read.",
+  "@settingsSessionAttentionPrivacy": {"description": "Privacy, foreground-service, and cloud TTS disclosure"},
+  "settingsSessionAttentionUnavailable": "Session attention is unavailable on this platform.",
+  "@settingsSessionAttentionUnavailable": {"description": "Unsupported platform explanation"},
+  "settingsSessionAttentionOpenSettings": "Open display settings",
+  "@settingsSessionAttentionOpenSettings": {"description": "Open Android overlay permission settings"},
+  "settingsSessionAttentionStop": "Stop session attention",
+  "@settingsSessionAttentionStop": {"description": "Stop the active session attention host"},
+  "settingsSessionAttentionThirdPartyTtsWarning": "When you press Read, response text may be sent to the configured third-party TTS provider.",
+  "@settingsSessionAttentionThirdPartyTtsWarning": {"description": "Third-party text-to-speech data use warning"},
   "workspaceSuggestions": "Suggestions",
   "@workspaceSuggestions": {
     "description": "CodeWalk UI string — workspaceSuggestions"

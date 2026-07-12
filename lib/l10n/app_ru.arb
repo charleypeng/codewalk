@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "Каталог проекта",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "Удалить {name} из истории",
-  "workspaceSuggestions": "Предложения"
+  "workspaceSuggestions": "Предложения",
+  "settingsSessionAttentionTitle": "Внимание к сеансам",
+  "settingsSessionAttentionDescription": "Показывает состояние корневых сеансов в дополнительном пузыре или панели.",
+  "settingsSessionAttentionOff": "Выключено",
+  "settingsSessionAttentionBubble": "Пузырь",
+  "settingsSessionAttentionPanel": "Панель",
+  "settingsSessionAttentionPrivacy": "В Android включение запускает постоянную службу переднего плана. Текст ответов хранится в зашифрованном виде; облачный TTS отправляет текст только после нажатия «Читать».",
+  "settingsSessionAttentionUnavailable": "Внимание к сеансам недоступно на этой платформе.",
+  "settingsSessionAttentionOpenSettings": "Открыть настройки отображения",
+  "settingsSessionAttentionStop": "Остановить внимание к сеансам",
+  "settingsSessionAttentionThirdPartyTtsWarning": "После нажатия «Читать» текст ответа может быть отправлен настроенному стороннему поставщику TTS."
 }

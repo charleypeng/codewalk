@@ -3,6 +3,74 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('session attention presentation serialization', () {
+    test('defaults new and migrated settings to off', () {
+      expect(
+        ExperienceSettings.defaults().sessionAttentionPresentation,
+        SessionAttentionPresentation.off,
+      );
+      expect(
+        ExperienceSettings.fromJson(
+          const <String, dynamic>{},
+        ).sessionAttentionPresentation,
+        SessionAttentionPresentation.off,
+      );
+    });
+
+    test('round-trips bubble and panel modes', () {
+      for (final mode in <SessionAttentionPresentation>[
+        SessionAttentionPresentation.bubble,
+        SessionAttentionPresentation.panel,
+      ]) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          sessionAttentionPresentation: mode,
+        );
+        final json = settings.toJson();
+
+        expect(json['sessionAttentionPresentation'], mode.name);
+        expect(
+          ExperienceSettings.fromJson(json).sessionAttentionPresentation,
+          mode,
+        );
+      }
+    });
+
+    test('unknown persisted values fail closed to off', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'sessionAttentionPresentation': 'future-mode',
+      });
+
+      expect(
+        restored.sessionAttentionPresentation,
+        SessionAttentionPresentation.off,
+      );
+    });
+
+    test('does not alter Android background-alert defaults', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        sessionAttentionPresentation: SessionAttentionPresentation.panel,
+      );
+
+      expect(settings.androidBackgroundAlertsEnabled, isTrue);
+    });
+
+    test('participates in settings value equality', () {
+      final first = ExperienceSettings.defaults().copyWith(
+        sessionAttentionPresentation: SessionAttentionPresentation.bubble,
+      );
+      final second = ExperienceSettings.fromJson(first.toJson());
+
+      expect(second, first);
+      expect(second.hashCode, first.hashCode);
+      expect(
+        second.copyWith(
+          sessionAttentionPresentation: SessionAttentionPresentation.panel,
+        ),
+        isNot(first),
+      );
+    });
+  });
+
   group('data saver serialization', () {
     test('defaults cellular data saver to enabled', () {
       expect(ExperienceSettings.defaults().dataSaverEnabled, isTrue);

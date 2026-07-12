@@ -11,6 +11,7 @@ import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/session_attention/session_attention_host_service.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
 
@@ -22,15 +23,19 @@ class BehaviorSettingsSection extends StatefulWidget {
       _BehaviorSettingsSectionState();
 }
 
-class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
+class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection>
+    with WidgetsBindingObserver {
   late final TextEditingController _usernameController;
   late final FocusNode _usernameFocusNode;
   final Map<String, int> _deferredConfigMutationGenerationByKey =
       <String, int>{};
+  bool _sessionAttentionUpdating = false;
+  SessionAttentionPresentation? _pendingSessionAttentionPresentation;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _usernameController = TextEditingController();
     _usernameFocusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -45,9 +50,29 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _usernameController.dispose();
     _usernameFocusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      unawaited(_resumeSessionAttentionPermissionFlow());
+    }
+  }
+
+  Future<void> _resumeSessionAttentionPermissionFlow() async {
+    final provider = context.read<SettingsProvider>();
+    await provider.refreshSessionAttentionHostCapability();
+    final pending = _pendingSessionAttentionPresentation;
+    if (!mounted ||
+        pending == null ||
+        !provider.sessionAttentionHostCapability.permissionGranted) {
+      return;
+    }
+    await _setSessionAttentionPresentation(provider, pending);
   }
 
   @override
@@ -74,6 +99,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             _buildPermissionParityCard(context),
             const SizedBox(height: 16),
             _buildDataSaverCard(context, settingsProvider),
+            const SizedBox(height: 16),
+            _buildSessionAttentionCard(context, settingsProvider),
             const SizedBox(height: 16),
             _buildChatRenderModeCard(context, settingsProvider),
             const SizedBox(height: 16),
@@ -115,6 +142,148 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
         );
       },
     );
+  }
+
+  Widget _buildSessionAttentionCard(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    final capability = settingsProvider.sessionAttentionHostCapability;
+    final enabled = capability.supported && !_sessionAttentionUpdating;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.settingsSessionAttentionTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.settingsSessionAttentionDescription,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<SessionAttentionPresentation>(
+              key: const ValueKey<String>('settings_session_attention_mode'),
+              segments: <ButtonSegment<SessionAttentionPresentation>>[
+                ButtonSegment<SessionAttentionPresentation>(
+                  value: SessionAttentionPresentation.off,
+                  label: Text(context.l10n.settingsSessionAttentionOff),
+                ),
+                ButtonSegment<SessionAttentionPresentation>(
+                  value: SessionAttentionPresentation.bubble,
+                  label: Text(context.l10n.settingsSessionAttentionBubble),
+                ),
+                ButtonSegment<SessionAttentionPresentation>(
+                  value: SessionAttentionPresentation.panel,
+                  label: Text(context.l10n.settingsSessionAttentionPanel),
+                ),
+              ],
+              selected: <SessionAttentionPresentation>{
+                settingsProvider.sessionAttentionPresentation,
+              },
+              onSelectionChanged: enabled
+                  ? (selection) => unawaited(
+                      _setSessionAttentionPresentation(
+                        settingsProvider,
+                        selection.single,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              context.l10n.settingsSessionAttentionPrivacy,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (!capability.supported) ...[
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.settingsSessionAttentionUnavailable,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
+            if (capability.kind == SessionAttentionHostKind.androidExternal &&
+                !capability.permissionGranted) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: const ValueKey<String>(
+                  'settings_session_attention_permission',
+                ),
+                onPressed: _sessionAttentionUpdating
+                    ? null
+                    : () => unawaited(
+                        settingsProvider.openSessionAttentionSystemSettings(),
+                      ),
+                icon: const Icon(Symbols.settings),
+                label: Text(context.l10n.settingsSessionAttentionOpenSettings),
+              ),
+            ],
+            if (capability.running) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: const ValueKey<String>('settings_session_attention_stop'),
+                onPressed: _sessionAttentionUpdating
+                    ? null
+                    : () => unawaited(
+                        _setSessionAttentionPresentation(
+                          settingsProvider,
+                          SessionAttentionPresentation.off,
+                        ),
+                      ),
+                icon: const Icon(Symbols.stop),
+                label: Text(context.l10n.settingsSessionAttentionStop),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setSessionAttentionPresentation(
+    SettingsProvider settingsProvider,
+    SessionAttentionPresentation presentation,
+  ) async {
+    if (_sessionAttentionUpdating) {
+      return;
+    }
+    if (presentation == SessionAttentionPresentation.off) {
+      _pendingSessionAttentionPresentation = null;
+    } else {
+      _pendingSessionAttentionPresentation = presentation;
+    }
+    setState(() => _sessionAttentionUpdating = true);
+    String? error;
+    try {
+      error = await settingsProvider.setSessionAttentionPresentation(
+        presentation,
+      );
+    } catch (_) {
+      error = context.l10n.settingsSessionAttentionUnavailable;
+    } finally {
+      if (mounted) {
+        setState(() => _sessionAttentionUpdating = false);
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    if (error == null ||
+        settingsProvider.sessionAttentionHostCapability.kind !=
+            SessionAttentionHostKind.androidExternal) {
+      _pendingSessionAttentionPresentation = null;
+    }
+    if (error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
+    }
   }
 
   Widget _buildLanguageCard(BuildContext context) {

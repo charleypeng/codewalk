@@ -4838,5 +4838,40 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'Attention aux sessions';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'Affiche l’état des sessions racines dans une bulle ou un panneau facultatif.';
+
+  @override
+  String get settingsSessionAttentionOff => 'Désactivé';
+
+  @override
+  String get settingsSessionAttentionBubble => 'Bulle';
+
+  @override
+  String get settingsSessionAttentionPanel => 'Panneau';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Sur Android, l’activation démarre un service de premier plan persistant. Le texte des réponses est chiffré; la synthèse vocale cloud ne l’envoie qu’après un appui sur Lire.';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'L’attention aux sessions n’est pas disponible sur cette plateforme.';
+
+  @override
+  String get settingsSessionAttentionOpenSettings =>
+      'Ouvrir les réglages d’affichage';
+
+  @override
+  String get settingsSessionAttentionStop => 'Arrêter l’attention aux sessions';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'Après un appui sur Lire, le texte de la réponse peut être envoyé au fournisseur TTS tiers configuré.';
+
+  @override
   String get workspaceSuggestions => 'Suggestions';
 }

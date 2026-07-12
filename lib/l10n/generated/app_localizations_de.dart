@@ -4778,5 +4778,40 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'Sitzungsaufmerksamkeit';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'Zeigt den Status von Stammsitzungen optional als Blase oder Panel an.';
+
+  @override
+  String get settingsSessionAttentionOff => 'Aus';
+
+  @override
+  String get settingsSessionAttentionBubble => 'Blase';
+
+  @override
+  String get settingsSessionAttentionPanel => 'Panel';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Unter Android startet dies einen dauerhaften Vordergrunddienst. Antworttext wird verschlüsselt gespeichert; Cloud-TTS sendet Text erst nach dem Tippen auf Lesen.';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'Sitzungsaufmerksamkeit ist auf dieser Plattform nicht verfügbar.';
+
+  @override
+  String get settingsSessionAttentionOpenSettings =>
+      'Anzeigeeinstellungen öffnen';
+
+  @override
+  String get settingsSessionAttentionStop => 'Sitzungsaufmerksamkeit beenden';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'Beim Tippen auf Lesen kann Antworttext an den konfigurierten externen TTS-Anbieter gesendet werden.';
+
+  @override
   String get workspaceSuggestions => 'Vorschläge';
 }

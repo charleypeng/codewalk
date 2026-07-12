@@ -22,6 +22,7 @@ class CellularDataSaverService extends ChangeNotifier
   }) : _sharedPreferences = sharedPreferences,
        _connectivity = connectivity ?? Connectivity(),
        _standardAutomaticSyncInterval = automaticSyncInterval,
+       _appInForeground = false,
        _disabled = false {
     _bootstrapFromPrefs();
     if (!startMonitoring) {
@@ -45,6 +46,7 @@ class CellularDataSaverService extends ChangeNotifier
     : _sharedPreferences = null,
       _connectivity = null,
       _standardAutomaticSyncInterval = const Duration(minutes: 1),
+      _appInForeground = true,
       _disabled = true;
 
   static const String persistedTransportKey =
@@ -59,7 +61,8 @@ class CellularDataSaverService extends ChangeNotifier
   Timer? _interactiveBurstTimer;
   DataSaverTransport _transport = DataSaverTransport.unknown;
   DataSaverLevel _dataSaverLevel = ExperienceSettings.defaults().dataSaverLevel;
-  bool _appInForeground = true;
+  // Real process restart is background until the main Activity reports resumed.
+  bool _appInForeground;
   DateTime? _lastAutomaticSyncAt;
   DateTime? _interactiveBurstUntil;
 

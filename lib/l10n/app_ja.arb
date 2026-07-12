@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "プロジェクトディレクトリ",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "履歴から {name} を削除",
-  "workspaceSuggestions": "提案"
+  "workspaceSuggestions": "提案",
+  "settingsSessionAttentionTitle": "セッション通知",
+  "settingsSessionAttentionDescription": "ルートセッションの状態を任意のバブルまたはパネルに表示します。",
+  "settingsSessionAttentionOff": "オフ",
+  "settingsSessionAttentionBubble": "バブル",
+  "settingsSessionAttentionPanel": "パネル",
+  "settingsSessionAttentionPrivacy": "Android で有効にすると、永続的なフォアグラウンドサービスが開始されます。応答テキストは暗号化して保存され、クラウド TTS には「読み上げ」を押した後にのみ送信されます。",
+  "settingsSessionAttentionUnavailable": "このプラットフォームではセッション通知を利用できません。",
+  "settingsSessionAttentionOpenSettings": "表示設定を開く",
+  "settingsSessionAttentionStop": "セッション通知を停止",
+  "settingsSessionAttentionThirdPartyTtsWarning": "「読み上げ」を押すと、応答テキストが設定済みの外部 TTS プロバイダーに送信される場合があります。"
 }

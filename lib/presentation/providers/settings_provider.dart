@@ -19,6 +19,7 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/cellular_data_saver_service.dart';
+import '../services/session_attention/session_attention_host_service.dart';
 import '../services/sound_service.dart';
 import '../services/tts/read_aloud_default_resolver.dart';
 import '../services/update_check_service.dart';
@@ -57,6 +58,7 @@ enum OpenCodeAutoupdateMode { automatic, notify, disabled }
 enum OpenCodeShareMode { manual, automatic, disabled }
 
 typedef NativeReadAloudAvailabilityProbe = Future<bool> Function();
+typedef SessionAttentionStopTts = Future<void> Function();
 
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
@@ -66,11 +68,17 @@ class SettingsProvider extends ChangeNotifier {
     UpdateCheckService? updateCheckService,
     CellularDataSaverService? cellularDataSaverService,
     NativeReadAloudAvailabilityProbe? nativeReadAloudAvailabilityProbe,
+    SessionAttentionHostService? sessionAttentionHostService,
+    SessionAttentionStopTts? sessionAttentionStopTts,
   }) : _localDataSource = localDataSource,
        _dioClient = dioClient,
        _soundService = soundService,
        _updateCheckService = updateCheckService ?? UpdateCheckService(),
        _nativeReadAloudAvailabilityProbe = nativeReadAloudAvailabilityProbe,
+       _sessionAttentionHostService =
+           sessionAttentionHostService ??
+           const UnsupportedSessionAttentionHostService(),
+       _sessionAttentionStopTts = sessionAttentionStopTts,
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled() {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
@@ -81,6 +89,8 @@ class SettingsProvider extends ChangeNotifier {
   final SoundService _soundService;
   final UpdateCheckService _updateCheckService;
   final NativeReadAloudAvailabilityProbe? _nativeReadAloudAvailabilityProbe;
+  final SessionAttentionHostService _sessionAttentionHostService;
+  final SessionAttentionStopTts? _sessionAttentionStopTts;
   final CellularDataSaverService _cellularDataSaverService;
 
   ExperienceSettings _settings = ExperienceSettings.defaults();
@@ -119,6 +129,14 @@ class SettingsProvider extends ChangeNotifier {
       const <OpenCodeDefaultModelOption>[];
   List<String> _openCodeDefaultAgentOptions = const <String>[];
   bool? _lastBackgroundDataSaverDisableState;
+  SessionAttentionHostCapability _sessionAttentionHostCapability =
+      const SessionAttentionHostCapability(
+        kind: SessionAttentionHostKind.unsupported,
+        supported: false,
+        permissionGranted: false,
+        running: false,
+        topmostSupported: false,
+      );
 
   // Whether the platform actually provided a dynamic color scheme at runtime.
   // Set from main.dart's DynamicColorBuilder callback.
@@ -188,6 +206,10 @@ class SettingsProvider extends ChangeNotifier {
       _cellularDataSaverService.automaticSyncInterval;
   bool get androidBackgroundAlertsEnabled =>
       _settings.androidBackgroundAlertsEnabled;
+  SessionAttentionPresentation get sessionAttentionPresentation =>
+      _settings.sessionAttentionPresentation;
+  SessionAttentionHostCapability get sessionAttentionHostCapability =>
+      _sessionAttentionHostCapability;
   bool get keepMobileRealtimeForShortPeriod =>
       _settings.keepMobileRealtimeForShortPeriod;
   Duration get syncResumeGracePeriod => _settings.syncResumeGracePeriod;
@@ -324,6 +346,7 @@ class SettingsProvider extends ChangeNotifier {
     AppLogger.setPerformanceLoggingEnabled(_settings.performanceLoggingEnabled);
     _lastBackgroundDataSaverDisableState =
         _cellularDataSaverService.shouldDisableBackgroundNetworkTasks;
+    await _restoreSessionAttentionHost();
     _dismissedUpdateVersion = await _localDataSource
         .getDismissedUpdateVersion();
     unawaited(syncNotificationsFromServerConfig());
@@ -770,6 +793,186 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     await _persist();
     await _syncAndroidBackgroundAlertRuntime();
+  }
+
+  Future<String?> setSessionAttentionPresentation(
+    SessionAttentionPresentation presentation,
+  ) async {
+    if (presentation == SessionAttentionPresentation.off) {
+      try {
+        await _sessionAttentionStopTts?.call();
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Failed to stop session attention TTS',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      final stopError = await _stopSessionAttentionHost();
+      if (stopError != null) {
+        notifyListeners();
+        return stopError;
+      }
+      if (_settings.sessionAttentionPresentation != presentation) {
+        _settings = _settings.copyWith(
+          sessionAttentionPresentation: presentation,
+        );
+        notifyListeners();
+      } else {
+        notifyListeners();
+      }
+      if (!await _persistSessionAttentionSettings()) {
+        return 'Session attention was stopped but the setting could not be saved.';
+      }
+      return null;
+    }
+
+    final previousPresentation = _settings.sessionAttentionPresentation;
+    final result = await _activateSessionAttentionHost(presentation);
+    _sessionAttentionHostCapability = result.capability;
+    if (!result.activated) {
+      final stopError = await _stopSessionAttentionHost();
+      final fallbackPresentation =
+          stopError != null &&
+              _sessionAttentionHostCapability.running &&
+              previousPresentation != SessionAttentionPresentation.off
+          ? previousPresentation
+          : SessionAttentionPresentation.off;
+      _settings = _settings.copyWith(
+        sessionAttentionPresentation: fallbackPresentation,
+      );
+      notifyListeners();
+      await _persist();
+      return stopError ??
+          result.error ??
+          'Session attention could not be enabled.';
+    }
+
+    _settings = _settings.copyWith(sessionAttentionPresentation: presentation);
+    notifyListeners();
+    if (!await _persistSessionAttentionSettings()) {
+      final stopError = await _stopSessionAttentionHost();
+      if (stopError != null) {
+        _settings = _settings.copyWith(
+          sessionAttentionPresentation: presentation,
+        );
+        notifyListeners();
+        return stopError;
+      }
+      _settings = _settings.copyWith(
+        sessionAttentionPresentation: SessionAttentionPresentation.off,
+      );
+      notifyListeners();
+      await _persist();
+      return 'Session attention could not be saved and was stopped.';
+    }
+    return null;
+  }
+
+  Future<void> openSessionAttentionSystemSettings() async {
+    await _sessionAttentionHostService.openSystemSettings();
+    await refreshSessionAttentionHostCapability();
+  }
+
+  Future<void> refreshSessionAttentionHostCapability() async {
+    _sessionAttentionHostCapability = await _safeHostCapability();
+    notifyListeners();
+  }
+
+  Future<void> _restoreSessionAttentionHost() async {
+    final presentation = _settings.sessionAttentionPresentation;
+    if (presentation == SessionAttentionPresentation.off) {
+      _sessionAttentionHostCapability = await _safeHostCapability();
+      if (_sessionAttentionHostCapability.running) {
+        await _stopSessionAttentionHost();
+      }
+      return;
+    }
+    final result = await _activateSessionAttentionHost(presentation);
+    _sessionAttentionHostCapability = result.capability;
+    if (result.activated) {
+      return;
+    }
+    final stopError = await _stopSessionAttentionHost();
+    if (stopError == null || !_sessionAttentionHostCapability.running) {
+      _settings = _settings.copyWith(
+        sessionAttentionPresentation: SessionAttentionPresentation.off,
+      );
+      await _persist();
+    }
+  }
+
+  Future<SessionAttentionHostCapability> _safeHostCapability() async {
+    try {
+      return await _sessionAttentionHostService.capability();
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to resolve session attention host capability',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return const SessionAttentionHostCapability(
+        kind: SessionAttentionHostKind.unsupported,
+        supported: false,
+        permissionGranted: false,
+        running: false,
+        topmostSupported: false,
+        explanation: 'Session attention host capability is unavailable.',
+      );
+    }
+  }
+
+  Future<SessionAttentionHostActivationResult> _activateSessionAttentionHost(
+    SessionAttentionPresentation presentation,
+  ) async {
+    try {
+      return await _sessionAttentionHostService.activate(presentation);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to activate session attention host',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return SessionAttentionHostActivationResult.failure(
+        await _safeHostCapability(),
+        'Session attention could not be enabled.',
+      );
+    }
+  }
+
+  Future<String?> _stopSessionAttentionHost() async {
+    try {
+      await _sessionAttentionHostService.stop();
+      _sessionAttentionHostCapability = await _safeHostCapability();
+      if (_sessionAttentionHostCapability.running) {
+        return 'Session attention is still running. Try stopping it again.';
+      }
+      return null;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to stop session attention host',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _sessionAttentionHostCapability = await _safeHostCapability();
+      return 'Session attention could not be stopped. Try again.';
+    }
+  }
+
+  Future<bool> _persistSessionAttentionSettings() async {
+    try {
+      await _localDataSource.saveExperienceSettingsJson(
+        jsonEncode(_settings.toJson()),
+      );
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to persist session attention settings',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
   }
 
   void _handleCellularDataSaverChanged() {

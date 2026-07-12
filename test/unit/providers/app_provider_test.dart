@@ -244,7 +244,8 @@ void main() {
       () async {
         final dataSaverService = CellularDataSaverService.disabled()
           ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
-          ..debugSetTransport(DataSaverTransport.cellular);
+          ..debugSetTransport(DataSaverTransport.cellular)
+          ..debugSetAppInForeground(true);
         addTearDown(dataSaverService.dispose);
         final testedProvider = AppProvider(
           getAppInfo: GetAppInfo(repository),

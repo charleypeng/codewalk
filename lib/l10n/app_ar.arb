@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "دليل المشروع",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "إزالة {name} من السجل",
-  "workspaceSuggestions": "اقتراحات"
+  "workspaceSuggestions": "اقتراحات",
+  "settingsSessionAttentionTitle": "تنبيهات الجلسات",
+  "settingsSessionAttentionDescription": "تعرض حالة الجلسات الجذرية في فقاعة أو لوحة اختيارية.",
+  "settingsSessionAttentionOff": "إيقاف",
+  "settingsSessionAttentionBubble": "فقاعة",
+  "settingsSessionAttentionPanel": "لوحة",
+  "settingsSessionAttentionPrivacy": "على Android، يؤدي التفعيل إلى تشغيل خدمة مستمرة في المقدمة. يُخزّن نص الرد مشفراً، ولا ترسله خدمة النطق السحابية إلا بعد الضغط على قراءة.",
+  "settingsSessionAttentionUnavailable": "تنبيهات الجلسات غير متاحة على هذه المنصة.",
+  "settingsSessionAttentionOpenSettings": "فتح إعدادات العرض",
+  "settingsSessionAttentionStop": "إيقاف تنبيهات الجلسات",
+  "settingsSessionAttentionThirdPartyTtsWarning": "عند الضغط على قراءة، قد يُرسل نص الرد إلى مزود النطق الخارجي المُعد."
 }

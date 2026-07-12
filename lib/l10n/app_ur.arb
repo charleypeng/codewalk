@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "پروجیکٹ ڈائرکٹری",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "تاریخ سے {name} کو ہٹا دیں۔",
-  "workspaceSuggestions": "تجاویز"
+  "workspaceSuggestions": "تجاویز",
+  "settingsSessionAttentionTitle": "سیشن توجہ",
+  "settingsSessionAttentionDescription": "روٹ سیشن کی حالت اختیاری ببل یا پینل میں دکھاتا ہے۔",
+  "settingsSessionAttentionOff": "بند",
+  "settingsSessionAttentionBubble": "ببل",
+  "settingsSessionAttentionPanel": "پینل",
+  "settingsSessionAttentionPrivacy": "Android پر اسے فعال کرنے سے مستقل فورگراؤنڈ سروس شروع ہوتی ہے۔ جواب کا متن خفیہ کر کے محفوظ ہوتا ہے؛ کلاؤڈ TTS صرف پڑھیں دبانے کے بعد متن بھیجتا ہے۔",
+  "settingsSessionAttentionUnavailable": "اس پلیٹ فارم پر سیشن توجہ دستیاب نہیں ہے۔",
+  "settingsSessionAttentionOpenSettings": "ڈسپلے سیٹنگز کھولیں",
+  "settingsSessionAttentionStop": "سیشن توجہ روکیں",
+  "settingsSessionAttentionThirdPartyTtsWarning": "پڑھیں دبانے پر جواب کا متن ترتیب دیے گئے فریق ثالث TTS فراہم کنندہ کو بھیجا جا سکتا ہے۔"
 }

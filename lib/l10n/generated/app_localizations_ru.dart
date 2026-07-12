@@ -4771,5 +4771,40 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'Внимание к сеансам';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'Показывает состояние корневых сеансов в дополнительном пузыре или панели.';
+
+  @override
+  String get settingsSessionAttentionOff => 'Выключено';
+
+  @override
+  String get settingsSessionAttentionBubble => 'Пузырь';
+
+  @override
+  String get settingsSessionAttentionPanel => 'Панель';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'В Android включение запускает постоянную службу переднего плана. Текст ответов хранится в зашифрованном виде; облачный TTS отправляет текст только после нажатия «Читать».';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'Внимание к сеансам недоступно на этой платформе.';
+
+  @override
+  String get settingsSessionAttentionOpenSettings =>
+      'Открыть настройки отображения';
+
+  @override
+  String get settingsSessionAttentionStop => 'Остановить внимание к сеансам';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'После нажатия «Читать» текст ответа может быть отправлен настроенному стороннему поставщику TTS.';
+
+  @override
   String get workspaceSuggestions => 'Предложения';
 }

@@ -11,6 +11,7 @@ import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/session_attention_overlay/session_attention_models.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
@@ -1677,6 +1678,13 @@ void main() {
               time: DateTime.fromMillisecondsSinceEpoch(1000),
               title: 'Session A Old',
             ),
+            ChatSession(
+              id: 'ses_a_child',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              title: 'Child A',
+              parentId: 'ses_a_old',
+            ),
           ],
         );
         final scopedLocal = InMemoryAppLocalDataSource()
@@ -1753,6 +1761,18 @@ void main() {
           );
         await scopedProvider.projectProvider.switchProject('proj_b');
         await scopedProvider.onProjectScopeChanged();
+
+        scopedRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'directory': '/repo/a',
+              'sessionID': 'ses_a_child',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
 
         scopedRepository.emitGlobalEvent(
           const ChatEvent(
@@ -1844,6 +1864,24 @@ void main() {
         );
         expect(pendingAttention.hasPendingInteraction, isTrue);
         expect(feedbackDispatcher.handledTypes, contains('question.asked'));
+
+        final firstAggregate = scopedProvider.rootSessionAttentionAggregate();
+        expect(firstAggregate.candidates, hasLength(1));
+        expect(
+          firstAggregate.candidates.single.identity,
+          const SessionAttentionIdentity(
+            serverId: 'srv_test',
+            directory: '/repo/a',
+            rootSessionId: 'ses_a_old',
+          ),
+        );
+        expect(
+          firstAggregate.candidates.single.kind,
+          RootSessionAttentionKind.pendingInteraction,
+        );
+        final nextAggregate = scopedProvider.rootSessionAttentionAggregate();
+        expect(nextAggregate.generation, firstAggregate.generation);
+        expect(nextAggregate.revision, firstAggregate.revision + 1);
 
         scopedRepository.emitGlobalEvent(
           const ChatEvent(

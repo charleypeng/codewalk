@@ -8372,6 +8372,66 @@ abstract class AppLocalizations {
   /// **'Remove {name} from history'**
   String workspaceRemoveFromHistory(String name);
 
+  /// Title for the opt-in floating session attention setting
+  ///
+  /// In en, this message translates to:
+  /// **'Session attention'**
+  String get settingsSessionAttentionTitle;
+
+  /// Description for floating session attention modes
+  ///
+  /// In en, this message translates to:
+  /// **'Show root-session status in an opt-in bubble or panel.'**
+  String get settingsSessionAttentionDescription;
+
+  /// Disabled session attention mode
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get settingsSessionAttentionOff;
+
+  /// Compact session attention mode
+  ///
+  /// In en, this message translates to:
+  /// **'Bubble'**
+  String get settingsSessionAttentionBubble;
+
+  /// Expanded session attention mode
+  ///
+  /// In en, this message translates to:
+  /// **'Panel'**
+  String get settingsSessionAttentionPanel;
+
+  /// Privacy, foreground-service, and cloud TTS disclosure
+  ///
+  /// In en, this message translates to:
+  /// **'On Android, enabling this starts a persistent foreground service. Response text is stored encrypted; cloud TTS sends text only after you press Read.'**
+  String get settingsSessionAttentionPrivacy;
+
+  /// Unsupported platform explanation
+  ///
+  /// In en, this message translates to:
+  /// **'Session attention is unavailable on this platform.'**
+  String get settingsSessionAttentionUnavailable;
+
+  /// Open Android overlay permission settings
+  ///
+  /// In en, this message translates to:
+  /// **'Open display settings'**
+  String get settingsSessionAttentionOpenSettings;
+
+  /// Stop the active session attention host
+  ///
+  /// In en, this message translates to:
+  /// **'Stop session attention'**
+  String get settingsSessionAttentionStop;
+
+  /// Third-party text-to-speech data use warning
+  ///
+  /// In en, this message translates to:
+  /// **'When you press Read, response text may be sent to the configured third-party TTS provider.'**
+  String get settingsSessionAttentionThirdPartyTtsWarning;
+
   /// CodeWalk UI string — workspaceSuggestions
   ///
   /// In en, this message translates to:

@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "প্রকল্প ডিরেক্টরি",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "ইতিহাস থেকে {name} সরান",
-  "workspaceSuggestions": "পরামর্শ"
+  "workspaceSuggestions": "পরামর্শ",
+  "settingsSessionAttentionTitle": "সেশন মনোযোগ",
+  "settingsSessionAttentionDescription": "ঐচ্ছিক বাবল বা প্যানেলে রুট সেশনের অবস্থা দেখায়।",
+  "settingsSessionAttentionOff": "বন্ধ",
+  "settingsSessionAttentionBubble": "বাবল",
+  "settingsSessionAttentionPanel": "প্যানেল",
+  "settingsSessionAttentionPrivacy": "Android-এ চালু করলে একটি স্থায়ী ফোরগ্রাউন্ড পরিষেবা শুরু হয়। উত্তরের লেখা এনক্রিপ্ট করে রাখা হয়; পড়ুন চাপার পরেই ক্লাউড TTS লেখা পাঠায়।",
+  "settingsSessionAttentionUnavailable": "এই প্ল্যাটফর্মে সেশন মনোযোগ উপলভ্য নয়।",
+  "settingsSessionAttentionOpenSettings": "ডিসপ্লে সেটিংস খুলুন",
+  "settingsSessionAttentionStop": "সেশন মনোযোগ বন্ধ করুন",
+  "settingsSessionAttentionThirdPartyTtsWarning": "পড়ুন চাপলে উত্তরের লেখা কনফিগার করা তৃতীয়-পক্ষ TTS প্রদানকারীর কাছে পাঠানো হতে পারে।"
 }

@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "Directory del progetto",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "Rimuovi {name} dalla cronologia",
-  "workspaceSuggestions": "Suggerimenti"
+  "workspaceSuggestions": "Suggerimenti",
+  "settingsSessionAttentionTitle": "Attenzione sessioni",
+  "settingsSessionAttentionDescription": "Mostra lo stato delle sessioni radice in una bolla o in un pannello facoltativo.",
+  "settingsSessionAttentionOff": "Disattivato",
+  "settingsSessionAttentionBubble": "Bolla",
+  "settingsSessionAttentionPanel": "Pannello",
+  "settingsSessionAttentionPrivacy": "Su Android, l’attivazione avvia un servizio persistente in primo piano. Il testo delle risposte viene archiviato crittografato; il TTS cloud lo invia solo dopo aver premuto Leggi.",
+  "settingsSessionAttentionUnavailable": "L’attenzione sessioni non è disponibile su questa piattaforma.",
+  "settingsSessionAttentionOpenSettings": "Apri impostazioni di visualizzazione",
+  "settingsSessionAttentionStop": "Arresta attenzione sessioni",
+  "settingsSessionAttentionThirdPartyTtsWarning": "Premendo Leggi, il testo della risposta può essere inviato al provider TTS di terze parti configurato."
 }

@@ -6,6 +6,7 @@ import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/session_attention/session_attention_host_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/services/update_check_service.dart';
 import 'package:dio/dio.dart';
@@ -83,6 +84,7 @@ void main() {
       localDataSource: local,
       dioClient: dioClient,
       soundService: SoundService(),
+      sessionAttentionHostService: _WidgetSessionAttentionHostService(),
     );
     await settingsProvider.initialize();
     addTearDown(settingsProvider.dispose);
@@ -288,6 +290,38 @@ void main() {
 
     expect(settingsProvider.dataSaverLevel, DataSaverLevel.off);
     expect(settingsProvider.dataSaverEnabled, isFalse);
+
+    final sessionAttentionFinder = find.byKey(
+      const ValueKey<String>('settings_session_attention_mode'),
+    );
+    await tester.scrollUntilVisible(
+      sessionAttentionFinder,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+
+    expect(sessionAttentionFinder, findsOneWidget);
+    expect(find.text('Session attention'), findsOneWidget);
+    expect(find.text('Bubble'), findsOneWidget);
+    expect(find.text('Panel'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: sessionAttentionFinder,
+        matching: find.text('Bubble'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      settingsProvider.sessionAttentionPresentation,
+      SessionAttentionPresentation.bubble,
+    );
+    expect(
+      jsonDecode(local.experienceSettingsJson!)['sessionAttentionPresentation'],
+      'bubble',
+    );
 
     final syncToggleFinder = find.byKey(
       const ValueKey<String>('settings_toggle_experimental_multi_device_sync'),
@@ -808,6 +842,38 @@ class _MockResponse {
 
   final int statusCode;
   final dynamic data;
+}
+
+class _WidgetSessionAttentionHostService
+    implements SessionAttentionHostService {
+  var _running = false;
+
+  @override
+  Future<SessionAttentionHostActivationResult> activate(
+    SessionAttentionPresentation presentation,
+  ) async {
+    _running = presentation != SessionAttentionPresentation.off;
+    return SessionAttentionHostActivationResult.success(await capability());
+  }
+
+  @override
+  Future<SessionAttentionHostCapability> capability() async {
+    return SessionAttentionHostCapability(
+      kind: SessionAttentionHostKind.desktopWindow,
+      supported: true,
+      permissionGranted: true,
+      running: _running,
+      topmostSupported: true,
+    );
+  }
+
+  @override
+  Future<void> openSystemSettings() async {}
+
+  @override
+  Future<void> stop() async {
+    _running = false;
+  }
 }
 
 class _MockDioAdapter implements HttpClientAdapter {

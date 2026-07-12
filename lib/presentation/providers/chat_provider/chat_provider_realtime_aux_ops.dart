@@ -77,6 +77,12 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     if (!_refreshlessRealtimeEnabled) {
       return;
     }
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      _idleRealtimePausedForDataSaver = true;
+      _setSyncState(ChatSyncState.connected, reason: 'data-saver-background');
+      await _stopRealtimeEventSubscriptions(reason: 'background-data-saver');
+      return;
+    }
     if (!_cellularDataSaverService.isDataSaverActive) {
       if (!_isForegroundActive) {
         return;
@@ -140,7 +146,8 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   Future<void> _startGlobalRealtimeEventSubscription() async {
     if (_globalEventSubscription != null ||
-        _cellularDataSaverService.isAggressiveDataSaverActive) {
+        _cellularDataSaverService.isAggressiveDataSaverActive ||
+        _cellularDataSaverService.shouldSuppressBackgroundWork) {
       return;
     }
     final generation = _eventStreamGeneration;
@@ -157,7 +164,13 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
             );
           },
           (event) {
-            _markRealtimeSignal(source: 'global-stream');
+            _markRealtimeSignal(
+              source: 'global-stream',
+              directory:
+                  _extractDirectoryFromEvent(event) ??
+                  projectProvider.currentDirectory ??
+                  '',
+            );
             _handleGlobalEvent(event);
           },
         );
@@ -195,6 +208,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     required String reason,
     bool force = false,
   }) async {
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      await _stopRealtimeEventSubscriptions(reason: 'background-data-saver');
+      return;
+    }
     if (!force &&
         !_cellularDataSaverService.allowAutomaticForegroundSync(
           reason: reason,
@@ -212,7 +229,13 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
         reason: 'data-saver:$reason',
         includeStatus: false,
       );
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        return;
+      }
       await _loadPendingInteractions(visibleSessionOnly: true);
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        return;
+      }
       await _syncCellularDataSaverRealtimePolicy(
         reason: '$reason:post-sync',
         forceBurst: force,
@@ -220,12 +243,24 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       return;
     }
     await loadSessions(preserveVisibleState: true);
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     await refreshActiveSessionView(
       reason: 'data-saver:$reason',
       includeStatus: true,
     );
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     await _loadPendingInteractions();
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     await _syncSelectionFromRemote(reason: 'data-saver:$reason', force: true);
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     await _syncCellularDataSaverRealtimePolicy(reason: '$reason:post-sync');
   }
 
@@ -307,7 +342,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     }
   }
 
-  void _markRealtimeSignal({required String source}) {
+  void _markRealtimeSignal({
+    required String source,
+    required String directory,
+  }) {
     _lastRealtimeSignalAt = DateTime.now();
     // Capture whether we were previously disconnected before resetting
     // the counter. When SSE reconnects after a gap, the OpenCode server
@@ -323,6 +361,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       _exitDegradedMode(reason: 'signal-restored:$source');
     }
     _setSyncState(ChatSyncState.connected, reason: 'signal:$source');
+    _sessionAttentionCoordinator.markMonitoringReconciled(directory: directory);
     if (needsRecovery) {
       _schedulePostReconnectRecovery();
     }
@@ -330,6 +369,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   void _handleRealtimeStreamFailure({required String source, Object? error}) {
     _consecutiveRealtimeFailures += 1;
+    _sessionAttentionCoordinator.pauseMonitoring(
+      SessionAttentionPauseReason.offline,
+    );
     AppLogger.warn(
       'event_stream_reconnecting source=$source attempts=$_consecutiveRealtimeFailures',
       error: error,
@@ -351,7 +393,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   /// recovery when both session and global event streams fire
   /// near-simultaneously after reconnection.
   void _schedulePostReconnectRecovery() {
-    if (!_isForegroundActive || _postReconnectRecoveryInFlight) {
+    if (!_isForegroundActive ||
+        _cellularDataSaverService.shouldSuppressBackgroundWork ||
+        _postReconnectRecoveryInFlight) {
       return;
     }
     _postReconnectRecoveryInFlight = true;
@@ -363,6 +407,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   /// The OpenCode server does NOT support Last-Event-ID replay.
   Future<void> _runPostReconnectRecovery() async {
     try {
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        return;
+      }
       if (_cellularDataSaverService.isAggressiveDataSaverActive) {
         AppLogger.info(
           'post_reconnect_recovery_start mode=aggressive-data-saver',
@@ -377,6 +424,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
           return;
         }
         await _loadPendingInteractions(visibleSessionOnly: true);
+        if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+          return;
+        }
         await refreshActiveSessionView(
           reason: 'post-reconnect-aggressive-data-saver',
           includeStatus: false,
@@ -391,7 +441,13 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       }
       AppLogger.info('post_reconnect_recovery_start');
       await _loadPendingInteractions();
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        return;
+      }
       await refreshActiveSessionView(includeStatus: true);
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        return;
+      }
       await loadSessions(preserveVisibleState: true);
       AppLogger.info('post_reconnect_recovery_complete');
     } finally {
@@ -407,6 +463,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       return;
     }
     _degradedMode = true;
+    _sessionAttentionCoordinator.pauseMonitoring(
+      SessionAttentionPauseReason.offline,
+    );
     _degradedModeStartedAt = DateTime.now();
     _setSyncState(ChatSyncState.delayed, reason: 'degraded-enter:$reason');
     AppLogger.warn(
@@ -441,6 +500,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   Future<void> _loadPendingInteractions({
     bool visibleSessionOnly = false,
   }) async {
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final restrictToVisible =
         visibleSessionOnly ||
         _cellularDataSaverService.isAggressiveDataSaverActive;
@@ -489,6 +551,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       },
     );
 
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final questionsResult = await listPendingQuestions(directory: directory);
     if (directory != projectProvider.currentDirectory) {
       return;

@@ -107,6 +107,10 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
   }
 
   Future<void> _processAutoTitleQueue(String sessionId) async {
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      _autoTitleQueuedSessionIds.remove(sessionId);
+      return;
+    }
     if (_autoTitleInFlightSessionIds.contains(sessionId)) {
       _autoTitleQueuedSessionIds.add(sessionId);
       return;
@@ -116,6 +120,9 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
     try {
       var keepProcessing = true;
       while (keepProcessing) {
+        if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+          return;
+        }
         _autoTitleQueuedSessionIds.remove(sessionId);
         await _runAutoTitlePass(sessionId);
         keepProcessing = _autoTitleQueuedSessionIds.contains(sessionId);
@@ -127,6 +134,9 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
   }
 
   Future<void> _runAutoTitlePass(String sessionId) async {
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final generator = titleGenerator;
     if (generator == null ||
         _autoTitleConsolidatedSessionIds.contains(sessionId)) {
@@ -148,6 +158,9 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
     }
 
     if (!await _isAutoTitleEnabledForActiveServer()) {
+      return;
+    }
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
       return;
     }
 
@@ -181,10 +194,16 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
         )
         .toList(growable: false);
 
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final generatedTitle = await generator.generateTitle(
       promptMessages,
       maxWords: _resolveAutoTitleMaxWords(),
     );
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final normalized = generatedTitle?.trim();
     if (normalized == null || normalized.isEmpty) {
       return;
@@ -207,6 +226,9 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
       return;
     }
 
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final result = await updateChatSession(
       UpdateChatSessionParams(
         projectId: runProjectId,

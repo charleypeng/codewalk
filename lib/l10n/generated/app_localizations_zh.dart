@@ -4459,5 +4459,37 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => '会话提醒';
+
+  @override
+  String get settingsSessionAttentionDescription => '在可选气泡或面板中显示根会话状态。';
+
+  @override
+  String get settingsSessionAttentionOff => '关闭';
+
+  @override
+  String get settingsSessionAttentionBubble => '气泡';
+
+  @override
+  String get settingsSessionAttentionPanel => '面板';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      '在 Android 上启用后会启动持久前台服务。回复文本将加密存储；只有按下“朗读”后，云端 TTS 才会发送文本。';
+
+  @override
+  String get settingsSessionAttentionUnavailable => '此平台不支持会话提醒。';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => '打开显示设置';
+
+  @override
+  String get settingsSessionAttentionStop => '停止会话提醒';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      '按下“朗读”时，回复文本可能会发送到已配置的第三方 TTS 提供商。';
+
+  @override
   String get workspaceSuggestions => '建议';
 }

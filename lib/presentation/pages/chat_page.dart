@@ -843,12 +843,14 @@ class _ChatPageState extends State<ChatPage>
   @override
   void onWindowMinimize() {
     _isAppInForeground = false;
+    _chatProvider?.setAppInForeground(false);
     _applyForegroundPolicy(reason: 'window-minimize');
   }
 
   @override
   void onWindowRestore() {
     _isAppInForeground = true;
+    _chatProvider?.setAppInForeground(true);
     _returnRevealGeneration += 1;
     _applyForegroundPolicy(reason: 'window-restore');
     _startForegroundWarningGrace();
@@ -863,6 +865,7 @@ class _ChatPageState extends State<ChatPage>
   void onWindowFocus() {
     if (!_isAppInForeground) {
       _isAppInForeground = true;
+      _chatProvider?.setAppInForeground(true);
       _returnRevealGeneration += 1;
       _applyForegroundPolicy(reason: 'window-focus');
       _startForegroundWarningGrace();

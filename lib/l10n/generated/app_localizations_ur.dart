@@ -4728,5 +4728,39 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'سیشن توجہ';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'روٹ سیشن کی حالت اختیاری ببل یا پینل میں دکھاتا ہے۔';
+
+  @override
+  String get settingsSessionAttentionOff => 'بند';
+
+  @override
+  String get settingsSessionAttentionBubble => 'ببل';
+
+  @override
+  String get settingsSessionAttentionPanel => 'پینل';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Android پر اسے فعال کرنے سے مستقل فورگراؤنڈ سروس شروع ہوتی ہے۔ جواب کا متن خفیہ کر کے محفوظ ہوتا ہے؛ کلاؤڈ TTS صرف پڑھیں دبانے کے بعد متن بھیجتا ہے۔';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'اس پلیٹ فارم پر سیشن توجہ دستیاب نہیں ہے۔';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => 'ڈسپلے سیٹنگز کھولیں';
+
+  @override
+  String get settingsSessionAttentionStop => 'سیشن توجہ روکیں';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'پڑھیں دبانے پر جواب کا متن ترتیب دیے گئے فریق ثالث TTS فراہم کنندہ کو بھیجا جا سکتا ہے۔';
+
+  @override
   String get workspaceSuggestions => 'تجاویز';
 }

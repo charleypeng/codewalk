@@ -7,7 +7,9 @@ import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/canned_answer.dart';
 import 'package:codewalk/domain/entities/chat_composer_draft.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/session_attention/session_attention_host_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/services/speech_input_service_stt.dart';
 import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
@@ -74,6 +76,33 @@ class _FakeSttSpeechInputService extends SttSpeechInputService {
   }
 }
 
+class _NoopSessionAttentionHostService implements SessionAttentionHostService {
+  static const _capability = SessionAttentionHostCapability(
+    kind: SessionAttentionHostKind.unsupported,
+    supported: false,
+    permissionGranted: false,
+    running: false,
+    topmostSupported: false,
+  );
+
+  @override
+  Future<SessionAttentionHostActivationResult> activate(
+    SessionAttentionPresentation presentation,
+  ) async => const SessionAttentionHostActivationResult.failure(
+    _capability,
+    'unsupported',
+  );
+
+  @override
+  Future<SessionAttentionHostCapability> capability() async => _capability;
+
+  @override
+  Future<void> openSystemSettings() async {}
+
+  @override
+  Future<void> stop() async {}
+}
+
 void main() {
   testWidgets('ChatInputWidget renders and sends message', (
     WidgetTester tester,
@@ -134,6 +163,7 @@ void main() {
       localDataSource: localDataSource,
       dioClient: DioClient(),
       soundService: SoundService(),
+      sessionAttentionHostService: _NoopSessionAttentionHostService(),
     );
     await settingsProvider.initialize();
     addTearDown(settingsProvider.dispose);

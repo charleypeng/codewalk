@@ -64,6 +64,8 @@ import '../../presentation/services/project_icon_discovery_service.dart';
 import '../../presentation/services/project_icon_store.dart';
 import '../../presentation/services/read_aloud_service.dart';
 import '../../presentation/services/sensevoice_model_manager.dart';
+import '../../presentation/services/session_attention/session_attention_coordinator.dart';
+import '../../presentation/services/session_attention/session_attention_host_service.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
 import '../../presentation/services/sound_service.dart';
 import '../../presentation/services/speech_input_service_moonshine.dart';
@@ -139,6 +141,13 @@ Future<void> init() async {
     dispose: (service) => service.dispose(),
   );
   sl.registerLazySingleton(TailscaleService.new);
+  sl.registerLazySingleton<SessionAttentionHostService>(
+    createSessionAttentionHostService,
+  );
+  sl.registerLazySingleton(
+    () => SessionAttentionCoordinator(cellularDataSaverService: sl()),
+    dispose: (service) => service.dispose(),
+  );
   sl.registerLazySingleton(
     () => CellularDataSaverService(sharedPreferences: sl()),
   );
@@ -270,6 +279,7 @@ Future<void> init() async {
       settingsProvider: sl(),
       dioClient: sl(),
       cellularDataSaverService: sl(),
+      sessionAttentionCoordinator: sl(),
       eventFeedbackDispatcher: sl(),
       titleGenerator: sl(),
     ),
@@ -290,6 +300,8 @@ Future<void> init() async {
       soundService: sl(),
       updateCheckService: sl(),
       cellularDataSaverService: sl(),
+      sessionAttentionHostService: sl(),
+      sessionAttentionStopTts: sl<ReadAloudService>().stop,
       nativeReadAloudAvailabilityProbe: () =>
           sl<ReadAloudService>().isProviderAvailable(ReadAloudProvider.native),
     ),

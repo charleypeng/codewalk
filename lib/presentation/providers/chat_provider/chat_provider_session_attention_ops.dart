@@ -1,6 +1,207 @@
 part of '../chat_provider.dart';
 
 extension ChatProviderSessionAttentionOps on ChatProvider {
+  SessionAttentionAggregate rootSessionAttentionAggregate({
+    bool fullResynchronization = false,
+  }) {
+    final candidates = <RootSessionAttentionCandidate>[];
+    final knownIdentities = <SessionAttentionIdentity>{};
+    final activePrefix = '$_activeServerId::';
+
+    void addContextCandidates({
+      required String contextKey,
+      required List<ChatSession> sessions,
+      required ChatSession? currentSession,
+      required List<ChatMessage> messages,
+      required Map<String, SessionStatusInfo> statusById,
+      required Map<String, List<ChatPermissionRequest>> permissionsBySession,
+      required Map<String, List<ChatQuestionRequest>> questionsBySession,
+      required Set<String> unreadCompletionIds,
+      required Map<String, DateTime> unreadCompletionTimestamps,
+      required Set<String> errorIds,
+      required bool isActiveContext,
+    }) {
+      if (!contextKey.startsWith(activePrefix)) {
+        return;
+      }
+      final contextDirectory = contextKey.substring(activePrefix.length).trim();
+      for (final session in sessions) {
+        final parentId = session.parentId?.trim();
+        if (session.archived || (parentId != null && parentId.isNotEmpty)) {
+          continue;
+        }
+        final sessionId = session.id.trim();
+        if (sessionId.isEmpty) {
+          continue;
+        }
+        final hasPending =
+            (permissionsBySession[sessionId]?.isNotEmpty ?? false) ||
+            (questionsBySession[sessionId]?.isNotEmpty ?? false);
+        final hasError = errorIds.contains(sessionId);
+        final hasCompletion = unreadCompletionIds.contains(sessionId);
+        final status = statusById[sessionId]?.type;
+        final receiving =
+            status == SessionStatusType.busy ||
+            status == SessionStatusType.retry;
+        final directory = (session.directory?.trim().isNotEmpty ?? false)
+            ? session.directory!.trim()
+            : contextDirectory;
+        if (directory.isEmpty) {
+          continue;
+        }
+        final identity = SessionAttentionIdentity(
+          serverId: _activeServerId,
+          directory: directory,
+          rootSessionId: sessionId,
+        );
+        knownIdentities.add(identity);
+        final sessionMessages = messages
+            .where((message) => message.sessionId == sessionId)
+            .toList(growable: false);
+        final latestMessage = sessionMessages.isEmpty
+            ? null
+            : sessionMessages.last;
+        final fingerprint = <Object?>[
+          status?.name,
+          statusById[sessionId]?.attempt,
+          statusById[sessionId]?.message,
+          statusById[sessionId]?.nextEpochMs,
+          latestMessage?.id,
+          latestMessage?.hashCode,
+          latestMessage == null
+              ? 0
+              : _messageLocalDeltaVersion(latestMessage.id),
+          latestMessage is AssistantMessage ? latestMessage.parts.length : 0,
+          permissionsBySession[sessionId]
+                  ?.map((request) => request.id)
+                  .join(',') ??
+              '',
+          questionsBySession[sessionId]
+                  ?.map((request) => request.id)
+                  .join(',') ??
+              '',
+          hasCompletion,
+          hasError,
+        ].join('|');
+        final progressObserved =
+            _sessionAttentionObservationFingerprintByIdentity[identity] !=
+            fingerprint;
+        _sessionAttentionObservationFingerprintByIdentity[identity] =
+            fingerprint;
+        final timing = _sessionAttentionCoordinator.observe(
+          identity: identity,
+          busy: receiving,
+          progressObserved: progressObserved,
+        );
+        if (isActiveContext &&
+            currentSession?.id == sessionId &&
+            !hasPending &&
+            !hasError) {
+          continue;
+        }
+
+        final kind = hasError
+            ? RootSessionAttentionKind.error
+            : hasPending
+            ? RootSessionAttentionKind.pendingInteraction
+            : hasCompletion
+            ? RootSessionAttentionKind.completed
+            : receiving
+            ? timing.delayed
+                  ? RootSessionAttentionKind.delayed
+                  : RootSessionAttentionKind.receiving
+            : null;
+        if (kind == null) {
+          continue;
+        }
+        String? completionMessageId;
+        if (hasCompletion) {
+          for (var index = messages.length - 1; index >= 0; index -= 1) {
+            final message = messages[index];
+            if (message.sessionId == sessionId &&
+                message is AssistantMessage &&
+                message.isCompleted) {
+              completionMessageId = message.id;
+              break;
+            }
+          }
+        }
+        candidates.add(
+          RootSessionAttentionCandidate(
+            identity: identity,
+            kind: kind,
+            title: session.title?.trim().isNotEmpty == true
+                ? session.title!.trim()
+                : sessionId,
+            projectLabel: session.workspaceId.trim().isNotEmpty
+                ? session.workspaceId.trim()
+                : directory,
+            observedAt: unreadCompletionTimestamps[sessionId] ?? session.time,
+            observableBusyElapsed: timing.observableBusyElapsed,
+            monitoringPaused: timing.monitoringPaused,
+            pauseReason: timing.pauseReason,
+            completionMessageId: completionMessageId,
+          ),
+        );
+      }
+    }
+
+    addContextCandidates(
+      contextKey: _activeContextKey,
+      sessions: _sessions,
+      currentSession: _currentSession,
+      messages: _messages,
+      statusById: _sessionStatusById,
+      permissionsBySession: _pendingPermissionsBySession,
+      questionsBySession: _pendingQuestionsBySession,
+      unreadCompletionIds: _sessionUnreadCompletionIds,
+      unreadCompletionTimestamps: _sessionUnreadCompletionTimestamps,
+      errorIds: _sessionErrorAttentionIds,
+      isActiveContext: true,
+    );
+    for (final entry in _contextSnapshots.entries) {
+      if (entry.key == _activeContextKey) {
+        continue;
+      }
+      final snapshot = entry.value;
+      addContextCandidates(
+        contextKey: entry.key,
+        sessions: snapshot.sessions,
+        currentSession: snapshot.currentSession,
+        messages: snapshot.messages,
+        statusById: snapshot.sessionStatusById,
+        permissionsBySession: snapshot.pendingPermissionsBySession,
+        questionsBySession: snapshot.pendingQuestionsBySession,
+        unreadCompletionIds: snapshot.sessionUnreadCompletionIds,
+        unreadCompletionTimestamps: snapshot.sessionUnreadCompletionTimestamps,
+        errorIds: snapshot.sessionErrorAttentionIds,
+        isActiveContext: false,
+      );
+    }
+    _sessionAttentionCoordinator.retainIdentities(knownIdentities);
+    _sessionAttentionObservationFingerprintByIdentity.removeWhere(
+      (identity, _) => !knownIdentities.contains(identity),
+    );
+    candidates.sort((left, right) {
+      final priority = right.priority.compareTo(left.priority);
+      if (priority != 0) {
+        return priority;
+      }
+      final observed = right.observedAt.compareTo(left.observedAt);
+      if (observed != 0) {
+        return observed;
+      }
+      return left.identity.key.compareTo(right.identity.key);
+    });
+    _sessionAttentionRevision += 1;
+    return SessionAttentionAggregate(
+      generation: _sessionAttentionGeneration,
+      revision: _sessionAttentionRevision,
+      candidates: List<RootSessionAttentionCandidate>.unmodifiable(candidates),
+      isFullResynchronization: fullResynchronization,
+    );
+  }
+
   bool isSessionActivelyResponding(String sessionId) {
     final normalizedSessionId = sessionId.trim();
     if (normalizedSessionId.isEmpty) {

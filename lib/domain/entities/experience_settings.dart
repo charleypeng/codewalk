@@ -28,6 +28,8 @@ enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
 
 enum DataSaverLevel { off, standard, aggressive }
 
+enum SessionAttentionPresentation { off, bubble, panel }
+
 enum ChatRenderMode { live, block }
 
 enum ThemeModeOption { system, light, dark }
@@ -596,6 +598,22 @@ String dataSaverLevelKey(DataSaverLevel level) {
   };
 }
 
+String sessionAttentionPresentationKey(SessionAttentionPresentation value) {
+  return switch (value) {
+    SessionAttentionPresentation.off => 'off',
+    SessionAttentionPresentation.bubble => 'bubble',
+    SessionAttentionPresentation.panel => 'panel',
+  };
+}
+
+SessionAttentionPresentation sessionAttentionPresentationFromKey(String value) {
+  return switch (value.trim().toLowerCase()) {
+    'bubble' => SessionAttentionPresentation.bubble,
+    'panel' => SessionAttentionPresentation.panel,
+    _ => SessionAttentionPresentation.off,
+  };
+}
+
 DataSaverLevel dataSaverLevelFromKey(String value) {
   return switch (value.trim().toLowerCase()) {
     'aggressive' => DataSaverLevel.aggressive,
@@ -726,6 +744,7 @@ class ExperienceSettings {
       dataSaverEnabled: true,
       dataSaverLevel: DataSaverLevel.standard,
       androidBackgroundAlertsEnabled: true,
+      sessionAttentionPresentation: SessionAttentionPresentation.off,
       keepMobileRealtimeForShortPeriod: true,
       syncResumeGracePeriod: kDefaultSyncResumeGracePeriod,
       enableExperimentalMultiDeviceSync: false,
@@ -793,6 +812,7 @@ class ExperienceSettings {
     required this.dataSaverEnabled,
     required this.dataSaverLevel,
     required this.androidBackgroundAlertsEnabled,
+    this.sessionAttentionPresentation = SessionAttentionPresentation.off,
     required this.keepMobileRealtimeForShortPeriod,
     required this.syncResumeGracePeriod,
     this.enableExperimentalMultiDeviceSync = false,
@@ -860,6 +880,7 @@ class ExperienceSettings {
   final bool dataSaverEnabled;
   final DataSaverLevel dataSaverLevel;
   final bool androidBackgroundAlertsEnabled;
+  final SessionAttentionPresentation sessionAttentionPresentation;
   final bool keepMobileRealtimeForShortPeriod;
   final Duration syncResumeGracePeriod;
   final bool enableExperimentalMultiDeviceSync;
@@ -929,6 +950,7 @@ class ExperienceSettings {
     bool? dataSaverEnabled,
     DataSaverLevel? dataSaverLevel,
     bool? androidBackgroundAlertsEnabled,
+    SessionAttentionPresentation? sessionAttentionPresentation,
     bool? keepMobileRealtimeForShortPeriod,
     Duration? syncResumeGracePeriod,
     bool? enableExperimentalMultiDeviceSync,
@@ -1011,6 +1033,8 @@ class ExperienceSettings {
       dataSaverLevel: nextDataSaverLevel,
       androidBackgroundAlertsEnabled:
           androidBackgroundAlertsEnabled ?? this.androidBackgroundAlertsEnabled,
+      sessionAttentionPresentation:
+          sessionAttentionPresentation ?? this.sessionAttentionPresentation,
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
@@ -1135,6 +1159,9 @@ class ExperienceSettings {
       'keepDesktopRunningInTray':
           desktopCloseBehavior != DesktopCloseBehavior.close,
       'androidBackgroundAlertsEnabled': androidBackgroundAlertsEnabled,
+      'sessionAttentionPresentation': sessionAttentionPresentationKey(
+        sessionAttentionPresentation,
+      ),
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'syncResumeGracePeriodMs': syncResumeGracePeriod.inMilliseconds,
       'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
@@ -1220,6 +1247,7 @@ class ExperienceSettings {
     var dataSaverLevel = defaults.dataSaverLevel;
     var androidBackgroundAlertsEnabled =
         defaults.androidBackgroundAlertsEnabled;
+    var sessionAttentionPresentation = defaults.sessionAttentionPresentation;
     var keepMobileRealtimeForShortPeriod =
         defaults.keepMobileRealtimeForShortPeriod;
     var syncResumeGracePeriod = defaults.syncResumeGracePeriod;
@@ -1484,6 +1512,14 @@ class ExperienceSettings {
       androidBackgroundAlertsEnabled = androidBackgroundAlertsEnabledJson;
     }
 
+    final sessionAttentionPresentationJson =
+        json['sessionAttentionPresentation'];
+    if (sessionAttentionPresentationJson is String) {
+      sessionAttentionPresentation = sessionAttentionPresentationFromKey(
+        sessionAttentionPresentationJson,
+      );
+    }
+
     final enableExperimentalMultiDeviceSyncJson =
         json['enableExperimentalMultiDeviceSync'];
     if (enableExperimentalMultiDeviceSyncJson is bool) {
@@ -1720,6 +1756,7 @@ class ExperienceSettings {
       dataSaverEnabled: dataSaverEnabled,
       dataSaverLevel: dataSaverLevel,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,
+      sessionAttentionPresentation: sessionAttentionPresentation,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       syncResumeGracePeriod: syncResumeGracePeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
@@ -1757,4 +1794,62 @@ class ExperienceSettings {
       terminalFontSize: terminalFontSize,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is ExperienceSettings &&
+            _deepJsonEquals(toJson(), other.toJson());
+  }
+
+  @override
+  int get hashCode => _deepJsonHash(toJson());
+}
+
+bool _deepJsonEquals(Object? left, Object? right) {
+  if (identical(left, right)) {
+    return true;
+  }
+  if (left is Map && right is Map) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (final entry in left.entries) {
+      if (!right.containsKey(entry.key) ||
+          !_deepJsonEquals(entry.value, right[entry.key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (left is List && right is List) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var index = 0; index < left.length; index += 1) {
+      if (!_deepJsonEquals(left[index], right[index])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return left == right;
+}
+
+int _deepJsonHash(Object? value) {
+  if (value is Map) {
+    final entries = value.entries.toList(growable: false)
+      ..sort(
+        (left, right) => left.key.toString().compareTo(right.key.toString()),
+      );
+    return Object.hashAll(
+      entries.map(
+        (entry) => Object.hash(entry.key, _deepJsonHash(entry.value)),
+      ),
+    );
+  }
+  if (value is List) {
+    return Object.hashAll(value.map(_deepJsonHash));
+  }
+  return value.hashCode;
 }

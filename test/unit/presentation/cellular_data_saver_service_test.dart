@@ -7,6 +7,18 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('CellularDataSaverService', () {
+    test('defaults process-restored lifecycle to background', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final service = CellularDataSaverService(
+        sharedPreferences: prefs,
+        startMonitoring: false,
+      );
+      addTearDown(service.dispose);
+
+      expect(service.isForeground, isFalse);
+    });
+
     test(
       'activates only when cellular transport and setting are both true',
       () async {
@@ -81,6 +93,7 @@ void main() {
 
         service.debugSetDataSaverLevel(DataSaverLevel.aggressive);
         service.debugSetTransport(DataSaverTransport.cellular);
+        service.setAppForeground(true);
 
         expect(service.automaticSyncInterval, const Duration(seconds: 30));
         expect(
@@ -107,6 +120,7 @@ void main() {
 
         service.debugSetDataSaverEnabled(true);
         service.debugSetTransport(DataSaverTransport.cellular);
+        service.setAppForeground(true);
 
         expect(
           service.allowAutomaticForegroundSync(reason: 'first-tick'),

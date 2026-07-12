@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/session_attention/session_attention_host_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -20,8 +21,258 @@ class _FakeSoundService extends SoundService {
   }
 }
 
+class _FailingExperienceSettingsDataSource extends InMemoryAppLocalDataSource {
+  bool failExperienceSettingsSaves = false;
+
+  @override
+  Future<void> saveExperienceSettingsJson(String settingsJson) async {
+    if (failExperienceSettingsSaves) {
+      throw StateError('save failed');
+    }
+    await super.saveExperienceSettingsJson(settingsJson);
+  }
+}
+
+class _FakeSessionAttentionHostService implements SessionAttentionHostService {
+  _FakeSessionAttentionHostService({this.activationSucceeds = true});
+
+  bool activationSucceeds;
+  bool stopThrows = false;
+  int activateCount = 0;
+  int stopCount = 0;
+  int openSettingsCount = 0;
+
+  SessionAttentionHostCapability currentCapability =
+      const SessionAttentionHostCapability(
+        kind: SessionAttentionHostKind.androidExternal,
+        supported: true,
+        permissionGranted: true,
+        running: false,
+        topmostSupported: true,
+      );
+
+  @override
+  Future<SessionAttentionHostActivationResult> activate(
+    SessionAttentionPresentation presentation,
+  ) async {
+    activateCount += 1;
+    if (!activationSucceeds) {
+      return SessionAttentionHostActivationResult.failure(
+        currentCapability,
+        'permission denied',
+      );
+    }
+    currentCapability = SessionAttentionHostCapability(
+      kind: currentCapability.kind,
+      supported: true,
+      permissionGranted: true,
+      running: true,
+      topmostSupported: currentCapability.topmostSupported,
+    );
+    return SessionAttentionHostActivationResult.success(currentCapability);
+  }
+
+  @override
+  Future<SessionAttentionHostCapability> capability() async =>
+      currentCapability;
+
+  @override
+  Future<void> openSystemSettings() async {
+    openSettingsCount += 1;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCount += 1;
+    if (stopThrows) {
+      throw StateError('stop failed');
+    }
+    currentCapability = SessionAttentionHostCapability(
+      kind: currentCapability.kind,
+      supported: currentCapability.supported,
+      permissionGranted: currentCapability.permissionGranted,
+      running: false,
+      topmostSupported: currentCapability.topmostSupported,
+    );
+  }
+}
+
 void main() {
   group('SettingsProvider', () {
+    test(
+      'persists session attention mode only after host activation',
+      () async {
+        final local = InMemoryAppLocalDataSource();
+        final host = _FakeSessionAttentionHostService();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          sessionAttentionHostService: host,
+        );
+        await provider.initialize();
+
+        final error = await provider.setSessionAttentionPresentation(
+          SessionAttentionPresentation.panel,
+        );
+
+        expect(error, isNull);
+        expect(host.activateCount, 1);
+        expect(
+          provider.sessionAttentionPresentation,
+          SessionAttentionPresentation.panel,
+        );
+        final saved = jsonDecode(local.experienceSettingsJson!);
+        expect(saved['sessionAttentionPresentation'], 'panel');
+        expect(saved['androidBackgroundAlertsEnabled'], isTrue);
+      },
+    );
+
+    test('activation failure persists off and surfaces the error', () async {
+      final local = InMemoryAppLocalDataSource();
+      final host = _FakeSessionAttentionHostService(activationSucceeds: false);
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+        sessionAttentionHostService: host,
+      );
+      await provider.initialize();
+
+      final error = await provider.setSessionAttentionPresentation(
+        SessionAttentionPresentation.bubble,
+      );
+
+      expect(error, 'permission denied');
+      expect(
+        provider.sessionAttentionPresentation,
+        SessionAttentionPresentation.off,
+      );
+      final saved = jsonDecode(local.experienceSettingsJson!);
+      expect(saved['sessionAttentionPresentation'], 'off');
+      expect(saved['androidBackgroundAlertsEnabled'], isTrue);
+    });
+
+    test('turning session attention off stops host and active TTS', () async {
+      final local = InMemoryAppLocalDataSource();
+      final host = _FakeSessionAttentionHostService();
+      var stopTtsCount = 0;
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+        sessionAttentionHostService: host,
+        sessionAttentionStopTts: () async {
+          stopTtsCount += 1;
+        },
+      );
+      await provider.initialize();
+      await provider.setSessionAttentionPresentation(
+        SessionAttentionPresentation.bubble,
+      );
+
+      await provider.setSessionAttentionPresentation(
+        SessionAttentionPresentation.off,
+      );
+
+      expect(stopTtsCount, 1);
+      expect(host.stopCount, 1);
+      expect(provider.sessionAttentionHostCapability.running, isFalse);
+    });
+
+    test('failed stop keeps the enabled mode available for retry', () async {
+      final local = InMemoryAppLocalDataSource();
+      final host = _FakeSessionAttentionHostService();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+        sessionAttentionHostService: host,
+      );
+      await provider.initialize();
+      await provider.setSessionAttentionPresentation(
+        SessionAttentionPresentation.bubble,
+      );
+      host.stopThrows = true;
+
+      final error = await provider.setSessionAttentionPresentation(
+        SessionAttentionPresentation.off,
+      );
+
+      expect(error, isNotNull);
+      expect(
+        provider.sessionAttentionPresentation,
+        SessionAttentionPresentation.bubble,
+      );
+      expect(provider.sessionAttentionHostCapability.running, isTrue);
+    });
+
+    test(
+      'failed activation persistence keeps a host that cannot stop visible',
+      () async {
+        final local = _FailingExperienceSettingsDataSource();
+        final host = _FakeSessionAttentionHostService()..stopThrows = true;
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          sessionAttentionHostService: host,
+        );
+        await provider.initialize();
+        local.failExperienceSettingsSaves = true;
+
+        final error = await provider.setSessionAttentionPresentation(
+          SessionAttentionPresentation.panel,
+        );
+
+        expect(error, isNotNull);
+        expect(
+          provider.sessionAttentionPresentation,
+          SessionAttentionPresentation.panel,
+        );
+        expect(provider.sessionAttentionHostCapability.running, isTrue);
+      },
+    );
+
+    test(
+      'repeated Off retries a previously failed persistence write',
+      () async {
+        final local = _FailingExperienceSettingsDataSource();
+        final host = _FakeSessionAttentionHostService();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          sessionAttentionHostService: host,
+        );
+        await provider.initialize();
+        await provider.setSessionAttentionPresentation(
+          SessionAttentionPresentation.bubble,
+        );
+        local.failExperienceSettingsSaves = true;
+        expect(
+          await provider.setSessionAttentionPresentation(
+            SessionAttentionPresentation.off,
+          ),
+          isNotNull,
+        );
+
+        local.failExperienceSettingsSaves = false;
+        expect(
+          await provider.setSessionAttentionPresentation(
+            SessionAttentionPresentation.off,
+          ),
+          isNull,
+        );
+        expect(
+          jsonDecode(
+            local.experienceSettingsJson!,
+          )['sessionAttentionPresentation'],
+          'off',
+        );
+      },
+    );
+
     test('loads persisted settings and updates notification toggle', () async {
       final local = InMemoryAppLocalDataSource()
         ..experienceSettingsJson = jsonEncode({

@@ -4674,5 +4674,39 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'تنبيهات الجلسات';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'تعرض حالة الجلسات الجذرية في فقاعة أو لوحة اختيارية.';
+
+  @override
+  String get settingsSessionAttentionOff => 'إيقاف';
+
+  @override
+  String get settingsSessionAttentionBubble => 'فقاعة';
+
+  @override
+  String get settingsSessionAttentionPanel => 'لوحة';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'على Android، يؤدي التفعيل إلى تشغيل خدمة مستمرة في المقدمة. يُخزّن نص الرد مشفراً، ولا ترسله خدمة النطق السحابية إلا بعد الضغط على قراءة.';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'تنبيهات الجلسات غير متاحة على هذه المنصة.';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => 'فتح إعدادات العرض';
+
+  @override
+  String get settingsSessionAttentionStop => 'إيقاف تنبيهات الجلسات';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'عند الضغط على قراءة، قد يُرسل نص الرد إلى مزود النطق الخارجي المُعد.';
+
+  @override
   String get workspaceSuggestions => 'اقتراحات';
 }

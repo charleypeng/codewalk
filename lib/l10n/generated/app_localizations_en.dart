@@ -4711,5 +4711,39 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'Session attention';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'Show root-session status in an opt-in bubble or panel.';
+
+  @override
+  String get settingsSessionAttentionOff => 'Off';
+
+  @override
+  String get settingsSessionAttentionBubble => 'Bubble';
+
+  @override
+  String get settingsSessionAttentionPanel => 'Panel';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'On Android, enabling this starts a persistent foreground service. Response text is stored encrypted; cloud TTS sends text only after you press Read.';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'Session attention is unavailable on this platform.';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => 'Open display settings';
+
+  @override
+  String get settingsSessionAttentionStop => 'Stop session attention';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'When you press Read, response text may be sent to the configured third-party TTS provider.';
+
+  @override
   String get workspaceSuggestions => 'Suggestions';
 }

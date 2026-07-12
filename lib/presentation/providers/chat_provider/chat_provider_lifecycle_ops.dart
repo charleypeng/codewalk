@@ -5,7 +5,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
-    _cellularDataSaverService.setAppForeground(isActive);
     if (!isActive) {
       _cancelResumeGrace(reason: 'background');
       _stopForegroundResumeSyncIndicator(reason: 'background');
@@ -66,6 +65,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
   // Foreground state setter.
   void setAppInForeground(bool isForeground) {
     _isAppInForeground = isForeground;
+    _cellularDataSaverService.setAppForeground(isForeground);
   }
 
   // Chat route state setter.
@@ -101,6 +101,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
     bool allowDuringAbortSuppression = false,
     bool preferDelta = true,
   }) async {
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
     final session = _currentSession;
     if (session == null) {
       return;
@@ -122,7 +125,8 @@ extension ChatProviderLifecycleOps on ChatProvider {
         return;
       }
       if (activeSessionId == session.id) {
-        if (includeStatus) {
+        if (includeStatus &&
+            !_cellularDataSaverService.shouldSuppressBackgroundWork) {
           await refreshSessionStatusSnapshot();
         }
         return;
@@ -185,6 +189,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
     required bool allowDuringAbortSuppression,
     required bool preferDelta,
   }) async {
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return false;
+    }
     _traceFinal(
       'refresh-active-start',
       sessionId: session.id,
@@ -290,7 +297,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
             sessionId: session.id,
             details: 'reason=$reason mergedMessages=${_messages.length}',
           );
-          _scheduleAutoTitleRefresh(session.id);
+          if (!_cellularDataSaverService.shouldSuppressBackgroundWork) {
+            _scheduleAutoTitleRefresh(session.id);
+          }
           if (!usedGapRecovery) {
             unawaited(
               _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
@@ -302,7 +311,8 @@ extension ChatProviderLifecycleOps on ChatProvider {
         },
       );
 
-      if (includeStatus) {
+      if (includeStatus &&
+          !_cellularDataSaverService.shouldSuppressBackgroundWork) {
         await refreshSessionStatusSnapshot();
       }
     } finally {

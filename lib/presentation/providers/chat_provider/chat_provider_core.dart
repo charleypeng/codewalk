@@ -450,8 +450,12 @@ extension _ChatProviderCorePart on ChatProvider {
       } else {
         await _startRealtimeEventSubscription();
       }
-      await _loadPendingInteractions();
-      await refreshSessionStatusSnapshot();
+      if (!_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        await _loadPendingInteractions();
+      }
+      if (!_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        await refreshSessionStatusSnapshot();
+      }
       _setProvidersRefreshState(
         ChatProvidersRefreshState.ready,
         errorMessage: null,

@@ -4555,5 +4555,39 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => '세션 알림';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      '루트 세션 상태를 선택적 버블이나 패널에 표시합니다.';
+
+  @override
+  String get settingsSessionAttentionOff => '끄기';
+
+  @override
+  String get settingsSessionAttentionBubble => '버블';
+
+  @override
+  String get settingsSessionAttentionPanel => '패널';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Android에서 사용하면 지속적인 포그라운드 서비스가 시작됩니다. 응답 텍스트는 암호화되어 저장되며 클라우드 TTS에는 읽기를 누른 후에만 전송됩니다.';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      '이 플랫폼에서는 세션 알림을 사용할 수 없습니다.';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => '표시 설정 열기';
+
+  @override
+  String get settingsSessionAttentionStop => '세션 알림 중지';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      '읽기를 누르면 응답 텍스트가 설정된 타사 TTS 제공업체로 전송될 수 있습니다.';
+
+  @override
   String get workspaceSuggestions => '추천 프로젝트';
 }

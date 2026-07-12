@@ -4740,5 +4740,39 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'সেশন মনোযোগ';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'ঐচ্ছিক বাবল বা প্যানেলে রুট সেশনের অবস্থা দেখায়।';
+
+  @override
+  String get settingsSessionAttentionOff => 'বন্ধ';
+
+  @override
+  String get settingsSessionAttentionBubble => 'বাবল';
+
+  @override
+  String get settingsSessionAttentionPanel => 'প্যানেল';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Android-এ চালু করলে একটি স্থায়ী ফোরগ্রাউন্ড পরিষেবা শুরু হয়। উত্তরের লেখা এনক্রিপ্ট করে রাখা হয়; পড়ুন চাপার পরেই ক্লাউড TTS লেখা পাঠায়।';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'এই প্ল্যাটফর্মে সেশন মনোযোগ উপলভ্য নয়।';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => 'ডিসপ্লে সেটিংস খুলুন';
+
+  @override
+  String get settingsSessionAttentionStop => 'সেশন মনোযোগ বন্ধ করুন';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'পড়ুন চাপলে উত্তরের লেখা কনফিগার করা তৃতীয়-পক্ষ TTS প্রদানকারীর কাছে পাঠানো হতে পারে।';
+
+  @override
   String get workspaceSuggestions => 'পরামর্শ';
 }

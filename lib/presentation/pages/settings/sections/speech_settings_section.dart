@@ -1956,6 +1956,13 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             ),
             const SizedBox(height: 12),
             _buildReadAloudProviderSelector(settingsProvider),
+            if (readAloudProvider != ReadAloudProvider.native) ...[
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.settingsSessionAttentionThirdPartyTtsWarning,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             const SizedBox(height: 8),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,

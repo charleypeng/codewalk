@@ -4741,5 +4741,39 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get settingsSessionAttentionTitle => 'सत्र ध्यान';
+
+  @override
+  String get settingsSessionAttentionDescription =>
+      'रूट सत्र की स्थिति को वैकल्पिक बबल या पैनल में दिखाता है।';
+
+  @override
+  String get settingsSessionAttentionOff => 'बंद';
+
+  @override
+  String get settingsSessionAttentionBubble => 'बबल';
+
+  @override
+  String get settingsSessionAttentionPanel => 'पैनल';
+
+  @override
+  String get settingsSessionAttentionPrivacy =>
+      'Android पर इसे चालू करने से स्थायी फ़ोरग्राउंड सेवा शुरू होती है। उत्तर का पाठ एन्क्रिप्ट होकर सहेजा जाता है; क्लाउड TTS पाठ केवल पढ़ें दबाने के बाद भेजता है।';
+
+  @override
+  String get settingsSessionAttentionUnavailable =>
+      'इस प्लेटफ़ॉर्म पर सत्र ध्यान उपलब्ध नहीं है।';
+
+  @override
+  String get settingsSessionAttentionOpenSettings => 'डिस्प्ले सेटिंग खोलें';
+
+  @override
+  String get settingsSessionAttentionStop => 'सत्र ध्यान रोकें';
+
+  @override
+  String get settingsSessionAttentionThirdPartyTtsWarning =>
+      'पढ़ें दबाने पर उत्तर का पाठ कॉन्फ़िगर किए गए तृतीय-पक्ष TTS प्रदाता को भेजा जा सकता है।';
+
+  @override
   String get workspaceSuggestions => 'सुझाव';
 }

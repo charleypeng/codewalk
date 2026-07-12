@@ -1348,5 +1348,15 @@
   "workspaceProjectDirectory": "परियोजना निर्देशिका (Project directory)",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "इतिहास से {name} निकालें",
-  "workspaceSuggestions": "सुझाव"
+  "workspaceSuggestions": "सुझाव",
+  "settingsSessionAttentionTitle": "सत्र ध्यान",
+  "settingsSessionAttentionDescription": "रूट सत्र की स्थिति को वैकल्पिक बबल या पैनल में दिखाता है।",
+  "settingsSessionAttentionOff": "बंद",
+  "settingsSessionAttentionBubble": "बबल",
+  "settingsSessionAttentionPanel": "पैनल",
+  "settingsSessionAttentionPrivacy": "Android पर इसे चालू करने से स्थायी फ़ोरग्राउंड सेवा शुरू होती है। उत्तर का पाठ एन्क्रिप्ट होकर सहेजा जाता है; क्लाउड TTS पाठ केवल पढ़ें दबाने के बाद भेजता है।",
+  "settingsSessionAttentionUnavailable": "इस प्लेटफ़ॉर्म पर सत्र ध्यान उपलब्ध नहीं है।",
+  "settingsSessionAttentionOpenSettings": "डिस्प्ले सेटिंग खोलें",
+  "settingsSessionAttentionStop": "सत्र ध्यान रोकें",
+  "settingsSessionAttentionThirdPartyTtsWarning": "पढ़ें दबाने पर उत्तर का पाठ कॉन्फ़िगर किए गए तृतीय-पक्ष TTS प्रदाता को भेजा जा सकता है।"
 }
