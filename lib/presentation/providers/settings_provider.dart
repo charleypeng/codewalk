@@ -60,6 +60,10 @@ enum OpenCodeShareMode { manual, automatic, disabled }
 typedef NativeReadAloudAvailabilityProbe = Future<bool> Function();
 typedef SessionAttentionStopTts = Future<void> Function();
 typedef SessionAttentionRepublish = Future<void> Function();
+typedef SessionAttentionPresentationOverrideReader =
+    Future<SessionAttentionPresentation?> Function();
+typedef SessionAttentionPresentationOverrideWriter =
+    Future<void> Function(SessionAttentionPresentation presentation);
 
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
@@ -72,6 +76,10 @@ class SettingsProvider extends ChangeNotifier {
     SessionAttentionHostService? sessionAttentionHostService,
     SessionAttentionStopTts? sessionAttentionStopTts,
     SessionAttentionRepublish? sessionAttentionRepublish,
+    SessionAttentionPresentationOverrideReader?
+    sessionAttentionPresentationOverrideReader,
+    SessionAttentionPresentationOverrideWriter?
+    sessionAttentionPresentationOverrideWriter,
   }) : _localDataSource = localDataSource,
        _dioClient = dioClient,
        _soundService = soundService,
@@ -82,6 +90,10 @@ class SettingsProvider extends ChangeNotifier {
            const UnsupportedSessionAttentionHostService(),
        _sessionAttentionStopTts = sessionAttentionStopTts,
        _sessionAttentionRepublish = sessionAttentionRepublish,
+       _sessionAttentionPresentationOverrideReader =
+           sessionAttentionPresentationOverrideReader,
+       _sessionAttentionPresentationOverrideWriter =
+           sessionAttentionPresentationOverrideWriter,
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled() {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
@@ -95,6 +107,10 @@ class SettingsProvider extends ChangeNotifier {
   final SessionAttentionHostService _sessionAttentionHostService;
   final SessionAttentionStopTts? _sessionAttentionStopTts;
   final SessionAttentionRepublish? _sessionAttentionRepublish;
+  final SessionAttentionPresentationOverrideReader?
+  _sessionAttentionPresentationOverrideReader;
+  final SessionAttentionPresentationOverrideWriter?
+  _sessionAttentionPresentationOverrideWriter;
   final CellularDataSaverService _cellularDataSaverService;
 
   ExperienceSettings _settings = ExperienceSettings.defaults();
@@ -828,6 +844,7 @@ class SettingsProvider extends ChangeNotifier {
       if (!await _persistSessionAttentionSettings()) {
         return 'Session attention was stopped but the setting could not be saved.';
       }
+      await _persistSessionAttentionPresentationOverride(presentation);
       await _sessionAttentionRepublish?.call();
       return null;
     }
@@ -848,6 +865,7 @@ class SettingsProvider extends ChangeNotifier {
       );
       notifyListeners();
       await _persist();
+      await _persistSessionAttentionPresentationOverride(fallbackPresentation);
       return stopError ??
           result.error ??
           'Session attention could not be enabled.';
@@ -869,8 +887,12 @@ class SettingsProvider extends ChangeNotifier {
       );
       notifyListeners();
       await _persist();
+      await _persistSessionAttentionPresentationOverride(
+        SessionAttentionPresentation.off,
+      );
       return 'Session attention could not be saved and was stopped.';
     }
+    await _persistSessionAttentionPresentationOverride(presentation);
     await _sessionAttentionRepublish?.call();
     return null;
   }
@@ -881,6 +903,17 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> refreshSessionAttentionHostCapability() async {
+    final persisted = await _localDataSource.getExperienceSettingsJson();
+    if (persisted != null && persisted.isNotEmpty) {
+      try {
+        _settings = ExperienceSettings.fromJson(
+          Map<String, dynamic>.from(jsonDecode(persisted) as Map),
+        );
+      } catch (_) {
+        // Keep the last valid in-memory settings snapshot.
+      }
+    }
+    await _applySessionAttentionPresentationOverride();
     _sessionAttentionHostCapability = await _safeHostCapability();
     if ((_sessionAttentionHostCapability.stoppedByUser ||
             _sessionAttentionHostCapability.permissionRevoked) &&
@@ -891,11 +924,15 @@ class SettingsProvider extends ChangeNotifier {
       );
       await _sessionAttentionStopTts?.call();
       await _persist();
+      await _persistSessionAttentionPresentationOverride(
+        SessionAttentionPresentation.off,
+      );
     }
     notifyListeners();
   }
 
   Future<void> _restoreSessionAttentionHost() async {
+    await _applySessionAttentionPresentationOverride();
     final presentation = _settings.sessionAttentionPresentation;
     final initialCapability = await _safeHostCapability();
     if (initialCapability.stoppedByUser ||
@@ -905,6 +942,9 @@ class SettingsProvider extends ChangeNotifier {
         sessionAttentionPresentation: SessionAttentionPresentation.off,
       );
       await _persist();
+      await _persistSessionAttentionPresentationOverride(
+        SessionAttentionPresentation.off,
+      );
       return;
     }
     if (presentation == SessionAttentionPresentation.off) {
@@ -920,13 +960,14 @@ class SettingsProvider extends ChangeNotifier {
       await _sessionAttentionRepublish?.call();
       return;
     }
-    final stopError = await _stopSessionAttentionHost();
-    if (stopError == null || !_sessionAttentionHostCapability.running) {
-      _settings = _settings.copyWith(
-        sessionAttentionPresentation: SessionAttentionPresentation.off,
-      );
-      await _persist();
-    }
+    await _stopSessionAttentionHost();
+    _settings = _settings.copyWith(
+      sessionAttentionPresentation: SessionAttentionPresentation.off,
+    );
+    await _persist();
+    await _persistSessionAttentionPresentationOverride(
+      SessionAttentionPresentation.off,
+    );
   }
 
   Future<SessionAttentionHostCapability> _safeHostCapability() async {
@@ -999,6 +1040,40 @@ class SettingsProvider extends ChangeNotifier {
         stackTrace: stackTrace,
       );
       return false;
+    }
+  }
+
+  Future<void> _applySessionAttentionPresentationOverride() async {
+    final reader = _sessionAttentionPresentationOverrideReader;
+    if (reader == null) return;
+    try {
+      final presentation = await reader();
+      if (presentation != null &&
+          presentation != _settings.sessionAttentionPresentation) {
+        _settings = _settings.copyWith(
+          sessionAttentionPresentation: presentation,
+        );
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to read the session attention presentation override',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _persistSessionAttentionPresentationOverride(
+    SessionAttentionPresentation presentation,
+  ) async {
+    try {
+      await _sessionAttentionPresentationOverrideWriter?.call(presentation);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to persist the session attention presentation override',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

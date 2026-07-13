@@ -96,3 +96,16 @@ class SessionAttentionHostCommandBus {
     if (!_controller.isClosed) _controller.add(command);
   }
 }
+
+class SessionAttentionHostSnapshotBus {
+  SessionAttentionHostSnapshotBus._();
+
+  static final StreamController<SessionAttentionHostSnapshot> _controller =
+      StreamController<SessionAttentionHostSnapshot>.broadcast();
+
+  static Stream<SessionAttentionHostSnapshot> get stream => _controller.stream;
+
+  static void emit(SessionAttentionHostSnapshot snapshot) {
+    if (!_controller.isClosed) _controller.add(snapshot);
+  }
+}

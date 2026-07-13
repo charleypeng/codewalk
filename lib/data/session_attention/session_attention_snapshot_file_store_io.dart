@@ -16,6 +16,21 @@ class _IoSessionAttentionSnapshotFileStore
   Future<File>? _fileFuture;
 
   @override
+  Future<T> synchronized<T>(Future<T> Function() operation) async {
+    final target = await _file();
+    await target.parent.create(recursive: true);
+    final lock = File('${target.path}.lock');
+    final handle = await lock.open(mode: FileMode.append);
+    try {
+      await handle.lock(FileLock.exclusive);
+      return await operation();
+    } finally {
+      await handle.unlock();
+      await handle.close();
+    }
+  }
+
+  @override
   Future<String?> read() async {
     final file = await _file();
     if (!await file.exists()) {

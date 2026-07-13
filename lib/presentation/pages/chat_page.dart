@@ -1567,9 +1567,27 @@ class _ChatPageState extends State<ChatPage>
         if (di.sl.isRegistered<ReadAloudService>()) {
           await di.sl<ReadAloudService>().stopIfReading(snapshotId);
         }
-        await di.sl<SessionAttentionCompletionResolver>().dismissSnapshot(
-          snapshotId,
-        );
+        final resolver = di.sl<SessionAttentionCompletionResolver>();
+        final durable = await resolver.itemBySnapshotId(snapshotId);
+        if (durable != null) {
+          await resolver.dismissSnapshot(snapshotId);
+        } else {
+          final serverId = payload.serverId?.trim() ?? '';
+          final directory = payload.directory?.trim() ?? '';
+          final sessionId = payload.sessionId?.trim() ?? '';
+          final identity = SessionAttentionIdentity(
+            serverId: serverId,
+            directory: directory,
+            rootSessionId: sessionId,
+          ).normalized();
+          final prefix = '${identity.key}::';
+          if (identity.isValid && snapshotId.startsWith(prefix)) {
+            await resolver.suppressLiveIdentity(
+              identity: identity,
+              contentDigest: snapshotId.substring(prefix.length),
+            );
+          }
+        }
       }
       return;
     }
@@ -1673,17 +1691,11 @@ class _ChatPageState extends State<ChatPage>
         if (!mounted || generation != _pendingNotificationTapGeneration) {
           return;
         }
-        if (targetServerId != null &&
-            targetServerId.isNotEmpty &&
-            targetDirectory != null &&
-            targetDirectory.isNotEmpty &&
+        if (snapshotId != null &&
+            snapshotId.isNotEmpty &&
             di.sl.isRegistered<SessionAttentionCompletionResolver>()) {
-          await di.sl<SessionAttentionCompletionResolver>().removeIdentity(
-            SessionAttentionIdentity(
-              serverId: targetServerId,
-              directory: targetDirectory,
-              rootSessionId: sessionId,
-            ),
+          await di.sl<SessionAttentionCompletionResolver>().consumeSnapshot(
+            snapshotId,
           );
         }
         if (di.sl.isRegistered<ReadAloudService>()) {

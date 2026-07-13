@@ -24,6 +24,8 @@ class _MemoryKeyStorage implements SessionAttentionSnapshotKeyStorage {
 class _MemoryFileStore implements SessionAttentionSnapshotFileStore {
   String? value;
   @override
+  Future<T> synchronized<T>(Future<T> Function() operation) => operation();
+  @override
   Future<void> delete() async => value = null;
   @override
   Future<String?> read() async => value;
@@ -227,6 +229,40 @@ void main() {
     expect((await store.read()).payload.items, isEmpty);
   });
 
+  test('dismisses a completion without message ID by digest', () async {
+    final repository = FakeChatRepository();
+    final store = SessionAttentionSnapshotStore(
+      keyStorage: _MemoryKeyStorage(),
+      fileStore: _MemoryFileStore(),
+    );
+    final resolver = SessionAttentionCompletionResolver(
+      getChatMessages: GetChatMessages(repository),
+      snapshotStore: store,
+      delay: (_) async {},
+    );
+    final resolved = await resolver.resolve(
+      identity: identity,
+      title: 'Session',
+      projectLabel: 'Project',
+      completedAt: DateTime.utc(2026),
+    );
+
+    await resolver.dismissSnapshot(resolved!.snapshotId);
+    await resolver.resolve(
+      identity: identity,
+      title: 'Session',
+      projectLabel: 'Project',
+      completedAt: DateTime.utc(2026),
+    );
+
+    final payload = (await store.read()).payload;
+    expect(payload.items, isEmpty);
+    expect(
+      payload.dismissalTombstones,
+      contains('${identity.key}::${resolved.contentDigest}'),
+    );
+  });
+
   test('truncates display text by Unicode scalar values', () async {
     final repository = FakeChatRepository();
     final text = List<String>.filled(4001, '😀').join();
@@ -304,6 +340,48 @@ void main() {
   });
 
   test(
+    'external ownership invalidates an in-flight completion write',
+    () async {
+      final repository = FakeChatRepository();
+      final gate = Completer<void>();
+      repository.getMessagesHandler = (_, _, {directory, limit}) async {
+        await gate.future;
+        return Right(<ChatMessage>[
+          AssistantMessage(
+            id: 'late',
+            sessionId: 'session-a',
+            time: DateTime.utc(2026),
+            completedTime: DateTime.utc(2026),
+          ),
+        ]);
+      };
+      final store = SessionAttentionSnapshotStore(
+        keyStorage: _MemoryKeyStorage(),
+        fileStore: _MemoryFileStore(),
+      );
+      final resolver = SessionAttentionCompletionResolver(
+        getChatMessages: GetChatMessages(repository),
+        snapshotStore: store,
+        delay: (_) async {},
+      );
+      var ownsFallback = true;
+      final resolving = resolver.resolve(
+        identity: identity,
+        title: 'Session',
+        projectLabel: 'Project',
+        completedAt: DateTime.utc(2026),
+        isStillValid: () => ownsFallback,
+      );
+
+      ownsFallback = false;
+      gate.complete();
+
+      expect(await resolving, isNull);
+      expect((await store.read()).payload.items, isEmpty);
+    },
+  );
+
+  test(
     'existing completion is not replaced by the same stale answer',
     () async {
       final repository = FakeChatRepository();
@@ -355,8 +433,11 @@ void main() {
       );
 
       expect(repository.getMessagesCallCount, 4);
-      expect(resolved?.assistantMessageId, isNull);
-      expect((await store.read()).payload.items.single.displayText, isEmpty);
+      expect(resolved?.assistantMessageId, 'previous');
+      expect(
+        (await store.read()).payload.items.single.displayText,
+        'Previous answer',
+      );
     },
   );
 }

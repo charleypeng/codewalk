@@ -8,6 +8,7 @@ import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/session_attention_overlay/session_attention_models.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
@@ -213,6 +214,8 @@ ChatProvider buildChatProvider({
   SettingsProvider? settingsProvider,
   CellularDataSaverService? cellularDataSaverService,
   EventFeedbackDispatcher? eventFeedbackDispatcher,
+  Future<void> Function(SessionAttentionAggregate aggregate)?
+  sessionAttentionAggregatePublisher,
 }) {
   return ChatProvider(
     sendChatMessage: SendChatMessage(chatRepository),
@@ -250,6 +253,7 @@ ChatProvider buildChatProvider({
     dioClient: dioClient,
     cellularDataSaverService: cellularDataSaverService,
     eventFeedbackDispatcher: eventFeedbackDispatcher,
+    sessionAttentionAggregatePublisher: sessionAttentionAggregatePublisher,
     syncSignalStaleThreshold: syncSignalStaleThreshold,
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,

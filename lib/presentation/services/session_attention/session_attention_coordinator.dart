@@ -46,6 +46,7 @@ class SessionAttentionCoordinator extends ChangeNotifier {
 
   bool get automaticMonitoringPermitted => !monitoringPaused;
   int get reconciliationGeneration => _reconciliationGeneration;
+  Duration get delayedThreshold => _delayCoordinator.delayedThreshold;
 
   SessionAttentionTimingState timingFor(SessionAttentionIdentity identity) {
     return _timingById[identity] ??

@@ -48,6 +48,10 @@ class AppConstants {
   static const String archivedProjectIdsKey = 'archived_project_ids';
   static const String hiddenProjectPathsKey = 'hidden_project_paths';
   static const String experienceSettingsKey = 'experience_settings';
+  static const String sessionAttentionPresentationOverrideKey =
+      'session_attention_presentation_override';
+  static const String sessionAttentionMainHeartbeatEpochMsKey =
+      'session_attention_main_heartbeat_epoch_ms';
   static const String localeCodeKey = 'locale_code';
 
   // Update check keys

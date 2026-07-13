@@ -174,27 +174,63 @@ extension ChatProviderSessionAttentionOps on ChatProvider {
         return;
       }
       final contextDirectory = contextKey.substring(activePrefix.length).trim();
+      final parentBySessionId = <String, String>{
+        for (final session in sessions)
+          if (session.parentId?.trim().isNotEmpty == true)
+            session.id: session.parentId!.trim(),
+      };
+      String rootSessionIdFor(String sessionId) {
+        var current = sessionId;
+        final visited = <String>{};
+        while (visited.add(current)) {
+          final parent = parentBySessionId[current];
+          if (parent == null || parent.isEmpty) return current;
+          current = parent;
+        }
+        return sessionId;
+      }
+
       for (final session in sessions) {
         final parentId = session.parentId?.trim();
-        if (session.archived || (parentId != null && parentId.isNotEmpty)) {
-          continue;
-        }
         final sessionId = session.id.trim();
         if (sessionId.isEmpty) {
           continue;
         }
-        final hasPending =
-            (permissionsBySession[sessionId]?.isNotEmpty ?? false) ||
-            (questionsBySession[sessionId]?.isNotEmpty ?? false);
-        final hasError = errorIds.contains(sessionId);
-        final hasCompletion = unreadCompletionIds.contains(sessionId);
-        final status = statusById[sessionId]?.type;
-        final receiving =
-            status == SessionStatusType.busy ||
-            status == SessionStatusType.retry;
         final directory = (session.directory?.trim().isNotEmpty ?? false)
             ? session.directory!.trim()
             : contextDirectory;
+        if (session.archived) {
+          if ((parentId == null || parentId.isEmpty) && directory.isNotEmpty) {
+            _deleteSessionAttentionSnapshotIdentity(
+              SessionAttentionIdentity(
+                serverId: _activeServerId,
+                directory: directory,
+                rootSessionId: sessionId,
+              ),
+            );
+          }
+          continue;
+        }
+        if (parentId != null && parentId.isNotEmpty) {
+          continue;
+        }
+        final hasPending =
+            permissionsBySession.entries.any(
+              (entry) =>
+                  entry.value.isNotEmpty &&
+                  rootSessionIdFor(entry.key) == sessionId,
+            ) ||
+            questionsBySession.entries.any(
+              (entry) =>
+                  entry.value.isNotEmpty &&
+                  rootSessionIdFor(entry.key) == sessionId,
+            );
+        final hasError = errorIds.contains(sessionId);
+        final hasCompletion = unreadCompletionIds.contains(sessionId);
+        final status = statusById[sessionId]?.type;
+        final working =
+            status == SessionStatusType.busy ||
+            status == SessionStatusType.retry;
         if (directory.isEmpty) {
           continue;
         }
@@ -221,14 +257,16 @@ extension ChatProviderSessionAttentionOps on ChatProvider {
               ? 0
               : _messageLocalDeltaVersion(latestMessage.id),
           latestMessage is AssistantMessage ? latestMessage.parts.length : 0,
-          permissionsBySession[sessionId]
-                  ?.map((request) => request.id)
-                  .join(',') ??
-              '',
-          questionsBySession[sessionId]
-                  ?.map((request) => request.id)
-                  .join(',') ??
-              '',
+          permissionsBySession.entries
+              .where((entry) => rootSessionIdFor(entry.key) == sessionId)
+              .expand((entry) => entry.value)
+              .map((request) => request.id)
+              .join(','),
+          questionsBySession.entries
+              .where((entry) => rootSessionIdFor(entry.key) == sessionId)
+              .expand((entry) => entry.value)
+              .map((request) => request.id)
+              .join(','),
           hasCompletion,
           hasError,
         ].join('|');
@@ -239,7 +277,7 @@ extension ChatProviderSessionAttentionOps on ChatProvider {
             fingerprint;
         final timing = _sessionAttentionCoordinator.observe(
           identity: identity,
-          busy: receiving,
+          busy: working,
           progressObserved: progressObserved,
         );
         if (isActiveContext &&
@@ -255,10 +293,13 @@ extension ChatProviderSessionAttentionOps on ChatProvider {
             ? RootSessionAttentionKind.pendingInteraction
             : hasCompletion
             ? RootSessionAttentionKind.completed
-            : receiving
+            : working
             ? timing.delayed
                   ? RootSessionAttentionKind.delayed
-                  : RootSessionAttentionKind.receiving
+                  : latestMessage is AssistantMessage &&
+                        !latestMessage.isCompleted
+                  ? RootSessionAttentionKind.receiving
+                  : RootSessionAttentionKind.active
             : null;
         if (kind == null) {
           continue;

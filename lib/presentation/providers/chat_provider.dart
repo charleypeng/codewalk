@@ -59,8 +59,8 @@ import '../services/cellular_data_saver_service.dart';
 import '../services/chat_title_generator.dart';
 import '../services/event_feedback_dispatcher.dart';
 import '../services/read_aloud_service.dart';
-import '../services/session_attention/session_attention_coordinator.dart';
 import '../services/session_attention/session_attention_completion_resolver.dart';
+import '../services/session_attention/session_attention_coordinator.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_assistant_settlement.dart';
 import '../utils/chat_event_property_extractors.dart';
@@ -164,6 +164,8 @@ class ChatProvider extends ChangeNotifier {
     CellularDataSaverService? cellularDataSaverService,
     SessionAttentionCoordinator? sessionAttentionCoordinator,
     SessionAttentionCompletionResolver? sessionAttentionCompletionResolver,
+    Future<void> Function(SessionAttentionAggregate aggregate)?
+    sessionAttentionAggregatePublisher,
     this.eventFeedbackDispatcher,
     this.titleGenerator,
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
@@ -188,6 +190,7 @@ class ChatProvider extends ChangeNotifier {
           cellularDataSaverService: _cellularDataSaverService,
         );
     _sessionAttentionCompletionResolver = sessionAttentionCompletionResolver;
+    _sessionAttentionAggregatePublisher = sessionAttentionAggregatePublisher;
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
@@ -276,6 +279,8 @@ class ChatProvider extends ChangeNotifier {
   late final SessionAttentionCoordinator _sessionAttentionCoordinator;
   late final SessionAttentionCompletionResolver?
   _sessionAttentionCompletionResolver;
+  late final Future<void> Function(SessionAttentionAggregate aggregate)?
+  _sessionAttentionAggregatePublisher;
   late final bool _ownsSessionAttentionCoordinator;
   final EventFeedbackDispatcher? eventFeedbackDispatcher;
   final ChatTitleGenerator? titleGenerator;
@@ -525,6 +530,8 @@ class ChatProvider extends ChangeNotifier {
   bool _notifyScheduled = false;
   final Set<String> _pendingNotifyReasons = <String>{};
   Timer? _deltaNotifyDebounce;
+  Timer? _sessionAttentionPublishDebounce;
+  Timer? _sessionAttentionThresholdTimer;
   bool _deltaNotifyPending = false;
 
   // Render gate: suppress UI rebuilds while app is in background.
@@ -533,6 +540,7 @@ class ChatProvider extends ChangeNotifier {
   bool _hasPendingRenderFlush = false;
 
   void _notifyListeners({String reason = 'chat_provider'}) {
+    _scheduleSessionAttentionPublish();
     if (!_isForegroundActive) {
       if (AppLogger.performanceLoggingEnabled) {
         _pendingNotifyReasons.add(reason);
@@ -588,6 +596,56 @@ class ChatProvider extends ChangeNotifier {
         Error.throwWithStackTrace(error, stackTrace);
       }
     });
+  }
+
+  void _scheduleSessionAttentionPublish() {
+    final publisher = _sessionAttentionAggregatePublisher;
+    if (publisher == null) return;
+    _sessionAttentionPublishDebounce?.cancel();
+    _sessionAttentionPublishDebounce = Timer(
+      const Duration(milliseconds: 100),
+      () {
+        final aggregate = rootSessionAttentionAggregate();
+        _scheduleSessionAttentionThreshold(aggregate);
+        unawaited(
+          publisher(aggregate).catchError((
+            Object error,
+            StackTrace stackTrace,
+          ) {
+            AppLogger.warn(
+              'Failed to publish live session attention aggregate',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  void _scheduleSessionAttentionThreshold(SessionAttentionAggregate aggregate) {
+    _sessionAttentionThresholdTimer?.cancel();
+    Duration? shortestRemaining;
+    for (final candidate in aggregate.candidates) {
+      if (candidate.monitoringPaused ||
+          (candidate.kind != RootSessionAttentionKind.active &&
+              candidate.kind != RootSessionAttentionKind.receiving)) {
+        continue;
+      }
+      final remaining =
+          _sessionAttentionCoordinator.delayedThreshold -
+          candidate.observableBusyElapsed;
+      if (remaining <= Duration.zero) continue;
+      if (shortestRemaining == null || remaining < shortestRemaining) {
+        shortestRemaining = remaining;
+      }
+    }
+    if (shortestRemaining != null) {
+      _sessionAttentionThresholdTimer = Timer(
+        shortestRemaining,
+        _scheduleSessionAttentionPublish,
+      );
+    }
   }
 
   void _scheduleDeltaNotification({String reason = 'message.part.delta'}) {
@@ -4566,7 +4624,7 @@ class ChatProvider extends ChangeNotifier {
       ),
     );
 
-    return result.fold(
+    final succeeded = result.fold(
       (failure) {
         _applySessionLocally(previous);
         if (previousCurrentSession != null) {
@@ -4590,6 +4648,23 @@ class ChatProvider extends ChangeNotifier {
         return true;
       },
     );
+    if (succeeded && archived) {
+      final updated = _sessionById(session.id) ?? session;
+      final sessionDirectory = (updated.directory ?? '').trim();
+      final directory = sessionDirectory.isNotEmpty
+          ? sessionDirectory
+          : (projectProvider.currentDirectory ?? '').trim();
+      if (_activeServerId.isNotEmpty && directory.isNotEmpty) {
+        await _sessionAttentionCompletionResolver?.removeIdentity(
+          SessionAttentionIdentity(
+            serverId: _activeServerId,
+            directory: directory,
+            rootSessionId: session.id,
+          ),
+        );
+      }
+    }
+    return succeeded;
   }
 
   Future<bool> toggleSessionShare(ChatSession session) async {
@@ -4651,6 +4726,8 @@ class ChatProvider extends ChangeNotifier {
     _globalEventSubscription?.cancel();
     _globalRefreshDebounce?.cancel();
     _deltaNotifyDebounce?.cancel();
+    _sessionAttentionPublishDebounce?.cancel();
+    _sessionAttentionThresholdTimer?.cancel();
     for (final timer in _messageFallbackDebounceById.values) {
       timer.cancel();
     }

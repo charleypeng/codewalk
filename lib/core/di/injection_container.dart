@@ -16,6 +16,7 @@ import '../../data/repositories/chat_repository_impl.dart';
 import '../../data/repositories/project_repository_impl.dart';
 import '../../data/session_attention/session_attention_snapshot_store.dart';
 import '../../domain/entities/experience_settings.dart';
+import '../../domain/entities/session_attention_overlay/session_attention_models.dart';
 import '../../domain/repositories/app_repository.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/project_repository.dart';
@@ -66,10 +67,10 @@ import '../../presentation/services/project_icon_discovery_service.dart';
 import '../../presentation/services/project_icon_store.dart';
 import '../../presentation/services/read_aloud_service.dart';
 import '../../presentation/services/sensevoice_model_manager.dart';
-import '../../presentation/services/session_attention/session_attention_coordinator.dart';
 import '../../presentation/services/session_attention/session_attention_completion_resolver.dart';
-import '../../presentation/services/session_attention/session_attention_host_service.dart';
+import '../../presentation/services/session_attention/session_attention_coordinator.dart';
 import '../../presentation/services/session_attention/session_attention_host_protocol.dart';
+import '../../presentation/services/session_attention/session_attention_host_service.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
 import '../../presentation/services/sound_service.dart';
 import '../../presentation/services/speech_input_service_moonshine.dart';
@@ -84,6 +85,7 @@ import '../../presentation/services/tts/tts_backend.dart';
 import '../../presentation/services/update_check_service.dart';
 import '../../presentation/services/workspace_file_operations_service.dart';
 import '../auth/tts_api_key_storage.dart';
+import '../constants/app_constants.dart';
 import '../network/dio_client.dart';
 import '../tailscale/tailscale_service.dart';
 
@@ -138,44 +140,142 @@ Future<void> init() async {
       'main-${DateTime.now().microsecondsSinceEpoch}';
   var sessionAttentionHostRevision = 0;
   var sessionAttentionPublishTail = Future<void>.value();
+  SessionAttentionAggregate? liveAttention;
+
+  Future<void> publishSessionAttention() async {
+    final revision = ++sessionAttentionHostRevision;
+    final liveSnapshot = liveAttention;
+    final publication = sessionAttentionPublishTail.then((_) async {
+      final host = sl<SessionAttentionHostService>();
+      if (host is! SessionAttentionSnapshotHostService ||
+          !sl.isRegistered<SettingsProvider>()) {
+        return;
+      }
+      final preferences = sl<SharedPreferences>();
+      await preferences.reload();
+      final activeServerId = await sl<AppLocalDataSource>().getActiveServerId();
+      final durableSnapshot =
+          (await sl<SessionAttentionSnapshotStore>().read()).payload;
+      var presentation =
+          sl<SettingsProvider>().settings.sessionAttentionPresentation;
+      final persistedSettings = await sl<AppLocalDataSource>()
+          .getExperienceSettingsJson();
+      if (persistedSettings != null && persistedSettings.isNotEmpty) {
+        try {
+          presentation = ExperienceSettings.fromJson(
+            Map<String, dynamic>.from(jsonDecode(persistedSettings) as Map),
+          ).sessionAttentionPresentation;
+        } catch (_) {
+          // Keep the initialized provider value if persisted data is malformed.
+        }
+      }
+      final presentationOverride = preferences.getString(
+        AppConstants.sessionAttentionPresentationOverrideKey,
+      );
+      if (presentationOverride != null) {
+        for (final value in SessionAttentionPresentation.values) {
+          if (value.name == presentationOverride) {
+            presentation = value;
+            break;
+          }
+        }
+      }
+      await preferences.setInt(
+        AppConstants.sessionAttentionMainHeartbeatEpochMsKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+      final byIdentity = <SessionAttentionIdentity, SessionAttentionItem>{
+        for (final item in durableSnapshot.items)
+          if (item.identity.serverId == activeServerId) item.identity: item,
+      };
+      for (final candidate
+          in liveSnapshot?.candidates ??
+              const <RootSessionAttentionCandidate>[]) {
+        final normalizedIdentity = candidate.identity.normalized();
+        if (normalizedIdentity.serverId != activeServerId) continue;
+        final liveDigest = sessionAttentionLiveDigest(
+          candidate.kind,
+          candidate.observedAt.millisecondsSinceEpoch,
+        );
+        if (durableSnapshot.dismissalTombstones.contains(
+          '${normalizedIdentity.key}::$liveDigest',
+        )) {
+          continue;
+        }
+        final current = byIdentity[normalizedIdentity];
+        if (candidate.kind == RootSessionAttentionKind.completed &&
+            current == null) {
+          continue;
+        }
+        if (current != null &&
+            rootSessionAttentionPriority(current.kind) >= candidate.priority) {
+          continue;
+        }
+        final observedEpoch = candidate.observedAt.millisecondsSinceEpoch;
+        byIdentity[normalizedIdentity] = SessionAttentionItem(
+          schemaVersion: SessionAttentionItem.currentSchemaVersion,
+          revision: liveSnapshot?.revision ?? revision,
+          identity: normalizedIdentity,
+          title: candidate.title,
+          projectLabel: candidate.projectLabel,
+          kind: candidate.kind,
+          startedAtEpochMs: observedEpoch,
+          lastObservedAtEpochMs: observedEpoch,
+          observableBusyElapsedMs:
+              candidate.observableBusyElapsed.inMilliseconds,
+          assistantMessageId: candidate.completionMessageId,
+          displayText: '',
+          speechText: '',
+          displayTruncated: false,
+          speechTruncated: false,
+          completedAtEpochMs:
+              candidate.kind == RootSessionAttentionKind.completed
+              ? observedEpoch
+              : null,
+          opened: false,
+          dismissed: false,
+          transportCapability: SessionAttentionTransportCapability.live,
+          pauseReason: candidate.pauseReason,
+          contentDigest: liveDigest,
+        );
+      }
+      final items = byIdentity.values.toList(growable: false)
+        ..sort((left, right) {
+          final priority = rootSessionAttentionPriority(
+            right.kind,
+          ).compareTo(rootSessionAttentionPriority(left.kind));
+          return priority != 0
+              ? priority
+              : right.lastObservedAtEpochMs.compareTo(
+                  left.lastObservedAtEpochMs,
+                );
+        });
+      await (host as SessionAttentionSnapshotHostService).publishSnapshot(
+        SessionAttentionHostSnapshot(
+          generation: sessionAttentionHostGeneration,
+          revision: revision,
+          presentation: presentation,
+          activeServerId: activeServerId ?? '',
+          items: items,
+          fullResynchronization: revision == 1,
+          activeSpeechSnapshotId: sl.isRegistered<ReadAloudService>()
+              ? sl<ReadAloudService>().activeMessageId
+              : null,
+        ),
+      );
+    });
+    sessionAttentionPublishTail = publication.then<void>(
+      (_) {},
+      onError: (_, _) {},
+    );
+    await publication;
+  }
+
   sl.registerLazySingleton(
     () => SessionAttentionCompletionResolver(
       getChatMessages: sl(),
       snapshotStore: sl(),
-      onSnapshotChanged: (payload) async {
-        final revision = ++sessionAttentionHostRevision;
-        final publication = sessionAttentionPublishTail.then((_) async {
-          final host = sl<SessionAttentionHostService>();
-          if (host is! SessionAttentionSnapshotHostService ||
-              !sl.isRegistered<SettingsProvider>()) {
-            return;
-          }
-          final snapshotHost = host as SessionAttentionSnapshotHostService;
-          final settings = sl<SettingsProvider>().settings;
-          final activeServerId = await sl<AppLocalDataSource>()
-              .getActiveServerId();
-          await snapshotHost.publishSnapshot(
-            SessionAttentionHostSnapshot(
-              generation: sessionAttentionHostGeneration,
-              revision: revision,
-              presentation: settings.sessionAttentionPresentation,
-              activeServerId: activeServerId ?? '',
-              items: payload.items
-                  .where((item) => item.identity.serverId == activeServerId)
-                  .toList(growable: false),
-              fullResynchronization: revision == 1,
-              activeSpeechSnapshotId: sl.isRegistered<ReadAloudService>()
-                  ? sl<ReadAloudService>().activeMessageId
-                  : null,
-            ),
-          );
-        });
-        sessionAttentionPublishTail = publication.then<void>(
-          (_) {},
-          onError: (_, _) {},
-        );
-        await publication;
-      },
+      onSnapshotChanged: (_) => publishSessionAttention(),
     ),
   );
   sl.registerLazySingleton(() {
@@ -338,6 +438,10 @@ Future<void> init() async {
       cellularDataSaverService: sl(),
       sessionAttentionCoordinator: sl(),
       sessionAttentionCompletionResolver: sl(),
+      sessionAttentionAggregatePublisher: (aggregate) async {
+        liveAttention = aggregate;
+        await publishSessionAttention();
+      },
       eventFeedbackDispatcher: sl(),
       titleGenerator: sl(),
     ),
@@ -362,6 +466,26 @@ Future<void> init() async {
       sessionAttentionStopTts: sl<ReadAloudService>().stop,
       sessionAttentionRepublish:
           sl<SessionAttentionCompletionResolver>().publishCurrent,
+      sessionAttentionPresentationOverrideReader: () async {
+        final preferences = sl<SharedPreferences>();
+        await preferences.reload();
+        final raw = preferences.getString(
+          AppConstants.sessionAttentionPresentationOverrideKey,
+        );
+        if (raw == null) return null;
+        for (final value in SessionAttentionPresentation.values) {
+          if (value.name == raw) return value;
+        }
+        return null;
+      },
+      sessionAttentionPresentationOverrideWriter: (presentation) async {
+        final preferences = sl<SharedPreferences>();
+        await preferences.reload();
+        await preferences.setString(
+          AppConstants.sessionAttentionPresentationOverrideKey,
+          presentation.name,
+        );
+      },
       nativeReadAloudAvailabilityProbe: () =>
           sl<ReadAloudService>().isProviderAvailable(ReadAloudProvider.native),
     ),

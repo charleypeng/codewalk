@@ -7,6 +7,9 @@ SessionAttentionSnapshotFileStore createSessionAttentionSnapshotFileStore() {
 class _UnsupportedSessionAttentionSnapshotFileStore
     implements SessionAttentionSnapshotFileStore {
   @override
+  Future<T> synchronized<T>(Future<T> Function() operation) => operation();
+
+  @override
   Future<String?> read() async => null;
 
   @override

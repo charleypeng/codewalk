@@ -29,6 +29,9 @@ class _MemoryFileStore implements SessionAttentionSnapshotFileStore {
   bool failWrites = false;
 
   @override
+  Future<T> synchronized<T>(Future<T> Function() operation) => operation();
+
+  @override
   Future<void> delete() async => value = null;
 
   @override
@@ -139,6 +142,118 @@ void main() {
       expect(read.payload.dismissalTombstones, hasLength(1));
     },
   );
+
+  test('live dismissal records the exact observation digest', () async {
+    final store = SessionAttentionSnapshotStore(
+      keyStorage: _MemoryKeyStorage(),
+      fileStore: _MemoryFileStore(),
+    );
+    const live = SessionAttentionItem(
+      schemaVersion: 1,
+      revision: 1,
+      identity: identity,
+      title: 'Session',
+      projectLabel: 'Project',
+      kind: RootSessionAttentionKind.active,
+      startedAtEpochMs: 1,
+      lastObservedAtEpochMs: 2,
+      observableBusyElapsedMs: 1,
+      displayText: '',
+      speechText: '',
+      displayTruncated: false,
+      speechTruncated: false,
+      opened: false,
+      dismissed: false,
+      transportCapability:
+          SessionAttentionTransportCapability.backgroundPlainOrBasic,
+      contentDigest: 'live:active:1',
+    );
+
+    await store.suppressLive(live);
+
+    expect(
+      (await store.read()).payload.dismissalTombstones,
+      contains('${identity.key}::live:active:1'),
+    );
+  });
+
+  test(
+    'digest tombstone removes and blocks a completion without message ID',
+    () async {
+      final store = SessionAttentionSnapshotStore(
+        keyStorage: _MemoryKeyStorage(),
+        fileStore: _MemoryFileStore(),
+      );
+      final withoutMessageId = item(messageId: '');
+      await store.upsert(withoutMessageId);
+
+      await store.suppressLive(withoutMessageId);
+      await store.upsert(withoutMessageId);
+
+      final payload = (await store.read()).payload;
+      expect(payload.items, isEmpty);
+      expect(
+        payload.dismissalTombstones,
+        contains('${identity.key}::digest-a'),
+      );
+    },
+  );
+
+  test(
+    'stale dismiss and live suppression preserve a newer completion',
+    () async {
+      final store = SessionAttentionSnapshotStore(
+        keyStorage: _MemoryKeyStorage(),
+        fileStore: _MemoryFileStore(),
+      );
+      final newer = item(messageId: 'message-b');
+      await store.upsert(newer);
+
+      await store.dismiss(identity: identity, assistantMessageId: 'message-a');
+      await store.suppressLive(
+        const SessionAttentionItem(
+          schemaVersion: 1,
+          revision: 2,
+          identity: identity,
+          title: 'Session',
+          projectLabel: 'Project',
+          kind: RootSessionAttentionKind.error,
+          startedAtEpochMs: 1,
+          lastObservedAtEpochMs: 2,
+          observableBusyElapsedMs: 1,
+          displayText: '',
+          speechText: '',
+          displayTruncated: false,
+          speechTruncated: false,
+          opened: false,
+          dismissed: false,
+          transportCapability: SessionAttentionTransportCapability.live,
+          contentDigest: 'live:error:2',
+        ),
+      );
+
+      expect(
+        (await store.read()).payload.items.single.assistantMessageId,
+        'message-b',
+      );
+    },
+  );
+
+  test('consume removes only the selected snapshot token', () async {
+    final store = SessionAttentionSnapshotStore(
+      keyStorage: _MemoryKeyStorage(),
+      fileStore: _MemoryFileStore(),
+    );
+    final stale = item(messageId: 'message-a');
+    final current = item(messageId: 'message-b');
+    await store.upsert(current);
+
+    await store.consume(stale);
+    expect((await store.read()).payload.items, hasLength(1));
+
+    await store.consume(current);
+    expect((await store.read()).payload.items, isEmpty);
+  });
 
   test('failed replacement preserves the prior encrypted file', () async {
     final files = _MemoryFileStore();

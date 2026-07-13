@@ -30,6 +30,7 @@ class _IoSessionAttentionHostService
   SessionAttentionHostSnapshot? _desktopSnapshot;
   bool _desktopHostActive = false;
   bool _iosHostActive = false;
+  Timer? _androidHeartbeatTimer;
 
   bool get _isDesktop => switch (defaultTargetPlatform) {
     TargetPlatform.linux ||
@@ -128,7 +129,9 @@ class _IoSessionAttentionHostService
         next = await capability();
       }
       return started && next.running
-          ? SessionAttentionHostActivationResult.success(next)
+          ? SessionAttentionHostActivationResult.success(
+              _startAndroidHeartbeat(next),
+            )
           : SessionAttentionHostActivationResult.failure(
               next,
               'The Android session attention service could not start.',
@@ -169,6 +172,8 @@ class _IoSessionAttentionHostService
   @override
   Future<void> stop() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
+      _androidHeartbeatTimer?.cancel();
+      _androidHeartbeatTimer = null;
       await _invokeAndroid<void>('stopOverlayService');
       return;
     }
@@ -181,8 +186,21 @@ class _IoSessionAttentionHostService
     _desktopHostActive = false;
   }
 
+  SessionAttentionHostCapability _startAndroidHeartbeat(
+    SessionAttentionHostCapability capability,
+  ) {
+    _androidHeartbeatTimer?.cancel();
+    unawaited(_invokeAndroid<void>('overlayHeartbeat'));
+    _androidHeartbeatTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => unawaited(_invokeAndroid<void>('overlayHeartbeat')),
+    );
+    return capability;
+  }
+
   @override
   Future<void> publishSnapshot(SessionAttentionHostSnapshot snapshot) async {
+    SessionAttentionHostSnapshotBus.emit(snapshot);
     if (defaultTargetPlatform == TargetPlatform.android) {
       await _invokeAndroid<void>('updateOverlaySnapshot', snapshot.toJson());
       return;

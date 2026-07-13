@@ -61,6 +61,8 @@ void main() {
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
       SettingsProvider? settingsProvider,
+      Future<void> Function(SessionAttentionAggregate aggregate)?
+      sessionAttentionAggregatePublisher,
     }) {
       return buildChatProvider(
         chatRepository: chatRepository,
@@ -71,6 +73,7 @@ void main() {
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
         settingsProvider: settingsProvider,
+        sessionAttentionAggregatePublisher: sessionAttentionAggregatePublisher,
       );
     }
 
@@ -1767,7 +1770,7 @@ void main() {
             type: 'session.status',
             properties: <String, dynamic>{
               'directory': '/repo/a',
-              'sessionID': 'ses_a_child',
+              'sessionID': 'ses_a_old',
               'status': <String, dynamic>{'type': 'busy'},
             },
           ),
@@ -1779,7 +1782,7 @@ void main() {
             type: 'session.status',
             properties: <String, dynamic>{
               'directory': '/repo/a',
-              'sessionID': 'ses_a_old',
+              'sessionID': 'ses_a_child',
               'status': <String, dynamic>{'type': 'busy'},
             },
           ),
@@ -1840,7 +1843,7 @@ void main() {
             properties: <String, dynamic>{
               'directory': '/repo/a',
               'id': 'question_inactive_project',
-              'sessionID': 'ses_a_old',
+              'sessionID': 'ses_a_child',
               'questions': <Map<String, dynamic>>[
                 <String, dynamic>{
                   'question': 'Proceed in inactive project?',
@@ -1859,7 +1862,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
 
         final pendingAttention = scopedProvider.sessionAttentionForScope(
-          'ses_a_old',
+          'ses_a_child',
           scopeId: '/repo/a',
         );
         expect(pendingAttention.hasPendingInteraction, isTrue);
@@ -1888,7 +1891,7 @@ void main() {
             type: 'question.replied',
             properties: <String, dynamic>{
               'directory': '/repo/a',
-              'sessionID': 'ses_a_old',
+              'sessionID': 'ses_a_child',
               'requestID': 'question_inactive_project',
             },
           ),
@@ -1896,11 +1899,50 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
 
         final clearedAttention = scopedProvider.sessionAttentionForScope(
-          'ses_a_old',
+          'ses_a_child',
           scopeId: '/repo/a',
         );
         expect(clearedAttention.hasPendingInteraction, isFalse);
-        expect(feedbackDispatcher.dismissedSessionIds, contains('ses_a_old'));
+        expect(feedbackDispatcher.dismissedSessionIds, contains('ses_a_child'));
+      },
+    );
+
+    test(
+      'publishes live root attention outside the widget render gate',
+      () async {
+        final published = <SessionAttentionAggregate>[];
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_background_attention',
+            workspaceId: 'default',
+            directory: '/repo/a',
+            time: DateTime.fromMillisecondsSinceEpoch(500),
+            title: 'Background work',
+          ),
+        );
+        chatRepository.sessionStatusById['ses_background_attention'] =
+            const SessionStatusInfo(type: SessionStatusType.busy);
+        provider.dispose();
+        provider = buildProvider(
+          sessionAttentionAggregatePublisher: (aggregate) async {
+            published.add(aggregate);
+          },
+        );
+
+        await provider.loadSessions();
+        await provider.refreshSessionStatusSnapshot();
+        await Future<void>.delayed(const Duration(milliseconds: 180));
+
+        expect(published, isNotEmpty);
+        expect(
+          published.last.candidates.any(
+            (candidate) =>
+                candidate.identity.rootSessionId ==
+                    'ses_background_attention' &&
+                candidate.kind == RootSessionAttentionKind.active,
+          ),
+          isTrue,
+        );
       },
     );
 

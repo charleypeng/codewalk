@@ -81,7 +81,8 @@ class TtsExecutor {
   TtsBackend? _activeBackend;
   SpeechJob? _activeJob;
   int _generation = 0;
-  Future<void> _pendingStop = Future<void>.value();
+  Future<void>? _pendingStop;
+  int _stopGeneration = 0;
 
   SpeechJob? get activeJob => _activeJob;
 
@@ -156,11 +157,31 @@ class TtsExecutor {
   }
 
   Future<void> _queueStop(TtsBackend? backend) {
-    final queued = _pendingStop.then<void>((_) async {
-      await backend?.stop();
-    });
-    _pendingStop = queued.then<void>((_) {}, onError: (_, _) {});
+    final generation = ++_stopGeneration;
+    final queued = _stopAfter(
+      previous: _pendingStop,
+      backend: backend,
+      generation: generation,
+    );
+    _pendingStop = queued;
     return queued;
+  }
+
+  Future<void> _stopAfter({
+    required Future<void>? previous,
+    required TtsBackend? backend,
+    required int generation,
+  }) async {
+    try {
+      if (previous != null) await previous;
+    } catch (_) {
+      // A failed stop must not prevent later jobs from stopping their backend.
+    }
+    try {
+      await backend?.stop();
+    } finally {
+      if (_stopGeneration == generation) _pendingStop = null;
+    }
   }
 
   Future<String?> _apiKeyFor(ReadAloudProvider provider) async {

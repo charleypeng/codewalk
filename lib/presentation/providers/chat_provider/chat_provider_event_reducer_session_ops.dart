@@ -174,6 +174,12 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
             }
           }
           _upsertSession(nextSession);
+          if (nextSession.archived) {
+            _deleteSessionAttentionSnapshot(
+              contextKey: _activeContextKey,
+              sessionId: nextSession.id,
+            );
+          }
           if (_currentSession?.id == nextSession.id) {
             final previousRevert = _currentSession?.revert;
             _currentSession = nextSession;

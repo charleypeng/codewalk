@@ -1672,6 +1672,44 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 ---
 
+## Session Attention
+
+### Opt-in presentation modes
+
+- **Given** Session attention is `Off` by default
+- **When** the user selects `Bubble` or `Panel` in Settings
+- **Then** Android requests display-over-other-apps permission before starting a non-exported `specialUse` foreground service, desktop reuses one always-on-top mini-window, and iOS renders the same controls only inside CodeWalk
+- **Then** stopping the host or revoking Android overlay permission persists the mode back to `Off`
+
+### Root-session aggregation and privacy
+
+- **Given** multiple projects on the active server have root sessions needing attention
+- **When** status, completion, permission/question, or error state changes
+- **Then** CodeWalk publishes one immutable, revisioned aggregate ordered as error, pending interaction, completed, delayed, receiving, then active
+- **Then** child sessions, archived sessions, inactive servers, reasoning parts, tool payloads, credentials, and full transcripts are excluded
+- **Then** completion previews are fetched with `limit=20`, retried at 500 ms, 1.5 s, and 3 s, truncated by Unicode scalar count, and stored only in an AES-256-GCM authenticated snapshot with its key in platform secure storage
+
+### Bubble and Panel actions
+
+- **Given** one or more attention items exist
+- **When** Bubble is active
+- **Then** a compact semantic control shows the highest-priority state and item count; expanding shows the scrollable Panel
+- **When** the user chooses Open, Read/Stop reading, Dismiss, Collapse/Expand, or Stop session attention
+- **Then** the command targets the exact server, directory, root session, and snapshot; passive updates never navigate or speak
+- **Then** Open removes the consumed snapshot after successful navigation, Dismiss writes an encrypted tombstone, and Read uses the configured TTS backend only after the explicit action
+
+### Background and transport limits
+
+- **Given** cellular Data Saver suppresses automatic background work or monitoring becomes unavailable
+- **When** a session remains busy
+- **Then** delayed timing is paused and resumes only after a valid directory-scoped observation; suppressed intervals are never counted
+- **Given** Android background transport uses plain HTTP/HTTPS or Basic auth
+- **Then** the existing low-data worker may continue monitoring according to Data Saver policy
+- **Given** the server requires OAuth or Tailscale after process death
+- **Then** background network work is not attempted, the last encrypted snapshot is preserved, and the user must reopen CodeWalk
+
+---
+
 ## Notifications
 
 > The OpenCode server does not support traditional push notifications. The app uses platform-native techniques to deliver background alerts reliably while minimizing battery impact.

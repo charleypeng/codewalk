@@ -128,6 +128,101 @@ void main() {
       },
     );
 
+    test('persists the session attention presentation override', () async {
+      final local = InMemoryAppLocalDataSource();
+      final host = _FakeSessionAttentionHostService();
+      SessionAttentionPresentation? override;
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+        sessionAttentionHostService: host,
+        sessionAttentionPresentationOverrideWriter: (presentation) async {
+          override = presentation;
+        },
+      );
+      await provider.initialize();
+
+      await provider.setSessionAttentionPresentation(
+        SessionAttentionPresentation.panel,
+      );
+
+      expect(override, SessionAttentionPresentation.panel);
+    });
+
+    test(
+      'restores a presentation override written by another engine',
+      () async {
+        final local = InMemoryAppLocalDataSource()
+          ..experienceSettingsJson = jsonEncode(
+            ExperienceSettings.defaults()
+                .copyWith(
+                  sessionAttentionPresentation:
+                      SessionAttentionPresentation.bubble,
+                )
+                .toJson(),
+          );
+        final host = _FakeSessionAttentionHostService();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+          sessionAttentionHostService: host,
+          sessionAttentionPresentationOverrideReader: () async =>
+              SessionAttentionPresentation.off,
+        );
+
+        await provider.initialize();
+
+        expect(
+          provider.sessionAttentionPresentation,
+          SessionAttentionPresentation.off,
+        );
+        expect(host.activateCount, 0);
+      },
+    );
+
+    test('restore activation failure persists the override as off', () async {
+      final local = InMemoryAppLocalDataSource()
+        ..experienceSettingsJson = jsonEncode(
+          ExperienceSettings.defaults()
+              .copyWith(
+                sessionAttentionPresentation:
+                    SessionAttentionPresentation.bubble,
+              )
+              .toJson(),
+        );
+      final host = _FakeSessionAttentionHostService(activationSucceeds: false)
+        ..stopThrows = true
+        ..currentCapability = const SessionAttentionHostCapability(
+          kind: SessionAttentionHostKind.androidExternal,
+          supported: true,
+          permissionGranted: true,
+          running: true,
+          topmostSupported: true,
+        );
+      final overrides = <SessionAttentionPresentation>[];
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+        sessionAttentionHostService: host,
+        sessionAttentionPresentationOverrideReader: () async =>
+            SessionAttentionPresentation.bubble,
+        sessionAttentionPresentationOverrideWriter: (presentation) async {
+          overrides.add(presentation);
+        },
+      );
+
+      await provider.initialize();
+
+      expect(
+        provider.sessionAttentionPresentation,
+        SessionAttentionPresentation.off,
+      );
+      expect(overrides.last, SessionAttentionPresentation.off);
+    });
+
     test('activation failure persists off and surfaces the error', () async {
       final local = InMemoryAppLocalDataSource();
       final host = _FakeSessionAttentionHostService(activationSucceeds: false);

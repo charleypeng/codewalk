@@ -87,6 +87,52 @@ void main() {
     );
   });
 
+  test(
+    'fallback completion requires a transition or post-heartbeat update',
+    () {
+      expect(
+        shouldResolveFallbackCompletion(
+          previousStatus: null,
+          sessionUpdatedAtEpochMs: 900,
+          lastMainHeartbeatEpochMs: 1000,
+          nowEpochMs: 1100,
+          durableCompletedAtEpochMs: 0,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldResolveFallbackCompletion(
+          previousStatus: null,
+          sessionUpdatedAtEpochMs: 1050,
+          lastMainHeartbeatEpochMs: 1000,
+          nowEpochMs: 1100,
+          durableCompletedAtEpochMs: 0,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldResolveFallbackCompletion(
+          previousStatus: null,
+          sessionUpdatedAtEpochMs: 1200,
+          lastMainHeartbeatEpochMs: 1000,
+          nowEpochMs: 1100,
+          durableCompletedAtEpochMs: 0,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldResolveFallbackCompletion(
+          previousStatus: 'busy',
+          sessionUpdatedAtEpochMs: 900,
+          lastMainHeartbeatEpochMs: 1000,
+          nowEpochMs: 1100,
+          durableCompletedAtEpochMs: 0,
+        ),
+        isTrue,
+      );
+    },
+  );
+
   test('schedules tail probe only when active sessions just ended', () {
     expect(
       shouldScheduleBackgroundTailProbe(

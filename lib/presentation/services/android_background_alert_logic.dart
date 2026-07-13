@@ -21,6 +21,24 @@ bool shouldDisableBackgroundNetworkForDataSaver({
   return settings.dataSaverEnabled && isCellularTransport;
 }
 
+bool shouldResolveFallbackCompletion({
+  required String? previousStatus,
+  required int sessionUpdatedAtEpochMs,
+  required int? lastMainHeartbeatEpochMs,
+  required int nowEpochMs,
+  required int durableCompletedAtEpochMs,
+}) {
+  if (previousStatus == 'busy' || previousStatus == 'retry') return true;
+  final ageMs = nowEpochMs - sessionUpdatedAtEpochMs;
+  return previousStatus == null &&
+      lastMainHeartbeatEpochMs != null &&
+      lastMainHeartbeatEpochMs > 0 &&
+      sessionUpdatedAtEpochMs > lastMainHeartbeatEpochMs &&
+      ageMs >= 0 &&
+      ageMs <= const Duration(minutes: 10).inMilliseconds &&
+      durableCompletedAtEpochMs < sessionUpdatedAtEpochMs;
+}
+
 bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {
   for (final rawStatus in sessionStatusById.values) {
     final normalized = rawStatus.trim().toLowerCase();

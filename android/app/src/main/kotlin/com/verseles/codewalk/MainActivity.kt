@@ -60,6 +60,10 @@ class MainActivity : FlutterActivity() {
                     intent?.removeExtra("session_attention_action")
                 }
                 "consumeOverlayStopState" -> result.success(consumeOverlayStopState())
+                "overlayHeartbeat" -> {
+                    SessionOverlayService.noteMainHeartbeat()
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }

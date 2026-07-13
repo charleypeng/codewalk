@@ -48,8 +48,28 @@ class SessionOverlayService : Service() {
 
         @Volatile
         private var instance: SessionOverlayService? = null
+        @Volatile
+        private var lastMainHeartbeatEpochMs: Long = 0
 
         fun isRunning(): Boolean = instance != null
+        fun hasAttachedOverlay(): Boolean = instance?.flutterView != null
+        fun currentSnapshotRevision(): Long = instance?.currentRevision ?: -1
+        fun dispatchNullStartForTest(): Int? =
+            instance?.onStartCommand(null, 0, 0)
+
+        fun expireMainHeartbeatForTest() {
+            lastMainHeartbeatEpochMs = 0
+        }
+
+        fun applyFallbackSnapshotForTest(snapshot: Map<String, Any?>): Boolean =
+            instance?.applyFallbackSnapshot(snapshot) ?: false
+
+        fun noteMainHeartbeat() {
+            lastMainHeartbeatEpochMs = System.currentTimeMillis()
+        }
+
+        fun isMainProducerAlive(): Boolean =
+            System.currentTimeMillis() - lastMainHeartbeatEpochMs < 15_000L
 
         fun updateSnapshot(snapshot: Map<String, Any?>?): Boolean {
             val service = instance ?: return false
@@ -66,6 +86,9 @@ class SessionOverlayService : Service() {
     private var currentGeneration: String? = null
     private var currentRevision: Long = -1
     private var currentProducer: String? = null
+    private var stoppingForNativeReason = false
+    private var nativeStopFinalized = false
+    private var persistOffTimeout: Runnable? = null
     private lateinit var windowManager: WindowManager
     private val handler = Handler(Looper.getMainLooper())
     private val screenReceiver = object : BroadcastReceiver() {
@@ -80,9 +103,7 @@ class SessionOverlayService : Service() {
         override fun run() {
             if (!Settings.canDrawOverlays(this@SessionOverlayService)) {
                 detachOverlay()
-                getSharedPreferences("session_attention_native", MODE_PRIVATE)
-                    .edit().putBoolean("permission_revoked", true).apply()
-                stopSelf()
+                stopForNativeReason("permission_revoked")
                 return
             }
             handler.postDelayed(this, 1000L)
@@ -113,9 +134,7 @@ class SessionOverlayService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
-                getSharedPreferences("session_attention_native", MODE_PRIVATE)
-                    .edit().putBoolean("stopped_by_user", true).apply()
-                stopSelf()
+                stopForNativeReason("stopped_by_user")
                 return START_NOT_STICKY
             }
             ACTION_OPEN -> {
@@ -124,7 +143,7 @@ class SessionOverlayService : Service() {
             }
         }
         if (!Settings.canDrawOverlays(this)) {
-            stopSelf()
+            stopForNativeReason("permission_revoked")
             return START_NOT_STICKY
         }
         if (engine == null) {
@@ -138,6 +157,8 @@ class SessionOverlayService : Service() {
     override fun onDestroy() {
         instance = null
         handler.removeCallbacks(permissionCheck)
+        persistOffTimeout?.let(handler::removeCallbacks)
+        persistOffTimeout = null
         runCatching { unregisterReceiver(screenReceiver) }
         detachOverlay()
         serviceChannel?.setMethodCallHandler(null)
@@ -149,6 +170,39 @@ class SessionOverlayService : Service() {
         engine = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
+    }
+
+    private fun stopForNativeReason(reasonKey: String) {
+        getSharedPreferences("session_attention_native", MODE_PRIVATE)
+            .edit().putBoolean(reasonKey, true).apply()
+        if (stoppingForNativeReason) return
+        stoppingForNativeReason = true
+        handler.removeCallbacks(permissionCheck)
+        val channel = serviceChannel
+        if (channel == null) {
+            stopSelf()
+            return
+        }
+        val finish = {
+            if (!nativeStopFinalized) {
+                nativeStopFinalized = true
+                persistOffTimeout?.let(handler::removeCallbacks)
+                persistOffTimeout = null
+                stopSelf()
+            }
+        }
+        persistOffTimeout = Runnable { finish() }.also {
+            handler.postDelayed(it, 1_500L)
+        }
+        channel.invokeMethod(
+            "persistPresentationOff",
+            null,
+            object : MethodChannel.Result {
+                override fun success(result: Any?) = finish()
+                override fun error(code: String, message: String?, details: Any?) = finish()
+                override fun notImplemented() = finish()
+            },
+        )
     }
 
     private fun startFlutterEngine() {
@@ -185,6 +239,29 @@ class SessionOverlayService : Service() {
                         result.success(true)
                     }
                 }
+                "applyLocalState" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val snapshot = call.arguments as? Map<String, Any?>
+                    if (snapshot == null) {
+                        result.success(false)
+                    } else {
+                        currentSnapshot = snapshot
+                        renderSnapshot(snapshot)
+                        result.success(true)
+                    }
+                }
+                "applyFallbackState" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val snapshot = call.arguments as? Map<String, Any?>
+                    result.success(snapshot != null && applyFallbackSnapshot(snapshot))
+                }
+                "stopLocal" -> {
+                    getSharedPreferences("session_attention_native", MODE_PRIVATE)
+                        .edit().putBoolean("stopped_by_user", true).apply()
+                    stopSelf()
+                    result.success(true)
+                }
+                "isMainProducerAlive" -> result.success(isMainProducerAlive())
                 else -> result.notImplemented()
             }
         }
@@ -205,6 +282,7 @@ class SessionOverlayService : Service() {
         val liveHandoff = currentProducer == "restore" && producer == "main"
         if (!liveHandoff && currentGeneration == generation && revision <= currentRevision) return
         if (!liveHandoff && currentGeneration != null && currentGeneration != generation && !full) return
+        if (producer == "main") noteMainHeartbeat()
         val acceptedSnapshot = if (liveHandoff && !full) {
             snapshot.toMutableMap().apply { this["fullResynchronization"] = true }
         } else {
@@ -218,10 +296,17 @@ class SessionOverlayService : Service() {
         renderSnapshot(acceptedSnapshot)
     }
 
+    private fun applyFallbackSnapshot(snapshot: Map<String, Any?>): Boolean {
+        if (isMainProducerAlive()) return false
+        currentSnapshot = snapshot
+        renderSnapshot(snapshot)
+        return true
+    }
+
     private fun renderSnapshot(snapshot: Map<String, Any?>) {
 
         if (!Settings.canDrawOverlays(this)) {
-            stopSelf()
+            stopForNativeReason("permission_revoked")
             return
         }
         val presentation = snapshot["presentation"] as? String ?: "off"
@@ -382,7 +467,7 @@ class SessionOverlayService : Service() {
                 openMainActivity(command)
                 stopSelf()
             }
-            "open", "read", "dismiss", "expand", "collapse" -> openMainActivity(command)
+            "open" -> openMainActivity(command)
         }
     }
 

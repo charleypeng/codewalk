@@ -10,6 +10,7 @@
 - Theme system follows Material You (MD3): user-controlled theme mode, dynamic color toggle, AMOLED dark toggle, brand color seeds, contrast level, and responsive window size classes.
 - Visual style layer (issue #86): `VisualStyle` (`classic` / `refined`) persisted in `ExperienceSettings`, exposed via `SettingsProvider`, and propagated through `AppVisualStyleTokens` `ThemeExtension` so chat surfaces can consume shape/surface tokens while `OpenCodeThemeTokens` continue to drive markdown/syntax palettes. New installs default to `VisualStyle.refined`; legacy persisted JSON missing the `visualStyle` key falls back to `VisualStyle.classic` for backward compatibility.
 - LaTeX math rendering (`$...$` and `$$...$$`) supported in chat messages via `flutter_math_fork` with custom markdown syntaxes and styled fallback on parse failure.
+- Session attention adds encrypted completion snapshots, root-session aggregation, and Android, desktop, and iOS presentation hosts.
 
 ## Folder Structure
 
@@ -35,7 +36,9 @@ codewalk/
 │   │   ├── tailscale/                    # Tailscale transport: service (IO/stub), node state, Dio adapter
 │   │   └── utils/                       # Core utilities (path, timeline search)
 │   ├── data/                           # Data layer: datasources, API/storage models, repositories
+│   │   └── session_attention/          # Encrypted completion snapshot store and conditional atomic file storage
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
+│   │   └── entities/session_attention_overlay/ # Session-attention identity, item, aggregate, and transport models
 │   ├── l10n/                           # Flutter gen_l10n ARB files (14 locales) and generated delegates
 │   │   ├── app_en.arb                  # English source ARB (1280 UI keys with metadata)
 │   │   ├── app_*.arb                   # Translation ARBs (ar, bn, de, es, fr, hi, it, ja, ko, pt, ru, ur, zh)
@@ -56,8 +59,10 @@ codewalk/
 │       │   ├── chat_message/            # ChatMessageWidget decomposed part renderers (consume visualStyleTokens — issue #86)
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
 │       │   ├── chat_input/             # ChatInput decomposed clusters (8 modules; consume visualStyleTokens — issue #86)
-│       │   └── math_expression_widget.dart # LaTeX math renderer with parse-failure styled fallback
+│       │   ├── math_expression_widget.dart # LaTeX math renderer with parse-failure styled fallback
+│       │   └── session_attention_overlay/ # Shared bubble/panel overlay widget and controller
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, read-aloud/TTS, terminal, etc.)
+│       │   ├── session_attention/       # Attention coordinator, completion resolver, host contract/protocol, and platform entrypoints
 │       │   └── tts/                    # Read-aloud TTS backend contracts, adapters, fresh-install default resolver, generated-audio player, and text extraction
 │       │       ├── read_aloud_default_resolver.dart # Fresh-install read-aloud provider/voice default resolver
 │       │       ├── edge_tts_protocol.dart # Edge/Bing Read Aloud URL, header, frame, SSML, voice-list, and MP3 frame helpers
@@ -72,6 +77,9 @@ codewalk/
 ├── .github/workflows/                  # CI and release workflows
 ├── .opencode/agents/                  # Repo-local OpenCode agents
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
+│   ├── android/app/src/main/kotlin/com/verseles/codewalk/
+│       ├── MainActivity.kt              # Android session-overlay host channel, permission/service controls, and activation forwarding
+│       └── overlay/SessionOverlayService.kt # Android foreground overlay host and service-owned Flutter engine
 │   └── windows/runner/                   # Windows runner sources (incl. `windows_microphone_plugin.{h,cpp}` runner-owned WASAPI bridge for on-device STT — see ADR-038)
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
 ├── linux/runner/resources/             # Linux launcher icon + desktop entry icon metadata
@@ -88,8 +96,11 @@ lib/main.dart                                # Runtime entry; DI, providers, Dyn
 lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior; triggers startup/hourly update toast via `addPostFrameCallback` + `UpdateCheckResult` when `checkUpdatesOnOpen` is enabled; reacts to `UpdateInstallState` transitions with platform-aware snackbars (Android downloading progress, desktop installing spinner, done/retry states) and triggers `startInstall()`
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
 lib/presentation/pages/settings_page.dart     # Settings landing and responsive split/detail shell; shows the shared update notice at the top when `SettingsProvider.updateCheckResult` contains a newer non-dismissed CodeWalk version
-lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard; exposes buildComposerReceivingTips() for the localized composer status-tip catalog
+lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; mounts the in-app session-attention overlay on iOS; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard; exposes buildComposerReceivingTips() for the localized composer status-tip catalog
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
+lib/presentation/services/session_attention/session_overlay_entrypoint.dart # Desktop child-window and Android service-engine Flutter entrypoints
+android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android overlay host channel and activation handoff entrypoint
+android/app/src/main/kotlin/com/verseles/codewalk/overlay/SessionOverlayService.kt # Android foreground-service overlay entrypoint
 lib/presentation/pages/logs_page.dart           # In-app App Logs surface; gated by `SettingsProvider.loggingEnabled` (disabled by default) — renders `_LogsDisabledState` empty-state with enable action when off, otherwise filters by time range/level/search/performance, supports **tag filter chips** (common task/network/cache presets plus **custom tag** input dialog), copies filtered entries, surfaces `Slowest performance logs` modal or, when a `task:*` tag is selected, `Slowest tasks` modal; AppLogger/measurePerformance toggle persisted via SettingsProvider
 .github/workflows/ci.yml                      # CI workflow entry
 .github/workflows/release.yml                 # Release workflow entry
@@ -143,7 +154,7 @@ lib/presentation/services/project_icon_discovery_service.dart       # Conditiona
 lib/presentation/services/project_icon_discovery_service_base.dart  # Abstract `ProjectIconDiscoveryService` contract: `isSupported` flag, `discover(Project)` returning `ProjectIconDiscoveryResult`; never mutates the project or any global state
 lib/presentation/services/project_icon_discovery_service_io.dart    # IO implementation: bounded IO icon discovery invoked by `ProjectIconProvider` auto-discovery, with existing local/remote file endpoint discovery and priority rules — Tauri `src-tauri/icons/*`, Electron direct `build/icon.*`, Flutter/React Native/native Apple `AppIcon.appiconset/*.png`, Flutter Windows `windows/runner/resources/app_icon.ico`, Flutter Linux `linux/runner/resources/app_icon.png`, Android `mipmap-*/ic_launcher*.png`, common app assets (`icon.*`, `app_icon.*`, `logo.*`), then web favicons/sized web icons; supports PNG/JPEG/SVG/WebP/ICO, 5 MB cap, shortest relative path ranking, skips heavy/generated dirs (`.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `pods`, `ephemeral`) while checking `build/icon.*` directly without traversing build output, and converts ICO to PNG via the `image` package
 lib/presentation/services/project_icon_discovery_service_stub.dart  # Non-IO platforms: returns `unsupportedPlatform`; `isSupported == false`
-lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, **Visual style**, provider-aware read-aloud settings (provider, voice id/locale, model, base URL, response format), fresh-install read-aloud defaults via nativeReadAloudAvailabilityProbe, composer tips visibility, sounds, update checks, complete OpenCode shared settings coverage, and debug logging toggles; exposes `dynamicColorAvailable`; manages update install lifecycle and logging preference sync
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, **Visual style**, provider-aware read-aloud settings (provider, voice id/locale, model, base URL, response format), session-attention presentation/host lifecycle, fresh-install read-aloud defaults via nativeReadAloudAvailabilityProbe, composer tips visibility, sounds, update checks, complete OpenCode shared settings coverage, and debug logging toggles; exposes `dynamicColorAvailable`; manages update install lifecycle and logging preference sync
   └── settings_provider_opencode_defaults.dart # Extension for OpenCode shared defaults (part of settings_provider.dart; see commit 8759defc)
   └── settings_provider_update_install.dart # Extension for update check and install lifecycle (part of settings_provider.dart; see commit 8759defc)
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch; Codex single-window label preserved using provider name instead of raw API label (guarded by `result.providerId != 'codex'`)
@@ -186,6 +197,17 @@ lib/presentation/services/tts/edge_tts_websocket_io.dart         # Native websoc
 lib/presentation/services/tts/edge_tts_websocket_stub.dart       # Non-IO websocket transport using `web_socket_channel`
 lib/presentation/services/tts/read_aloud_text_extractor.dart     # Assistant-message text extractor and Markdown sanitizer used before sending text to read-aloud providers
 lib/presentation/services/session_export_service.dart # SessionExportService: serializes session history to Markdown and JSON for local export; omits local_user_* IDs from JSON per ADR-023
+lib/domain/entities/session_attention_overlay/session_attention_models.dart # Session-attention identity, priority, transport, aggregate, and durable snapshot payload models
+lib/data/session_attention/session_attention_snapshot_store.dart # AES-GCM encrypted session-completion snapshot persistence with secure key storage and dismissal tombstones
+lib/data/session_attention/session_attention_snapshot_file_store*.dart # Conditional atomic application-support file store (IO) and unsupported-platform stub
+lib/presentation/services/session_attention/session_attention_coordinator.dart # Tracks attention timing and monitoring availability
+lib/presentation/services/session_attention/session_attention_completion_resolver.dart # Resolves completed root-session output into encrypted snapshots and publishes changes
+lib/presentation/services/session_attention/session_attention_host_contract.dart # Cross-platform host capability and lifecycle contract
+lib/presentation/services/session_attention/session_attention_host_protocol.dart # Versioned host snapshot and command protocol
+lib/presentation/services/session_attention/session_attention_host_service*.dart # Conditional Android, desktop child-window, iOS in-app, and unsupported host implementation selection
+lib/presentation/services/session_attention/session_overlay_entrypoint.dart # Flutter entrypoints and IPC bridge for desktop child and Android service hosts
+lib/presentation/widgets/session_attention_overlay/session_attention_overlay.dart # Shared bubble/panel attention presentation
+lib/presentation/widgets/session_attention_overlay/session_attention_overlay_controller.dart # In-app snapshot, read-aloud, and action controller used by ChatPage on iOS
 lib/presentation/services/workspace_file_operations_service.dart # WorkspaceFileOperationsService (issues #89/#90): shell-gated `createFolder`/`createFile`/`rename`/`delete`/`writeFile` with capability probe and ephemeral `/session` lifecycle; parses shell responses with the official OpenCode tool-state parser; `writeFile` transports UTF-8 content as 48 KiB environment chunks and uses a negotiated GNU/BSD/Python decoder pipeline to stage an atomic mode-preserving replacement; operation logs are privacy-safe; capabilities are cache-scoped per `serverScopeKey::directory`
 lib/presentation/services/message_image_export_service.dart # MessageImageExportService: captures a RepaintBoundary widget as a PNG and invokes the platform share sheet; MessageImageExportResult enum (shared, tooTall, notLaidOut, failed); uses RenderRepaintBoundary.toImage() with _capturePixelRatio=2.5, capped at _maxCaptureHeight=4096 logical px
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
@@ -429,6 +451,12 @@ flutter run -d chrome
 
 ```text
 test/unit/                             # Unit tests
+test/unit/domain/session_attention_models_test.dart # Session-attention identity, priority, aggregate, and payload models
+test/unit/data/session_attention_snapshot_store_test.dart # Encrypted snapshot round trips, nonce rotation, corruption recovery, atomic-write failures, and tombstones
+test/unit/presentation/session_attention_coordinator_test.dart # Attention timing and monitoring-availability coverage
+test/unit/presentation/session_attention_delay_coordinator_test.dart # Attention delay-state coverage
+test/unit/presentation/session_attention_completion_resolver_test.dart # Completion snapshot resolution coverage
+test/unit/presentation/session_attention_host_protocol_test.dart # Versioned host snapshot and command-protocol coverage
 test/unit/domain/experience_settings_test.dart # `ExperienceSettings` JSON round-trip covers `visualStyle` and provider-aware read-aloud settings (`ReadAloudProvider`, voice/model/baseUrl/format)
 test/unit/auth/                        # OAuth auth unit tests
 test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare Managed OAuth flow, PKCE S256 challenge/verifier generation, local callback server lifecycle, credential caching/refresh, isOAuthChallenge detection, trusted endpoint validation, cross-profile isolation
@@ -458,6 +486,7 @@ test/unit/services/                     # Platform and runtime service unit test
   windows_microphone_service_test.dart   #   Windows microphone access probe and preflight status tests
 test/unit/presentation/                 # Presentation-level service tests; includes `workspace_file_operations_service_test.dart` (issues #89 and #90) covering official tool-state parsing, malformed responses, shell quoting, capability probes, create/rename/delete session teardown, write-path validation, 48 KiB content chunking, and negotiated GNU/BSD/Python decoding; `app_theme_test.dart` (issue #86) covers `AppVisualStyleTokens.classic`/`refined` factories, theme-extension wiring through `AppTheme.lightFrom`/`darkFrom`, `withResponsiveSnackBars` shape switching, and the `ThemeData.visualStyleTokens` fallback getter
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, terminal mobile backspace simulation, Windows printable hardware key forwarding, Windows AltGr printable forwarding, AppShell update toast coverage in `app_shell_page_test.dart` with explicit teardown of ChatProvider/AppProvider/SettingsProvider in `finally` for clean run isolation, issue #86 Visual style coverage in `settings_page_test.dart` for the Appearance `SegmentedButton<VisualStyle>` (`settings_visual_style_segmented`) calling `setVisualStyle` and persisting `visualStyle: 'refined'`; `chat_message_widget_test.dart` and `chat_page_test.dart` were additionally run as regression suites to confirm no refined-surface regression on the chat surfaces, issue #89 file-tree coverage in `chat_page_test.dart` covering file-tree refresh, root New menu, new-file/new-folder dialogs, rename, delete confirmation + reconciliation, Quick Open lookup, and absolute/relative path resolution, and issue #90 editor coverage in `chat_page_test.dart` covering file-editor save from the open-files dialog, CRLF save round-trip, current-draft Add-to-chat via gutter selection, dirty-state preservation on save failure, dirty close-blocker, dirty relative-path rename blocker, and a `file editor opens empty text files as editable drafts` widget test that taps a known empty non-binary file and confirms the editor renders with the editable `CodeEditor`)
+  session_attention_overlay_test.dart  # Shared bubble/panel ordering and action wiring, including disabled read-aloud
   chat_message_widget_test.dart         #   Read-aloud button loading indicator and long-press Settings > Speech routing
   chat_page_test.dart                   #   ChatPage lifecycle regression keeps active/loading read-aloud alive across inactive/hidden/paused/resumed transitions
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`, plus opt-in local OpenCode probe/create/write/read/delete coverage in `workspace_file_operations_live_test.dart`
@@ -522,6 +551,13 @@ tool/release/changelog.py              # Changelog update/extract helper used by
 - **First-run defaults**: `SettingsProvider` applies `ReadAloudDefaultResolver` only when no `ExperienceSettings` JSON exists; Linux fresh installs select Edge experimental because native `flutter_tts` is unavailable, Windows/macOS/others select native when `ReadAloudService.isProviderAvailable(ReadAloudProvider.native)` succeeds, and native-unavailable installs fall back to Edge with a locale-mapped voice.
 - **Backends**: `ReadAloudService` routes native, OpenAI-compatible, and Edge experimental providers; OpenAI-compatible and Edge use generated-audio `TtsBackend` adapters plus `TtsAudioPlayer` byte playback; all providers share idle/loading/playing/paused service state.
 - **Edge experimental**: `EdgeExperimentalTtsBackend` discovers Microsoft Edge/Bing Read Aloud voices, synthesizes directly over conditional websocket transport, and returns generated MP3 bytes.
+
+### Session Attention Overlay Workflow
+
+- `ChatProvider` produces root-session attention candidates; `SessionAttentionCoordinator` tracks timing and availability.
+- `SessionAttentionCompletionResolver` writes completed-response snapshots through `SessionAttentionSnapshotStore` and DI publishes host snapshots.
+- Android uses `MainActivity` and `SessionOverlayService`; desktop uses a child-window IPC host; iOS mounts the shared overlay in `ChatPage`.
+- `SessionAttentionOverlay` routes open, read, dismiss, presentation-toggle, and stop actions through its host/controller.
 
 ### Android Background Monitoring
 

@@ -130,7 +130,10 @@ abstract class ChatRemoteDataSource {
   Stream<ChatEventModel> subscribeEvents({String? directory});
 
   /// Subscribe to global realtime event stream.
-  Stream<ChatEventModel> subscribeGlobalEvents();
+  Stream<ChatEventModel> subscribeGlobalEvents({
+    void Function()? onConnected,
+    void Function()? onDisconnected,
+  });
 
   /// List pending permission requests.
   Future<List<ChatPermissionRequestModel>> listPermissions({String? directory});
@@ -1771,10 +1774,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   @override
-  Stream<ChatEventModel> subscribeGlobalEvents() {
+  Stream<ChatEventModel> subscribeGlobalEvents({
+    void Function()? onConnected,
+    void Function()? onDisconnected,
+  }) {
     return _subscribeEventStream(
       path: '/global/event',
       logLabel: 'Global realtime event stream',
+      onConnected: onConnected,
+      onDisconnected: onDisconnected,
     );
   }
 
@@ -1782,6 +1790,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     required String path,
     String? directory,
     required String logLabel,
+    void Function()? onConnected,
+    void Function()? onDisconnected,
   }) {
     final queryParams = <String, String>{};
     if (directory != null && directory.trim().isNotEmpty) {
@@ -1819,6 +1829,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (response.statusCode != 200) {
             throw const ServerException('Failed to subscribe to events');
           }
+          onConnected?.call();
 
           final streamAliveStart = DateTime.now();
           final responseBody = response.data as ResponseBody;
@@ -1914,6 +1925,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             }
           }
         } finally {
+          onDisconnected?.call();
           requestCancelToken = null;
           activeConnectionDone = null;
           await lineSubscription?.cancel();

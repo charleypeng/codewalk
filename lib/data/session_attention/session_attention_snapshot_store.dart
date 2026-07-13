@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
@@ -68,6 +69,12 @@ class SessionAttentionSnapshotStore {
 
   static const int envelopeSchemaVersion = 1;
   static const int keyVersion = 1;
+  static final StreamController<SessionAttentionSnapshotPayload>
+  _changesController =
+      StreamController<SessionAttentionSnapshotPayload>.broadcast();
+
+  static Stream<SessionAttentionSnapshotPayload> get changes =>
+      _changesController.stream;
 
   final SessionAttentionSnapshotKeyStorage _keyStorage;
   final SessionAttentionSnapshotFileStore _fileStore;
@@ -83,9 +90,28 @@ class SessionAttentionSnapshotStore {
       final current = (await _readUnlocked()).payload;
       final normalized = item.identity.normalized();
       final normalizedItem = item.withIdentity(normalized);
-      final tombstone = _tombstoneKey(normalized, item.assistantMessageId);
+      final messageId = item.assistantMessageId?.trim();
+      final tombstone = _tombstoneKey(
+        normalized,
+        messageId?.isNotEmpty == true ? messageId : item.contentDigest,
+      );
       if (tombstone != null &&
           current.dismissalTombstones.contains(tombstone)) {
+        return;
+      }
+      SessionAttentionItem? existing;
+      for (final candidate in current.items) {
+        if (candidate.identity == normalized) {
+          existing = candidate;
+          break;
+        }
+      }
+      if (existing != null &&
+          (existing.revision > normalizedItem.revision ||
+              (existing.revision == normalizedItem.revision &&
+                  existing.assistantMessageId ==
+                      normalizedItem.assistantMessageId &&
+                  existing.contentDigest == normalizedItem.contentDigest))) {
         return;
       }
       final items =
@@ -116,11 +142,67 @@ class SessionAttentionSnapshotStore {
       }
       final tombstones = Set<String>.from(current.dismissalTombstones)
         ..add(tombstone);
+      final prefix = '${normalized.key}::';
+      final matching = tombstones
+          .where((key) => key.startsWith(prefix))
+          .toList(growable: false);
+      for (final expired in matching.take(
+        (matching.length - 8).clamp(0, matching.length).toInt(),
+      )) {
+        tombstones.remove(expired);
+      }
       await _writeUnlocked(
         SessionAttentionSnapshotPayload(
           revision: current.revision + 1,
           items: current.items
-              .where((item) => item.identity != normalized)
+              .where(
+                (item) =>
+                    item.identity != normalized ||
+                    _effectiveToken(item) != assistantMessageId.trim(),
+              )
+              .toList(growable: false),
+          dismissalTombstones: tombstones,
+        ),
+      );
+    });
+  }
+
+  Future<void> suppressLive(SessionAttentionItem item) {
+    return suppressLiveIdentity(
+      identity: item.identity,
+      contentDigest: item.contentDigest,
+    );
+  }
+
+  Future<void> suppressLiveIdentity({
+    required SessionAttentionIdentity identity,
+    required String contentDigest,
+  }) {
+    return _serialize(() async {
+      final current = (await _readUnlocked()).payload;
+      final normalized = identity.normalized();
+      final tombstone = _tombstoneKey(normalized, contentDigest);
+      if (tombstone == null) return;
+      final tombstones = Set<String>.from(current.dismissalTombstones)
+        ..add(tombstone);
+      final prefix = '${normalized.key}::';
+      final matching = tombstones
+          .where((key) => key.startsWith(prefix))
+          .toList(growable: false);
+      for (final expired in matching.take(
+        (matching.length - 8).clamp(0, matching.length).toInt(),
+      )) {
+        tombstones.remove(expired);
+      }
+      await _writeUnlocked(
+        SessionAttentionSnapshotPayload(
+          revision: current.revision + 1,
+          items: current.items
+              .where(
+                (item) =>
+                    item.identity != normalized ||
+                    _effectiveToken(item) != contentDigest.trim(),
+              )
               .toList(growable: false),
           dismissalTombstones: tombstones,
         ),
@@ -132,6 +214,12 @@ class SessionAttentionSnapshotStore {
     return _serialize(() async {
       final current = (await _readUnlocked()).payload;
       final normalized = identity.normalized();
+      final hasItem = current.items.any((item) => item.identity == normalized);
+      final tombstonePrefix = '${normalized.key}::';
+      final hasTombstone = current.dismissalTombstones.any(
+        (key) => key.startsWith(tombstonePrefix),
+      );
+      if (!hasItem && !hasTombstone) return;
       await _writeUnlocked(
         SessionAttentionSnapshotPayload(
           revision: current.revision + 1,
@@ -139,8 +227,37 @@ class SessionAttentionSnapshotStore {
               .where((item) => item.identity != normalized)
               .toList(growable: false),
           dismissalTombstones: current.dismissalTombstones
-              .where((key) => !key.startsWith('${normalized.key}::'))
+              .where((key) => !key.startsWith(tombstonePrefix))
               .toSet(),
+        ),
+      );
+    });
+  }
+
+  Future<void> consume(SessionAttentionItem selected) {
+    return _serialize(() async {
+      final current = (await _readUnlocked()).payload;
+      final normalized = selected.identity.normalized();
+      final selectedToken = _effectiveToken(selected);
+      if (selectedToken.isEmpty ||
+          !current.items.any(
+            (item) =>
+                item.identity == normalized &&
+                _effectiveToken(item) == selectedToken,
+          )) {
+        return;
+      }
+      await _writeUnlocked(
+        SessionAttentionSnapshotPayload(
+          revision: current.revision + 1,
+          items: current.items
+              .where(
+                (item) =>
+                    item.identity != normalized ||
+                    _effectiveToken(item) != selectedToken,
+              )
+              .toList(growable: false),
+          dismissalTombstones: current.dismissalTombstones,
         ),
       );
     });
@@ -168,6 +285,7 @@ class SessionAttentionSnapshotStore {
     return _serialize(() async {
       await _fileStore.delete();
       await _keyStorage.delete();
+      _changesController.add(const SessionAttentionSnapshotPayload());
     });
   }
 
@@ -229,6 +347,7 @@ class SessionAttentionSnapshotStore {
 
   Future<SessionAttentionSnapshotReadResult> _recoverFromCorruption() async {
     await _fileStore.delete();
+    _changesController.add(const SessionAttentionSnapshotPayload());
     return const SessionAttentionSnapshotReadResult(
       payload: SessionAttentionSnapshotPayload(),
       recoveredFromCorruption: true,
@@ -256,6 +375,7 @@ class SessionAttentionSnapshotStore {
         'updatedAtEpochMs': DateTime.now().millisecondsSinceEpoch,
       };
       await _fileStore.writeAtomically(jsonEncode(envelope));
+      _changesController.add(payload);
     } catch (error) {
       throw SessionAttentionSnapshotStoreException(
         'Encrypted session snapshot storage is unavailable.',
@@ -265,7 +385,7 @@ class SessionAttentionSnapshotStore {
   }
 
   Future<T> _serialize<T>(Future<T> Function() operation) {
-    final result = _pending.then((_) => operation());
+    final result = _pending.then((_) => _fileStore.synchronized(operation));
     _pending = result.then<void>((_) {}, onError: (_, _) {});
     return result;
   }
@@ -279,5 +399,12 @@ class SessionAttentionSnapshotStore {
       return null;
     }
     return '${identity.key}::$normalizedMessageId';
+  }
+
+  String _effectiveToken(SessionAttentionItem item) {
+    final messageId = item.assistantMessageId?.trim();
+    return messageId?.isNotEmpty == true
+        ? messageId!
+        : item.contentDigest.trim();
   }
 }

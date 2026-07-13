@@ -50,6 +50,7 @@ class SessionAttentionCompletionResolver {
     String? baselineAssistantMessageId,
     SessionAttentionTransportCapability transportCapability =
         SessionAttentionTransportCapability.live,
+    FutureOr<bool> Function()? isStillValid,
   }) {
     final normalizedIdentity = identity.normalized();
     if (!normalizedIdentity.isValid ||
@@ -75,11 +76,15 @@ class SessionAttentionCompletionResolver {
           completedAt: completedAt,
           baselineAssistantMessageId: baselineAssistantMessageId?.trim(),
           transportCapability: transportCapability,
-          isStillValid: () =>
-              globalGeneration == _globalGeneration &&
-              identityGeneration == (_identityGeneration[key] ?? 0) &&
-              serverGeneration ==
-                  (_serverGeneration[normalizedIdentity.serverId] ?? 0),
+          isStillValid: () async {
+            if (globalGeneration != _globalGeneration ||
+                identityGeneration != (_identityGeneration[key] ?? 0) ||
+                serverGeneration !=
+                    (_serverGeneration[normalizedIdentity.serverId] ?? 0)) {
+              return false;
+            }
+            return await isStillValid?.call() ?? true;
+          },
         ).whenComplete(() {
           if (identical(_inFlight[key], task)) {
             _inFlight.remove(key);
@@ -143,12 +148,36 @@ class SessionAttentionCompletionResolver {
     if (item == null) return;
     final messageId = item.assistantMessageId;
     if (messageId == null || messageId.isEmpty) {
-      await removeIdentity(item.identity);
+      await _snapshotStore.suppressLive(item);
+      await publishCurrent();
       return;
     }
     await _snapshotStore.dismiss(
       identity: item.identity,
       assistantMessageId: messageId,
+    );
+    await publishCurrent();
+  }
+
+  Future<void> consumeSnapshot(String snapshotId) async {
+    final item = await itemBySnapshotId(snapshotId);
+    if (item == null) return;
+    await _snapshotStore.consume(item);
+    await publishCurrent();
+  }
+
+  Future<void> suppressLive(SessionAttentionItem item) async {
+    await _snapshotStore.suppressLive(item);
+    await publishCurrent();
+  }
+
+  Future<void> suppressLiveIdentity({
+    required SessionAttentionIdentity identity,
+    required String contentDigest,
+  }) async {
+    await _snapshotStore.suppressLiveIdentity(
+      identity: identity,
+      contentDigest: contentDigest,
     );
     await publishCurrent();
   }
@@ -160,7 +189,7 @@ class SessionAttentionCompletionResolver {
     required DateTime completedAt,
     required String? baselineAssistantMessageId,
     required SessionAttentionTransportCapability transportCapability,
-    required bool Function() isStillValid,
+    required FutureOr<bool> Function() isStillValid,
   }) async {
     final normalizedIdentity = identity.normalized();
     SessionAttentionItem? existing;
@@ -177,7 +206,7 @@ class SessionAttentionCompletionResolver {
       if (wait > Duration.zero) {
         await _delay(wait);
       }
-      if (!isStillValid()) {
+      if (!await isStillValid()) {
         return null;
       }
       final result = await _getChatMessages(
@@ -215,6 +244,10 @@ class SessionAttentionCompletionResolver {
       }
     }
 
+    if (resolved == null && existing != null) {
+      return existing;
+    }
+
     final displaySource = resolved == null ? '' : _displayText(resolved!);
     final speechSource = resolved == null
         ? ''
@@ -246,7 +279,7 @@ class SessionAttentionCompletionResolver {
       transportCapability: transportCapability,
       contentDigest: digest,
     );
-    if (!isStillValid()) {
+    if (!await isStillValid()) {
       return null;
     }
     await _snapshotStore.upsert(item);

@@ -36,6 +36,11 @@ int rootSessionAttentionPriority(RootSessionAttentionKind kind) {
   };
 }
 
+String sessionAttentionLiveDigest(
+  RootSessionAttentionKind kind,
+  int observedAtEpochMs,
+) => 'live:${kind.name}:$observedAtEpochMs';
+
 @immutable
 class SessionAttentionIdentity {
   const SessionAttentionIdentity({
@@ -165,6 +170,34 @@ class SessionAttentionItem {
       dismissed: dismissed,
       transportCapability: transportCapability,
       pauseReason: pauseReason,
+      contentDigest: contentDigest,
+    );
+  }
+
+  SessionAttentionItem withTransport({
+    required SessionAttentionTransportCapability capability,
+    SessionAttentionPauseReason? reason,
+  }) {
+    return SessionAttentionItem(
+      schemaVersion: schemaVersion,
+      revision: revision,
+      identity: identity,
+      title: title,
+      projectLabel: projectLabel,
+      kind: kind,
+      startedAtEpochMs: startedAtEpochMs,
+      lastObservedAtEpochMs: lastObservedAtEpochMs,
+      observableBusyElapsedMs: observableBusyElapsedMs,
+      assistantMessageId: assistantMessageId,
+      displayText: displayText,
+      speechText: speechText,
+      displayTruncated: displayTruncated,
+      speechTruncated: speechTruncated,
+      completedAtEpochMs: completedAtEpochMs,
+      opened: opened,
+      dismissed: dismissed,
+      transportCapability: capability,
+      pauseReason: reason,
       contentDigest: contentDigest,
     );
   }
