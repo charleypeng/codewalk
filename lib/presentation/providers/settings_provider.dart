@@ -59,6 +59,7 @@ enum OpenCodeShareMode { manual, automatic, disabled }
 
 typedef NativeReadAloudAvailabilityProbe = Future<bool> Function();
 typedef SessionAttentionStopTts = Future<void> Function();
+typedef SessionAttentionRepublish = Future<void> Function();
 
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
@@ -70,6 +71,7 @@ class SettingsProvider extends ChangeNotifier {
     NativeReadAloudAvailabilityProbe? nativeReadAloudAvailabilityProbe,
     SessionAttentionHostService? sessionAttentionHostService,
     SessionAttentionStopTts? sessionAttentionStopTts,
+    SessionAttentionRepublish? sessionAttentionRepublish,
   }) : _localDataSource = localDataSource,
        _dioClient = dioClient,
        _soundService = soundService,
@@ -79,6 +81,7 @@ class SettingsProvider extends ChangeNotifier {
            sessionAttentionHostService ??
            const UnsupportedSessionAttentionHostService(),
        _sessionAttentionStopTts = sessionAttentionStopTts,
+       _sessionAttentionRepublish = sessionAttentionRepublish,
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled() {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
@@ -91,6 +94,7 @@ class SettingsProvider extends ChangeNotifier {
   final NativeReadAloudAvailabilityProbe? _nativeReadAloudAvailabilityProbe;
   final SessionAttentionHostService _sessionAttentionHostService;
   final SessionAttentionStopTts? _sessionAttentionStopTts;
+  final SessionAttentionRepublish? _sessionAttentionRepublish;
   final CellularDataSaverService _cellularDataSaverService;
 
   ExperienceSettings _settings = ExperienceSettings.defaults();
@@ -824,6 +828,7 @@ class SettingsProvider extends ChangeNotifier {
       if (!await _persistSessionAttentionSettings()) {
         return 'Session attention was stopped but the setting could not be saved.';
       }
+      await _sessionAttentionRepublish?.call();
       return null;
     }
 
@@ -866,6 +871,7 @@ class SettingsProvider extends ChangeNotifier {
       await _persist();
       return 'Session attention could not be saved and was stopped.';
     }
+    await _sessionAttentionRepublish?.call();
     return null;
   }
 
@@ -876,13 +882,33 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> refreshSessionAttentionHostCapability() async {
     _sessionAttentionHostCapability = await _safeHostCapability();
+    if ((_sessionAttentionHostCapability.stoppedByUser ||
+            _sessionAttentionHostCapability.permissionRevoked) &&
+        _settings.sessionAttentionPresentation !=
+            SessionAttentionPresentation.off) {
+      _settings = _settings.copyWith(
+        sessionAttentionPresentation: SessionAttentionPresentation.off,
+      );
+      await _sessionAttentionStopTts?.call();
+      await _persist();
+    }
     notifyListeners();
   }
 
   Future<void> _restoreSessionAttentionHost() async {
     final presentation = _settings.sessionAttentionPresentation;
+    final initialCapability = await _safeHostCapability();
+    if (initialCapability.stoppedByUser ||
+        initialCapability.permissionRevoked) {
+      _sessionAttentionHostCapability = initialCapability;
+      _settings = _settings.copyWith(
+        sessionAttentionPresentation: SessionAttentionPresentation.off,
+      );
+      await _persist();
+      return;
+    }
     if (presentation == SessionAttentionPresentation.off) {
-      _sessionAttentionHostCapability = await _safeHostCapability();
+      _sessionAttentionHostCapability = initialCapability;
       if (_sessionAttentionHostCapability.running) {
         await _stopSessionAttentionHost();
       }
@@ -891,6 +917,7 @@ class SettingsProvider extends ChangeNotifier {
     final result = await _activateSessionAttentionHost(presentation);
     _sessionAttentionHostCapability = result.capability;
     if (result.activated) {
+      await _sessionAttentionRepublish?.call();
       return;
     }
     final stopError = await _stopSessionAttentionHost();

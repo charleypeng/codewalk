@@ -29,6 +29,7 @@ class _FakeNotificationService extends NotificationService {
     required String body,
     required String category,
     String? sessionId,
+    String? serverId,
     String? directory,
     bool playSound = true,
     SoundOption soundOption = SoundOption.systemDefault,

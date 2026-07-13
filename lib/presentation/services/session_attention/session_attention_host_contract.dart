@@ -17,6 +17,8 @@ class SessionAttentionHostCapability {
     required this.permissionGranted,
     required this.running,
     required this.topmostSupported,
+    this.stoppedByUser = false,
+    this.permissionRevoked = false,
     this.explanation,
   });
 
@@ -25,6 +27,8 @@ class SessionAttentionHostCapability {
   final bool permissionGranted;
   final bool running;
   final bool topmostSupported;
+  final bool stoppedByUser;
+  final bool permissionRevoked;
   final String? explanation;
 }
 

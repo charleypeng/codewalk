@@ -14,9 +14,12 @@ class SessionAttentionCompletionResolver {
     required GetChatMessages getChatMessages,
     required SessionAttentionSnapshotStore snapshotStore,
     Future<void> Function(Duration duration)? delay,
+    Future<void> Function(SessionAttentionSnapshotPayload payload)?
+    onSnapshotChanged,
   }) : _getChatMessages = getChatMessages,
        _snapshotStore = snapshotStore,
-       _delay = delay ?? Future<void>.delayed;
+       _delay = delay ?? Future<void>.delayed,
+       _onSnapshotChanged = onSnapshotChanged;
 
   static const int messageLimit = 20;
   static const int maxDisplayScalars = 4000;
@@ -31,6 +34,8 @@ class SessionAttentionCompletionResolver {
   final GetChatMessages _getChatMessages;
   final SessionAttentionSnapshotStore _snapshotStore;
   final Future<void> Function(Duration duration) _delay;
+  final Future<void> Function(SessionAttentionSnapshotPayload payload)?
+  _onSnapshotChanged;
   final Map<String, Future<SessionAttentionItem?>> _inFlight =
       <String, Future<SessionAttentionItem?>>{};
   final Map<String, int> _identityGeneration = <String, int>{};
@@ -89,20 +94,63 @@ class SessionAttentionCompletionResolver {
     final key = normalized.key;
     _identityGeneration[key] = (_identityGeneration[key] ?? 0) + 1;
     _inFlight.remove(key);
-    return _snapshotStore.removeIdentity(normalized);
+    return _removeIdentity(normalized);
+  }
+
+  Future<void> _removeIdentity(SessionAttentionIdentity identity) async {
+    await _snapshotStore.removeIdentity(identity);
+    await publishCurrent();
   }
 
   Future<void> removeServer(String serverId) {
     final normalized = serverId.trim();
     _serverGeneration[normalized] = (_serverGeneration[normalized] ?? 0) + 1;
     _inFlight.removeWhere((key, _) => key.startsWith('$normalized::'));
-    return _snapshotStore.removeServer(normalized);
+    return _removeServer(normalized);
+  }
+
+  Future<void> _removeServer(String serverId) async {
+    await _snapshotStore.removeServer(serverId);
+    await publishCurrent();
   }
 
   Future<void> clear() {
     _globalGeneration += 1;
     _inFlight.clear();
-    return _snapshotStore.clear();
+    return _clear();
+  }
+
+  Future<void> _clear() async {
+    await _snapshotStore.clear();
+    await _onSnapshotChanged?.call(const SessionAttentionSnapshotPayload());
+  }
+
+  Future<void> publishCurrent() async {
+    final callback = _onSnapshotChanged;
+    if (callback == null) return;
+    await callback(await _snapshotStore.read().then((value) => value.payload));
+  }
+
+  Future<SessionAttentionItem?> itemBySnapshotId(String snapshotId) async {
+    for (final item in (await _snapshotStore.read()).payload.items) {
+      if (item.snapshotId == snapshotId) return item;
+    }
+    return null;
+  }
+
+  Future<void> dismissSnapshot(String snapshotId) async {
+    final item = await itemBySnapshotId(snapshotId);
+    if (item == null) return;
+    final messageId = item.assistantMessageId;
+    if (messageId == null || messageId.isEmpty) {
+      await removeIdentity(item.identity);
+      return;
+    }
+    await _snapshotStore.dismiss(
+      identity: item.identity,
+      assistantMessageId: messageId,
+    );
+    await publishCurrent();
   }
 
   Future<SessionAttentionItem?> _resolve({
@@ -202,6 +250,7 @@ class SessionAttentionCompletionResolver {
       return null;
     }
     await _snapshotStore.upsert(item);
+    await publishCurrent();
     return item;
   }
 

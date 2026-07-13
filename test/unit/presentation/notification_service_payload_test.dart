@@ -8,6 +8,7 @@ void main() {
     const payload = NotificationTapPayload(
       category: 'agent',
       sessionId: 'ses_123',
+      serverId: 'server-a',
       directory: '/tmp/workspace',
     );
 
@@ -17,6 +18,7 @@ void main() {
     expect(parsed, isNotNull);
     expect(parsed?.category, 'agent');
     expect(parsed?.sessionId, 'ses_123');
+    expect(parsed?.serverId, 'server-a');
     expect(parsed?.directory, '/tmp/workspace');
     expect(parsed?.notificationId, isNull);
   });

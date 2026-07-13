@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -18,21 +19,30 @@ typedef AllNotificationsCanceller = Future<void> Function();
 class NotificationTapPayload {
   const NotificationTapPayload({
     required this.category,
+    this.action,
     this.sessionId,
+    this.serverId,
     this.directory,
+    this.snapshotId,
     this.notificationId,
   });
 
   final String category;
+  final String? action;
   final String? sessionId;
+  final String? serverId;
   final String? directory;
+  final String? snapshotId;
   final int? notificationId;
 
   String toRaw() {
     return jsonEncode(<String, dynamic>{
       'category': category,
+      'action': action,
       'sessionId': sessionId,
+      'serverId': serverId,
       'directory': directory,
+      'snapshotId': snapshotId,
       'notificationId': notificationId,
     });
   }
@@ -51,12 +61,18 @@ class NotificationTapPayload {
         return null;
       }
       final sessionId = decoded['sessionId']?.toString().trim();
+      final action = decoded['action']?.toString().trim();
+      final serverId = decoded['serverId']?.toString().trim();
       final directory = decoded['directory']?.toString().trim();
+      final snapshotId = decoded['snapshotId']?.toString().trim();
       final notificationId = _parseNotificationId(decoded['notificationId']);
       return NotificationTapPayload(
         category: category,
+        action: (action?.isEmpty ?? true) ? null : action,
         sessionId: (sessionId?.isEmpty ?? true) ? null : sessionId,
+        serverId: (serverId?.isEmpty ?? true) ? null : serverId,
         directory: (directory?.isEmpty ?? true) ? null : directory,
+        snapshotId: (snapshotId?.isEmpty ?? true) ? null : snapshotId,
         notificationId: notificationId,
       );
     } catch (_) {
@@ -95,6 +111,12 @@ class NotificationService {
        _initialized = assumeInitialized;
 
   static const String _androidSmallIcon = '@drawable/ic_stat_codewalk';
+  static const MethodChannel _overlayActivationChannel = MethodChannel(
+    'codewalk/session_overlay_activation',
+  );
+  static const MethodChannel _overlayHostChannel = MethodChannel(
+    'codewalk/session_overlay_host',
+  );
 
   final FlutterLocalNotificationsPlugin _plugin;
   final AppActivationCallback _activateApp;
@@ -118,6 +140,11 @@ class NotificationService {
   }
 
   void dispose() {
+    try {
+      _overlayActivationChannel.setMethodCallHandler(null);
+    } catch (_) {
+      // Unit tests and early shutdown may not have a binary messenger.
+    }
     _webTapSubscription?.cancel();
     _webTapSubscription = null;
     _tapController.close();
@@ -135,6 +162,45 @@ class NotificationService {
         );
         _initialized = true;
         return;
+      }
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        _overlayActivationChannel.setMethodCallHandler((call) async {
+          if (call.method != 'activation' || call.arguments is! Map) {
+            return false;
+          }
+          final args = Map<String, dynamic>.from(call.arguments as Map);
+          final payload = NotificationTapPayload(
+            category: 'session_attention',
+            action: args['action'] as String?,
+            sessionId: args['sessionId'] as String?,
+            serverId: args['serverId'] as String?,
+            directory: args['directory'] as String?,
+            snapshotId: args['snapshotId'] as String?,
+          );
+          await _handleRawTap(payload.toRaw());
+          return true;
+        });
+        Map<String, dynamic>? pending;
+        try {
+          pending = await _overlayHostChannel.invokeMapMethod<String, dynamic>(
+            'consumeOverlayActivation',
+          );
+        } on MissingPluginException {
+          pending = null;
+        }
+        if (pending != null) {
+          await _handleRawTap(
+            NotificationTapPayload(
+              category: 'session_attention',
+              action: pending['action'] as String?,
+              sessionId: pending['sessionId'] as String?,
+              serverId: pending['serverId'] as String?,
+              directory: pending['directory'] as String?,
+              snapshotId: pending['snapshotId'] as String?,
+            ).toRaw(),
+          );
+        }
       }
 
       const android = AndroidInitializationSettings('@mipmap/launcher_icon');
@@ -197,6 +263,7 @@ class NotificationService {
     required String body,
     required String category,
     String? sessionId,
+    String? serverId,
     String? directory,
     bool playSound = true,
     SoundOption soundOption = SoundOption.systemDefault,
@@ -208,6 +275,7 @@ class NotificationService {
     final payload = NotificationTapPayload(
       category: category,
       sessionId: normalizedSessionId,
+      serverId: serverId?.trim().isNotEmpty == true ? serverId!.trim() : null,
       directory: normalizedDirectory,
       notificationId: notificationId,
     ).toRaw();

@@ -1,19 +1,30 @@
 package com.verseles.codewalk.overlay
 
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.os.Build
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.ViewConfiguration
+import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import com.eyedeadevelopment.fluttertts.FlutterTtsPlugin
 import com.it_nomads.fluttersecurestorage.FlutterSecureStoragePlugin
 import com.verseles.codewalk.MainActivity
@@ -22,6 +33,7 @@ import io.flutter.FlutterInjector
 import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
+import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.pathprovider.PathProviderPlugin
 import io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin
 import xyz.luan.audioplayers.AudioplayersPlugin
@@ -29,41 +41,94 @@ import xyz.luan.audioplayers.AudioplayersPlugin
 class SessionOverlayService : Service() {
     companion object {
         private const val CHANNEL_ID = "codewalk_session_attention_overlay_v1"
+        private const val SERVICE_CHANNEL = "codewalk/session_overlay_service"
         private const val NOTIFICATION_ID = 9801
         private const val ACTION_STOP = "com.verseles.codewalk.overlay.STOP"
+        private const val ACTION_OPEN = "com.verseles.codewalk.overlay.OPEN"
 
         @Volatile
         private var instance: SessionOverlayService? = null
 
         fun isRunning(): Boolean = instance != null
+
+        fun updateSnapshot(snapshot: Map<String, Any?>?): Boolean {
+            val service = instance ?: return false
+            snapshot ?: return false
+            service.applySnapshot(snapshot)
+            return true
+        }
     }
 
     private var engine: FlutterEngine? = null
     private var flutterView: FlutterView? = null
+    private var serviceChannel: MethodChannel? = null
+    private var currentSnapshot: Map<String, Any?>? = null
+    private var currentGeneration: String? = null
+    private var currentRevision: Long = -1
+    private var currentProducer: String? = null
     private lateinit var windowManager: WindowManager
+    private val handler = Handler(Looper.getMainLooper())
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF -> detachOverlay()
+                Intent.ACTION_USER_PRESENT -> currentSnapshot?.let(::renderSnapshot)
+            }
+        }
+    }
+    private val permissionCheck = object : Runnable {
+        override fun run() {
+            if (!Settings.canDrawOverlays(this@SessionOverlayService)) {
+                detachOverlay()
+                getSharedPreferences("session_attention_native", MODE_PRIVATE)
+                    .edit().putBoolean("permission_revoked", true).apply()
+                stopSelf()
+                return
+            }
+            handler.postDelayed(this, 1000L)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         instance = this
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
-        startAsForeground()
+        startAsForeground(null)
+        ContextCompat.registerReceiver(
+            this,
+            screenReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_USER_PRESENT)
+            },
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        handler.post(permissionCheck)
         if (Settings.canDrawOverlays(this)) {
-            attachOverlay()
+            startFlutterEngine()
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
+        when (intent?.action) {
+            ACTION_STOP -> {
+                getSharedPreferences("session_attention_native", MODE_PRIVATE)
+                    .edit().putBoolean("stopped_by_user", true).apply()
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            ACTION_OPEN -> {
+                openMainActivity(intent.extras?.keySet()?.associateWith { intent.extras?.get(it) })
+                return START_STICKY
+            }
         }
         if (!Settings.canDrawOverlays(this)) {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (flutterView == null) {
-            attachOverlay()
+        if (engine == null) {
+            startFlutterEngine()
         }
         return START_STICKY
     }
@@ -72,11 +137,11 @@ class SessionOverlayService : Service() {
 
     override fun onDestroy() {
         instance = null
-        flutterView?.let { view ->
-            view.detachFromFlutterEngine()
-            runCatching { windowManager.removeViewImmediate(view) }
-        }
-        flutterView = null
+        handler.removeCallbacks(permissionCheck)
+        runCatching { unregisterReceiver(screenReceiver) }
+        detachOverlay()
+        serviceChannel?.setMethodCallHandler(null)
+        serviceChannel = null
         engine?.let { flutterEngine ->
             flutterEngine.serviceControlSurface.detachFromService()
             flutterEngine.destroy()
@@ -86,9 +151,8 @@ class SessionOverlayService : Service() {
         super.onDestroy()
     }
 
-    private fun attachOverlay() {
+    private fun startFlutterEngine() {
         if (engine != null || !Settings.canDrawOverlays(this)) return
-
         val loader = FlutterInjector.instance().flutterLoader()
         loader.startInitialization(applicationContext)
         loader.ensureInitializationComplete(applicationContext, null)
@@ -99,45 +163,263 @@ class SessionOverlayService : Service() {
         flutterEngine.plugins.add(PathProviderPlugin())
         flutterEngine.plugins.add(SharedPreferencesPlugin())
         flutterEngine.serviceControlSurface.attachToService(this, null, true)
-        flutterEngine.dartExecutor.executeDartEntrypoint(
-            DartExecutor.DartEntrypoint(
-                loader.findAppBundlePath(),
-                "sessionOverlayAndroidMain",
-            ),
-        )
-
-        val view = FlutterView(this).also {
-            it.attachToFlutterEngine(flutterEngine)
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SERVICE_CHANNEL)
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "command" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    handleCommand(call.arguments as? Map<String, Any?>)
+                    result.success(true)
+                }
+                "requestFullSnapshot" -> {
+                    currentSnapshot?.let { channel.invokeMethod("applySnapshot", it) }
+                    result.success(true)
+                }
+                "restoreSnapshot" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val snapshot = call.arguments as? Map<String, Any?>
+                    if (snapshot == null) {
+                        result.success(false)
+                    } else {
+                        applySnapshot(snapshot)
+                        result.success(true)
+                    }
+                }
+                else -> result.notImplemented()
+            }
         }
-        val size = (96 * resources.displayMetrics.density).toInt()
+        flutterEngine.dartExecutor.executeDartEntrypoint(
+            DartExecutor.DartEntrypoint(loader.findAppBundlePath(), "sessionOverlayAndroidMain"),
+        )
+        engine = flutterEngine
+        serviceChannel = channel
+        currentSnapshot?.let { channel.invokeMethod("applySnapshot", it) }
+    }
+
+    private fun applySnapshot(snapshot: Map<String, Any?>) {
+        val generation = snapshot["generation"] as? String ?: ""
+        val revision = (snapshot["revision"] as? Number)?.toLong() ?: 0L
+        val full = snapshot["fullResynchronization"] as? Boolean ?: false
+        val producer = snapshot["producer"] as? String ?: "main"
+        if (producer == "restore" && currentProducer == "main") return
+        val liveHandoff = currentProducer == "restore" && producer == "main"
+        if (!liveHandoff && currentGeneration == generation && revision <= currentRevision) return
+        if (!liveHandoff && currentGeneration != null && currentGeneration != generation && !full) return
+        val acceptedSnapshot = if (liveHandoff && !full) {
+            snapshot.toMutableMap().apply { this["fullResynchronization"] = true }
+        } else {
+            snapshot
+        }
+        currentGeneration = generation
+        currentRevision = revision
+        currentProducer = producer
+        currentSnapshot = acceptedSnapshot
+
+        renderSnapshot(acceptedSnapshot)
+    }
+
+    private fun renderSnapshot(snapshot: Map<String, Any?>) {
+
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf()
+            return
+        }
+        val presentation = snapshot["presentation"] as? String ?: "off"
+        @Suppress("UNCHECKED_CAST")
+        val items = snapshot["items"] as? List<Map<String, Any?>> ?: emptyList()
+        if (presentation == "off") {
+            stopSelf()
+            return
+        }
+        val keyguard = getSystemService(KeyguardManager::class.java)
+        if (items.isEmpty() || keyguard?.isDeviceLocked == true) {
+            detachOverlay()
+        } else {
+            attachOrResizeOverlay(presentation)
+        }
+        startAsForeground(items.firstOrNull())
+        serviceChannel?.invokeMethod("applySnapshot", snapshot)
+    }
+
+    private fun attachOrResizeOverlay(presentation: String) {
+        val density = resources.displayMetrics.density
+        val widthDp = if (presentation == "panel") 360 else 96
+        val heightDp = if (presentation == "panel") 520 else 96
+        val width = (widthDp * density).toInt()
+        val height = (heightDp * density).toInt()
+        val existing = flutterView
+        if (existing != null) {
+            val params = existing.layoutParams as WindowManager.LayoutParams
+            params.width = width
+            params.height = height
+            clampToDisplay(params)
+            windowManager.updateViewLayout(existing, params)
+            return
+        }
+        val flutterEngine = engine ?: return
+        val view = FlutterView(this).also { it.attachToFlutterEngine(flutterEngine) }
+        val bounds = availableBounds()
+        val saved = getSharedPreferences("session_attention_native", MODE_PRIVATE)
         val params = WindowManager.LayoutParams(
-            size,
-            size,
+            width,
+            height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_SECURE,
             PixelFormat.TRANSLUCENT,
-        )
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = if (saved.contains("x_fraction")) {
+                bounds.left + ((bounds.width() - width) * saved.getFloat("x_fraction", 1f)).toInt()
+            } else {
+                bounds.right - width - (16 * density).toInt()
+            }
+            y = if (saved.contains("y_fraction")) {
+                bounds.top + ((bounds.height() - height) * saved.getFloat("y_fraction", .15f)).toInt()
+            } else {
+                bounds.top + (96 * density).toInt()
+            }
+        }
+        clampToDisplay(params)
+        configureDrag(view, params)
         windowManager.addView(view, params)
-        engine = flutterEngine
         flutterView = view
     }
 
-    private fun startAsForeground() {
-        val stopIntent = Intent(this, SessionOverlayService::class.java).apply {
-            action = ACTION_STOP
+    private fun clampToDisplay(params: WindowManager.LayoutParams) {
+        val bounds = availableBounds()
+        params.x = params.x.coerceIn(bounds.left, (bounds.right - params.width).coerceAtLeast(bounds.left))
+        params.y = params.y.coerceIn(bounds.top, (bounds.bottom - params.height).coerceAtLeast(bounds.top))
+    }
+
+    private fun availableBounds(): Rect {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val metrics = windowManager.currentWindowMetrics
+            val bounds = Rect(metrics.bounds)
+            val insets = metrics.windowInsets.getInsetsIgnoringVisibility(
+                WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout(),
+            )
+            bounds.left += insets.left
+            bounds.top += insets.top
+            bounds.right -= insets.right
+            bounds.bottom -= insets.bottom
+            return bounds
         }
+        @Suppress("DEPRECATION")
+        return Rect(0, 0, resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)
+    }
+
+    private fun configureDrag(view: FlutterView, params: WindowManager.LayoutParams) {
+        val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
+        var downRawX = 0f
+        var downRawY = 0f
+        var startX = 0
+        var startY = 0
+        var dragging = false
+        view.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downRawX = event.rawX
+                    downRawY = event.rawY
+                    startX = params.x
+                    startY = params.y
+                    dragging = false
+                    false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaX = event.rawX - downRawX
+                    val deltaY = event.rawY - downRawY
+                    if (!dragging && kotlin.math.hypot(deltaX.toDouble(), deltaY.toDouble()) > touchSlop) {
+                        dragging = true
+                    }
+                    if (dragging) {
+                        params.x = startX + deltaX.toInt()
+                        params.y = startY + deltaY.toInt()
+                        clampToDisplay(params)
+                        windowManager.updateViewLayout(view, params)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (dragging) {
+                        persistBounds(params)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun persistBounds(params: WindowManager.LayoutParams) {
+        val bounds = availableBounds()
+        val maxX = (bounds.width() - params.width).coerceAtLeast(1)
+        val maxY = (bounds.height() - params.height).coerceAtLeast(1)
+        val xFraction = ((params.x - bounds.left).toFloat() / maxX).coerceIn(0f, 1f)
+        val yFraction = ((params.y - bounds.top).toFloat() / maxY).coerceIn(0f, 1f)
+        getSharedPreferences("session_attention_native", MODE_PRIVATE).edit()
+            .putFloat("x_fraction", xFraction)
+            .putFloat("y_fraction", yFraction)
+            .apply()
+    }
+
+    private fun detachOverlay() {
+        flutterView?.let { view ->
+            view.detachFromFlutterEngine()
+            runCatching { windowManager.removeViewImmediate(view) }
+        }
+        flutterView = null
+    }
+
+    private fun handleCommand(command: Map<String, Any?>?) {
+        when (command?.get("action") as? String) {
+            "stop" -> {
+                openMainActivity(command)
+                stopSelf()
+            }
+            "open", "read", "dismiss", "expand", "collapse" -> openMainActivity(command)
+        }
+    }
+
+    private fun openMainActivity(payload: Map<String, Any?>?) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("session_attention_action", payload?.get("action") as? String ?: "open")
+            putExtra("serverId", payload?.get("serverId") as? String)
+            putExtra("directory", payload?.get("directory") as? String)
+            putExtra("sessionId", payload?.get("sessionId") as? String)
+            putExtra("snapshotId", payload?.get("snapshotId") as? String)
+        }
+        startActivity(intent)
+    }
+
+    private fun startAsForeground(primary: Map<String, Any?>?) {
+        val openIntent = Intent(this, SessionOverlayService::class.java).apply {
+            action = ACTION_OPEN
+            primary?.let {
+                putExtra("serverId", (it["identity"] as? Map<*, *>)?.get("serverId") as? String)
+                putExtra("directory", (it["identity"] as? Map<*, *>)?.get("directory") as? String)
+                putExtra("sessionId", (it["identity"] as? Map<*, *>)?.get("sessionId") as? String)
+                putExtra("snapshotId", it["snapshotId"] as? String)
+            }
+        }
+        val openAction = PendingIntent.getService(
+            this,
+            99,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val stopIntent = Intent(this, SessionOverlayService::class.java).apply { action = ACTION_STOP }
         val stopAction = PendingIntent.getService(
             this,
             98,
             stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val openAction = PendingIntent.getActivity(
-            this,
-            99,
-            Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -147,7 +429,8 @@ class SessionOverlayService : Service() {
             .setContentIntent(openAction)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .addAction(0, "Stop", stopAction)
+            .addAction(0, "Open CodeWalk", openAction)
+            .addAction(0, "Stop overlay", stopAction)
             .build()
         ServiceCompat.startForeground(
             this,
@@ -163,8 +446,7 @@ class SessionOverlayService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
                 "Session attention overlay",

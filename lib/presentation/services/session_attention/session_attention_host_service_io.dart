@@ -7,13 +7,17 @@ import 'package:flutter/services.dart';
 
 import '../../../domain/entities/experience_settings.dart';
 import 'session_attention_host_contract.dart';
+import 'session_attention_host_protocol.dart';
 import 'session_overlay_entrypoint.dart';
 
 SessionAttentionHostService createSessionAttentionHostService() {
   return _IoSessionAttentionHostService();
 }
 
-class _IoSessionAttentionHostService implements SessionAttentionHostService {
+class _IoSessionAttentionHostService
+    implements
+        SessionAttentionHostService,
+        SessionAttentionSnapshotHostService {
   static const _androidChannel = MethodChannel('codewalk/session_overlay_host');
 
   WindowController? _desktopWindow;
@@ -30,6 +34,11 @@ class _IoSessionAttentionHostService implements SessionAttentionHostService {
   @override
   Future<SessionAttentionHostCapability> capability() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
+      final stopState =
+          await _invokeAndroid<Map<Object?, Object?>>(
+            'consumeOverlayStopState',
+          ) ??
+          const <Object?, Object?>{};
       final permissionGranted =
           await _invokeAndroid<bool>('canDrawOverlays') ?? false;
       final running =
@@ -40,6 +49,8 @@ class _IoSessionAttentionHostService implements SessionAttentionHostService {
         permissionGranted: permissionGranted,
         running: running,
         topmostSupported: true,
+        stoppedByUser: stopState['stoppedByUser'] == true,
+        permissionRevoked: stopState['permissionRevoked'] == true,
         explanation: permissionGranted
             ? null
             : 'Display-over-other-apps permission is required.',
@@ -162,6 +173,21 @@ class _IoSessionAttentionHostService implements SessionAttentionHostService {
     _desktopHostActive = false;
   }
 
+  @override
+  Future<void> publishSnapshot(SessionAttentionHostSnapshot snapshot) async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await _invokeAndroid<void>('updateOverlaySnapshot', snapshot.toJson());
+      return;
+    }
+    if (_isDesktop) {
+      final controller = await _findDesktopWindow();
+      await controller?.invokeMethod(
+        'sessionAttention.applySnapshot',
+        snapshot.toJson(),
+      );
+    }
+  }
+
   Future<WindowController?> _findDesktopWindow() async {
     if (!_isDesktop) {
       return null;
@@ -180,9 +206,9 @@ class _IoSessionAttentionHostService implements SessionAttentionHostService {
     return null;
   }
 
-  Future<T?> _invokeAndroid<T>(String method) {
+  Future<T?> _invokeAndroid<T>(String method, [Object? arguments]) {
     return _androidChannel
-        .invokeMethod<T>(method)
+        .invokeMethod<T>(method, arguments)
         .timeout(const Duration(seconds: 2));
   }
 }

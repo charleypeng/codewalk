@@ -16,7 +16,10 @@ class MainActivity : FlutterActivity() {
         private const val SYSTEM_SOUNDS_CHANNEL = "codewalk/system_sounds"
         private const val SYSTEM_CHANNEL = "codewalk/system"
         private const val SESSION_OVERLAY_CHANNEL = "codewalk/session_overlay_host"
+        private const val SESSION_OVERLAY_ACTIVATION_CHANNEL = "codewalk/session_overlay_activation"
     }
+
+    private var sessionOverlayActivationChannel: MethodChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -31,6 +34,12 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        sessionOverlayActivationChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            SESSION_OVERLAY_ACTIVATION_CHANNEL,
+        )
+        dispatchSessionOverlayActivation(intent)
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             SESSION_OVERLAY_CHANNEL,
@@ -41,6 +50,16 @@ class MainActivity : FlutterActivity() {
                 "startOverlayService" -> result.success(startSessionOverlayService())
                 "stopOverlayService" -> result.success(stopSessionOverlayService())
                 "isOverlayServiceRunning" -> result.success(SessionOverlayService.isRunning())
+                "updateOverlaySnapshot" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val snapshot = call.arguments as? Map<String, Any?>
+                    result.success(SessionOverlayService.updateSnapshot(snapshot))
+                }
+                "consumeOverlayActivation" -> {
+                    result.success(sessionOverlayActivationPayload(intent))
+                    intent?.removeExtra("session_attention_action")
+                }
+                "consumeOverlayStopState" -> result.success(consumeOverlayStopState())
                 else -> result.notImplemented()
             }
         }
@@ -78,6 +97,52 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        dispatchSessionOverlayActivation(intent)
+    }
+
+    private fun dispatchSessionOverlayActivation(intent: Intent?) {
+        val payload = sessionOverlayActivationPayload(intent) ?: return
+        sessionOverlayActivationChannel?.invokeMethod(
+            "activation",
+            payload,
+            object : MethodChannel.Result {
+                override fun success(result: Any?) {
+                    intent?.removeExtra("session_attention_action")
+                }
+
+                override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) = Unit
+                override fun notImplemented() = Unit
+            },
+        )
+    }
+
+    private fun sessionOverlayActivationPayload(intent: Intent?): Map<String, String?>? {
+        if (intent?.hasExtra("session_attention_action") != true) return null
+        return mapOf(
+            "action" to intent.getStringExtra("session_attention_action"),
+            "serverId" to intent.getStringExtra("serverId"),
+            "directory" to intent.getStringExtra("directory"),
+            "sessionId" to intent.getStringExtra("sessionId"),
+            "snapshotId" to intent.getStringExtra("snapshotId"),
+        )
+    }
+
+    private fun consumeOverlayStopState(): Map<String, Boolean> {
+        val preferences = getSharedPreferences("session_attention_native", MODE_PRIVATE)
+        val state = mapOf(
+            "stoppedByUser" to preferences.getBoolean("stopped_by_user", false),
+            "permissionRevoked" to preferences.getBoolean("permission_revoked", false),
+        )
+        preferences.edit()
+            .remove("stopped_by_user")
+            .remove("permission_revoked")
+            .apply()
+        return state
     }
 
     private fun requestOverlayPermission(): Boolean {

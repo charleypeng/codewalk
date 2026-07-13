@@ -67,6 +67,7 @@ import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/file_node.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/provider.dart';
+import '../../domain/entities/session_attention_overlay/session_attention_models.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
@@ -76,11 +77,14 @@ import '../providers/settings_provider.dart';
 import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
+import '../services/cellular_data_saver_service.dart';
 import '../services/codewalk_terminal_controller.dart';
 import '../services/forward_message_service.dart';
 import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
 import '../services/read_aloud_service.dart';
+import '../services/session_attention/session_attention_completion_resolver.dart';
+import '../services/tts/tts_executor.dart';
 import '../services/session_export_service.dart';
 import '../services/workspace_file_operations_service.dart';
 import '../theme/app_animations.dart';
@@ -313,6 +317,7 @@ class _ChatPageState extends State<ChatPage>
   NotificationService? _notificationService;
   StreamSubscription<NotificationTapPayload>? _notificationTapSubscription;
   NotificationTapPayload? _pendingNotificationTap;
+  int _pendingNotificationTapGeneration = 0;
   Future<void>? _notificationTapTask;
   ChatProvider? _chatProvider;
   AppProvider? _appProvider;
@@ -1451,6 +1456,7 @@ class _ChatPageState extends State<ChatPage>
       'notification_tap_schedule',
       (_) {
         _pendingNotificationTap = payload;
+        _pendingNotificationTapGeneration += 1;
         _notificationTapTask ??= _drainNotificationTapQueue();
       },
       tags: const <String>{'notification:tap'},
@@ -1468,11 +1474,12 @@ class _ChatPageState extends State<ChatPage>
     try {
       while (mounted) {
         final payload = _pendingNotificationTap;
+        final generation = _pendingNotificationTapGeneration;
         if (payload == null) {
           break;
         }
         _pendingNotificationTap = null;
-        await _handleNotificationTap(payload);
+        await _handleNotificationTap(payload, generation);
       }
     } finally {
       _notificationTapTask = null;
@@ -1482,8 +1489,78 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Future<void> _handleNotificationTap(NotificationTapPayload payload) async {
+  Future<void> _handleNotificationTap(
+    NotificationTapPayload payload,
+    int generation,
+  ) async {
     if (!mounted) {
+      return;
+    }
+    final action = payload.action?.trim() ?? 'open';
+    if (action == 'stop') {
+      await context.read<SettingsProvider>().setSessionAttentionPresentation(
+        SessionAttentionPresentation.off,
+      );
+      return;
+    }
+    if (action == 'expand' || action == 'collapse') {
+      await context.read<SettingsProvider>().setSessionAttentionPresentation(
+        action == 'expand'
+            ? SessionAttentionPresentation.panel
+            : SessionAttentionPresentation.bubble,
+      );
+      return;
+    }
+    final snapshotId = payload.snapshotId?.trim();
+    if (action == 'dismiss') {
+      if (snapshotId != null &&
+          snapshotId.isNotEmpty &&
+          di.sl.isRegistered<SessionAttentionCompletionResolver>()) {
+        if (di.sl.isRegistered<ReadAloudService>()) {
+          await di.sl<ReadAloudService>().stopIfReading(snapshotId);
+        }
+        await di.sl<SessionAttentionCompletionResolver>().dismissSnapshot(
+          snapshotId,
+        );
+      }
+      return;
+    }
+    if (action == 'read') {
+      if (snapshotId == null ||
+          snapshotId.isEmpty ||
+          !di.sl.isRegistered<SessionAttentionCompletionResolver>() ||
+          !di.sl.isRegistered<ReadAloudService>()) {
+        return;
+      }
+      final item = await di
+          .sl<SessionAttentionCompletionResolver>()
+          .itemBySnapshotId(snapshotId);
+      if (item == null ||
+          item.speechText.isEmpty ||
+          item.transportCapability ==
+              SessionAttentionTransportCapability.reopenRequired) {
+        return;
+      }
+      if (di.sl.isRegistered<CellularDataSaverService>()) {
+        di.sl<CellularDataSaverService>().noteExplicitUserAction(
+          reason: 'session-attention-read',
+        );
+      }
+      final configuration = TtsConfiguration.fromSettings(
+        context.read<SettingsProvider>().settings,
+      );
+      await di.sl<ReadAloudService>().speak(
+        messageId: item.snapshotId,
+        text: item.speechText,
+        provider: configuration.provider,
+        rate: configuration.rate,
+        pitch: configuration.pitch,
+        voiceId: configuration.voiceId,
+        voiceLocale: configuration.voiceLocale,
+        model: configuration.model,
+        baseUrl: configuration.baseUrl,
+        responseFormat: configuration.responseFormat,
+      );
       return;
     }
     final sessionId = payload.sessionId?.trim();
@@ -1491,12 +1568,39 @@ class _ChatPageState extends State<ChatPage>
       return;
     }
 
+    final targetServerId = payload.serverId?.trim();
+    if (targetServerId != null && targetServerId.isNotEmpty) {
+      final appProvider = context.read<AppProvider>();
+      if (appProvider.serverProfiles.every(
+        (profile) => profile.id != targetServerId,
+      )) {
+        return;
+      }
+      if (appProvider.activeServerId != targetServerId) {
+        final activated = await appProvider.setActiveServer(
+          targetServerId,
+          blockUnhealthy: false,
+        );
+        if (!mounted ||
+            generation != _pendingNotificationTapGeneration ||
+            !activated) {
+          return;
+        }
+        final scopedChatProvider =
+            _chatProvider ?? context.read<ChatProvider>();
+        await scopedChatProvider.onServerScopeChanged();
+        if (!mounted || generation != _pendingNotificationTapGeneration) {
+          return;
+        }
+      }
+    }
+
     final targetDirectory = payload.directory?.trim();
     if (targetDirectory != null && targetDirectory.isNotEmpty) {
       final currentDirectory = context.read<ProjectProvider>().currentDirectory;
       if (currentDirectory != targetDirectory) {
         await _switchDirectoryContext(targetDirectory);
-        if (!mounted) {
+        if (!mounted || generation != _pendingNotificationTapGeneration) {
           return;
         }
       }
@@ -1511,6 +1615,25 @@ class _ChatPageState extends State<ChatPage>
           .firstOrNull;
       if (targetSession != null) {
         await chatProvider.selectSession(targetSession);
+        if (!mounted || generation != _pendingNotificationTapGeneration) {
+          return;
+        }
+        if (targetServerId != null &&
+            targetServerId.isNotEmpty &&
+            targetDirectory != null &&
+            targetDirectory.isNotEmpty &&
+            di.sl.isRegistered<SessionAttentionCompletionResolver>()) {
+          await di.sl<SessionAttentionCompletionResolver>().removeIdentity(
+            SessionAttentionIdentity(
+              serverId: targetServerId,
+              directory: targetDirectory,
+              rootSessionId: sessionId,
+            ),
+          );
+        }
+        if (di.sl.isRegistered<ReadAloudService>()) {
+          await di.sl<ReadAloudService>().stop();
+        }
         return;
       }
 
@@ -1518,7 +1641,7 @@ class _ChatPageState extends State<ChatPage>
           reloadAttempts < _notificationTapReloadAttempts) {
         reloadAttempts += 1;
         await chatProvider.loadSessions(userInitiated: true);
-        if (!mounted) {
+        if (!mounted || generation != _pendingNotificationTapGeneration) {
           return;
         }
         continue;
@@ -1529,7 +1652,7 @@ class _ChatPageState extends State<ChatPage>
       }
 
       await Future<void>.delayed(_notificationTapRetryInterval);
-      if (!mounted) {
+      if (!mounted || generation != _pendingNotificationTapGeneration) {
         return;
       }
     }

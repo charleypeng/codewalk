@@ -68,6 +68,7 @@ import '../../presentation/services/sensevoice_model_manager.dart';
 import '../../presentation/services/session_attention/session_attention_coordinator.dart';
 import '../../presentation/services/session_attention/session_attention_completion_resolver.dart';
 import '../../presentation/services/session_attention/session_attention_host_service.dart';
+import '../../presentation/services/session_attention/session_attention_host_protocol.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
 import '../../presentation/services/sound_service.dart';
 import '../../presentation/services/speech_input_service_moonshine.dart';
@@ -132,10 +133,45 @@ Future<void> init() async {
   sl.registerLazySingleton(SoundService.new);
   sl.registerLazySingleton(TtsApiKeyStorage.new);
   sl.registerLazySingleton(SessionAttentionSnapshotStore.new);
+  final sessionAttentionHostGeneration =
+      'main-${DateTime.now().microsecondsSinceEpoch}';
+  var sessionAttentionHostRevision = 0;
+  var sessionAttentionPublishTail = Future<void>.value();
   sl.registerLazySingleton(
     () => SessionAttentionCompletionResolver(
       getChatMessages: sl(),
       snapshotStore: sl(),
+      onSnapshotChanged: (payload) async {
+        final revision = ++sessionAttentionHostRevision;
+        final publication = sessionAttentionPublishTail.then((_) async {
+          final host = sl<SessionAttentionHostService>();
+          if (host is! SessionAttentionSnapshotHostService ||
+              !sl.isRegistered<SettingsProvider>()) {
+            return;
+          }
+          final snapshotHost = host as SessionAttentionSnapshotHostService;
+          final settings = sl<SettingsProvider>().settings;
+          final activeServerId = await sl<AppLocalDataSource>()
+              .getActiveServerId();
+          await snapshotHost.publishSnapshot(
+            SessionAttentionHostSnapshot(
+              generation: sessionAttentionHostGeneration,
+              revision: revision,
+              presentation: settings.sessionAttentionPresentation,
+              activeServerId: activeServerId ?? '',
+              items: payload.items
+                  .where((item) => item.identity.serverId == activeServerId)
+                  .toList(growable: false),
+              fullResynchronization: revision == 1,
+            ),
+          );
+        });
+        sessionAttentionPublishTail = publication.then<void>(
+          (_) {},
+          onError: (_, _) {},
+        );
+        await publication;
+      },
     ),
   );
   sl.registerLazySingleton(
@@ -313,6 +349,8 @@ Future<void> init() async {
       cellularDataSaverService: sl(),
       sessionAttentionHostService: sl(),
       sessionAttentionStopTts: sl<ReadAloudService>().stop,
+      sessionAttentionRepublish:
+          sl<SessionAttentionCompletionResolver>().publishCurrent,
       nativeReadAloudAvailabilityProbe: () =>
           sl<ReadAloudService>().isProviderAvailable(ReadAloudProvider.native),
     ),

@@ -428,7 +428,9 @@ class _AndroidBackgroundAlertRunner {
       final shouldAttemptPermissionAutoApprove =
           settings.composerAutoApprovePermissions && autoApproveContext != null;
       final shouldFetchSessionMetadata =
-          shouldAttemptPermissionAutoApprove || agentEnabled;
+          shouldAttemptPermissionAutoApprove ||
+          agentEnabled ||
+          settings.notifications.values.any((enabled) => enabled);
       var sessionMetadata = shouldFetchSessionMetadata
           ? await _fetchSessionMetadata(dio)
           : const _SessionMetadata.empty();
@@ -506,7 +508,11 @@ class _AndroidBackgroundAlertRunner {
 
       if (!plan.baselineOnly) {
         for (final signal in plan.signals) {
-          await _notificationDispatcher.show(signal: signal);
+          await _notificationDispatcher.show(
+            signal: signal,
+            serverId: server.serverId,
+            directory: sessionMetadata.directoryBySessionId[signal.sessionId],
+          );
         }
       }
 
@@ -806,6 +812,10 @@ class _AndroidBackgroundAlertRunner {
               defaultServerId: defaultServerId,
             );
             if (selected != null) {
+              if (selected['oauthEnabled'] == true ||
+                  selected['tailscaleEnabled'] == true) {
+                return null;
+              }
               final baseUrl = selected['url']?.toString().trim() ?? '';
               if (baseUrl.isNotEmpty) {
                 final serverId = selected['id']?.toString().trim();
@@ -1005,6 +1015,7 @@ class _AndroidBackgroundAlertRunner {
       final titleById = <String, String>{};
       final updatedAtById = <String, int>{};
       final parentByChildId = <String, String>{};
+      final directoryById = <String, String>{};
       for (final item in raw) {
         if (item is! Map) {
           continue;
@@ -1028,12 +1039,17 @@ class _AndroidBackgroundAlertRunner {
         if (parentId != null && parentId.isNotEmpty) {
           parentByChildId[sessionId] = parentId;
         }
+        final directory = model.directory?.trim();
+        if (directory != null && directory.isNotEmpty) {
+          directoryById[sessionId] = directory;
+        }
       }
 
       return _SessionMetadata(
         titleBySessionId: titleById,
         updatedAtBySessionId: updatedAtById,
         parentSessionIdByChild: parentByChildId,
+        directoryBySessionId: directoryById,
       );
     } catch (_) {
       return const _SessionMetadata.empty();
@@ -1138,7 +1154,11 @@ class _BackgroundNotificationDispatcher {
   bool _initialized = false;
   bool _notificationsEnabled = true;
 
-  Future<void> show({required BackgroundAlertSignal signal}) async {
+  Future<void> show({
+    required BackgroundAlertSignal signal,
+    required String serverId,
+    String? directory,
+  }) async {
     await _ensureInitialized();
     if (!_initialized || !_notificationsEnabled) {
       return;
@@ -1150,6 +1170,8 @@ class _BackgroundNotificationDispatcher {
     final payload = NotificationTapPayload(
       category: signal.categoryKey,
       sessionId: hasSessionId ? normalizedSessionId : null,
+      serverId: serverId,
+      directory: directory,
     ).toRaw();
 
     final details = NotificationDetails(
@@ -1294,16 +1316,19 @@ class _SessionMetadata {
     required this.titleBySessionId,
     required this.updatedAtBySessionId,
     required this.parentSessionIdByChild,
+    required this.directoryBySessionId,
   });
 
   const _SessionMetadata.empty()
     : titleBySessionId = const <String, String>{},
       updatedAtBySessionId = const <String, int>{},
-      parentSessionIdByChild = const <String, String>{};
+      parentSessionIdByChild = const <String, String>{},
+      directoryBySessionId = const <String, String>{};
 
   final Map<String, String> titleBySessionId;
   final Map<String, int> updatedAtBySessionId;
   final Map<String, String> parentSessionIdByChild;
+  final Map<String, String> directoryBySessionId;
 }
 
 class _PermissionAutoApproveRunResult {
