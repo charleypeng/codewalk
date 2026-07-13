@@ -2,6 +2,31 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.176.0 - 2026-07-13
+
+- fix(ci): restore ADB startup for runtime matrix
+- chore(agent): [Step 7/8] complete session attention integration
+- chore(agent): [Step 6/8] implement desktop and iOS attention hosts
+- chore(agent): [Step 5/8] implement Android overlay host and activation
+- chore(agent): [Step 4/8] add reusable TTS and shared attention UI
+- chore(agent): [Step 3/8] add encrypted snapshots and completion resolution
+- chore(agent): [Step 2/8] add settings and attention domain state
+- chore(agent): [Step 1/8] validate session attention prototypes
+- fix(ci): apply compile-only Android prototype gate
+- fix(ci): start ADB before Android emulator
+- fix(ci): configure Android runtime jobs without APK build
+- fix(ci): run Android overlay tests on Intel macOS
+- fix(ci): defer Android emulator capability check
+- fix(ci): accelerate Android overlay runtime tests
+- fix(ci): prepare Gradle wrapper before emulator tests
+- test(android): gate overlay service on API 34-36
+- fix(ci): install Go in desktop prototype jobs
+- fix(ci): validate prototypes on project Flutter
+- fix(ci): provision prototype native toolchains
+- chore(prototype): add session overlay platform gates
+- plan: add cross-platform session attention overlay
+- chore: remove obsolete planning files
+
 ## v1.175.0 - 2026-07-11
 
 - chore(agent): [Step 4/5] document adaptive onboarding
