@@ -31,7 +31,7 @@ jobs:
 
   android-runtime:
     runs-on: macos-15-intel
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -62,6 +62,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          pre-emulator-launch-script: adb start-server
           script: |
             adb install -r build/app/outputs/flutter-apk/app-debug.apk
             adb install -r build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
