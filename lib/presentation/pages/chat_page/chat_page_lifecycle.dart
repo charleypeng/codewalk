@@ -67,6 +67,18 @@ extension _ChatPageLifecycle on _ChatPageState {
       _consumePendingUiNotice(provider);
       _consumePendingHistoryComposerSync(provider);
       _consumeRejectedDraft(provider);
+      if (defaultTargetPlatform == TargetPlatform.iOS &&
+          _sessionAttentionOverlayController != null) {
+        _sessionAttentionOverlayRefreshTimer?.cancel();
+        _sessionAttentionOverlayRefreshTimer = Timer(
+          const Duration(milliseconds: 600),
+          () => unawaited(
+            _sessionAttentionOverlayController!.refresh(
+              activeServerId: _appProvider?.activeServerId,
+            ),
+          ),
+        );
+      }
     }
     _reconcileTimelineSearchForProviderChanged();
     _scheduleAutoApprovePermissionDrain(reason: 'chat-provider-changed');

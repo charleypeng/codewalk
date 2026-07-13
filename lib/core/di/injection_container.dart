@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -163,6 +164,9 @@ Future<void> init() async {
                   .where((item) => item.identity.serverId == activeServerId)
                   .toList(growable: false),
               fullResynchronization: revision == 1,
+              activeSpeechSnapshotId: sl.isRegistered<ReadAloudService>()
+                  ? sl<ReadAloudService>().activeMessageId
+                  : null,
             ),
           );
         });
@@ -174,17 +178,24 @@ Future<void> init() async {
       },
     ),
   );
-  sl.registerLazySingleton(
-    () => ReadAloudService(
+  sl.registerLazySingleton(() {
+    final service = ReadAloudService(
       apiKeyStorage: sl<TtsApiKeyStorage>(),
       backends: <ReadAloudProvider, TtsBackend>{
         ReadAloudProvider.native: NativeTtsBackend(),
         ReadAloudProvider.edgeExperimental: EdgeExperimentalTtsBackend(),
         ReadAloudProvider.openAiCompatible: OpenAiCompatibleTtsBackend(),
       },
-    ),
-    dispose: (service) => service.dispose(),
-  );
+    );
+    String? lastActiveSnapshotId;
+    service.addListener(() {
+      final next = service.activeMessageId;
+      if (next == lastActiveSnapshotId) return;
+      lastActiveSnapshotId = next;
+      unawaited(sl<SessionAttentionCompletionResolver>().publishCurrent());
+    });
+    return service;
+  }, dispose: (service) => service.dispose());
   sl.registerLazySingleton(TailscaleService.new);
   sl.registerLazySingleton<SessionAttentionHostService>(
     createSessionAttentionHostService,

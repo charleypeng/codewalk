@@ -57,6 +57,7 @@ import '../../core/network/dio_client.dart';
 import '../../core/utils/path_utils.dart';
 import '../../core/utils/timeline_search_service.dart';
 import '../../data/datasources/terminal_remote_datasource.dart';
+import '../../data/session_attention/session_attention_snapshot_store.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/canned_answer.dart';
 import '../../domain/entities/chat_composer_draft.dart';
@@ -93,6 +94,8 @@ import '../theme/app_theme.dart';
 import '../theme/app_visual_style_tokens.dart';
 import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
+import '../widgets/session_attention_overlay/session_attention_overlay.dart';
+import '../widgets/session_attention_overlay/session_attention_overlay_controller.dart';
 import '../utils/app_page_route.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_server_error_formatter.dart';
@@ -319,6 +322,10 @@ class _ChatPageState extends State<ChatPage>
   NotificationTapPayload? _pendingNotificationTap;
   int _pendingNotificationTapGeneration = 0;
   Future<void>? _notificationTapTask;
+  SessionAttentionOverlayController? _sessionAttentionOverlayController;
+  String? _sessionAttentionOverlayRefreshKey;
+  bool _sessionAttentionOverlayRefreshScheduled = false;
+  Timer? _sessionAttentionOverlayRefreshTimer;
   ChatProvider? _chatProvider;
   AppProvider? _appProvider;
   ProjectProvider? _projectProvider;
@@ -757,6 +764,34 @@ class _ChatPageState extends State<ChatPage>
         _flushPendingPostOnboardingTourAutoStart();
       });
     }
+    _ensureSessionAttentionOverlayController();
+  }
+
+  void _ensureSessionAttentionOverlayController() {
+    if (defaultTargetPlatform != TargetPlatform.iOS ||
+        _sessionAttentionOverlayController != null ||
+        !di.sl.isRegistered<SessionAttentionSnapshotStore>() ||
+        !di.sl.isRegistered<ReadAloudService>()) {
+      return;
+    }
+    final controller = SessionAttentionOverlayController(
+      snapshotStore: di.sl<SessionAttentionSnapshotStore>(),
+      readAloudService: di.sl<ReadAloudService>(),
+      settings: () =>
+          _settingsProvider?.settings ?? ExperienceSettings.defaults(),
+      noteExplicitUserAction: (reason) {
+        if (di.sl.isRegistered<CellularDataSaverService>()) {
+          di.sl<CellularDataSaverService>().noteExplicitUserAction(
+            reason: reason,
+          );
+        }
+      },
+    )..addListener(_handleSessionAttentionOverlayChanged);
+    _sessionAttentionOverlayController = controller;
+  }
+
+  void _handleSessionAttentionOverlayChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -771,6 +806,10 @@ class _ChatPageState extends State<ChatPage>
     _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
+    _sessionAttentionOverlayController
+      ?..removeListener(_handleSessionAttentionOverlayChanged)
+      ..dispose();
+    _sessionAttentionOverlayRefreshTimer?.cancel();
     _clearBackgroundPermissionAutoApproveContextBestEffort(
       reason: 'chat-page-dispose',
     );
@@ -839,6 +878,15 @@ class _ChatPageState extends State<ChatPage>
         }
         _handleReturnToChat(provider, reason: 'app-resumed');
       }
+    }
+    if (_isAppInForeground &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        _sessionAttentionOverlayController != null) {
+      unawaited(
+        _sessionAttentionOverlayController!.refresh(
+          activeServerId: _appProvider?.activeServerId,
+        ),
+      );
     }
   }
 
@@ -1541,6 +1589,12 @@ class _ChatPageState extends State<ChatPage>
               SessionAttentionTransportCapability.reopenRequired) {
         return;
       }
+      final readAloudService = di.sl<ReadAloudService>();
+      if (readAloudService.activeMessageId == snapshotId) {
+        await readAloudService.stopIfReading(snapshotId);
+        await di.sl<SessionAttentionCompletionResolver>().publishCurrent();
+        return;
+      }
       if (di.sl.isRegistered<CellularDataSaverService>()) {
         di.sl<CellularDataSaverService>().noteExplicitUserAction(
           reason: 'session-attention-read',
@@ -1549,7 +1603,7 @@ class _ChatPageState extends State<ChatPage>
       final configuration = TtsConfiguration.fromSettings(
         context.read<SettingsProvider>().settings,
       );
-      await di.sl<ReadAloudService>().speak(
+      await readAloudService.speak(
         messageId: item.snapshotId,
         text: item.speechText,
         provider: configuration.provider,
@@ -1561,6 +1615,7 @@ class _ChatPageState extends State<ChatPage>
         baseUrl: configuration.baseUrl,
         responseFormat: configuration.responseFormat,
       );
+      await di.sl<SessionAttentionCompletionResolver>().publishCurrent();
       return;
     }
     final sessionId = payload.sessionId?.trim();
@@ -1633,6 +1688,12 @@ class _ChatPageState extends State<ChatPage>
         }
         if (di.sl.isRegistered<ReadAloudService>()) {
           await di.sl<ReadAloudService>().stop();
+        }
+        if (defaultTargetPlatform == TargetPlatform.iOS &&
+            _sessionAttentionOverlayController != null) {
+          await _sessionAttentionOverlayController!.refresh(
+            activeServerId: targetServerId,
+          );
         }
         return;
       }
@@ -2007,6 +2068,32 @@ class _ChatPageState extends State<ChatPage>
             MediaQuery.viewInsetsOf(context).bottom > 0 ||
             View.of(context).viewInsets.bottom > 0;
         final settingsProvider = context.watch<SettingsProvider>();
+        final attentionController = _sessionAttentionOverlayController;
+        final attentionPresentation =
+            settingsProvider.settings.sessionAttentionPresentation;
+        final showInAppAttention =
+            defaultTargetPlatform == TargetPlatform.iOS &&
+            attentionController != null &&
+            attentionPresentation != SessionAttentionPresentation.off;
+        if (showInAppAttention) {
+          final refreshKey =
+              '${_appProvider?.activeServerId}:${attentionPresentation.name}';
+          if (_sessionAttentionOverlayRefreshKey != refreshKey &&
+              !_sessionAttentionOverlayRefreshScheduled) {
+            _sessionAttentionOverlayRefreshKey = refreshKey;
+            _sessionAttentionOverlayRefreshScheduled = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _sessionAttentionOverlayRefreshScheduled = false;
+              if (mounted) {
+                unawaited(
+                  attentionController.refresh(
+                    activeServerId: _appProvider?.activeServerId,
+                  ),
+                );
+              }
+            });
+          }
+        }
         final conversationsPaneEnabled = settingsProvider.isDesktopPaneVisible(
           DesktopPane.conversations,
         );
@@ -2321,6 +2408,60 @@ class _ChatPageState extends State<ChatPage>
                         Positioned.fill(
                           child: _buildFullscreenTerminalOverlay(
                             settingsProvider,
+                          ),
+                        ),
+                      if (showInAppAttention &&
+                          attentionController.items.isNotEmpty)
+                        PositionedDirectional(
+                          end: 16,
+                          bottom: 16 + MediaQuery.paddingOf(context).bottom,
+                          child: SessionAttentionOverlay(
+                            items: attentionController.items,
+                            expanded:
+                                attentionPresentation ==
+                                SessionAttentionPresentation.panel,
+                            semanticLabel:
+                                context.l10n.settingsSessionAttentionTitle,
+                            stateLabelBuilder: (kind) => kind.name,
+                            openLabel: context.l10n.notificationOpenToClear,
+                            expandLabel: context.l10n.chatExpandGroup,
+                            collapseLabel: context.l10n.chatCollapseGroup,
+                            readLabel: context.l10n.msgReadAloud,
+                            stopReadingLabel: context.l10n.msgStopReadAloud,
+                            dismissLabel: context.l10n.settingsAboutDismiss,
+                            stopOverlayLabel:
+                                context.l10n.settingsSessionAttentionStop,
+                            activeSpeechSnapshotId:
+                                attentionController.activeSpeechSnapshotId,
+                            onOpen: (item) {
+                              _scheduleNotificationTap(
+                                NotificationTapPayload(
+                                  category: 'session_attention',
+                                  action: 'open',
+                                  serverId: item.identity.serverId,
+                                  directory: item.identity.directory,
+                                  sessionId: item.identity.rootSessionId,
+                                  snapshotId: item.snapshotId,
+                                ),
+                              );
+                            },
+                            onRead: (item) =>
+                                unawaited(attentionController.readOrStop(item)),
+                            onDismiss: (item) =>
+                                unawaited(attentionController.dismiss(item)),
+                            onToggleExpanded: () => unawaited(
+                              settingsProvider.setSessionAttentionPresentation(
+                                attentionPresentation ==
+                                        SessionAttentionPresentation.panel
+                                    ? SessionAttentionPresentation.bubble
+                                    : SessionAttentionPresentation.panel,
+                              ),
+                            ),
+                            onStopOverlay: () => unawaited(
+                              settingsProvider.setSessionAttentionPresentation(
+                                SessionAttentionPresentation.off,
+                              ),
+                            ),
                           ),
                         ),
                     ],

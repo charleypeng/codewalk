@@ -16,6 +16,8 @@ import '../../widgets/session_attention_overlay/session_attention_overlay.dart';
 import 'session_attention_host_protocol.dart';
 
 const sessionAttentionDesktopChildRole = 'session_attention_child_v1';
+const sessionAttentionDesktopChannelName =
+    'codewalk/session_attention_desktop_v1';
 const _androidServiceChannel = MethodChannel(
   'codewalk/session_overlay_service',
 );
@@ -61,8 +63,14 @@ class SessionAttentionHostApp extends StatefulWidget {
       _SessionAttentionHostAppState();
 }
 
-class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
+class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
+    with WindowListener {
   SessionAttentionHostSnapshot? _snapshot;
+  SessionAttentionPresentation? _desktopPresentation;
+  final WindowMethodChannel _desktopChannel = const WindowMethodChannel(
+    sessionAttentionDesktopChannelName,
+    mode: ChannelMode.bidirectional,
+  );
 
   @override
   void initState() {
@@ -72,10 +80,24 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
       _androidServiceChannel.invokeMethod<void>('requestFullSnapshot');
       unawaited(_restoreAndroidSnapshot());
     } else {
-      widget.desktopController!.setWindowMethodHandler(_handleMethodCall);
-      widget.desktopController!.invokeMethod<void>(
-        'sessionAttention.requestFullSnapshot',
-      );
+      _desktopChannel.setMethodCallHandler(_handleMethodCall);
+      windowManager.addListener(this);
+      unawaited(windowManager.setPreventClose(true));
+      unawaited(_restoreDesktopSnapshot());
+    }
+  }
+
+  @override
+  void onWindowClose() {
+    unawaited(windowManager.hide());
+  }
+
+  Future<void> _restoreDesktopSnapshot() async {
+    final raw = await _desktopChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'requestFullSnapshot',
+    );
+    if (raw != null) {
+      await _handleMethodCall(MethodCall('applySnapshot', raw));
     }
   }
 
@@ -124,12 +146,29 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
     }
     final raw = call.arguments;
     if (raw is! Map) return false;
-    final next = SessionAttentionHostSnapshot.fromJson(
-      Map<String, dynamic>.from(raw),
-    );
+    late final SessionAttentionHostSnapshot next;
+    try {
+      next = SessionAttentionHostSnapshot.fromJson(
+        Map<String, dynamic>.from(raw),
+      );
+    } on FormatException {
+      return false;
+    }
     if (!next.supersedes(_snapshot)) return false;
     if (mounted) {
       setState(() => _snapshot = next);
+    }
+    if (widget.desktopController != null) {
+      if (_desktopPresentation != next.presentation) {
+        _desktopPresentation = next.presentation;
+        await windowManager.setSize(
+          next.presentation == SessionAttentionPresentation.panel
+              ? const Size(420, 560)
+              : const Size(112, 112),
+        );
+        await windowManager.setAlwaysOnTop(true);
+        await windowManager.setSkipTaskbar(true);
+      }
     }
     return true;
   }
@@ -145,10 +184,7 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
     if (widget.desktopController == null) {
       await _androidServiceChannel.invokeMethod<void>('command', payload);
     } else {
-      await widget.desktopController!.invokeMethod<void>(
-        'sessionAttention.command',
-        payload,
-      );
+      await _desktopChannel.invokeMethod<void>('command', payload);
     }
   }
 
@@ -157,7 +193,8 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
     if (widget.desktopController == null) {
       _androidServiceChannel.setMethodCallHandler(null);
     } else {
-      widget.desktopController!.setWindowMethodHandler(null);
+      _desktopChannel.setMethodCallHandler(null);
+      windowManager.removeListener(this);
     }
     super.dispose();
   }
@@ -185,6 +222,7 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
             stopReadingLabel: 'Stop reading',
             dismissLabel: 'Dismiss',
             stopOverlayLabel: 'Stop overlay',
+            activeSpeechSnapshotId: snapshot?.activeSpeechSnapshotId,
             onOpen: (item) => _command('open', item),
             onRead: (item) => _command('read', item),
             onDismiss: (item) => _command('dismiss', item),

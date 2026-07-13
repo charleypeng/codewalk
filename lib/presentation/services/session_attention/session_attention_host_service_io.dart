@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../../domain/entities/experience_settings.dart';
 import 'session_attention_host_contract.dart';
@@ -21,6 +22,12 @@ class _IoSessionAttentionHostService
   static const _androidChannel = MethodChannel('codewalk/session_overlay_host');
 
   WindowController? _desktopWindow;
+  final WindowMethodChannel _desktopChannel = const WindowMethodChannel(
+    sessionAttentionDesktopChannelName,
+    mode: ChannelMode.bidirectional,
+  );
+  bool _desktopChannelRegistered = false;
+  SessionAttentionHostSnapshot? _desktopSnapshot;
   bool _desktopHostActive = false;
   bool _iosHostActive = false;
 
@@ -128,6 +135,7 @@ class _IoSessionAttentionHostService
             );
     }
     if (_isDesktop) {
+      await _ensureDesktopChannel();
       final controller =
           await _findDesktopWindow() ??
           await WindowController.create(
@@ -180,12 +188,44 @@ class _IoSessionAttentionHostService
       return;
     }
     if (_isDesktop) {
+      _desktopSnapshot = snapshot;
+      await _ensureDesktopChannel();
       final controller = await _findDesktopWindow();
-      await controller?.invokeMethod(
-        'sessionAttention.applySnapshot',
-        snapshot.toJson(),
-      );
+      if (snapshot.presentation == SessionAttentionPresentation.off ||
+          snapshot.items.isEmpty) {
+        await controller?.hide();
+        return;
+      }
+      try {
+        await _desktopChannel.invokeMethod<void>(
+          'applySnapshot',
+          snapshot.toJson(),
+        );
+      } on WindowChannelException {
+        // The child requests _desktopSnapshot after registering its channel.
+      }
+      await controller?.show();
     }
+  }
+
+  Future<void> _ensureDesktopChannel() async {
+    if (_desktopChannelRegistered) return;
+    await _desktopChannel.setMethodCallHandler((call) async {
+      if (call.method == 'requestFullSnapshot') {
+        return _desktopSnapshot?.toJson();
+      }
+      if (call.method == 'command' && call.arguments is Map) {
+        final command = Map<String, dynamic>.from(call.arguments as Map);
+        SessionAttentionHostCommandBus.emit(command);
+        if (command['action'] == 'open') {
+          await windowManager.show();
+          await windowManager.focus();
+        }
+        return true;
+      }
+      return null;
+    });
+    _desktopChannelRegistered = true;
   }
 
   Future<WindowController?> _findDesktopWindow() async {

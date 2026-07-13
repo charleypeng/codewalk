@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
 import 'app_activation_service.dart';
+import 'session_attention/session_attention_host_protocol.dart';
 import 'web_notification_bridge.dart';
 
 typedef AppActivationCallback = Future<void> Function();
@@ -129,6 +130,7 @@ class NotificationService {
   bool _initialized;
   NotificationTapPayload? _pendingTap;
   StreamSubscription<String>? _webTapSubscription;
+  StreamSubscription<Map<String, dynamic>>? _attentionCommandSubscription;
 
   Stream<NotificationTapPayload> get onNotificationTapped =>
       _tapController.stream;
@@ -147,6 +149,8 @@ class NotificationService {
     }
     _webTapSubscription?.cancel();
     _webTapSubscription = null;
+    _attentionCommandSubscription?.cancel();
+    _attentionCommandSubscription = null;
     _tapController.close();
   }
 
@@ -156,6 +160,19 @@ class NotificationService {
     }
 
     try {
+      _attentionCommandSubscription ??= SessionAttentionHostCommandBus.stream
+          .listen((command) {
+            _emitTap(
+              NotificationTapPayload(
+                category: 'session_attention',
+                action: command['action'] as String?,
+                sessionId: command['sessionId'] as String?,
+                serverId: command['serverId'] as String?,
+                directory: command['directory'] as String?,
+                snapshotId: command['snapshotId'] as String?,
+              ),
+            );
+          });
       if (kIsWeb) {
         _webTapSubscription ??= webNotificationTapStream.listen(
           (rawPayload) => unawaited(_handleRawTap(rawPayload)),
@@ -721,11 +738,13 @@ class NotificationService {
         stackTrace: stackTrace,
       );
     }
-    _pendingTap = payload;
-    if (!_tapController.isClosed) {
-      _tapController.add(payload);
-    }
+    _emitTap(payload);
     await _dismissTappedNotification(payload);
+  }
+
+  void _emitTap(NotificationTapPayload payload) {
+    _pendingTap = payload;
+    if (!_tapController.isClosed) _tapController.add(payload);
   }
 
   Future<void> _dismissTappedNotification(

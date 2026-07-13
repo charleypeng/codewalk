@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../domain/entities/experience_settings.dart';
 import '../../../domain/entities/session_attention_overlay/session_attention_models.dart';
 
@@ -10,6 +12,7 @@ class SessionAttentionHostSnapshot {
     required this.items,
     this.fullResynchronization = false,
     this.producer = 'main',
+    this.activeSpeechSnapshotId,
   });
 
   final String generation;
@@ -19,6 +22,7 @@ class SessionAttentionHostSnapshot {
   final List<SessionAttentionItem> items;
   final bool fullResynchronization;
   final String producer;
+  final String? activeSpeechSnapshotId;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'schemaVersion': 1,
@@ -36,9 +40,13 @@ class SessionAttentionHostSnapshot {
         .toList(growable: false),
     'fullResynchronization': fullResynchronization,
     'producer': producer,
+    'activeSpeechSnapshotId': activeSpeechSnapshotId,
   };
 
   factory SessionAttentionHostSnapshot.fromJson(Map<String, dynamic> json) {
+    if (json['schemaVersion'] != 1) {
+      throw const FormatException('Unsupported session attention host schema.');
+    }
     final rawPresentation = json['presentation'];
     var presentation = SessionAttentionPresentation.off;
     for (final value in SessionAttentionPresentation.values) {
@@ -61,6 +69,7 @@ class SessionAttentionHostSnapshot {
           .toList(growable: false),
       fullResynchronization: json['fullResynchronization'] as bool? ?? false,
       producer: json['producer'] as String? ?? 'main',
+      activeSpeechSnapshotId: json['activeSpeechSnapshotId'] as String?,
     );
   }
 
@@ -73,4 +82,17 @@ class SessionAttentionHostSnapshot {
 
 abstract interface class SessionAttentionSnapshotHostService {
   Future<void> publishSnapshot(SessionAttentionHostSnapshot snapshot);
+}
+
+class SessionAttentionHostCommandBus {
+  SessionAttentionHostCommandBus._();
+
+  static final StreamController<Map<String, dynamic>> _controller =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  static Stream<Map<String, dynamic>> get stream => _controller.stream;
+
+  static void emit(Map<String, dynamic> command) {
+    if (!_controller.isClosed) _controller.add(command);
+  }
 }

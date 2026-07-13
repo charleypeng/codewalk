@@ -38,6 +38,7 @@ void main() {
       activeServerId: 'server-a',
       items: <SessionAttentionItem>[_item()],
       fullResynchronization: true,
+      producer: 'restore',
     );
 
     final json = snapshot.toJson();
@@ -46,6 +47,7 @@ void main() {
     expect(decoded.items.single.identity, _item().identity);
     expect((json['items'] as List).single['snapshotId'], _item().snapshotId);
     expect(decoded.presentation, SessionAttentionPresentation.panel);
+    expect(decoded.producer, 'restore');
   });
 
   test(
