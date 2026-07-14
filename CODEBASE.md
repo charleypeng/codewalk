@@ -72,7 +72,7 @@ codewalk/
 │       ├── utils/ # Presentation helpers (incl. WindowSizeClass MD3 breakpoints, diff parser, file path detector, file path markdown, math markdown)
 │       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors, AppVisualStyleTokens (issue #86)
 ├── test/                               # Unit, widget, integration, presentation, support tests
-├── tool/ci/                            # Analyzer budget and coverage gate scripts
+├── tool/ci/                            # Analyzer budget, coverage gate, and session-overlay Android instrumentation scripts
 ├── tool/i18n/                          # ARB generation and code migration tooling
 ├── .github/workflows/                  # CI and release workflows
 ├── .opencode/agents/                  # Repo-local OpenCode agents
@@ -495,8 +495,10 @@ test/support/                          # Test helpers/fakes; `mock_opencode_serv
 test/contract/                         # Contract tests; `chat_event_contract_test.dart` covers SSE event dispatch contract tests, including `session.idle` idle-trailing-error invariant (P-002), `message.created` fallback fetch dispatch, and `message.part.delta` stale-fallback monotonic-version merge coverage
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
+tool/ci/run_session_overlay_instrumentation.sh # Android session-overlay instrumentation runner for the GitHub Actions API 34–36 matrix; bounded APK installs/test execution, semantic result validation, and runtime diagnostics
 tool/release/changelog.py              # Changelog update/extract helper used by `make release` and GitHub Releases
 .github/workflows/ci.yml               # CI executes analyze + tests + coverage gate; includes Go setup (actions/setup-go@v5) in quality, test_shards, and coverage jobs for Tailscale dep; `windows_build` job runs on `windows-latest` and executes `flutter build windows --debug` to validate the runner-owned WASAPI microphone bridge compiles
+.github/workflows/session-overlay-prototype.yml # Session-overlay prototype workflow: Android compile plus API 34–36 runtime instrumentation, and desktop compile matrix
 ```
 
 ## Internationalization (i18n)
