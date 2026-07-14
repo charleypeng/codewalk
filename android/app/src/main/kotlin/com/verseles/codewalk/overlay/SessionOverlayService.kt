@@ -203,13 +203,7 @@ class SessionOverlayService : Service() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        val snapshot = currentSnapshot ?: return
-        val presentation = snapshot["presentation"] as? String ?: return
-        @Suppress("UNCHECKED_CAST")
-        val items = snapshot["items"] as? List<Map<String, Any?>> ?: emptyList()
-        if (presentation != "off" && items.isNotEmpty()) {
-            attachOrResizeOverlay(presentation)
-        }
+        currentSnapshot?.let(::renderSnapshot)
     }
 
     override fun onDestroy() {

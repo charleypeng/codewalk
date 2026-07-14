@@ -2,6 +2,17 @@ name: Session Overlay Prototype
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/session-overlay-prototype.yml"
+      - "android/app/build.gradle.kts"
+      - "android/app/src/main/AndroidManifest.xml"
+      - "android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt"
+      - "android/app/src/main/kotlin/com/verseles/codewalk/overlay/**"
+      - "android/app/src/androidTest/kotlin/com/verseles/codewalk/overlay/**"
+      - "lib/presentation/services/session_attention/**"
+      - "lib/presentation/widgets/session_attention_overlay/**"
+      - "test/widget/session_attention_overlay_test.dart"
 
 env:
   FLUTTER_VERSION: "3.41.5"

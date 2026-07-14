@@ -71,7 +71,11 @@ Widget _app({
       body: Center(
         child: hostSize == null
             ? overlay
-            : SizedBox.fromSize(size: hostSize, child: overlay),
+            : SizedBox.fromSize(
+                key: const ValueKey<String>('session_attention_test_host'),
+                size: hostSize,
+                child: Align(alignment: Alignment.topCenter, child: overlay),
+              ),
       ),
     ),
   );
@@ -89,27 +93,93 @@ void main() {
 
     expect(
       tester.getSize(
-        find.byKey(const ValueKey<String>('session_attention_bubble')),
+        find.byKey(const ValueKey<String>('session_attention_test_host')),
       ),
       const Size(96, 96),
     );
+    final bubbleSize = tester.getSize(
+      find.byKey(const ValueKey<String>('session_attention_bubble')),
+    );
+    expect(bubbleSize.width, lessThanOrEqualTo(96));
+    expect(bubbleSize.height, lessThanOrEqualTo(96));
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('panel fits the 360 by 240 Android host', (tester) async {
+    final items = <SessionAttentionItem>[
+      _item(id: 'session-a'),
+      _item(id: 'session-b'),
+      _item(id: 'session-c'),
+    ];
+    SessionAttentionItem? opened;
+    SessionAttentionItem? read;
+    SessionAttentionItem? dismissed;
     await tester.pumpWidget(
       _app(
-        items: <SessionAttentionItem>[_item()],
+        items: items,
         expanded: true,
         hostSize: const Size(360, 240),
+        onOpen: (item) => opened = item,
+        onRead: (item) => read = item,
+        onDismiss: (item) => dismissed = item,
       ),
     );
 
     expect(
       tester.getSize(
-        find.byKey(const ValueKey<String>('session_attention_panel')),
+        find.byKey(const ValueKey<String>('session_attention_test_host')),
       ),
       const Size(360, 240),
+    );
+    final panelSize = tester.getSize(
+      find.byKey(const ValueKey<String>('session_attention_panel')),
+    );
+    expect(panelSize.width, lessThanOrEqualTo(360));
+    expect(panelSize.height, lessThanOrEqualTo(240));
+    expect(
+      find.byKey(const ValueKey<String>('session_attention_collapse')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('session_attention_stop')),
+      findsOneWidget,
+    );
+
+    final finalItem = items.last;
+    final finalRow = find.byKey(
+      ValueKey<String>('session_attention_item_${finalItem.snapshotId}'),
+    );
+    await tester.scrollUntilVisible(
+      finalRow,
+      100,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+    final openButton = find.descendant(
+      of: finalRow,
+      matching: find.widgetWithText(TextButton, 'Open'),
+    );
+    final readButton = find.descendant(
+      of: finalRow,
+      matching: find.widgetWithText(TextButton, 'Read'),
+    );
+    final dismissButton = find.descendant(
+      of: finalRow,
+      matching: find.widgetWithText(TextButton, 'Dismiss'),
+    );
+    await tester.tap(openButton);
+    await tester.tap(readButton);
+    await tester.tap(dismissButton);
+
+    expect(opened, same(finalItem));
+    expect(read, same(finalItem));
+    expect(dismissed, same(finalItem));
+    await tester.scrollUntilVisible(
+      find.byKey(
+        ValueKey<String>('session_attention_item_${items.first.snapshotId}'),
+      ),
+      -100,
+      scrollable: find.byType(Scrollable),
     );
     expect(tester.takeException(), isNull);
   });

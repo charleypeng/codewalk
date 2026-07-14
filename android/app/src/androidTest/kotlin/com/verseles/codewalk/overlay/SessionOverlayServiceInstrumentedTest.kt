@@ -1,6 +1,7 @@
 package com.verseles.codewalk.overlay
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import android.view.View
@@ -106,20 +107,25 @@ class SessionOverlayServiceInstrumentedTest {
                 )
             }
             assertTrue(waitUntil { SessionOverlayService.isRunning() })
+            instrumentation.waitForIdleSync()
+            val baseline = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            try {
+                assertTrue(SessionOverlayService.updateSnapshot(attentionSnapshot(revision = 20)))
+                assertTrue(waitUntil { SessionOverlayService.hasRenderedFirstFrameForTest() })
+                assertOverlayGeometry("bubble")
+                assertTransparentTopLeftCorner(baseline, "bubble")
 
-            assertTrue(SessionOverlayService.updateSnapshot(attentionSnapshot(revision = 20)))
-            assertTrue(waitUntil { SessionOverlayService.hasRenderedFirstFrameForTest() })
-            assertOverlayGeometry("bubble")
-            assertTransparentTopLeftCorner()
-
-            assertTrue(
-                SessionOverlayService.updateSnapshot(
-                    attentionSnapshot(revision = 21, presentation = "panel"),
-                ),
-            )
-            assertTrue(waitUntil { overlayHasExpectedSize("panel") })
-            assertOverlayGeometry("panel")
-            assertTransparentTopLeftCorner()
+                assertTrue(
+                    SessionOverlayService.updateSnapshot(
+                        attentionSnapshot(revision = 21, presentation = "panel"),
+                    ),
+                )
+                assertTrue(waitUntil { overlayHasExpectedSize("panel") })
+                assertOverlayGeometry("panel")
+                assertTransparentTopLeftCorner(baseline, "panel")
+            } finally {
+                baseline.recycle()
+            }
         }
     }
 
@@ -239,24 +245,71 @@ class SessionOverlayServiceInstrumentedTest {
         return actual == (expectedWidth to expectedHeight)
     }
 
-    private fun assertTransparentTopLeftCorner() {
+    private fun assertTransparentTopLeftCorner(
+        baseline: Bitmap,
+        presentation: String,
+    ) {
         instrumentation.waitForIdleSync()
-        Thread.sleep(250)
         val rect = overlayRectOnMainThread()
-        val screenshot = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+        val screenshot = captureWhenContentIsVisible(baseline, rect, presentation)
         try {
             assertTrue(rect.left >= 0 && rect.top >= 0)
             assertTrue(rect.right <= screenshot.width && rect.bottom <= screenshot.height)
-            val pixel = screenshot.getPixel(rect.left + 1, rect.top + 1)
+            assertEquals(baseline.width, screenshot.width)
+            assertEquals(baseline.height, screenshot.height)
+            val cornerX = rect.left + 1
+            val cornerY = rect.top + 1
+            val baselineCorner = baseline.getPixel(cornerX, cornerY)
+            val overlayCorner = screenshot.getPixel(cornerX, cornerY)
             assertTrue(
-                "Expected the activity at the rounded overlay corner, but captured #${
-                    Integer.toHexString(pixel)
-                }",
-                colorDistance(pixel, TEST_BACKGROUND_COLOR) < 180,
+                "Test activity background was not visible before attaching the overlay",
+                maxChannelDistance(baselineCorner, TEST_BACKGROUND_COLOR) <= 12,
+            )
+            assertTrue(
+                "Expected the baseline at the rounded overlay corner, but captured #${
+                    Integer.toHexString(overlayCorner)
+                } over #${Integer.toHexString(baselineCorner)}",
+                maxChannelDistance(overlayCorner, baselineCorner) <= 12,
+            )
+            val contentPoint = contentProbe(rect, presentation)
+            assertTrue(
+                "Expected rendered overlay content at the probe point",
+                colorDistance(
+                    screenshot.getPixel(contentPoint.first, contentPoint.second),
+                    baseline.getPixel(contentPoint.first, contentPoint.second),
+                ) > 40,
             )
         } finally {
             screenshot.recycle()
         }
+    }
+
+    private fun captureWhenContentIsVisible(
+        baseline: Bitmap,
+        rect: Rect,
+        presentation: String,
+    ): Bitmap {
+        val point = contentProbe(rect, presentation)
+        val deadline = System.currentTimeMillis() + 3_000
+        while (true) {
+            val screenshot = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            val contentVisible = colorDistance(
+                screenshot.getPixel(point.first, point.second),
+                baseline.getPixel(point.first, point.second),
+            ) > 40
+            if (contentVisible || System.currentTimeMillis() >= deadline) {
+                return screenshot
+            }
+            screenshot.recycle()
+            Thread.sleep(100)
+        }
+    }
+
+    private fun contentProbe(rect: Rect, presentation: String): Pair<Int, Int> {
+        if (presentation != "panel") return rect.centerX() to rect.centerY()
+        val inset = (24 * targetContext.resources.displayMetrics.density).roundToInt()
+        return (rect.left + inset).coerceAtMost(rect.right - 1) to
+            (rect.top + inset).coerceAtMost(rect.bottom - 1)
     }
 
     private fun overlayRectOnMainThread(): Rect {
@@ -271,6 +324,13 @@ class SessionOverlayServiceInstrumentedTest {
         abs(Color.red(left) - Color.red(right)) +
             abs(Color.green(left) - Color.green(right)) +
             abs(Color.blue(left) - Color.blue(right))
+
+    private fun maxChannelDistance(left: Int, right: Int): Int =
+        maxOf(
+            abs(Color.red(left) - Color.red(right)),
+            abs(Color.green(left) - Color.green(right)),
+            abs(Color.blue(left) - Color.blue(right)),
+        )
 
     private fun waitUntil(predicate: () -> Boolean): Boolean {
         repeat(100) {
