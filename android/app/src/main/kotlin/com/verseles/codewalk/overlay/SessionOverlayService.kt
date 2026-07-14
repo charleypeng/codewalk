@@ -321,7 +321,11 @@ class SessionOverlayService : Service() {
             }
         }
         flutterEngine.dartExecutor.executeDartEntrypoint(
-            DartExecutor.DartEntrypoint(loader.findAppBundlePath(), "sessionOverlayAndroidMain"),
+            DartExecutor.DartEntrypoint(
+                loader.findAppBundlePath(),
+                "package:codewalk/presentation/services/session_attention/session_overlay_entrypoint.dart",
+                "sessionOverlayAndroidMain",
+            ),
         )
         engine = flutterEngine
         serviceChannel = channel
