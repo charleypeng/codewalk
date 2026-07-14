@@ -960,7 +960,10 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
       theme: ThemeData(colorSchemeSeed: const Color(0xff6750a4)),
       home: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
+        body: Align(
+          alignment: widget.desktopController == null
+              ? Alignment.topCenter
+              : Alignment.center,
           child: SessionAttentionOverlay(
             items: items,
             expanded: expanded,

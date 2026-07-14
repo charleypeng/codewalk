@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Build
@@ -17,6 +18,7 @@ import android.os.IBinder
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ViewConfiguration
@@ -27,15 +29,18 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.eyedeadevelopment.fluttertts.FlutterTtsPlugin
 import com.it_nomads.fluttersecurestorage.FlutterSecureStoragePlugin
+import com.verseles.codewalk.BuildConfig
 import com.verseles.codewalk.MainActivity
 import com.verseles.codewalk.R
 import io.flutter.FlutterInjector
+import io.flutter.embedding.android.FlutterSurfaceView
 import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.pathprovider.PathProviderPlugin
 import io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin
+import kotlin.math.roundToInt
 import xyz.luan.audioplayers.AudioplayersPlugin
 
 class SessionOverlayService : Service() {
@@ -45,14 +50,53 @@ class SessionOverlayService : Service() {
         private const val NOTIFICATION_ID = 9801
         private const val ACTION_STOP = "com.verseles.codewalk.overlay.STOP"
         private const val ACTION_OPEN = "com.verseles.codewalk.overlay.OPEN"
+        private const val BUBBLE_WIDTH_DP = 96
+        private const val BUBBLE_HEIGHT_DP = 96
+        private const val PANEL_WIDTH_DP = 360
+        private const val PANEL_HEIGHT_DP = 240
+        private const val OVERLAY_EDGE_MARGIN_DP = 16
+        private const val FIRST_FRAME_TIMEOUT_MS = 5_000L
+        private const val TAG = "SessionOverlay"
 
         @Volatile
         private var instance: SessionOverlayService? = null
         @Volatile
         private var lastMainHeartbeatEpochMs: Long = 0
+        @Volatile
+        private var disableSecureForTest = false
 
         fun isRunning(): Boolean = instance != null
         fun hasAttachedOverlay(): Boolean = instance?.flutterView != null
+        fun hasRenderedFirstFrameForTest(): Boolean =
+            instance?.flutterView?.hasRenderedFirstFrame() == true
+        fun currentOverlaySizeForTest(): Pair<Int, Int>? =
+            instance?.flutterView?.layoutParams
+                ?.let { it as? WindowManager.LayoutParams }
+                ?.let { it.width to it.height }
+        fun currentOverlayFlagsForTest(): Int? =
+            instance?.flutterView?.layoutParams
+                ?.let { it as? WindowManager.LayoutParams }
+                ?.flags
+        fun currentOverlayRectForTest(): Rect? {
+            val view = instance?.flutterView ?: return null
+            val params = view.layoutParams as? WindowManager.LayoutParams ?: return null
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            val width = view.width.takeIf { it > 0 } ?: params.width
+            val height = view.height.takeIf { it > 0 } ?: params.height
+            return Rect(
+                location[0],
+                location[1],
+                location[0] + width,
+                location[1] + height,
+            )
+        }
+        fun setDisableSecureForTest(disable: Boolean) {
+            check(BuildConfig.DEBUG) {
+                "Secure overlay capture can only be changed in debug builds"
+            }
+            disableSecureForTest = disable
+        }
         fun currentSnapshotRevision(): Long = instance?.currentRevision ?: -1
         fun dispatchNullStartForTest(): Int? =
             instance?.onStartCommand(null, 0, 0)
@@ -89,6 +133,7 @@ class SessionOverlayService : Service() {
     private var stoppingForNativeReason = false
     private var nativeStopFinalized = false
     private var persistOffTimeout: Runnable? = null
+    private var firstFrameTimeout: Runnable? = null
     private lateinit var windowManager: WindowManager
     private val handler = Handler(Looper.getMainLooper())
     private val screenReceiver = object : BroadcastReceiver() {
@@ -154,6 +199,17 @@ class SessionOverlayService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val snapshot = currentSnapshot ?: return
+        val presentation = snapshot["presentation"] as? String ?: return
+        @Suppress("UNCHECKED_CAST")
+        val items = snapshot["items"] as? List<Map<String, Any?>> ?: emptyList()
+        if (presentation != "off" && items.isNotEmpty()) {
+            attachOrResizeOverlay(presentation)
+        }
+    }
+
     override fun onDestroy() {
         instance = null
         handler.removeCallbacks(permissionCheck)
@@ -168,6 +224,7 @@ class SessionOverlayService : Service() {
             flutterEngine.destroy()
         }
         engine = null
+        disableSecureForTest = false
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
@@ -327,11 +384,8 @@ class SessionOverlayService : Service() {
     }
 
     private fun attachOrResizeOverlay(presentation: String) {
-        val density = resources.displayMetrics.density
-        val widthDp = if (presentation == "panel") 360 else 96
-        val heightDp = if (presentation == "panel") 520 else 96
-        val width = (widthDp * density).toInt()
-        val height = (heightDp * density).toInt()
+        val bounds = overlayMovementBounds()
+        val (width, height) = overlaySize(presentation, bounds)
         val existing = flutterView
         if (existing != null) {
             val params = existing.layoutParams as WindowManager.LayoutParams
@@ -342,41 +396,72 @@ class SessionOverlayService : Service() {
             return
         }
         val flutterEngine = engine ?: return
-        val view = FlutterView(this).also { it.attachToFlutterEngine(flutterEngine) }
-        val bounds = availableBounds()
+        val surfaceView = FlutterSurfaceView(this, true)
+        val view = FlutterView(this, surfaceView).also {
+            it.attachToFlutterEngine(flutterEngine)
+        }
         val saved = getSharedPreferences("session_attention_native", MODE_PRIVATE)
+        var windowFlags =
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+        if (!BuildConfig.DEBUG || !disableSecureForTest) {
+            windowFlags = windowFlags or WindowManager.LayoutParams.FLAG_SECURE
+        }
         val params = WindowManager.LayoutParams(
             width,
             height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_SECURE,
+            windowFlags,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = if (saved.contains("x_fraction")) {
                 bounds.left + ((bounds.width() - width) * saved.getFloat("x_fraction", 1f)).toInt()
             } else {
-                bounds.right - width - (16 * density).toInt()
+                bounds.right - width
             }
             y = if (saved.contains("y_fraction")) {
                 bounds.top + ((bounds.height() - height) * saved.getFloat("y_fraction", .15f)).toInt()
             } else {
-                bounds.top + (96 * density).toInt()
+                bounds.top + dp(BUBBLE_HEIGHT_DP)
             }
         }
         clampToDisplay(params)
         configureDrag(view, params)
         windowManager.addView(view, params)
         flutterView = view
+        scheduleFirstFrameTimeout(view)
     }
 
     private fun clampToDisplay(params: WindowManager.LayoutParams) {
-        val bounds = availableBounds()
+        val bounds = overlayMovementBounds()
         params.x = params.x.coerceIn(bounds.left, (bounds.right - params.width).coerceAtLeast(bounds.left))
         params.y = params.y.coerceIn(bounds.top, (bounds.bottom - params.height).coerceAtLeast(bounds.top))
     }
+
+    private fun overlaySize(presentation: String, bounds: Rect): Pair<Int, Int> {
+        val widthDp = if (presentation == "panel") PANEL_WIDTH_DP else BUBBLE_WIDTH_DP
+        val heightDp = if (presentation == "panel") PANEL_HEIGHT_DP else BUBBLE_HEIGHT_DP
+        val width = dp(widthDp).coerceAtMost(bounds.width().coerceAtLeast(1))
+        val height = dp(heightDp).coerceAtMost(bounds.height().coerceAtLeast(1))
+        return width to height
+    }
+
+    private fun overlayMovementBounds(): Rect {
+        val bounds = availableBounds()
+        val desiredMargin = dp(OVERLAY_EDGE_MARGIN_DP)
+        val horizontalMargin = desiredMargin.coerceAtMost(
+            ((bounds.width() - 1).coerceAtLeast(0)) / 2,
+        )
+        val verticalMargin = desiredMargin.coerceAtMost(
+            ((bounds.height() - 1).coerceAtLeast(0)) / 2,
+        )
+        bounds.inset(horizontalMargin, verticalMargin)
+        return bounds
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).roundToInt()
 
     private fun availableBounds(): Rect {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -442,7 +527,7 @@ class SessionOverlayService : Service() {
     }
 
     private fun persistBounds(params: WindowManager.LayoutParams) {
-        val bounds = availableBounds()
+        val bounds = overlayMovementBounds()
         val maxX = (bounds.width() - params.width).coerceAtLeast(1)
         val maxY = (bounds.height() - params.height).coerceAtLeast(1)
         val xFraction = ((params.x - bounds.left).toFloat() / maxX).coerceIn(0f, 1f)
@@ -454,11 +539,24 @@ class SessionOverlayService : Service() {
     }
 
     private fun detachOverlay() {
+        firstFrameTimeout?.let(handler::removeCallbacks)
+        firstFrameTimeout = null
         flutterView?.let { view ->
             view.detachFromFlutterEngine()
             runCatching { windowManager.removeViewImmediate(view) }
         }
         flutterView = null
+    }
+
+    private fun scheduleFirstFrameTimeout(view: FlutterView) {
+        firstFrameTimeout?.let(handler::removeCallbacks)
+        firstFrameTimeout = Runnable {
+            firstFrameTimeout = null
+            if (flutterView === view && !view.hasRenderedFirstFrame()) {
+                Log.w(TAG, "Session overlay removed: first frame timeout")
+                detachOverlay()
+            }
+        }.also { handler.postDelayed(it, FIRST_FRAME_TIMEOUT_MS) }
     }
 
     private fun handleCommand(command: Map<String, Any?>?) {
