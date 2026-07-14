@@ -42,6 +42,12 @@
 - Use a specific upload caption. Avoid generic captions like `Latest adjustments made`.
 - Android APK builds do not work reliably on ARM64 Linux hosts; use GitHub Actions for release APKs. `make check` works on ARM64.
 
+## Tester Subagent
+
+- The `tester` subagent must execute the delegated test command exactly once, wait for that process to finish, read its result once, and respond immediately.
+- The `tester` must never rerun a command because output appears incomplete, truncated, ambiguous, or difficult to interpret. It must report the result as inconclusive and stop.
+- Only a new explicit delegation from the main agent may authorize another test execution.
+
 ## Explicit `flow` Request
 
 When the user explicitly asks for `flow`, follow this order:
