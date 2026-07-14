@@ -77,6 +77,8 @@ class SessionOverlayService : Service() {
             instance?.flutterView?.layoutParams
                 ?.let { it as? WindowManager.LayoutParams }
                 ?.flags
+        fun currentMovementBoundsForTest(): Rect? =
+            instance?.overlayMovementBounds()?.let(::Rect)
         fun currentOverlayRectForTest(): Rect? {
             val view = instance?.flutterView ?: return null
             val params = view.layoutParams as? WindowManager.LayoutParams ?: return null

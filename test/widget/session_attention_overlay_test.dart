@@ -41,39 +41,79 @@ SessionAttentionItem _item({
 Widget _app({
   required List<SessionAttentionItem> items,
   required bool expanded,
+  Size? hostSize,
   ValueChanged<SessionAttentionItem>? onOpen,
   ValueChanged<SessionAttentionItem>? onRead,
   ValueChanged<SessionAttentionItem>? onDismiss,
   VoidCallback? onToggle,
   VoidCallback? onStop,
 }) {
+  final overlay = SessionAttentionOverlay(
+    items: items,
+    expanded: expanded,
+    semanticLabel: '${items.length} sessions need attention',
+    stateLabelBuilder: (kind) => kind.name,
+    openLabel: 'Open',
+    expandLabel: 'Expand',
+    collapseLabel: 'Collapse',
+    readLabel: 'Read',
+    stopReadingLabel: 'Stop reading',
+    dismissLabel: 'Dismiss',
+    stopOverlayLabel: 'Stop overlay',
+    onOpen: onOpen ?? (_) {},
+    onRead: onRead,
+    onDismiss: onDismiss ?? (_) {},
+    onToggleExpanded: onToggle ?? () {},
+    onStopOverlay: onStop ?? () {},
+  );
   return MaterialApp(
     home: Scaffold(
       body: Center(
-        child: SessionAttentionOverlay(
-          items: items,
-          expanded: expanded,
-          semanticLabel: '${items.length} sessions need attention',
-          stateLabelBuilder: (kind) => kind.name,
-          openLabel: 'Open',
-          expandLabel: 'Expand',
-          collapseLabel: 'Collapse',
-          readLabel: 'Read',
-          stopReadingLabel: 'Stop reading',
-          dismissLabel: 'Dismiss',
-          stopOverlayLabel: 'Stop overlay',
-          onOpen: onOpen ?? (_) {},
-          onRead: onRead,
-          onDismiss: onDismiss ?? (_) {},
-          onToggleExpanded: onToggle ?? () {},
-          onStopOverlay: onStop ?? () {},
-        ),
+        child: hostSize == null
+            ? overlay
+            : SizedBox.fromSize(size: hostSize, child: overlay),
       ),
     ),
   );
 }
 
 void main() {
+  testWidgets('bubble fits the 96 by 96 Android host', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        items: <SessionAttentionItem>[_item()],
+        expanded: false,
+        hostSize: const Size(96, 96),
+      ),
+    );
+
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey<String>('session_attention_bubble')),
+      ),
+      const Size(96, 96),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('panel fits the 360 by 240 Android host', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        items: <SessionAttentionItem>[_item()],
+        expanded: true,
+        hostSize: const Size(360, 240),
+      ),
+    );
+
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey<String>('session_attention_panel')),
+      ),
+      const Size(360, 240),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('bubble exposes count semantics and opens primary item', (
     tester,
   ) async {
