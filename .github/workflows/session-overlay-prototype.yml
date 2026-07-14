@@ -39,32 +39,44 @@ jobs:
       - run: flutter pub get
       - run: flutter build apk --debug
       - run: ./android/gradlew -p android app:assembleDebugAndroidTest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: session-overlay-app-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: session-overlay-test-debug
+          path: build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          retention-days: 1
 
   android-runtime:
-    runs-on: macos-15-intel
-    timeout-minutes: 60
+    needs: android-compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         api-level: [34, 35, 36]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/download-artifact@v4
         with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-      - uses: actions/setup-go@v5
+          name: session-overlay-app-debug
+          path: build/app/outputs/flutter-apk
+      - uses: actions/download-artifact@v4
         with:
-          go-version: "1.25"
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: flutter build apk --debug
-      - run: ./android/gradlew -p android app:assembleDebugAndroidTest
+          name: session-overlay-test-debug
+          path: build/app/outputs/apk/androidTest/debug
+      - name: Enable KVM group permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Prepare runtime diagnostics
+        run: |
+          mkdir -p build/session-overlay-test-results
+          touch build/session-overlay-test-results/emulator-api-${{ matrix.api-level }}.started
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
@@ -73,11 +85,69 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
-          pre-emulator-launch-script: adb start-server
+          pre-emulator-launch-script: timeout --kill-after=10s 30s adb start-server
           script: |
-            adb install -r build/app/outputs/flutter-apk/app-debug.apk
-            adb install -r build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-            adb shell am instrument -w -r com.verseles.codewalk.test/androidx.test.runner.AndroidJUnitRunner
+            set -eu
+            results_dir=build/session-overlay-test-results
+            mkdir -p "$results_dir"
+            output="$results_dir/instrumentation-api-${{ matrix.api-level }}.txt"
+            : > "$output"
+            collect_diagnostics() {
+              diagnostic_status=$?
+              trap - 0
+              printf 'workflow_exit_status=%s\n' "$diagnostic_status" \
+                > "$results_dir/status-api-${{ matrix.api-level }}.txt"
+              timeout 30s adb logcat -d -v threadtime \
+                > "$results_dir/logcat-api-${{ matrix.api-level }}.txt" 2>&1 || true
+              timeout 30s adb logcat -d -b crash -v threadtime \
+                > "$results_dir/logcat-crash-api-${{ matrix.api-level }}.txt" 2>&1 || true
+              timeout 30s adb shell dumpsys activity exit-info com.verseles.codewalk \
+                > "$results_dir/exit-info-api-${{ matrix.api-level }}.txt" 2>&1 || true
+              exit "$diagnostic_status"
+            }
+            trap collect_diagnostics 0
+            timeout --kill-after=15s 2m \
+              adb install --no-streaming -r build/app/outputs/flutter-apk/app-debug.apk
+            timeout --kill-after=15s 2m \
+              adb install --no-streaming -r \
+                build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            timeout 30s adb logcat -c
+            set +e
+            timeout --kill-after=30s 15m \
+              adb shell am instrument -w -r \
+                com.verseles.codewalk.test/androidx.test.runner.AndroidJUnitRunner \
+              > "$output" 2>&1
+            status=$?
+            set -e
+            cat "$output"
+            parsed_output="$results_dir/instrumentation-api-${{ matrix.api-level }}.normalized.txt"
+            tr -d '\r' < "$output" > "$parsed_output"
+            final_code="$(grep '^INSTRUMENTATION_CODE:' "$parsed_output" | tail -n 1 || true)"
+            if [ "$status" -ne 0 ] \
+              || ! grep -Eq '^OK \([1-9][0-9]* tests?\)' "$parsed_output" \
+              || [ "$final_code" != 'INSTRUMENTATION_CODE: -1' ] \
+              || grep -Eq '^INSTRUMENTATION_STATUS_CODE: (-1|-2)$' "$parsed_output" \
+              || grep -Eq '^(INSTRUMENTATION_FAILED:|INSTRUMENTATION_ABORTED:|Error:|Process crashed\.)|shortMsg=' "$parsed_output"; then
+              status=1
+            fi
+            exit "$status"
+      - name: Capture runner failure diagnostics
+        if: failure()
+        run: |
+          results_dir=build/session-overlay-test-results
+          timeout 15s adb devices -l \
+            > "$results_dir/adb-devices-api-${{ matrix.api-level }}.txt" 2>&1 || true
+          timeout 15s adb logcat -d -v threadtime \
+            > "$results_dir/runner-logcat-api-${{ matrix.api-level }}.txt" 2>&1 || true
+          timeout 15s adb shell dumpsys activity exit-info com.verseles.codewalk \
+            > "$results_dir/runner-exit-info-api-${{ matrix.api-level }}.txt" 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: session-overlay-runtime-api-${{ matrix.api-level }}
+          path: build/session-overlay-test-results
+          if-no-files-found: warn
+          retention-days: 7
 
   desktop-compile:
     strategy:

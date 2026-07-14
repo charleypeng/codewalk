@@ -4,6 +4,9 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
+import android.os.ParcelFileDescriptor
+import android.os.SystemClock
+import android.provider.Settings
 import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
@@ -15,8 +18,10 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.FutureTask
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -25,17 +30,26 @@ class SessionOverlayServiceInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val targetContext = instrumentation.targetContext
 
+    @Before
+    fun setUp() {
+        assertTrue("Session overlay service did not stop", stopOverlayService())
+        SessionOverlayService.setDisableSecureForTest(targetContext, false)
+        targetContext.getSharedPreferences(TEST_PREFERENCES, 0).edit().clear().commit()
+        grantOverlayAppOp()
+    }
+
     @After
     fun tearDown() {
-        targetContext.stopService(Intent(targetContext, SessionOverlayService::class.java))
-        waitUntil { !SessionOverlayService.isRunning() }
         SessionOverlayService.setDisableSecureForTest(targetContext, false)
+        val stopped = stopOverlayService()
+        SessionOverlayService.setDisableSecureForTest(targetContext, false)
+        targetContext.getSharedPreferences(TEST_PREFERENCES, 0).edit().clear().commit()
+        resetOverlayAppOp()
+        assertTrue("Session overlay service did not stop", stopped)
     }
 
     @Test
     fun startsFromVisibleActivityAndStopsCleanly() {
-        grantOverlayAppOp()
-
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity {
                 ContextCompat.startForegroundService(
@@ -55,7 +69,6 @@ class SessionOverlayServiceInstrumentedTest {
 
     @Test
     fun stopActionIsIdempotentAfterPermissionGrant() {
-        grantOverlayAppOp()
         assertFalse(SessionOverlayService.isRunning())
         targetContext.stopService(Intent(targetContext, SessionOverlayService::class.java))
         assertFalse(SessionOverlayService.isRunning())
@@ -63,7 +76,6 @@ class SessionOverlayServiceInstrumentedTest {
 
     @Test
     fun attachesRevisionedSnapshotAndSurvivesNullIntentAndActivityDestroy() {
-        grantOverlayAppOp()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         scenario.onActivity {
             ContextCompat.startForegroundService(
@@ -72,29 +84,28 @@ class SessionOverlayServiceInstrumentedTest {
             )
         }
         assertTrue(waitUntil { SessionOverlayService.isRunning() })
-        assertTrue(SessionOverlayService.updateSnapshot(attentionSnapshot(revision = 7)))
-        assertTrue(waitUntil { SessionOverlayService.hasAttachedOverlay() })
-        assertTrue(waitUntil { SessionOverlayService.hasRenderedFirstFrameForTest() })
-        assertEquals(7L, SessionOverlayService.currentSnapshotRevision())
+        assertTrue(updateSnapshot(attentionSnapshot(revision = 7)))
+        assertTrue(waitUntil { hasAttachedOverlay() })
+        assertTrue(waitUntil { hasRenderedFirstFrame() })
+        assertEquals(7L, currentSnapshotRevision())
         assertOverlayGeometry("bubble")
         assertTrue(
-            requireNotNull(SessionOverlayService.currentOverlayFlagsForTest()) and
+            requireNotNull(currentOverlayFlags()) and
                 WindowManager.LayoutParams.FLAG_SECURE != 0,
         )
         assertEquals(
             android.app.Service.START_STICKY,
-            SessionOverlayService.dispatchNullStartForTest(),
+            runOnMainThread { SessionOverlayService.dispatchNullStartForTest() },
         )
 
         scenario.close()
 
         assertTrue(SessionOverlayService.isRunning())
-        assertTrue(SessionOverlayService.hasAttachedOverlay())
+        assertTrue(hasAttachedOverlay())
     }
 
     @Test
     fun transparentBubbleAndPanelCornersRevealTheActivity() {
-        grantOverlayAppOp()
         SessionOverlayService.setDisableSecureForTest(targetContext, true)
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
@@ -107,16 +118,15 @@ class SessionOverlayServiceInstrumentedTest {
                 )
             }
             assertTrue(waitUntil { SessionOverlayService.isRunning() })
-            instrumentation.waitForIdleSync()
-            val baseline = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            val baseline = captureActivityBaseline()
             try {
-                assertTrue(SessionOverlayService.updateSnapshot(attentionSnapshot(revision = 20)))
-                assertTrue(waitUntil { SessionOverlayService.hasRenderedFirstFrameForTest() })
+                assertTrue(updateSnapshot(attentionSnapshot(revision = 20)))
+                assertTrue(waitUntil { hasRenderedFirstFrame() })
                 assertOverlayGeometry("bubble")
                 assertTransparentTopLeftCorner(baseline, "bubble")
 
                 assertTrue(
-                    SessionOverlayService.updateSnapshot(
+                    updateSnapshot(
                         attentionSnapshot(revision = 21, presentation = "panel"),
                     ),
                 )
@@ -131,7 +141,6 @@ class SessionOverlayServiceInstrumentedTest {
 
     @Test
     fun permissionRevocationDetachesAndStopsService() {
-        grantOverlayAppOp()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity {
                 ContextCompat.startForegroundService(
@@ -140,22 +149,20 @@ class SessionOverlayServiceInstrumentedTest {
                 )
             }
             assertTrue(waitUntil { SessionOverlayService.isRunning() })
-            SessionOverlayService.updateSnapshot(attentionSnapshot(revision = 9))
-            assertTrue(waitUntil { SessionOverlayService.hasAttachedOverlay() })
+            updateSnapshot(attentionSnapshot(revision = 9))
+            assertTrue(waitUntil { hasAttachedOverlay() })
 
-            instrumentation.uiAutomation.executeShellCommand(
+            executeShellCommand(
                 "appops set ${targetContext.packageName} SYSTEM_ALERT_WINDOW deny",
-            ).close()
+            )
 
             assertTrue(waitUntil { !SessionOverlayService.isRunning() })
-            assertFalse(SessionOverlayService.hasAttachedOverlay())
+            assertFalse(hasAttachedOverlay())
         }
-        grantOverlayAppOp()
     }
 
     @Test
     fun fallbackSnapshotIsRejectedAfterMainHeartbeatReturns() {
-        grantOverlayAppOp()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity {
                 ContextCompat.startForegroundService(
@@ -166,15 +173,15 @@ class SessionOverlayServiceInstrumentedTest {
             assertTrue(waitUntil { SessionOverlayService.isRunning() })
             SessionOverlayService.expireMainHeartbeatForTest()
             assertTrue(
-                SessionOverlayService.applyFallbackSnapshotForTest(
+                applyFallbackSnapshot(
                     attentionSnapshot(revision = 10),
                 ),
             )
 
-            assertTrue(SessionOverlayService.updateSnapshot(attentionSnapshot(revision = 11)))
+            assertTrue(updateSnapshot(attentionSnapshot(revision = 11)))
 
             assertFalse(
-                SessionOverlayService.applyFallbackSnapshotForTest(
+                applyFallbackSnapshot(
                     attentionSnapshot(revision = 12),
                 ),
             )
@@ -222,21 +229,76 @@ class SessionOverlayServiceInstrumentedTest {
     }
 
     private fun grantOverlayAppOp() {
-        instrumentation.uiAutomation.executeShellCommand(
+        executeShellCommand(
             "appops set ${targetContext.packageName} SYSTEM_ALERT_WINDOW allow",
-        ).close()
+        )
+        assertTrue(
+            "Overlay app-op was not granted",
+            waitUntil { Settings.canDrawOverlays(targetContext) },
+        )
+    }
+
+    private fun resetOverlayAppOp() {
+        executeShellCommand(
+            "appops set ${targetContext.packageName} SYSTEM_ALERT_WINDOW default",
+        )
+    }
+
+    private fun executeShellCommand(command: String) {
+        ParcelFileDescriptor.AutoCloseInputStream(
+            instrumentation.uiAutomation.executeShellCommand(command),
+        ).use { it.readBytes() }
+    }
+
+    private fun stopOverlayService(): Boolean {
+        targetContext.stopService(Intent(targetContext, SessionOverlayService::class.java))
+        val stopped = waitUntil { !SessionOverlayService.isRunning() }
+        if (stopped) {
+            runOnMainThread { Unit }
+        }
+        return stopped
+    }
+
+    private fun updateSnapshot(snapshot: Map<String, Any?>): Boolean =
+        runOnMainThread { SessionOverlayService.updateSnapshot(snapshot) }
+
+    private fun applyFallbackSnapshot(snapshot: Map<String, Any?>): Boolean =
+        runOnMainThread { SessionOverlayService.applyFallbackSnapshotForTest(snapshot) }
+
+    private fun hasAttachedOverlay(): Boolean =
+        runOnMainThread { SessionOverlayService.hasAttachedOverlay() }
+
+    private fun hasRenderedFirstFrame(): Boolean =
+        runOnMainThread { SessionOverlayService.hasRenderedFirstFrameForTest() }
+
+    private fun currentSnapshotRevision(): Long =
+        runOnMainThread { SessionOverlayService.currentSnapshotRevision() }
+
+    private fun currentOverlayFlags(): Int? =
+        runOnMainThread { SessionOverlayService.currentOverlayFlagsForTest() }
+
+    private fun currentMovementBounds(): Rect? =
+        runOnMainThread { SessionOverlayService.currentMovementBoundsForTest() }
+
+    private fun currentOverlaySize(): Pair<Int, Int>? =
+        runOnMainThread { SessionOverlayService.currentOverlaySizeForTest() }
+
+    private fun <T> runOnMainThread(action: () -> T): T {
+        val task = FutureTask<T> { action() }
+        instrumentation.runOnMainSync(task)
+        return task.get()
     }
 
     private fun assertOverlayGeometry(presentation: String) {
-        val bounds = requireNotNull(SessionOverlayService.currentMovementBoundsForTest())
+        val bounds = requireNotNull(currentMovementBounds())
         val rect = overlayRectOnMainThread()
         assertTrue("Overlay $rect must remain inside $bounds", bounds.contains(rect))
         assertTrue(overlayHasExpectedSize(presentation))
     }
 
     private fun overlayHasExpectedSize(presentation: String): Boolean {
-        val bounds = SessionOverlayService.currentMovementBoundsForTest() ?: return false
-        val actual = SessionOverlayService.currentOverlaySizeForTest() ?: return false
+        val bounds = currentMovementBounds() ?: return false
+        val actual = currentOverlaySize() ?: return false
         val density = targetContext.resources.displayMetrics.density
         val expectedWidthDp = if (presentation == "panel") 360 else 96
         val expectedHeightDp = if (presentation == "panel") 240 else 96
@@ -249,7 +311,6 @@ class SessionOverlayServiceInstrumentedTest {
         baseline: Bitmap,
         presentation: String,
     ) {
-        instrumentation.waitForIdleSync()
         val rect = overlayRectOnMainThread()
         val screenshot = captureWhenContentIsVisible(baseline, rect, presentation)
         try {
@@ -284,23 +345,46 @@ class SessionOverlayServiceInstrumentedTest {
         }
     }
 
+    private fun captureActivityBaseline(): Bitmap {
+        val deadline = SystemClock.elapsedRealtime() + SCREENSHOT_TIMEOUT_MS
+        while (true) {
+            val screenshot = instrumentation.uiAutomation.takeScreenshot()
+            if (screenshot != null) {
+                val centerPixel = screenshot.getPixel(screenshot.width / 2, screenshot.height / 2)
+                if (maxChannelDistance(centerPixel, TEST_BACKGROUND_COLOR) <= 12) {
+                    return screenshot
+                }
+                screenshot.recycle()
+            }
+            check(SystemClock.elapsedRealtime() < deadline) {
+                "Test activity background did not become visible"
+            }
+            Thread.sleep(100)
+        }
+    }
+
     private fun captureWhenContentIsVisible(
         baseline: Bitmap,
         rect: Rect,
         presentation: String,
     ): Bitmap {
         val point = contentProbe(rect, presentation)
-        val deadline = System.currentTimeMillis() + 3_000
+        val deadline = SystemClock.elapsedRealtime() + 3_000
         while (true) {
-            val screenshot = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
-            val contentVisible = colorDistance(
-                screenshot.getPixel(point.first, point.second),
-                baseline.getPixel(point.first, point.second),
-            ) > 40
-            if (contentVisible || System.currentTimeMillis() >= deadline) {
-                return screenshot
+            val screenshot = instrumentation.uiAutomation.takeScreenshot()
+            if (screenshot != null) {
+                val contentVisible = colorDistance(
+                    screenshot.getPixel(point.first, point.second),
+                    baseline.getPixel(point.first, point.second),
+                ) > 40
+                if (contentVisible || SystemClock.elapsedRealtime() >= deadline) {
+                    return screenshot
+                }
+                screenshot.recycle()
             }
-            screenshot.recycle()
+            check(SystemClock.elapsedRealtime() < deadline) {
+                "Overlay content did not become visible"
+            }
             Thread.sleep(100)
         }
     }
@@ -312,13 +396,8 @@ class SessionOverlayServiceInstrumentedTest {
             (rect.top + inset).coerceAtMost(rect.bottom - 1)
     }
 
-    private fun overlayRectOnMainThread(): Rect {
-        var rect: Rect? = null
-        instrumentation.runOnMainSync {
-            rect = SessionOverlayService.currentOverlayRectForTest()
-        }
-        return requireNotNull(rect)
-    }
+    private fun overlayRectOnMainThread(): Rect =
+        requireNotNull(runOnMainThread { SessionOverlayService.currentOverlayRectForTest() })
 
     private fun colorDistance(left: Int, right: Int): Int =
         abs(Color.red(left) - Color.red(right)) +
@@ -341,6 +420,8 @@ class SessionOverlayServiceInstrumentedTest {
     }
 
     private companion object {
+        const val SCREENSHOT_TIMEOUT_MS = 10_000L
+        const val TEST_PREFERENCES = "session_attention_native"
         val TEST_BACKGROUND_COLOR: Int = Color.rgb(230, 100, 220)
     }
 }
