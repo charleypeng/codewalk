@@ -29,7 +29,7 @@ class SessionOverlayServiceInstrumentedTest {
     fun tearDown() {
         targetContext.stopService(Intent(targetContext, SessionOverlayService::class.java))
         waitUntil { !SessionOverlayService.isRunning() }
-        SessionOverlayService.setDisableSecureForTest(false)
+        SessionOverlayService.setDisableSecureForTest(targetContext, false)
     }
 
     @Test
@@ -95,7 +95,7 @@ class SessionOverlayServiceInstrumentedTest {
     @Test
     fun transparentBubbleAndPanelCornersRevealTheActivity() {
         grantOverlayAppOp()
-        SessionOverlayService.setDisableSecureForTest(true)
+        SessionOverlayService.setDisableSecureForTest(targetContext, true)
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 activity.setContentView(

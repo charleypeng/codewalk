@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.PixelFormat
@@ -29,7 +30,6 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.eyedeadevelopment.fluttertts.FlutterTtsPlugin
 import com.it_nomads.fluttersecurestorage.FlutterSecureStoragePlugin
-import com.verseles.codewalk.BuildConfig
 import com.verseles.codewalk.MainActivity
 import com.verseles.codewalk.R
 import io.flutter.FlutterInjector
@@ -93,12 +93,14 @@ class SessionOverlayService : Service() {
                 location[1] + height,
             )
         }
-        fun setDisableSecureForTest(disable: Boolean) {
-            check(BuildConfig.DEBUG) {
+        fun setDisableSecureForTest(context: Context, disable: Boolean) {
+            check(isDebuggable(context)) {
                 "Secure overlay capture can only be changed in debug builds"
             }
             disableSecureForTest = disable
         }
+        private fun isDebuggable(context: Context): Boolean =
+            context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         fun currentSnapshotRevision(): Long = instance?.currentRevision ?: -1
         fun dispatchNullStartForTest(): Int? =
             instance?.onStartCommand(null, 0, 0)
@@ -400,7 +402,7 @@ class SessionOverlayService : Service() {
         var windowFlags =
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-        if (!BuildConfig.DEBUG || !disableSecureForTest) {
+        if (!isDebuggable(this) || !disableSecureForTest) {
             windowFlags = windowFlags or WindowManager.LayoutParams.FLAG_SECURE
         }
         val params = WindowManager.LayoutParams(
