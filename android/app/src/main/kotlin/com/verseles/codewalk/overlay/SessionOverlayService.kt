@@ -22,6 +22,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -138,6 +139,7 @@ class SessionOverlayService : Service() {
     private var nativeStopFinalized = false
     private var persistOffTimeout: Runnable? = null
     private var firstFrameTimeout: Runnable? = null
+    private var firstFrameLayoutListener: View.OnLayoutChangeListener? = null
     private lateinit var windowManager: WindowManager
     private val handler = Handler(Looper.getMainLooper())
     private val screenReceiver = object : BroadcastReceiver() {
@@ -544,21 +546,54 @@ class SessionOverlayService : Service() {
         firstFrameTimeout?.let(handler::removeCallbacks)
         firstFrameTimeout = null
         flutterView?.let { view ->
+            firstFrameLayoutListener?.let(view::removeOnLayoutChangeListener)
             view.detachFromFlutterEngine()
             runCatching { windowManager.removeViewImmediate(view) }
         }
+        firstFrameLayoutListener = null
         flutterView = null
     }
 
     private fun scheduleFirstFrameTimeout(view: FlutterView) {
-        firstFrameTimeout?.let(handler::removeCallbacks)
-        firstFrameTimeout = Runnable {
-            firstFrameTimeout = null
-            if (flutterView === view && !view.hasRenderedFirstFrame()) {
-                Log.w(TAG, "Session overlay removed: first frame timeout")
-                detachOverlay()
+        fun armTimeout() {
+            firstFrameTimeout?.let(handler::removeCallbacks)
+            firstFrameTimeout = Runnable {
+                firstFrameTimeout = null
+                if (flutterView === view && !view.hasRenderedFirstFrame()) {
+                    Log.w(TAG, "Session overlay removed: first frame timeout")
+                    detachOverlay()
+                }
+            }.also { handler.postDelayed(it, FIRST_FRAME_TIMEOUT_MS) }
+        }
+
+        firstFrameLayoutListener?.let(view::removeOnLayoutChangeListener)
+        firstFrameLayoutListener = null
+        armTimeout()
+        if (view.width > 0 && view.height > 0) return
+
+        firstFrameLayoutListener = object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(
+                changedView: View,
+                left: Int,
+                top: Int,
+                right: Int,
+                bottom: Int,
+                oldLeft: Int,
+                oldTop: Int,
+                oldRight: Int,
+                oldBottom: Int,
+            ) {
+                if (right <= left || bottom <= top) return
+                changedView.removeOnLayoutChangeListener(this)
+                firstFrameLayoutListener = null
+                if (flutterView === view && !view.hasRenderedFirstFrame()) {
+                    armTimeout()
+                } else {
+                    firstFrameTimeout?.let(handler::removeCallbacks)
+                    firstFrameTimeout = null
+                }
             }
-        }.also { handler.postDelayed(it, FIRST_FRAME_TIMEOUT_MS) }
+        }.also(view::addOnLayoutChangeListener)
     }
 
     private fun handleCommand(command: Map<String, Any?>?) {
