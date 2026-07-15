@@ -163,10 +163,10 @@ class SessionOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
         startAsForeground(null)
+        instance = this
         ContextCompat.registerReceiver(
             this,
             screenReceiver,
