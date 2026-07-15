@@ -2,6 +2,24 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.177.0 - 2026-07-15
+
+- docs: clarify OpenCode source investigation
+- chore(agent): [Step 2/2] Prove and document watchdog behavior
+- fix(android): publish overlay foreground readiness
+- fix(android): stabilize overlay runtime matrix
+- chore(agent): [Step 1/2] Bound first-frame watchdog
+- plan: stabilize API 34 overlay first frame
+- fix(android): launch overlay from its Dart library
+- docs: constrain tester command execution
+- fix(ci): preserve overlay runner shell state
+- fix(ci): stabilize Android overlay instrumentation
+- fix(android): guard overlay capture without BuildConfig
+- chore(agent): [Step 3/3] Automate validation and document behavior
+- chore(agent): [Step 2/3] Add overlay visual regression coverage
+- chore(agent): [Step 1/3] Fix overlay composition and geometry
+- plan: fix Android session overlay transparency
+
 ## v1.176.0 - 2026-07-13
 
 - fix(ci): restore ADB startup for runtime matrix
