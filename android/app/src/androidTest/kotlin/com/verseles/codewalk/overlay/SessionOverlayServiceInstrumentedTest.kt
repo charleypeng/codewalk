@@ -7,7 +7,6 @@ import android.graphics.Rect
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.provider.Settings
-import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ActivityScenario
@@ -107,11 +106,8 @@ class SessionOverlayServiceInstrumentedTest {
     @Test
     fun transparentBubbleAndPanelCornersRevealTheActivity() {
         SessionOverlayService.setDisableSecureForTest(targetContext, true)
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(SessionOverlayTestActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                activity.setContentView(
-                    View(activity).apply { setBackgroundColor(TEST_BACKGROUND_COLOR) },
-                )
                 ContextCompat.startForegroundService(
                     activity,
                     Intent(activity, SessionOverlayService::class.java),
@@ -347,17 +343,21 @@ class SessionOverlayServiceInstrumentedTest {
 
     private fun captureActivityBaseline(): Bitmap {
         val deadline = SystemClock.elapsedRealtime() + SCREENSHOT_TIMEOUT_MS
+        var lastCenterPixel: Int? = null
         while (true) {
             val screenshot = instrumentation.uiAutomation.takeScreenshot()
             if (screenshot != null) {
                 val centerPixel = screenshot.getPixel(screenshot.width / 2, screenshot.height / 2)
+                lastCenterPixel = centerPixel
                 if (maxChannelDistance(centerPixel, TEST_BACKGROUND_COLOR) <= 12) {
                     return screenshot
                 }
                 screenshot.recycle()
             }
             check(SystemClock.elapsedRealtime() < deadline) {
-                "Test activity background did not become visible"
+                "Test activity background did not become visible; last center pixel was #${
+                    lastCenterPixel?.let(Integer::toHexString) ?: "unavailable"
+                }"
             }
             Thread.sleep(100)
         }
@@ -422,6 +422,6 @@ class SessionOverlayServiceInstrumentedTest {
     private companion object {
         const val SCREENSHOT_TIMEOUT_MS = 10_000L
         const val TEST_PREFERENCES = "session_attention_native"
-        val TEST_BACKGROUND_COLOR: Int = Color.rgb(230, 100, 220)
+        val TEST_BACKGROUND_COLOR: Int = SessionOverlayTestActivity.BACKGROUND_COLOR
     }
 }

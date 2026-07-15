@@ -401,9 +401,7 @@ class SessionOverlayService : Service() {
         }
         val flutterEngine = engine ?: return
         val surfaceView = FlutterSurfaceView(this, true)
-        val view = FlutterView(this, surfaceView).also {
-            it.attachToFlutterEngine(flutterEngine)
-        }
+        val view = FlutterView(this, surfaceView)
         val saved = getSharedPreferences("session_attention_native", MODE_PRIVATE)
         var windowFlags =
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -434,6 +432,7 @@ class SessionOverlayService : Service() {
         configureDrag(view, params)
         windowManager.addView(view, params)
         flutterView = view
+        view.attachToFlutterEngine(flutterEngine)
         scheduleFirstFrameTimeout(view)
     }
 

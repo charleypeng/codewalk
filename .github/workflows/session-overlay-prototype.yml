@@ -7,6 +7,8 @@ on:
       - ".github/workflows/session-overlay-prototype.yml"
       - "android/app/build.gradle.kts"
       - "android/app/src/main/AndroidManifest.xml"
+      - "android/app/src/debug/AndroidManifest.xml"
+      - "android/app/src/debug/kotlin/com/verseles/codewalk/overlay/**"
       - "android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt"
       - "android/app/src/main/kotlin/com/verseles/codewalk/overlay/**"
       - "android/app/src/androidTest/kotlin/com/verseles/codewalk/overlay/**"
