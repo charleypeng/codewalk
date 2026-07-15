@@ -1705,7 +1705,7 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Then** the protected overlay keeps `FLAG_SECURE`; screenshots, screen recording, and device mirroring may therefore show the protected area as black even though normal on-device composition is transparent
 - **Then** Bubble uses a `96 x 96dp` host and Panel uses a `360 x 240dp` host, both constrained to usable display bounds with a `16dp` edge margin
 - **Then** Android content is top-centered, dragging persists normalized position, and rotation or display changes re-clamp the overlay without bypassing permission or lock-screen gates
-- **Given** the Android overlay does not render its first Flutter frame within 5 seconds
+- **Given** the Android overlay does not reach a non-zero layout within 5 seconds, or reaches that layout but does not render its first Flutter frame within the following 5 seconds
 - **Then** only the overlay window is removed; the foreground service remains available for a later valid snapshot or lifecycle transition
 
 ### Background and transport limits
