@@ -21,6 +21,7 @@
 - For behavior changes, verify ADR-023 alignment first using `ADR.md` and local official OpenCode anchors:
   `ai-docs/opencode_server.md`, `ai-docs/opencode_web.md`, and `ai-docs/opencode_models.md`.
 - For new features or bug fixes, also inspect `https://github.com/openchamber/openchamber` as a secondary community reference. It must never override official OpenCode docs/source.
+- For OpenCode or OpenChamber source-code investigation, do not use the `researcher` subagent. Inspect GitHub URLs, raw files, commits, pull requests, and code directly with GitHub/URL tools.
 - If a behavior change cannot align with ADR-023, it is blocked unless an explicit ADR exception documents rationale, risk, rollback/feature flag, and regression tests.
 
 ## Documentation
