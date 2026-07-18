@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.178.0 - 2026-07-18
+
+- chore(agent): [Step 2/2] Document OpenCode compatibility
+- chore(agent): [Step 1/2] Align OpenCode compatibility
+- plan: align OpenCode v1.18.3 compatibility
+
 ## v1.177.0 - 2026-07-15
 
 - docs: clarify OpenCode source investigation
