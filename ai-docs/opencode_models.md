@@ -1,6 +1,6 @@
 # Models | OpenCode Compatibility Notes
 
-Last reviewed: 2026-07-02
+Last reviewed: 2026-07-18
 
 This local anchor summarizes the model/provider compatibility details CodeWalk
 needs when following ADR-023. The official OpenCode server remains the source of
@@ -22,6 +22,13 @@ spec exposed at `/doc`.
   `/provider` payload refreshed by OpenCode from models.dev.
 - Do not treat similarly named providers such as `opencode-go` as Zen/free unless
   they are reported as connected.
+- Treat `catalog.updated` as a provider/model catalog invalidation signal. Keep
+  the current catalog visible while one coalesced `/provider` refresh is in
+  flight, then publish the server response.
+- Do not infer that `integration.updated` or `integration.connection.updated`
+  changed the legacy `/provider` response. Those events belong to newer
+  integration lifecycle behavior and require a separate official contract
+  before they can invalidate the legacy provider catalog.
 
 ## Recent OpenCode Additions
 

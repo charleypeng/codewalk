@@ -77,6 +77,15 @@
 - **Then** the wizard returns to local setup
 - **Then** a delayed startup result cannot override navigation the user made after starting it
 
+### Managed local OpenCode prefers the native Windows architecture
+
+- **Given** CodeWalk manages the local OpenCode runtime on Windows ARM64
+- **When** the OpenCode release publishes a Windows ARM64 CLI archive
+- **Then** CodeWalk installs `opencode-windows-arm64.zip` instead of the x64 archive
+- **When** the native ARM64 CLI archive is unavailable
+- **Then** CodeWalk falls back to `opencode-windows-x64.zip`
+- **Then** Windows x64, macOS, and Linux keep their existing platform-specific archive preferences, and Desktop application installers are never selected as managed CLI runtimes
+
 ### Successful onboarding can trigger a first-use chat tour
 
 - **Given** the user leaves onboarding from the successful `Ready` step
@@ -575,6 +584,20 @@
 - **Then** unsupported or detailed inactive-context events only mark that context dirty, so returning to the project renders cache immediately and revalidates through SWR instead of reconciling every background event live
 - **When** the user opens a non-active session
 - **Then** cached content appears first when available, followed by active-session revalidation and session insights loading for authoritative messages, diffs, todos, and status
+
+### OpenCode global events preserve server-owned routing and state
+
+- **Given** CodeWalk receives an official nested `/global/event` frame
+- **When** the outer envelope includes `directory`, `project`, or `workspace`
+- **Then** those outer values identify the authoritative project context for routing, even if the nested payload repeats a different value
+- **Then** flat per-instance events and global `server.connected` / `server.heartbeat` frames without outer context remain accepted
+- **When** `session.next.revert.staged`, `session.next.revert.cleared`, or `session.next.revert.committed` targets the visible session, or omits a usable session ID
+- **Then** CodeWalk serializes a server-authoritative session and message refresh instead of deleting or fabricating messages locally
+- **When** a revert event identifies another session
+- **Then** CodeWalk refreshes session metadata without replacing the visible session timeline
+- **Then** aggressive cellular data saver can reconcile an active-session revert from the per-instance stream without enabling the global stream or adding a status fetch
+- **When** `catalog.updated` arrives in a burst
+- **Then** CodeWalk keeps the current provider/model catalog visible and coalesces the burst into the existing single provider refresh path
 
 ### New Chat draft state is isolated per project context
 

@@ -966,6 +966,34 @@ Server-sent events stream. First event is `server.connected`, then bus events
 
 Server-sent events stream
 
+#### OpenCode v1.18.3 event compatibility
+
+- Per-instance `/event` frames remain flat objects shaped as
+  `{ id, type, properties }`.
+- `/global/event` frames wrap that event in `payload` and may include outer
+  routing metadata: `{ directory, project?, workspace?, payload }`. The outer
+  `directory`, `project`, and `workspace` identify the event context and are
+  authoritative if the nested payload repeats those keys.
+- Initial `server.connected` and periodic `server.heartbeat` global frames may
+  omit the outer routing metadata. Clients must accept those transport events
+  without synthesizing empty context values.
+- The cumulative EventV2 families relevant to CodeWalk include
+  `catalog.updated`, `session.next.revert.staged`,
+  `session.next.revert.cleared`, and `session.next.revert.committed`.
+  `catalog.updated` has an empty event payload and invalidates the provider and
+  model catalog. Revert lifecycle events are reconciliation signals; session
+  and message responses remain authoritative.
+- `integration.*` events belong to newer integration lifecycle behavior. Their
+  arrival does not prove that the legacy `/provider` response changed, so they
+  must not be treated as provider-catalog invalidations without an official
+  contract establishing that relationship.
+
+Tag-pinned references: [global event schema](https://github.com/anomalyco/opencode/blob/v1.18.3/packages/opencode/src/server/routes/instance/httpapi/groups/global.ts#L35-L46),
+[global event handler](https://github.com/anomalyco/opencode/blob/v1.18.3/packages/opencode/src/server/routes/instance/httpapi/handlers/global.ts#L16-L58),
+[instance event handler](https://github.com/anomalyco/opencode/blob/v1.18.3/packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts#L12-L78),
+[revert events](https://github.com/anomalyco/opencode/blob/v1.18.3/packages/schema/src/session-event.ts#L434-L443),
+and [catalog event](https://github.com/anomalyco/opencode/blob/v1.18.3/packages/schema/src/catalog.ts#L5-L6).
+
 ---
 
 ### [Docs](#docs)
