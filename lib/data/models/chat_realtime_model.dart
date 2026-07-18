@@ -16,14 +16,25 @@ class ChatEventModel {
     final payload = json['payload'];
     if (payload is Map) {
       final payloadMap = _toStringDynamicMap(payload);
+      final properties = Map<String, dynamic>.from(
+        _toStringDynamicMap(payloadMap['properties']),
+      );
+      for (final key in const <String>['directory', 'project', 'workspace']) {
+        final value = json[key];
+        if (value is String && value.trim().isNotEmpty) {
+          properties[key] = value;
+        }
+      }
       return ChatEventModel(
         type: payloadMap['type'] as String? ?? 'unknown',
-        properties: _toStringDynamicMap(payloadMap['properties']),
+        properties: properties,
       );
     }
     return ChatEventModel(
       type: json['type'] as String? ?? 'unknown',
-      properties: _toStringDynamicMap(json['properties']),
+      properties: Map<String, dynamic>.from(
+        _toStringDynamicMap(json['properties']),
+      ),
     );
   }
   const ChatEventModel({required this.type, required this.properties});

@@ -186,7 +186,12 @@ extension _ChatProviderEventReducerHelpers on ChatProvider {
     if (mutationSignature != null) segments.add(mutationSignature);
     // Events with only type+session (e.g. session.status) change over time,
     // so skip dedup for events without a fine-grained identifier.
-    if (messageId == null && partId == null && requestId == null) return null;
+    if (messageId == null &&
+        partId == null &&
+        requestId == null &&
+        mutationSignature == null) {
+      return null;
+    }
     return segments.join(':');
   }
 
@@ -259,6 +264,14 @@ extension _ChatProviderEventReducerHelpers on ChatProvider {
           signaturePayload['part'] = part;
         }
         return 'payload=${_stableEventValueHash(signaturePayload)}';
+      case 'session.next.revert.staged':
+      case 'session.next.revert.cleared':
+      case 'session.next.revert.committed':
+        final mutation = Map<String, dynamic>.from(props)
+          ..remove('directory')
+          ..remove('project')
+          ..remove('workspace');
+        return 'payload=${_stableEventValueHash(mutation)}';
       default:
         return null;
     }

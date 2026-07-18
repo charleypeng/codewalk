@@ -4,6 +4,11 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
   void _handleGlobalEvent(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
 
+    if (event.type == 'catalog.updated') {
+      unawaited(initializeProviders());
+      return;
+    }
+
     if (event.type == 'server.heartbeat') {
       return;
     }
@@ -104,6 +109,9 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
       'session.idle',
       'session.error',
       'session.next.moved',
+      'session.next.revert.staged',
+      'session.next.revert.cleared',
+      'session.next.revert.committed',
       'todo.updated',
       'message.created',
       'message.updated',
@@ -684,8 +692,41 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
     _pendingRefreshStatus = _pendingRefreshStatus || refreshStatus;
     _pendingRefreshActiveSession =
         _pendingRefreshActiveSession || refreshActiveSession;
+    _pendingCurrentContextRefreshReason = reason;
     _globalRefreshDebounce?.cancel();
     _globalRefreshDebounce = Timer(const Duration(milliseconds: 300), () {
+      _globalRefreshDebounce = null;
+      _startCurrentContextRefreshDrain();
+    });
+  }
+
+  bool get _hasPendingCurrentContextRefresh =>
+      _pendingRefreshSessions ||
+      _pendingRefreshStatus ||
+      _pendingRefreshActiveSession;
+
+  void _startCurrentContextRefreshDrain() {
+    if (_currentContextRefreshTask != null) {
+      return;
+    }
+    final task = _drainCurrentContextRefreshes();
+    _currentContextRefreshTask = task;
+    unawaited(
+      task.whenComplete(() {
+        if (!identical(_currentContextRefreshTask, task)) {
+          return;
+        }
+        _currentContextRefreshTask = null;
+        if (_hasPendingCurrentContextRefresh &&
+            _globalRefreshDebounce == null) {
+          _startCurrentContextRefreshDrain();
+        }
+      }),
+    );
+  }
+
+  Future<void> _drainCurrentContextRefreshes() async {
+    while (_hasPendingCurrentContextRefresh) {
       if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
         _pendingRefreshSessions = false;
         _pendingRefreshStatus = false;
@@ -695,6 +736,7 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
       final shouldRefreshSessions = _pendingRefreshSessions;
       final shouldRefreshStatus = _pendingRefreshStatus;
       final shouldRefreshActiveSession = _pendingRefreshActiveSession;
+      final reason = _pendingCurrentContextRefreshReason;
       _pendingRefreshSessions = false;
       _pendingRefreshStatus = false;
       _pendingRefreshActiveSession = false;
@@ -705,29 +747,43 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
 
       final isAggressiveDataSaver =
           _cellularDataSaverService.isAggressiveDataSaverActive;
+      final shouldRefreshSessionMetadata =
+          shouldRefreshSessions &&
+          (!isAggressiveDataSaver || shouldRefreshActiveSession);
 
-      if (shouldRefreshSessions && !isAggressiveDataSaver) {
-        unawaited(loadSessions());
-      }
+      try {
+        if (shouldRefreshSessionMetadata) {
+          await loadSessions(
+            refreshSelectedSessionMessages: false,
+            refreshSessionStatus: !isAggressiveDataSaver,
+          );
+        }
 
-      if (shouldRefreshActiveSession) {
-        unawaited(
-          refreshActiveSessionView(
+        if (shouldRefreshActiveSession) {
+          await refreshActiveSessionView(
             reason: 'scoped-reconcile:$reason',
             includeStatus:
                 !isAggressiveDataSaver &&
                 !shouldRefreshSessions &&
                 shouldRefreshStatus,
-          ),
+            refreshAfterJoiningInFlight: shouldRefreshSessionMetadata,
+          );
+        } else if (!shouldRefreshSessions &&
+            shouldRefreshStatus &&
+            !isAggressiveDataSaver) {
+          await refreshSessionStatusSnapshot();
+        }
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Scoped reconciliation failed reason=$reason',
+          error: error,
+          stackTrace: stackTrace,
         );
-        return;
       }
 
-      if (!shouldRefreshSessions &&
-          shouldRefreshStatus &&
-          !isAggressiveDataSaver) {
-        unawaited(refreshSessionStatusSnapshot());
+      if (_globalRefreshDebounce != null) {
+        return;
       }
-    });
+    }
   }
 }

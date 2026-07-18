@@ -269,8 +269,14 @@ void main() {
     test('ChatRemoteDataSource subscribes to /global/event stream', () async {
       server.scriptedGlobalEvents = <Map<String, dynamic>>[
         <String, dynamic>{
-          'type': 'session.updated',
-          'properties': <String, dynamic>{'directory': '/workspace/project'},
+          'directory': '/workspace/project',
+          'project': 'project-id',
+          'workspace': 'workspace-id',
+          'payload': <String, dynamic>{
+            'id': 'evt_global_session_updated',
+            'type': 'session.updated',
+            'properties': <String, dynamic>{},
+          },
         },
       ];
       final remote = ChatRemoteDataSourceImpl(
@@ -280,6 +286,8 @@ void main() {
       final events = await remote.subscribeGlobalEvents().take(1).toList();
       expect(events.single.type, 'session.updated');
       expect(events.single.properties['directory'], '/workspace/project');
+      expect(events.single.properties['project'], 'project-id');
+      expect(events.single.properties['workspace'], 'workspace-id');
     });
 
     test(

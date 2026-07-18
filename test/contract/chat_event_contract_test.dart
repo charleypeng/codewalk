@@ -1406,6 +1406,56 @@ void main() {
       });
     });
 
+    // ── v2 reconciliation events ──
+
+    group('v2 reconciliation events', () {
+      test(
+        'global revert event refreshes server-authoritative state',
+        () async {
+          await initAndSelectSession();
+          chatRepository.getSessionsCallCount = 0;
+          chatRepository.getMessagesCallCount = 0;
+          chatRepository.getSessionStatusCallCount = 0;
+
+          chatRepository.emitGlobalEvent(
+            const ChatEvent(
+              type: 'session.next.revert.staged',
+              properties: <String, dynamic>{
+                'directory': '/tmp',
+                'sessionID': 'ses_1',
+                'timestamp': 1000,
+                'revert': <String, dynamic>{'messageID': 'msg_user_1'},
+              },
+            ),
+          );
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+
+          expect(chatRepository.getSessionsCallCount, greaterThan(0));
+          expect(chatRepository.getMessagesCallCount, greaterThan(0));
+          expect(chatRepository.getSessionStatusCallCount, greaterThan(0));
+        },
+      );
+
+      test('catalog.updated triggers the provider refresh contract', () async {
+        await initAndSelectSession();
+        final callsBefore = appRepository.getProvidersCallCount;
+
+        chatRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'catalog.updated',
+            properties: <String, dynamic>{},
+          ),
+        );
+        await settleUntil(
+          () => appRepository.getProvidersCallCount == callsBefore + 1,
+          reason: 'Expected catalog.updated to refresh providers.',
+        );
+
+        expect(appRepository.getProvidersCallCount, callsBefore + 1);
+      });
+    });
+
     // ── global event routing ──
 
     group('global event routing', () {

@@ -12,6 +12,7 @@ import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/session.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
@@ -127,6 +128,501 @@ void main() {
       }
       fail('Expected server.connected signal to mark connected.');
     }
+
+    Future<void> initializeRealtimeProvider() async {
+      await provider.projectProvider.initializeProject();
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere((session) => session.id == 'ses_1'),
+      );
+      await provider.refresh();
+      await settleUntil(
+        () => provider.debugHasRealtimeEventSubscription,
+        reason: 'Expected realtime subscription before compatibility event.',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+
+    group('OpenCode v1.18.3 compatibility', () {
+      for (final eventType in const <String>[
+        'session.next.revert.staged',
+        'session.next.revert.cleared',
+        'session.next.revert.committed',
+      ]) {
+        test('$eventType schedules authoritative reconciliation', () async {
+          await initializeRealtimeProvider();
+          chatRepository.getSessionsCallCount = 0;
+          chatRepository.getMessagesCallCount = 0;
+          chatRepository.getSessionStatusCallCount = 0;
+
+          chatRepository.emitEvent(
+            ChatEvent(
+              type: eventType,
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'timestamp': 1000,
+                if (eventType == 'session.next.revert.staged')
+                  'revert': <String, dynamic>{'messageID': 'msg_user_2'},
+                if (eventType == 'session.next.revert.committed')
+                  'messageID': 'msg_user_2',
+              },
+            ),
+          );
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+
+          expect(chatRepository.getSessionsCallCount, greaterThan(0));
+          expect(chatRepository.getMessagesCallCount, greaterThan(0));
+          expect(chatRepository.getSessionStatusCallCount, greaterThan(0));
+        });
+      }
+
+      test(
+        'active revert refresh adopts server boundary without deleting raw messages',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_user_1',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+            ),
+            AssistantMessage(
+              id: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: const <MessagePart>[],
+            ),
+            UserMessage(
+              id: 'msg_user_2',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+              parts: const <MessagePart>[],
+            ),
+          ];
+          await initializeRealtimeProvider();
+          final messagesStarted = Completer<void>();
+          final releaseMessages = Completer<void>();
+          addTearDown(() {
+            if (!releaseMessages.isCompleted) {
+              releaseMessages.complete();
+            }
+          });
+          chatRepository.getMessagesDelay = () async {
+            if (!messagesStarted.isCompleted) {
+              messagesStarted.complete();
+            }
+            await releaseMessages.future;
+          };
+          chatRepository.getMessagesCallCount = 0;
+          final preexistingRefresh = provider.refreshActiveSessionView(
+            reason: 'test-preexisting-refresh',
+          );
+          await messagesStarted.future.timeout(const Duration(seconds: 2));
+          chatRepository.sessions[0] = chatRepository.sessions[0].copyWith(
+            revert: const SessionRevert(messageId: 'msg_user_2'),
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_user_1',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+            ),
+            AssistantMessage(
+              id: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: const <MessagePart>[],
+            ),
+            AssistantMessage(
+              id: 'msg_server_reconciled',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1150),
+              parts: const <MessagePart>[],
+            ),
+            UserMessage(
+              id: 'msg_user_2',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+              parts: const <MessagePart>[],
+            ),
+          ];
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.next.revert.staged',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'timestamp': 1000,
+                'revert': <String, dynamic>{'messageID': 'msg_user_2'},
+              },
+            ),
+          );
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+          await settleUntil(
+            () => provider.currentSessionRevert?.messageId == 'msg_user_2',
+            maxTicks: 80,
+            reason: 'Expected refreshed session to expose the revert boundary.',
+          );
+          releaseMessages.complete();
+          await preexistingRefresh;
+          await settleUntil(
+            () => provider.rawMessages.any(
+              (message) => message.id == 'msg_server_reconciled',
+            ),
+            maxTicks: 80,
+            reason: 'Expected messages fetched after the revert boundary.',
+          );
+
+          expect(chatRepository.getMessagesCallCount, 2);
+          expect(provider.rawMessages, hasLength(4));
+          expect(provider.messages.map((message) => message.id), <String>[
+            'msg_user_1',
+            'msg_assistant_1',
+            'msg_server_reconciled',
+          ]);
+        },
+      );
+
+      test(
+        'known inactive-session revert does not refresh visible messages',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_visible_existing',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+            ),
+          ];
+          chatRepository.sessions.add(
+            ChatSession(
+              id: 'ses_2',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session 2',
+            ),
+          );
+          await initializeRealtimeProvider();
+          chatRepository.getSessionsCallCount = 0;
+          chatRepository.getMessagesCallCount = 0;
+          chatRepository.getSessionStatusCallCount = 0;
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.next.revert.cleared',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_2',
+                'timestamp': 1000,
+              },
+            ),
+          );
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+
+          expect(chatRepository.getSessionsCallCount, greaterThan(0));
+          expect(chatRepository.getSessionStatusCallCount, greaterThan(0));
+          expect(chatRepository.getMessagesCallCount, 0);
+        },
+      );
+
+      test(
+        'overlapping revert reconciliations serialize message refreshes',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_serial_existing',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+            ),
+          ];
+          await initializeRealtimeProvider();
+          final firstRequestStarted = Completer<void>();
+          final releaseFirstRequest = Completer<void>();
+          addTearDown(() {
+            if (!releaseFirstRequest.isCompleted) {
+              releaseFirstRequest.complete();
+            }
+          });
+          var requestOrdinal = 0;
+          var activeRequests = 0;
+          var maxActiveRequests = 0;
+          chatRepository.getMessagesDelay = () async {
+            requestOrdinal += 1;
+            activeRequests += 1;
+            if (activeRequests > maxActiveRequests) {
+              maxActiveRequests = activeRequests;
+            }
+            try {
+              if (requestOrdinal == 1) {
+                firstRequestStarted.complete();
+                await releaseFirstRequest.future;
+              } else {
+                await Future<void>.delayed(const Duration(milliseconds: 40));
+              }
+            } finally {
+              activeRequests -= 1;
+            }
+          };
+          chatRepository.getMessagesCallCount = 0;
+          final preexistingRefresh = provider.refreshActiveSessionView(
+            reason: 'test-overlapping-revert-refresh',
+          );
+          await firstRequestStarted.future.timeout(const Duration(seconds: 2));
+          chatRepository.sessions[0] = chatRepository.sessions[0].copyWith(
+            revert: const SessionRevert(messageId: 'msg_serial_existing'),
+          );
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.next.revert.staged',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'timestamp': 1000,
+                'revert': <String, dynamic>{'messageID': 'msg_serial_existing'},
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+          await settleUntil(
+            () =>
+                provider.currentSessionRevert?.messageId ==
+                'msg_serial_existing',
+            reason: 'Expected the first reconciliation to update metadata.',
+          );
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.next.revert.committed',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'timestamp': 2000,
+                'messageID': 'msg_serial_existing',
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+          releaseFirstRequest.complete();
+          await preexistingRefresh;
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+
+          expect(chatRepository.getMessagesCallCount, 3);
+          expect(maxActiveRequests, 1);
+        },
+      );
+
+      test(
+        'revert without a session id safely refreshes visible messages',
+        () async {
+          await initializeRealtimeProvider();
+          chatRepository.getMessagesCallCount = 0;
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.next.revert.cleared',
+              properties: <String, dynamic>{'timestamp': 1000},
+            ),
+          );
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+
+          expect(chatRepository.getMessagesCallCount, greaterThan(0));
+        },
+      );
+
+      test(
+        'aggressive data saver reconciles active revert from session stream',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_user_1',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+            ),
+            UserMessage(
+              id: 'msg_user_2',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: const <MessagePart>[],
+            ),
+          ];
+          final dataSaverService = CellularDataSaverService.disabled()
+            ..debugSetDataSaverLevel(DataSaverLevel.aggressive)
+            ..debugSetTransport(DataSaverTransport.cellular);
+          addTearDown(dataSaverService.dispose);
+          provider = buildProvider(cellularDataSaverService: dataSaverService);
+          await initializeRealtimeProvider();
+          expect(provider.debugHasGlobalEventSubscription, isFalse);
+          chatRepository.getSessionsCallCount = 0;
+          chatRepository.getMessagesCallCount = 0;
+          chatRepository.getSessionStatusCallCount = 0;
+          chatRepository.sessions[0] = chatRepository.sessions[0].copyWith(
+            revert: const SessionRevert(messageId: 'msg_user_2'),
+          );
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.next.revert.committed',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'timestamp': 1000,
+                'messageID': 'msg_user_2',
+              },
+            ),
+          );
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+          await settleUntil(
+            () => provider.currentSessionRevert?.messageId == 'msg_user_2',
+            reason: 'Expected aggressive mode to refresh revert metadata.',
+          );
+
+          expect(chatRepository.getMessagesCallCount, 1);
+          expect(chatRepository.getSessionsCallCount, 1);
+          expect(chatRepository.getSessionStatusCallCount, 0);
+          expect(provider.messages.map((message) => message.id), <String>[
+            'msg_user_1',
+          ]);
+        },
+      );
+
+      test(
+        'duplicate revert across streams triggers one reconciliation',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            UserMessage(
+              id: 'msg_dedup_existing',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+            ),
+          ];
+          await initializeRealtimeProvider();
+          await settleUntil(
+            () => provider.debugHasGlobalEventSubscription,
+            reason: 'Expected global subscription before deduplication test.',
+          );
+          chatRepository.getSessionsCallCount = 0;
+          chatRepository.getMessagesCallCount = 0;
+          chatRepository.getSessionStatusCallCount = 0;
+          const sessionEvent = ChatEvent(
+            type: 'session.next.revert.staged',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'timestamp': 1000,
+              'revert': <String, dynamic>{'messageID': 'msg_user_2'},
+            },
+          );
+          const globalEvent = ChatEvent(
+            type: 'session.next.revert.staged',
+            properties: <String, dynamic>{
+              'directory': '/tmp',
+              'project': 'project-id',
+              'workspace': 'workspace-id',
+              'sessionID': 'ses_1',
+              'timestamp': 1000,
+              'revert': <String, dynamic>{'messageID': 'msg_user_2'},
+            },
+          );
+
+          chatRepository.emitEvent(sessionEvent);
+          chatRepository.emitGlobalEvent(globalEvent);
+
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+
+          expect(chatRepository.getSessionsCallCount, 1);
+          expect(chatRepository.getMessagesCallCount, 1);
+          expect(chatRepository.getSessionStatusCallCount, 1);
+        },
+      );
+
+      test(
+        'catalog.updated coalesces provider refresh and updates models',
+        () async {
+          await initializeRealtimeProvider();
+          await settleUntil(
+            () => provider.debugHasGlobalEventSubscription,
+            reason: 'Expected global subscription before catalog event.',
+          );
+          final releaseRefresh = Completer<void>();
+          appRepository.getProvidersDelay = () => releaseRefresh.future;
+          appRepository.providersResult = Right(
+            ProvidersResponse(
+              providers: <Provider>[
+                Provider(
+                  id: 'provider_a',
+                  name: 'Provider A',
+                  env: const <String>[],
+                  models: <String, Model>{'model_b': testModel('model_b')},
+                ),
+              ],
+              defaultModels: const <String, String>{'provider_a': 'model_b'},
+              connected: const <String>['provider_a'],
+            ),
+          );
+          final callsBefore = appRepository.getProvidersCallCount;
+
+          for (var index = 0; index < 3; index += 1) {
+            chatRepository.emitGlobalEvent(
+              const ChatEvent(
+                type: 'catalog.updated',
+                properties: <String, dynamic>{},
+              ),
+            );
+          }
+          await settleUntil(
+            () => appRepository.getProvidersCallCount == callsBefore + 1,
+            reason: 'Expected one in-flight provider refresh.',
+          );
+          expect(provider.providers.single.models, contains('model_a'));
+
+          releaseRefresh.complete();
+          await settleUntil(
+            () => provider.providers.single.models.containsKey('model_b'),
+            maxTicks: 80,
+            reason: 'Expected catalog event to publish refreshed models.',
+          );
+
+          expect(appRepository.getProvidersCallCount, callsBefore + 1);
+        },
+      );
+
+      test('catalog refresh failure preserves the visible catalog', () async {
+        await initializeRealtimeProvider();
+        await settleUntil(
+          () => provider.debugHasGlobalEventSubscription,
+          reason: 'Expected global subscription before catalog event.',
+        );
+        final providersBefore = List<Provider>.from(provider.providers);
+        appRepository.providersResult = const Left(
+          ServerFailure('catalog refresh failed'),
+        );
+        final callsBefore = appRepository.getProvidersCallCount;
+
+        chatRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'catalog.updated',
+            properties: <String, dynamic>{},
+          ),
+        );
+        await settleUntil(
+          () => appRepository.getProvidersCallCount == callsBefore + 1,
+          reason: 'Expected catalog refresh attempt.',
+        );
+        await settleUntil(
+          () => !provider.isProvidersRefreshInProgress,
+          reason: 'Expected failed catalog refresh to settle.',
+        );
+
+        expect(provider.providers, providersBefore);
+        expect(provider.providers.single.models, contains('model_a'));
+      });
+    });
 
     test(
       'aggressive data saver keeps burst realtime and pauses idle streams',

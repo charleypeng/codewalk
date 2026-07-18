@@ -974,6 +974,25 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
           refreshActiveSession: true,
         );
         break;
+      case 'session.next.revert.staged':
+      case 'session.next.revert.cleared':
+      case 'session.next.revert.committed':
+        final normalizedSessionId = eventSessionId?.trim();
+        final currentSessionId = _currentSession?.id.trim();
+        final refreshActiveSession =
+            normalizedSessionId == null ||
+            normalizedSessionId.isEmpty ||
+            (currentSessionId != null &&
+                currentSessionId.isNotEmpty &&
+                normalizedSessionId == currentSessionId);
+        _dirtyContextKeys.add(_activeContextKey);
+        _scheduleCurrentContextRefresh(
+          reason: 'event-${event.type}',
+          refreshSessions: true,
+          refreshStatus: true,
+          refreshActiveSession: refreshActiveSession,
+        );
+        break;
       default:
         break;
     }

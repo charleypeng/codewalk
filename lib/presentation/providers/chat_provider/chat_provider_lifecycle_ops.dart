@@ -100,6 +100,7 @@ extension ChatProviderLifecycleOps on ChatProvider {
     bool includeStatus = true,
     bool allowDuringAbortSuppression = false,
     bool preferDelta = true,
+    bool refreshAfterJoiningInFlight = false,
   }) async {
     if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
       return;
@@ -125,11 +126,14 @@ extension ChatProviderLifecycleOps on ChatProvider {
         return;
       }
       if (activeSessionId == session.id) {
-        if (includeStatus &&
-            !_cellularDataSaverService.shouldSuppressBackgroundWork) {
-          await refreshSessionStatusSnapshot();
+        if (!refreshAfterJoiningInFlight) {
+          if (includeStatus &&
+              !_cellularDataSaverService.shouldSuppressBackgroundWork) {
+            await refreshSessionStatusSnapshot();
+          }
+          return;
         }
-        return;
+        break;
       }
     }
 

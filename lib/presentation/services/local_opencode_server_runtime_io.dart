@@ -13,6 +13,50 @@ LocalOpencodeServerRuntime createLocalOpencodeServerRuntime() {
   return _IoLocalOpencodeServerRuntime();
 }
 
+@visibleForTesting
+String? selectLocalOpencodeReleaseAssetName({
+  required Iterable<String> availableAssetNames,
+  required TargetPlatform platform,
+  required bool isArm64,
+}) {
+  final preferredNames = switch (platform) {
+    TargetPlatform.windows =>
+      isArm64
+          ? const <String>[
+              'opencode-windows-arm64.zip',
+              'opencode-windows-x64.zip',
+            ]
+          : const <String>['opencode-windows-x64.zip'],
+    TargetPlatform.macOS =>
+      isArm64
+          ? const <String>['opencode-darwin-arm64.zip']
+          : const <String>[
+              'opencode-darwin-x64.zip',
+              'opencode-darwin-x64-baseline.zip',
+            ],
+    TargetPlatform.linux =>
+      isArm64
+          ? const <String>[
+              'opencode-linux-arm64.tar.gz',
+              'opencode-linux-arm64-musl.tar.gz',
+            ]
+          : const <String>[
+              'opencode-linux-x64.tar.gz',
+              'opencode-linux-x64-baseline.tar.gz',
+              'opencode-linux-x64-musl.tar.gz',
+              'opencode-linux-x64-baseline-musl.tar.gz',
+            ],
+    _ => const <String>[],
+  };
+  final available = availableAssetNames.toSet();
+  for (final preferredName in preferredNames) {
+    if (available.contains(preferredName)) {
+      return preferredName;
+    }
+  }
+  return null;
+}
+
 class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
   static const String _githubLatestReleaseApi =
       'https://api.github.com/repos/anomalyco/opencode/releases/latest';
@@ -920,33 +964,17 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
         abi == Abi.macosArm64 ||
         abi == Abi.windowsArm64;
 
-    final preferredNames = <String>[];
-    if (defaultTargetPlatform == TargetPlatform.windows) {
-      preferredNames.add('opencode-windows-x64.zip');
-    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
-      if (isArm64) {
-        preferredNames.add('opencode-darwin-arm64.zip');
-      } else {
-        preferredNames.add('opencode-darwin-x64.zip');
-        preferredNames.add('opencode-darwin-x64-baseline.zip');
-      }
-    } else if (defaultTargetPlatform == TargetPlatform.linux) {
-      if (isArm64) {
-        preferredNames.add('opencode-linux-arm64.tar.gz');
-        preferredNames.add('opencode-linux-arm64-musl.tar.gz');
-      } else {
-        preferredNames.add('opencode-linux-x64.tar.gz');
-        preferredNames.add('opencode-linux-x64-baseline.tar.gz');
-        preferredNames.add('opencode-linux-x64-musl.tar.gz');
-        preferredNames.add('opencode-linux-x64-baseline-musl.tar.gz');
-      }
+    final selectedName = selectLocalOpencodeReleaseAssetName(
+      availableAssetNames: mapped.map((asset) => asset.name),
+      platform: defaultTargetPlatform,
+      isArm64: isArm64,
+    );
+    if (selectedName == null) {
+      return null;
     }
-
-    for (final preferred in preferredNames) {
-      for (final asset in mapped) {
-        if (asset.name == preferred) {
-          return asset;
-        }
+    for (final asset in mapped) {
+      if (asset.name == selectedName) {
+        return asset;
       }
     }
     return null;

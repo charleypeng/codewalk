@@ -464,6 +464,8 @@ class ChatProvider extends ChangeNotifier {
   bool _pendingRefreshSessions = false;
   bool _pendingRefreshStatus = false;
   bool _pendingRefreshActiveSession = false;
+  Future<void>? _currentContextRefreshTask;
+  String _pendingCurrentContextRefreshReason = 'unspecified';
   bool _featureFlagLogged = false;
   final Map<String, String> _pendingRenameTitleBySessionId = <String, String>{};
   final Set<String> _autoTitleConsolidatedSessionIds = <String>{};
@@ -2971,6 +2973,8 @@ class ChatProvider extends ChangeNotifier {
   Future<void> loadSessions({
     bool preserveVisibleState = false,
     bool userInitiated = false,
+    bool refreshSelectedSessionMessages = true,
+    bool refreshSessionStatus = true,
   }) async {
     return AppLogger.runPerformanceTask<void>(
       'load_sessions',
@@ -3088,11 +3092,14 @@ class ChatProvider extends ChangeNotifier {
               serverId: serverId,
               scopeId: scopeId,
               storedSessionId: storedSessionId,
+              refreshMessages: refreshSelectedSessionMessages,
             );
             if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
               return;
             }
-            await refreshSessionStatusSnapshot();
+            if (refreshSessionStatus) {
+              await refreshSessionStatusSnapshot();
+            }
           }
 
           final canRevalidateInBackground =
@@ -3160,6 +3167,7 @@ class ChatProvider extends ChangeNotifier {
     required String serverId,
     required String scopeId,
     String? storedSessionId,
+    bool refreshMessages = true,
   }) async {
     try {
       if (_sessions.isEmpty) {
@@ -3227,9 +3235,26 @@ class ChatProvider extends ChangeNotifier {
         return;
       }
 
+      final currentSessionChanged = _currentSession != targetSession;
+      final previousRevert = _currentSession?.revert;
+      _currentSession = targetSession;
+      if (previousRevert != targetSession.revert) {
+        _messagesVersion++;
+      }
       final appliedSessionOverride = _applySelectionPriorityForCurrentSession();
-      if (appliedSessionOverride) {
+      if (currentSessionChanged || appliedSessionOverride) {
         notifyListeners();
+      }
+
+      if (!refreshMessages) {
+        if (resolvedStoredSessionId != targetSession.id) {
+          await _saveCurrentSessionId(
+            targetSession.id,
+            serverId: serverId,
+            scopeId: scopeId,
+          );
+        }
+        return;
       }
 
       if (_messages.isEmpty) {

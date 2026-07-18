@@ -2124,6 +2124,7 @@ class FakeAppRepository implements AppRepository {
     Agent(name: 'plan', mode: 'primary', hidden: false, native: false),
   ]);
   int getProvidersCallCount = 0;
+  Future<void> Function()? getProvidersDelay;
   String? lastGetProvidersDirectory;
   String? updatedHost;
   int? updatedPort;
@@ -2144,6 +2145,7 @@ class FakeAppRepository implements AppRepository {
   }) async {
     getProvidersCallCount += 1;
     lastGetProvidersDirectory = directory;
+    if (getProvidersDelay != null) await getProvidersDelay!();
     return providersResult;
   }
 
