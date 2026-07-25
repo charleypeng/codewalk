@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -31,14 +30,6 @@ class OAuthService {
     this.challengeBody,
     OAuthTokenStorage? storage,
   }) : _storage = storage ?? OAuthTokenStorage();
-
-  /// RFC 8252 §7: native apps must redirect to a private-use URI scheme.
-  /// A loopback HTTP redirect cannot work on Android — no local server is
-  /// running, so Chrome fails with ERR_CONNECTION_REFUSED after consent.
-  /// The scheme is registered via the `appAuthRedirectScheme` manifest
-  /// placeholder in android/app/build.gradle.kts.
-  static const String _androidRedirectUri =
-      'com.verseles.codewalk.oauth://oauth/callback';
 
   final String profileId;
   final String serverUrl;
@@ -359,10 +350,6 @@ class OAuthService {
   Future<Map<String, dynamic>?> _runPkceFlow(
     Map<String, dynamic> meta,
   ) async {
-    if (Platform.isAndroid) {
-      return _runPkceFlowAndroid(meta);
-    }
-
     final authEp = meta['authorization_endpoint'] as String?;
     final tokenEp = meta['token_endpoint'] as String?;
     if (authEp == null || tokenEp == null) return null;
@@ -413,69 +400,6 @@ class OAuthService {
       return data;
     } finally {
       await callbackServer.close(force: true);
-    }
-  }
-
-  Future<Map<String, dynamic>?> _runPkceFlowAndroid(
-    Map<String, dynamic> meta,
-  ) async {
-    final authEp = meta['authorization_endpoint'] as String?;
-    final tokenEp = meta['token_endpoint'] as String?;
-    if (authEp == null || tokenEp == null) return null;
-
-    final redirectUri = _androidRedirectUri;
-    final client = await _registerClient(meta, redirectUri);
-    final dcrClientId = client?['client_id'] as String?;
-    final clientId = dcrClientId ?? 'codewalk';
-
-    const appAuth = FlutterAppAuth();
-
-    try {
-      _log('Opening Chrome Custom Tab: $authEp');
-      final AuthorizationResponse? result = await appAuth.authorize(
-        AuthorizationRequest(
-          clientId,
-          redirectUri,
-          serviceConfiguration: AuthorizationServiceConfiguration(
-            authorizationEndpoint: authEp,
-            tokenEndpoint: tokenEp,
-          ),
-          additionalParameters: {'resource': _baseUrl},
-        ),
-      );
-
-      if (result == null) {
-        _log('User cancelled OAuth authorization');
-        return null;
-      }
-
-      _log('Authorization code received from Chrome Custom Tab');
-
-      final authCode = result.authorizationCode;
-      if (authCode == null) {
-        _log('flutter_appauth did not return an authorization code');
-        return null;
-      }
-      final codeVerifier = result.codeVerifier;
-      if (codeVerifier == null) {
-        _log('flutter_appauth did not return a code verifier');
-        return null;
-      }
-
-      final data = await _exchangeCode(
-        tokenEp,
-        authCode,
-        codeVerifier,
-        redirectUri,
-        dcrClientId,
-      );
-      if (data != null) {
-        data['_client'] = client;
-      }
-      return data;
-    } catch (e) {
-      _log('OAuth authorization failed on Android: $e');
-      return null;
     }
   }
 
