@@ -99,8 +99,10 @@ android {
         versionName = flutter.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Required by flutter_appauth for custom-scheme redirect support.
-        // Loopback-based OAuth (used by Cloudflare Access) does not use this
-        // scheme, but the manifest merger requires the placeholder to resolve.
+        // Cloudflare Access OAuth on Android redirects to
+        // com.verseles.codewalk.oauth://oauth/callback (RFC 8252 private-use
+        // scheme); AppAuth's RedirectUriReceiverActivity consumes this
+        // placeholder via its library manifest intent-filter.
         manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.verseles.codewalk.oauth")
     }
 

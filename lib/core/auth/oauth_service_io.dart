@@ -24,12 +24,6 @@ class OAuthCallbackValidation {
 }
 
 class OAuthService {
-  final String profileId;
-  final String serverUrl;
-  final Map<String, String>? challengeHeaders;
-  final String? challengeBody;
-  final OAuthTokenStorage _storage;
-
   OAuthService({
     required this.profileId,
     required this.serverUrl,
@@ -37,6 +31,20 @@ class OAuthService {
     this.challengeBody,
     OAuthTokenStorage? storage,
   }) : _storage = storage ?? OAuthTokenStorage();
+
+  /// RFC 8252 §7: native apps must redirect to a private-use URI scheme.
+  /// A loopback HTTP redirect cannot work on Android — no local server is
+  /// running, so Chrome fails with ERR_CONNECTION_REFUSED after consent.
+  /// The scheme is registered via the `appAuthRedirectScheme` manifest
+  /// placeholder in android/app/build.gradle.kts.
+  static const String _androidRedirectUri =
+      'com.verseles.codewalk.oauth://oauth/callback';
+
+  final String profileId;
+  final String serverUrl;
+  final Map<String, String>? challengeHeaders;
+  final String? challengeBody;
+  final OAuthTokenStorage _storage;
 
   static bool isOAuthChallenge(int statusCode, Map<String, String> headers) {
     if (statusCode != 401 && statusCode != 403) return false;
@@ -415,7 +423,7 @@ class OAuthService {
     final tokenEp = meta['token_endpoint'] as String?;
     if (authEp == null || tokenEp == null) return null;
 
-    final redirectUri = _redirectUriFor(null);
+    final redirectUri = _androidRedirectUri;
     final client = await _registerClient(meta, redirectUri);
     final dcrClientId = client?['client_id'] as String?;
     final clientId = dcrClientId ?? 'codewalk';
@@ -433,7 +441,6 @@ class OAuthService {
             tokenEndpoint: tokenEp,
           ),
           additionalParameters: {'resource': _baseUrl},
-          allowInsecureConnections: true,
         ),
       );
 
@@ -710,8 +717,8 @@ class OAuthService {
     return base64Url.encode(bytes).replaceAll('=', '');
   }
 
-  String _redirectUriFor(int? port) {
-    return 'http://127.0.0.1:${port ?? 61308}/oauth/callback';
+  String _redirectUriFor(int port) {
+    return 'http://127.0.0.1:$port/oauth/callback';
   }
 
   String get _baseUrl {

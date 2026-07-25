@@ -1777,7 +1777,7 @@ Official OpenCode does not define a reverse-proxy authentication mechanism. The 
 
 ### Decision
 
-1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop and Android platforms. On desktop, the flow uses a system browser + local HTTP redirect server; on Android, it uses `flutter_appauth` (Chrome Custom Tab + manifest-verified loopback redirect). When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
+1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop and Android platforms. On desktop, the flow uses a system browser + local HTTP redirect server; on Android, it uses `flutter_appauth` (Chrome Custom Tab + private-use URI scheme redirect per RFC 8252 (`com.verseles.codewalk.oauth://oauth/callback`)). When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
 
 2. **Profile-scoped configuration**: Each `ServerProfile` (ADR-001) gains an `oauthEnabled` (bool, default `false`) field. This single toggle controls whether the profile uses Cloudflare Managed OAuth or standard Basic Auth — the two modes are mutually exclusive within a profile. This preserves OpenCode Basic Auth for non-OAuth profiles without interference.
 
@@ -1861,7 +1861,7 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 ### Key Files
 
 - `lib/core/auth/oauth_service.dart` — `OAuthService` public API with conditional export
-- `lib/core/auth/oauth_service_io.dart` — IO platforms (desktop + Android) implementation: desktop uses system browser + local HTTP redirect server; Android uses `flutter_appauth` Chrome Custom Tab with manifest-verified loopback; Cloudflare Managed OAuth authorization code + PKCE S256, DCR when `registration_endpoint` available, `/oauth/callback` handling with state/path/duplicate rejection, token exchange
+- `lib/core/auth/oauth_service_io.dart` — IO platforms (desktop + Android) implementation: desktop uses system browser + local HTTP redirect server; Android uses `flutter_appauth` Chrome Custom Tab with a private-use URI scheme redirect per RFC 8252 (loopback HTTP cannot work on Android — no local server is running); Cloudflare Managed OAuth authorization code + PKCE S256, DCR when `registration_endpoint` available, `/oauth/callback` handling with state/path/duplicate rejection, token exchange
 - `lib/core/auth/oauth_service_stub.dart` — no-op stub for mobile platforms
 - `lib/core/auth/oauth_service_result.dart` — `OAuthServiceResult` type for flow outcomes
 - `lib/core/auth/oauth_token_storage.dart` — `OAuthTokenStorage` backed by `flutter_secure_storage`, keys scoped by `profileId + serverUrl`
