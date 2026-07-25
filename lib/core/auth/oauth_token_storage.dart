@@ -98,10 +98,17 @@ class OAuthTokenStorage {
     } on FormatException {
       return null;
     } catch (error) {
-      throw OAuthTokenStorageException(
-        'Secure credential storage is unavailable.',
-        error,
-      );
+      // A corrupted or keystore-invalidated entry (common on Android after
+      // reinstalls or lock-screen changes) must not block re-authentication:
+      // drop the unreadable entry and behave as if no credential existed.
+      try {
+        await _backend.delete(
+          key: _key(profileId: profileId, serverUrl: serverUrl),
+        );
+      } catch (_) {
+        // Best-effort cleanup only.
+      }
+      return null;
     }
     return null;
   }

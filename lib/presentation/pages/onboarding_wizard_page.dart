@@ -540,9 +540,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         );
         if (!mounted) return;
         if (!authenticated) {
+          final detail = appProvider.errorMessage.trim();
           setState(() {
             _testing = false;
-            _connectionError = context.l10n.onboardingCloudflareAuthFailed;
+            _connectionError = detail.isNotEmpty
+                ? detail
+                : context.l10n.onboardingCloudflareAuthFailed;
           });
           return;
         }
@@ -611,9 +614,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         );
         if (!mounted) return;
         if (!authenticated) {
+          final detail = appProvider.errorMessage.trim();
           setState(() {
             _testing = false;
-            _connectionError = context.l10n.onboardingCloudflareAuthFailed;
+            _connectionError = detail.isNotEmpty
+                ? detail
+                : context.l10n.onboardingCloudflareAuthFailed;
           });
           return;
         }

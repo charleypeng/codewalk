@@ -83,6 +83,23 @@ class OAuthService {
   }
 
   Future<OAuthFlowResult> authenticate({bool skipCache = false}) async {
+    try {
+      return await _authenticate(skipCache: skipCache);
+    } catch (e) {
+      // Never let an unexpected failure (secure-storage errors, loopback
+      // bind failures, browser launch errors, malformed token responses)
+      // escape as an exception — callers would otherwise wait on a future
+      // that never resolves and the UI spinner would run forever.
+      _log('OAuth flow aborted with unexpected error: $e');
+      return OAuthFlowResult(
+        log: [],
+        error: 'OAuth flow failed: $e',
+        token: null,
+      );
+    }
+  }
+
+  Future<OAuthFlowResult> _authenticate({bool skipCache = false}) async {
     _log('Starting OAuth flow for $serverUrl');
 
     if (!skipCache) {

@@ -79,12 +79,14 @@ void main() {
         () => storage.saveCredential(credential),
         throwsA(isA<OAuthTokenStorageException>()),
       );
+      // A failed/corrupted read must not throw: it behaves as "no credential"
+      // so re-authentication is never blocked by a broken storage entry.
       expect(
-        () => storage.loadCredential(
+        await storage.loadCredential(
           profileId: 'profile-a',
           serverUrl: 'https://code.example.com',
         ),
-        throwsA(isA<OAuthTokenStorageException>()),
+        isNull,
       );
     });
   });

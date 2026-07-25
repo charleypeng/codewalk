@@ -673,6 +673,12 @@ class AppProvider extends ChangeNotifier {
         return true;
       }
 
+      // Surface the concrete OAuth failure (token exchange, secure storage,
+      // metadata discovery) instead of leaving callers with a generic error.
+      final detail = result.error?.trim();
+      if (detail != null && detail.isNotEmpty) {
+        _setError(detail);
+      }
       SchedulerBinding.instance.addPostFrameCallback((_) {
         notifyListeners();
       });
@@ -681,6 +687,12 @@ class AppProvider extends ChangeNotifier {
     _oauthFlowByProfileId[profile.id] = flow;
     try {
       return await flow;
+    } catch (e) {
+      // Any failure inside the flow (token storage, post-auth connection
+      // verification) must resolve to a clean auth failure — never an
+      // exception, which would leave callers waiting/spinning forever.
+      AppLogger.warn('OAuth flow failed for profile', error: e);
+      return false;
     } finally {
       _oauthFlowByProfileId.remove(profile.id);
     }
