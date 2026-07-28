@@ -1146,6 +1146,13 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **When** the embedded terminal is open
 - **Then** CodeWalk hides the composer input area until the terminal is minimized or closed so the terminal can use the available screen space
 - **Then** mobile soft-keyboard Backspace sends a terminal backspace instead of being ignored while editing the current shell input
+- **Given** an active embedded terminal has the software keyboard open on Android or iOS
+- **When** the terminal input controls appear above the keyboard
+- **Then** CodeWalk shows localized, accessible keys for `Escape`, `Tab`, one-shot `Ctrl` and `Alt`, and all four arrow directions while keeping terminal focus and the keyboard input connection active
+- **Then** `Ctrl` and `Alt` can be armed independently, apply together when both are selected, and clear after the next terminal input that produces output; empty IME updates and physical modifier keys do not consume them
+- **Then** tapping an arrow sends one movement, while holding it repeats the same resolved movement until release or cancellation
+- **Then** the controls scroll horizontally on narrow screens, respect the platform safe area, and disappear when the keyboard closes, the terminal becomes inactive, or the terminal surface is replaced
+- **Then** desktop and web terminal input remain unchanged and never show the mobile extra-key strip
 - **Given** the user is on an unsupported platform
 - **When** the user taps the same terminal button
 - **Then** CodeWalk opens an informational sheet explaining that the embedded server terminal is unavailable there and points the user to composer shell mode instead
