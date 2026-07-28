@@ -4469,6 +4469,33 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt key';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Down arrow';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Left arrow';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Right arrow';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Up arrow';
+
+  @override
+  String get terminalExtraKeyControl => 'Control key';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape key';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab key';
+
+  @override
+  String get terminalExtraKeys => 'Terminal extra keys';
+
+  @override
   String get terminalHide => 'Hide terminal';
 
   @override

@@ -4319,6 +4319,33 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt 키';
+
+  @override
+  String get terminalExtraKeyArrowDown => '아래쪽 화살표';
+
+  @override
+  String get terminalExtraKeyArrowLeft => '왼쪽 화살표';
+
+  @override
+  String get terminalExtraKeyArrowRight => '오른쪽 화살표';
+
+  @override
+  String get terminalExtraKeyArrowUp => '위쪽 화살표';
+
+  @override
+  String get terminalExtraKeyControl => 'Control 키';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape 키';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab 키';
+
+  @override
+  String get terminalExtraKeys => '터미널 추가 키';
+
+  @override
   String get terminalHide => '터미널 숨기기';
 
   @override

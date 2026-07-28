@@ -4224,6 +4224,33 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt 键';
+
+  @override
+  String get terminalExtraKeyArrowDown => '向下箭头';
+
+  @override
+  String get terminalExtraKeyArrowLeft => '向左箭头';
+
+  @override
+  String get terminalExtraKeyArrowRight => '向右箭头';
+
+  @override
+  String get terminalExtraKeyArrowUp => '向上箭头';
+
+  @override
+  String get terminalExtraKeyControl => 'Control 键';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape 键';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab 键';
+
+  @override
+  String get terminalExtraKeys => '终端附加键';
+
+  @override
   String get terminalHide => '隐藏终端';
 
   @override

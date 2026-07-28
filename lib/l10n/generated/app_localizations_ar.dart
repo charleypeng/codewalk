@@ -4434,6 +4434,33 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'مفتاح Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'السهم لأسفل';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'السهم لليسار';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'السهم لليمين';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'السهم لأعلى';
+
+  @override
+  String get terminalExtraKeyControl => 'مفتاح Control';
+
+  @override
+  String get terminalExtraKeyEscape => 'مفتاح Escape';
+
+  @override
+  String get terminalExtraKeyTab => 'مفتاح Tab';
+
+  @override
+  String get terminalExtraKeys => 'مفاتيح إضافية للطرفية';
+
+  @override
   String get terminalHide => 'إخفاء الطرفية';
 
   @override

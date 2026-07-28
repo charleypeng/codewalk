@@ -4528,6 +4528,33 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Клавиша Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Стрелка вниз';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Стрелка влево';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Стрелка вправо';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Стрелка вверх';
+
+  @override
+  String get terminalExtraKeyControl => 'Клавиша Control';
+
+  @override
+  String get terminalExtraKeyEscape => 'Клавиша Escape';
+
+  @override
+  String get terminalExtraKeyTab => 'Клавиша Tab';
+
+  @override
+  String get terminalExtraKeys => 'Дополнительные клавиши терминала';
+
+  @override
   String get terminalHide => 'Скрыть терминал';
 
   @override

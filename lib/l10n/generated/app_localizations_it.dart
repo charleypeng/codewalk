@@ -4556,6 +4556,33 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Tasto Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Freccia giù';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Freccia sinistra';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Freccia destra';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Freccia su';
+
+  @override
+  String get terminalExtraKeyControl => 'Tasto Ctrl';
+
+  @override
+  String get terminalExtraKeyEscape => 'Tasto Esc';
+
+  @override
+  String get terminalExtraKeyTab => 'Tasto Tab';
+
+  @override
+  String get terminalExtraKeys => 'Tasti aggiuntivi del terminale';
+
+  @override
   String get terminalHide => 'Nascondi terminale';
 
   @override

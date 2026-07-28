@@ -4495,6 +4495,33 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt कुंजी';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'नीचे तीर';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'बायां तीर';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'दायां तीर';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'ऊपर तीर';
+
+  @override
+  String get terminalExtraKeyControl => 'Control कुंजी';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape कुंजी';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab कुंजी';
+
+  @override
+  String get terminalExtraKeys => 'टर्मिनल की अतिरिक्त कुंजियां';
+
+  @override
   String get terminalHide => 'टर्मिनल छिपाएं';
 
   @override

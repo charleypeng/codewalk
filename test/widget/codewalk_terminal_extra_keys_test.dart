@@ -1,6 +1,10 @@
 import 'package:codewalk/presentation/widgets/codewalk_terminal_extra_keys.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xterm/xterm.dart';
+
+import '../support/pump_localized_app.dart';
 
 void main() {
   group('CodewalkTerminalExtraKeysController', () {
@@ -18,6 +22,27 @@ void main() {
       controller.dispatchKey(TerminalKey.arrowUp);
 
       expect(output, ['normal', 'application']);
+      controller.dispose();
+    });
+
+    test('emits exact Escape, Tab, and arrow sequences', () {
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+
+      for (final key in <TerminalKey>[
+        TerminalKey.escape,
+        TerminalKey.tab,
+        TerminalKey.arrowLeft,
+        TerminalKey.arrowUp,
+        TerminalKey.arrowDown,
+        TerminalKey.arrowRight,
+      ]) {
+        controller.dispatchKey(key);
+      }
+
+      expect(output, ['\x1b', '\t', '\x1b[D', '\x1b[A', '\x1b[B', '\x1b[C']);
       controller.dispose();
     });
 
@@ -98,6 +123,69 @@ void main() {
       controller.dispose();
     });
 
+    test('emits standard control characters from IME commits', () {
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+
+      for (final text in [' ', '[', r'\', ']', '^', '_']) {
+        controller.toggleControl();
+        expect(controller.handleRawTextInput(text), isTrue);
+      }
+      controller.toggleControl();
+      controller.toggleAlt();
+      expect(controller.handleRawTextInput('['), isTrue);
+
+      expect(output, [
+        '\x00',
+        '\x1b',
+        '\x1c',
+        '\x1d',
+        '\x1e',
+        '\x1f',
+        '\x1b\x1b',
+      ]);
+      controller.dispose();
+    });
+
+    test('retains modifiers until printable hardware fallback commits', () {
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+
+      controller.toggleAlt();
+      expect(terminal.keyInput(TerminalKey.digit1), isFalse);
+      expect(controller.altEnabled, isTrue);
+      expect(controller.handleRawTextInput('1'), isTrue);
+
+      controller.toggleAlt();
+      expect(terminal.keyInput(TerminalKey.bracketLeft), isFalse);
+      expect(controller.altEnabled, isTrue);
+      expect(controller.handleRawTextInput('['), isTrue);
+
+      expect(output, ['\x1b1', '\x1b[']);
+      controller.dispose();
+    });
+
+    test('retains modifiers across empty IME commits', () {
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(terminal)
+        ..toggleControl()
+        ..toggleAlt();
+
+      expect(controller.handleRawTextInput(''), isFalse);
+      expect(controller.controlEnabled, isTrue);
+      expect(controller.altEnabled, isTrue);
+      expect(controller.handleRawTextInput('c'), isTrue);
+
+      expect(output, ['\x1b\x03']);
+      controller.dispose();
+    });
+
     test('leaves pending modifiers armed for modifier key events', () {
       final output = <String>[];
       final terminal = Terminal(onOutput: output.add);
@@ -105,7 +193,15 @@ void main() {
         ..attach(terminal);
 
       controller.toggleControl();
-      terminal.keyInput(TerminalKey.shiftLeft);
+      for (final key in [
+        TerminalKey.shiftLeft,
+        TerminalKey.fn,
+        TerminalKey.fnLock,
+        TerminalKey.hyper,
+        TerminalKey.superKey,
+      ]) {
+        terminal.keyInput(key);
+      }
       terminal.keyInput(TerminalKey.keyC);
 
       expect(output, ['\x03']);
@@ -127,6 +223,23 @@ void main() {
       controller.detach();
       expect(terminal.inputHandler, same(replacement));
       controller.dispose();
+    });
+
+    test('transfers input-handler ownership between panel controllers', () {
+      final output = <String>[];
+      final original = _InputHandler((_) => 'original');
+      final terminal = Terminal(inputHandler: original, onOutput: output.add);
+      final firstController = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+      final secondController = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+
+      firstController.dispose();
+      terminal.keyInput(TerminalKey.arrowUp);
+
+      expect(output, ['original']);
+      secondController.dispose();
+      expect(terminal.inputHandler, same(original));
     });
 
     testWidgets('captures the modified sequence for an arrow repeat', (
@@ -171,6 +284,217 @@ void main() {
       expect(controller.altEnabled, isFalse);
       expect(output.length, countAfterReset);
       controller.dispose();
+    });
+
+    testWidgets('attaching a new terminal resets generation-bound state', (
+      tester,
+    ) async {
+      final firstOutput = <String>[];
+      final secondOutput = <String>[];
+      final firstTerminal = Terminal(onOutput: firstOutput.add);
+      final secondTerminal = Terminal(onOutput: secondOutput.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(firstTerminal)
+        ..toggleControl()
+        ..startArrowRepeat(TerminalKey.arrowDown)
+        ..attach(secondTerminal);
+      final firstCountAfterAttach = firstOutput.length;
+
+      await tester.pump(codewalkTerminalArrowRepeatInterval * 2);
+      controller.dispatchKey(TerminalKey.arrowDown);
+
+      expect(controller.controlEnabled, isFalse);
+      expect(controller.altEnabled, isFalse);
+      expect(firstOutput, hasLength(firstCountAfterAttach));
+      expect(secondOutput, ['\x1b[B']);
+      controller.dispose();
+    });
+  });
+
+  group('mobile terminal extra-key strip', () {
+    test('shows only for an active Android or iOS terminal above the IME', () {
+      expect(
+        shouldShowCodewalkTerminalExtraKeys(
+          isWeb: false,
+          platform: TargetPlatform.android,
+          hasActiveTerminal: true,
+          keyboardInset: 280,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldShowCodewalkTerminalExtraKeys(
+          isWeb: false,
+          platform: TargetPlatform.iOS,
+          hasActiveTerminal: true,
+          keyboardInset: 280,
+        ),
+        isTrue,
+      );
+
+      for (final hiddenCase
+          in <
+            ({
+              bool isWeb,
+              TargetPlatform platform,
+              bool hasActiveTerminal,
+              double keyboardInset,
+            })
+          >[
+            (
+              isWeb: true,
+              platform: TargetPlatform.android,
+              hasActiveTerminal: true,
+              keyboardInset: 280,
+            ),
+            (
+              isWeb: false,
+              platform: TargetPlatform.linux,
+              hasActiveTerminal: true,
+              keyboardInset: 280,
+            ),
+            (
+              isWeb: false,
+              platform: TargetPlatform.android,
+              hasActiveTerminal: false,
+              keyboardInset: 280,
+            ),
+            (
+              isWeb: false,
+              platform: TargetPlatform.android,
+              hasActiveTerminal: true,
+              keyboardInset: 0,
+            ),
+          ]) {
+        expect(
+          shouldShowCodewalkTerminalExtraKeys(
+            isWeb: hiddenCase.isWeb,
+            platform: hiddenCase.platform,
+            hasActiveTerminal: hiddenCase.hasActiveTerminal,
+            keyboardInset: hiddenCase.keyboardInset,
+          ),
+          isFalse,
+        );
+      }
+    });
+
+    testWidgets(
+      'keeps accessible controls scrollable and terminal focus on narrow screens',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(320, 180));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final output = <String>[];
+        final terminal = Terminal(onOutput: output.add);
+        final controller = CodewalkTerminalExtraKeysController()
+          ..attach(terminal);
+        final terminalFocusNode = FocusNode(debugLabel: 'test_terminal');
+        addTearDown(controller.dispose);
+        addTearDown(terminalFocusNode.dispose);
+
+        await tester.pumpWidget(
+          localizedMaterialApp(
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.bottomCenter,
+                child: Focus(
+                  focusNode: terminalFocusNode,
+                  child: CodewalkTerminalExtraKeys(
+                    controller: controller,
+                    requestTerminalFocus: terminalFocusNode.requestFocus,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        terminalFocusNode.requestFocus();
+        await tester.pump();
+
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys_scroll')),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel('Terminal extra keys'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        final controlFinder = find.byKey(
+          const ValueKey<String>('terminal_extra_key_control'),
+        );
+        Semantics controlSemantics() => tester.widget<Semantics>(
+          find
+              .descendant(of: controlFinder, matching: find.byType(Semantics))
+              .first,
+        );
+
+        expect(controlSemantics().properties.toggled, isFalse);
+        expect(controlSemantics().properties.onTap, isNotNull);
+        await tester.tap(controlFinder);
+        await tester.pump();
+        expect(controller.controlEnabled, isTrue);
+        expect(controlSemantics().properties.toggled, isTrue);
+        expect(terminalFocusNode.hasFocus, isTrue);
+
+        await tester.tap(controlFinder);
+        await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_extra_key_escape')),
+        );
+        await tester.pump();
+        expect(output, ['\x1b']);
+        expect(terminalFocusNode.hasFocus, isTrue);
+
+        final rightArrowFinder = find.byKey(
+          const ValueKey<String>('terminal_extra_key_arrow_right'),
+        );
+        await tester.ensureVisible(rightArrowFinder);
+        expect(tester.getSize(rightArrowFinder), const Size.square(48));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('arrow tap emits once while hold repeats until release', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 180));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        localizedMaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: CodewalkTerminalExtraKeys(
+                controller: controller,
+                requestTerminalFocus: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final leftArrowFinder = find.byKey(
+        const ValueKey<String>('terminal_extra_key_arrow_left'),
+      );
+      await tester.tap(leftArrowFinder);
+      expect(output, ['\x1b[D']);
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(leftArrowFinder),
+      );
+      await tester.pump(
+        kLongPressTimeout + codewalkTerminalArrowRepeatInterval,
+      );
+      expect(output.length, greaterThan(1));
+      expect(output, everyElement('\x1b[D'));
+      await gesture.up();
+      final countAfterRelease = output.length;
+      await tester.pump(codewalkTerminalArrowRepeatInterval * 2);
+
+      expect(output, hasLength(countAfterRelease));
     });
   });
 }

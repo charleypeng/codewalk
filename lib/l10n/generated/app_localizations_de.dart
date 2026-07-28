@@ -4535,6 +4535,33 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt-Taste';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Pfeil nach unten';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Pfeil nach links';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Pfeil nach rechts';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Pfeil nach oben';
+
+  @override
+  String get terminalExtraKeyControl => 'Strg-Taste';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape-Taste';
+
+  @override
+  String get terminalExtraKeyTab => 'Tabulatortaste';
+
+  @override
+  String get terminalExtraKeys => 'Terminal-Zusatztasten';
+
+  @override
   String get terminalHide => 'Terminal ausblenden';
 
   @override

@@ -4498,6 +4498,33 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt কী';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'নিচের তীর';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'বাঁ তীর';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'ডান তীর';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'উপরের তীর';
+
+  @override
+  String get terminalExtraKeyControl => 'Control কী';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape কী';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab কী';
+
+  @override
+  String get terminalExtraKeys => 'টার্মিনালের অতিরিক্ত কী';
+
+  @override
   String get terminalHide => 'টার্মিনাল লুকান';
 
   @override

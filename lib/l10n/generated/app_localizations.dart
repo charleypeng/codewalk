@@ -7922,6 +7922,60 @@ abstract class AppLocalizations {
   /// **'Embedded terminal is not available on this runtime yet. Keep using composer shell mode for one-shot commands or open the terminal from a supported CodeWalk app runtime for {serverName}.'**
   String terminalEmbeddedUnavailable(String serverName);
 
+  /// CodeWalk UI string — terminalExtraKeyAlt
+  ///
+  /// In en, this message translates to:
+  /// **'Alt key'**
+  String get terminalExtraKeyAlt;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowDown
+  ///
+  /// In en, this message translates to:
+  /// **'Down arrow'**
+  String get terminalExtraKeyArrowDown;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowLeft
+  ///
+  /// In en, this message translates to:
+  /// **'Left arrow'**
+  String get terminalExtraKeyArrowLeft;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowRight
+  ///
+  /// In en, this message translates to:
+  /// **'Right arrow'**
+  String get terminalExtraKeyArrowRight;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowUp
+  ///
+  /// In en, this message translates to:
+  /// **'Up arrow'**
+  String get terminalExtraKeyArrowUp;
+
+  /// CodeWalk UI string — terminalExtraKeyControl
+  ///
+  /// In en, this message translates to:
+  /// **'Control key'**
+  String get terminalExtraKeyControl;
+
+  /// CodeWalk UI string — terminalExtraKeyEscape
+  ///
+  /// In en, this message translates to:
+  /// **'Escape key'**
+  String get terminalExtraKeyEscape;
+
+  /// CodeWalk UI string — terminalExtraKeyTab
+  ///
+  /// In en, this message translates to:
+  /// **'Tab key'**
+  String get terminalExtraKeyTab;
+
+  /// CodeWalk UI string — terminalExtraKeys
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal extra keys'**
+  String get terminalExtraKeys;
+
   /// CodeWalk UI string — terminalHide
   ///
   /// In en, this message translates to:

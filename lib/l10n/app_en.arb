@@ -5518,6 +5518,42 @@
     "placeholders": {
       "serverName": { "type": "String" }
     }  },
+  "terminalExtraKeyAlt": "Alt key",
+  "@terminalExtraKeyAlt": {
+    "description": "CodeWalk UI string — terminalExtraKeyAlt"
+  },
+  "terminalExtraKeyArrowDown": "Down arrow",
+  "@terminalExtraKeyArrowDown": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowDown"
+  },
+  "terminalExtraKeyArrowLeft": "Left arrow",
+  "@terminalExtraKeyArrowLeft": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowLeft"
+  },
+  "terminalExtraKeyArrowRight": "Right arrow",
+  "@terminalExtraKeyArrowRight": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowRight"
+  },
+  "terminalExtraKeyArrowUp": "Up arrow",
+  "@terminalExtraKeyArrowUp": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowUp"
+  },
+  "terminalExtraKeyControl": "Control key",
+  "@terminalExtraKeyControl": {
+    "description": "CodeWalk UI string — terminalExtraKeyControl"
+  },
+  "terminalExtraKeyEscape": "Escape key",
+  "@terminalExtraKeyEscape": {
+    "description": "CodeWalk UI string — terminalExtraKeyEscape"
+  },
+  "terminalExtraKeyTab": "Tab key",
+  "@terminalExtraKeyTab": {
+    "description": "CodeWalk UI string — terminalExtraKeyTab"
+  },
+  "terminalExtraKeys": "Terminal extra keys",
+  "@terminalExtraKeys": {
+    "description": "CodeWalk UI string — terminalExtraKeys"
+  },
   "terminalHide": "Hide terminal",
   "@terminalHide": {
     "description": "CodeWalk UI string — terminalHide"

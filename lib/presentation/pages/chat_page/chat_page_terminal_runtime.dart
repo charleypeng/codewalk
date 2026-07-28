@@ -191,6 +191,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
         onHeightDelta(delta);
       },
       onTerminalKeyEvent: onTerminalKeyEvent,
+      keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
     );
   }
 }

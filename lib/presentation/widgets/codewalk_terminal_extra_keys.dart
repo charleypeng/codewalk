@@ -1,9 +1,246 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../core/i18n/l10n_context.dart';
+
 const codewalkTerminalArrowRepeatInterval = Duration(milliseconds: 80);
+
+bool shouldShowCodewalkTerminalExtraKeys({
+  required bool isWeb,
+  required TargetPlatform platform,
+  required bool hasActiveTerminal,
+  required double keyboardInset,
+}) {
+  return !isWeb &&
+      (platform == TargetPlatform.android || platform == TargetPlatform.iOS) &&
+      hasActiveTerminal &&
+      keyboardInset > 0;
+}
+
+class CodewalkTerminalExtraKeys extends StatelessWidget {
+  const CodewalkTerminalExtraKeys({
+    required this.controller,
+    required this.requestTerminalFocus,
+    super.key,
+  });
+
+  final CodewalkTerminalExtraKeysController controller;
+  final VoidCallback requestTerminalFocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SafeArea(
+      top: false,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
+          border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+        ),
+        child: Semantics(
+          container: true,
+          explicitChildNodes: true,
+          label: context.l10n.terminalExtraKeys,
+          child: SizedBox(
+            height: 56,
+            child: SingleChildScrollView(
+              key: const ValueKey<String>('terminal_extra_keys_scroll'),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: AnimatedBuilder(
+                animation: controller,
+                builder: (context, _) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _TerminalExtraKeyButton(
+                        key: const ValueKey<String>(
+                          'terminal_extra_key_escape',
+                        ),
+                        visibleLabel: 'Esc',
+                        semanticLabel: context.l10n.terminalExtraKeyEscape,
+                        tooltip: context.l10n.terminalExtraKeyEscape,
+                        onTap: () => _dispatchKey(TerminalKey.escape),
+                      ),
+                      const SizedBox(width: 4),
+                      _TerminalExtraKeyButton(
+                        key: const ValueKey<String>('terminal_extra_key_tab'),
+                        visibleLabel: 'Tab',
+                        semanticLabel: context.l10n.terminalExtraKeyTab,
+                        tooltip: context.l10n.terminalExtraKeyTab,
+                        onTap: () => _dispatchKey(TerminalKey.tab),
+                      ),
+                      const SizedBox(width: 4),
+                      _TerminalExtraKeyButton(
+                        key: const ValueKey<String>(
+                          'terminal_extra_key_control',
+                        ),
+                        visibleLabel: 'Ctrl',
+                        semanticLabel: context.l10n.terminalExtraKeyControl,
+                        tooltip: context.l10n.terminalExtraKeyControl,
+                        toggled: controller.controlEnabled,
+                        onTap: () {
+                          controller.toggleControl();
+                          requestTerminalFocus();
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _TerminalExtraKeyButton(
+                        key: const ValueKey<String>('terminal_extra_key_alt'),
+                        visibleLabel: 'Alt',
+                        semanticLabel: context.l10n.terminalExtraKeyAlt,
+                        tooltip: context.l10n.terminalExtraKeyAlt,
+                        toggled: controller.altEnabled,
+                        onTap: () {
+                          controller.toggleAlt();
+                          requestTerminalFocus();
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _arrowButton(
+                        key: const ValueKey<String>(
+                          'terminal_extra_key_arrow_left',
+                        ),
+                        terminalKey: TerminalKey.arrowLeft,
+                        icon: Symbols.arrow_left_alt_rounded,
+                        semanticLabel: context.l10n.terminalExtraKeyArrowLeft,
+                      ),
+                      const SizedBox(width: 4),
+                      _arrowButton(
+                        key: const ValueKey<String>(
+                          'terminal_extra_key_arrow_up',
+                        ),
+                        terminalKey: TerminalKey.arrowUp,
+                        icon: Symbols.arrow_upward_alt_rounded,
+                        semanticLabel: context.l10n.terminalExtraKeyArrowUp,
+                      ),
+                      const SizedBox(width: 4),
+                      _arrowButton(
+                        key: const ValueKey<String>(
+                          'terminal_extra_key_arrow_down',
+                        ),
+                        terminalKey: TerminalKey.arrowDown,
+                        icon: Symbols.arrow_downward_alt_rounded,
+                        semanticLabel: context.l10n.terminalExtraKeyArrowDown,
+                      ),
+                      const SizedBox(width: 4),
+                      _arrowButton(
+                        key: const ValueKey<String>(
+                          'terminal_extra_key_arrow_right',
+                        ),
+                        terminalKey: TerminalKey.arrowRight,
+                        icon: Symbols.arrow_right_alt_rounded,
+                        semanticLabel: context.l10n.terminalExtraKeyArrowRight,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _arrowButton({
+    required Key key,
+    required TerminalKey terminalKey,
+    required IconData icon,
+    required String semanticLabel,
+  }) {
+    return _TerminalExtraKeyButton(
+      key: key,
+      icon: icon,
+      semanticLabel: semanticLabel,
+      onTap: () => _dispatchKey(terminalKey),
+      onLongPress: () {
+        controller.startArrowRepeat(terminalKey);
+        requestTerminalFocus();
+      },
+      onPointerEnd: controller.stopRepeat,
+    );
+  }
+
+  void _dispatchKey(TerminalKey key) {
+    controller.dispatchKey(key);
+    requestTerminalFocus();
+  }
+}
+
+class _TerminalExtraKeyButton extends StatelessWidget {
+  const _TerminalExtraKeyButton({
+    required this.semanticLabel,
+    required this.onTap,
+    this.visibleLabel,
+    this.icon,
+    this.tooltip,
+    this.toggled,
+    this.onLongPress,
+    this.onPointerEnd,
+    super.key,
+  }) : assert(visibleLabel != null || icon != null);
+
+  final String semanticLabel;
+  final String? visibleLabel;
+  final IconData? icon;
+  final String? tooltip;
+  final bool? toggled;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onPointerEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isActive = toggled ?? false;
+    Widget content = Center(
+      child: icon != null
+          ? Icon(icon, size: 22)
+          : Text(visibleLabel!, style: Theme.of(context).textTheme.labelLarge),
+    );
+    if (tooltip != null) {
+      content = Tooltip(
+        message: tooltip!,
+        excludeFromSemantics: true,
+        child: content,
+      );
+    }
+
+    return Listener(
+      onPointerUp: onPointerEnd == null ? null : (_) => onPointerEnd!(),
+      onPointerCancel: onPointerEnd == null ? null : (_) => onPointerEnd!(),
+      child: Semantics(
+        button: true,
+        label: semanticLabel,
+        toggled: toggled,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: SizedBox.square(
+          dimension: kMinInteractiveDimension,
+          child: Material(
+            color: isActive
+                ? colorScheme.primaryContainer
+                : colorScheme.surfaceContainerHigh,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              canRequestFocus: false,
+              onTap: onTap,
+              onLongPress: onLongPress,
+              child: content,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class CodewalkTerminalExtraKeysController extends ChangeNotifier {
   Terminal? _terminal;
@@ -25,16 +262,20 @@ class CodewalkTerminalExtraKeysController extends ChangeNotifier {
     }
 
     detach();
+    final currentInputHandler = terminal.inputHandler;
+    if (currentInputHandler is _CodewalkTerminalInputHandler &&
+        !identical(currentInputHandler.owner, this)) {
+      currentInputHandler.owner.detach();
+    }
     _terminal = terminal;
     _originalInputHandler = terminal.inputHandler;
-    _installedInputHandler = _CodewalkTerminalInputHandler(
-      _handleKeyboardEvent,
-    );
+    _installedInputHandler = _CodewalkTerminalInputHandler(this);
     terminal.inputHandler = _installedInputHandler;
   }
 
   void detach() {
-    reset();
+    stopRepeat();
+    _clearModifiers(notify: false);
     final terminal = _terminal;
     final installedInputHandler = _installedInputHandler;
     if (terminal != null &&
@@ -100,7 +341,7 @@ class CodewalkTerminalExtraKeysController extends ChangeNotifier {
   }
 
   bool handleRawTextInput(String text) {
-    if (!_hasPendingModifiers) {
+    if (!_hasPendingModifiers || text.isEmpty) {
       return false;
     }
 
@@ -108,7 +349,7 @@ class CodewalkTerminalExtraKeysController extends ChangeNotifier {
     final control = _controlEnabled;
     final alt = _altEnabled;
     _clearModifiers();
-    if (terminal == null || text.isEmpty) {
+    if (terminal == null) {
       return true;
     }
 
@@ -155,26 +396,32 @@ class CodewalkTerminalExtraKeysController extends ChangeNotifier {
       ctrl: event.ctrl || _controlEnabled,
       alt: event.alt || _altEnabled,
     );
-    _clearModifiers();
 
     final arrowSuffix = _arrowSuffix(modifiedEvent.key);
     if (arrowSuffix != null &&
         (modifiedEvent.shift || modifiedEvent.ctrl || modifiedEvent.alt)) {
       final modifier = _modifierCode(modifiedEvent);
+      _clearModifiers();
       return '\x1b[1;${modifier ?? 1}$arrowSuffix';
     }
 
     final letterIndex = _letterIndex(modifiedEvent.key);
     if (letterIndex != null && modifiedEvent.ctrl) {
       final controlCharacter = String.fromCharCode(letterIndex + 1);
+      _clearModifiers();
       return modifiedEvent.alt ? '\x1b$controlCharacter' : controlCharacter;
     }
     if (letterIndex != null && modifiedEvent.alt) {
       final offset = modifiedEvent.shift ? 0x41 : 0x61;
+      _clearModifiers();
       return '\x1b${String.fromCharCode(offset + letterIndex)}';
     }
 
-    return _originalInputHandler?.call(modifiedEvent);
+    final sequence = _originalInputHandler?.call(modifiedEvent);
+    if (sequence != null) {
+      _clearModifiers();
+    }
+    return sequence;
   }
 
   String _modifyScalar(
@@ -191,19 +438,28 @@ class CodewalkTerminalExtraKeysController extends ChangeNotifier {
         final controlCharacter = String.fromCharCode(normalized - 0x60);
         return alt ? '\x1b$controlCharacter' : controlCharacter;
       }
+      if (codePoint == 0x20) {
+        return alt ? '\x1b\x00' : '\x00';
+      }
+      if (codePoint >= 0x5b && codePoint <= 0x5f) {
+        final controlCharacter = String.fromCharCode(codePoint - 0x40);
+        return alt ? '\x1b$controlCharacter' : controlCharacter;
+      }
     }
     return alt ? '\x1b$scalar' : scalar;
   }
 
   bool get _hasPendingModifiers => _controlEnabled || _altEnabled;
 
-  void _clearModifiers() {
+  void _clearModifiers({bool notify = true}) {
     if (!_hasPendingModifiers) {
       return;
     }
     _controlEnabled = false;
     _altEnabled = false;
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   @override
@@ -218,12 +474,13 @@ class CodewalkTerminalExtraKeysController extends ChangeNotifier {
 }
 
 class _CodewalkTerminalInputHandler implements TerminalInputHandler {
-  const _CodewalkTerminalInputHandler(this._handle);
+  const _CodewalkTerminalInputHandler(this.owner);
 
-  final String? Function(TerminalKeyboardEvent event) _handle;
+  final CodewalkTerminalExtraKeysController owner;
 
   @override
-  String? call(TerminalKeyboardEvent event) => _handle(event);
+  String? call(TerminalKeyboardEvent event) =>
+      owner._handleKeyboardEvent(event);
 }
 
 bool _isArrowKey(TerminalKey key) => _arrowSuffix(key) != null;
@@ -272,7 +529,11 @@ String? _modifierCode(TerminalKeyboardEvent event) {
 }
 
 bool _isModifierKey(TerminalKey key) {
-  return key == TerminalKey.control ||
+  return key == TerminalKey.fn ||
+      key == TerminalKey.fnLock ||
+      key == TerminalKey.hyper ||
+      key == TerminalKey.superKey ||
+      key == TerminalKey.control ||
       key == TerminalKey.controlLeft ||
       key == TerminalKey.controlRight ||
       key == TerminalKey.alt ||

@@ -4484,6 +4484,33 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt کی';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'نیچے کا تیر';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'بائیں تیر';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'دائیں تیر';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'اوپر کا تیر';
+
+  @override
+  String get terminalExtraKeyControl => 'Control کی';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape کی';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab کی';
+
+  @override
+  String get terminalExtraKeys => 'ٹرمینل کی اضافی کیز';
+
+  @override
   String get terminalHide => 'ٹرمینل چھپائیں';
 
   @override

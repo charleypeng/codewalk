@@ -4551,6 +4551,33 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Tecla Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Flecha abajo';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Flecha izquierda';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Flecha derecha';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Flecha arriba';
+
+  @override
+  String get terminalExtraKeyControl => 'Tecla Control';
+
+  @override
+  String get terminalExtraKeyEscape => 'Tecla Escape';
+
+  @override
+  String get terminalExtraKeyTab => 'Tecla Tabulador';
+
+  @override
+  String get terminalExtraKeys => 'Teclas adicionales del terminal';
+
+  @override
   String get terminalHide => 'Ocultar terminal';
 
   @override

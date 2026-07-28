@@ -3,11 +3,14 @@ import 'dart:convert';
 
 import 'package:codewalk/core/config/feature_flags.dart';
 import 'package:codewalk/core/di/injection_container.dart' as di;
+import 'package:codewalk/core/errors/exceptions.dart';
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/i18n/l10n_bridge.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
+import 'package:codewalk/data/datasources/terminal_remote_datasource.dart';
+import 'package:codewalk/data/models/pty_session_model.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
@@ -81,6 +84,40 @@ import 'package:simple_icons/simple_icons.dart';
 
 import '../support/fakes.dart';
 import '../support/pump_localized_app.dart';
+
+class _PendingTerminalRemoteDataSource implements TerminalRemoteDataSource {
+  final Completer<PtySessionModel> _createPtyCompleter =
+      Completer<PtySessionModel>();
+  int createPtyCount = 0;
+
+  @override
+  Future<PtySessionModel> createPty({required String directory}) {
+    createPtyCount += 1;
+    return _createPtyCompleter.future;
+  }
+
+  @override
+  Future<void> deletePty({
+    required String ptyId,
+    required String directory,
+  }) async {}
+
+  @override
+  Future<void> resizePty({
+    required String ptyId,
+    required String directory,
+    required int rows,
+    required int cols,
+  }) async {}
+
+  void finishPendingRequest() {
+    if (!_createPtyCompleter.isCompleted) {
+      _createPtyCompleter.completeError(
+        const ServerException('Terminal test completed.'),
+      );
+    }
+  }
+}
 
 class _ConfigurableDelayFakeChatRepository extends FakeChatRepository {
   _ConfigurableDelayFakeChatRepository({required super.sessions});
@@ -3051,6 +3088,185 @@ void main() {
       },
       variant: const TargetPlatformVariant(<TargetPlatform>{
         TargetPlatform.android,
+      }),
+    );
+
+    testWidgets(
+      'mobile terminal extra keys follow the IME across maximize transitions',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(390, 844));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        const baseMediaQueryData = MediaQueryData(size: Size(390, 844));
+        final keyboardMediaQueryData = baseMediaQueryData.copyWith(
+          viewInsets: const EdgeInsets.only(bottom: 280),
+        );
+        final terminalRemoteDataSource = _PendingTerminalRemoteDataSource();
+        if (di.sl.isRegistered<TerminalRemoteDataSource>()) {
+          await di.sl.unregister<TerminalRemoteDataSource>();
+        }
+        di.sl.registerSingleton<TerminalRemoteDataSource>(
+          terminalRemoteDataSource,
+        );
+        addTearDown(() async {
+          terminalRemoteDataSource.finishPendingRequest();
+          if (di.sl.isRegistered<TerminalRemoteDataSource>() &&
+              identical(
+                di.sl<TerminalRemoteDataSource>(),
+                terminalRemoteDataSource,
+              )) {
+            await di.sl.unregister<TerminalRemoteDataSource>();
+          }
+        });
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+        final settingsProvider = SettingsProvider(
+          localDataSource: localDataSource,
+          dioClient: DioClient(),
+          soundService: SoundService(),
+        );
+        await settingsProvider.initialize();
+        await settingsProvider.setCheckUpdatesOnOpen(false);
+        addTearDown(settingsProvider.dispose);
+
+        await tester.pumpWidget(
+          _testApp(
+            provider,
+            appProvider,
+            settingsProvider: settingsProvider,
+            mediaQueryData: baseMediaQueryData,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('mobile_overflow_item_terminal')),
+        );
+        await _pumpUiFrames(tester);
+
+        expect(terminalRemoteDataSource.createPtyCount, 1);
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys')),
+          findsNothing,
+        );
+
+        await tester.pumpWidget(
+          _testApp(
+            provider,
+            appProvider,
+            settingsProvider: settingsProvider,
+            mediaQueryData: keyboardMediaQueryData,
+          ),
+        );
+        await _pumpUiFrames(tester);
+
+        final panelFinder = find.byKey(
+          const ValueKey<String>('terminal_panel'),
+        );
+        expect(panelFinder, findsOneWidget);
+        expect(find.textContaining('Connecting to'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_key_control')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+
+        bool modifierIsToggled(String key) {
+          final keyFinder = find.byKey(ValueKey<String>(key));
+          final semantics = tester.widget<Semantics>(
+            find
+                .descendant(of: keyFinder, matching: find.byType(Semantics))
+                .first,
+          );
+          return semantics.properties.toggled ?? false;
+        }
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_extra_key_control')),
+        );
+        await tester.pump();
+        expect(modifierIsToggled('terminal_extra_key_control'), isTrue);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_panel_maximize_button')),
+        );
+        await _pumpUiFrames(tester);
+
+        expect(settingsProvider.terminalPanelMaximized, isTrue);
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys')),
+          findsOneWidget,
+        );
+        expect(modifierIsToggled('terminal_extra_key_control'), isFalse);
+        expect(terminalRemoteDataSource.createPtyCount, 1);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_panel_maximize_button')),
+        );
+        await _pumpUiFrames(tester);
+
+        expect(settingsProvider.terminalPanelMaximized, isFalse);
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys')),
+          findsOneWidget,
+        );
+        expect(terminalRemoteDataSource.createPtyCount, 1);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_extra_key_alt')),
+        );
+        await tester.pump();
+        expect(modifierIsToggled('terminal_extra_key_alt'), isTrue);
+
+        await tester.pumpWidget(
+          _testApp(
+            provider,
+            appProvider,
+            settingsProvider: settingsProvider,
+            mediaQueryData: baseMediaQueryData,
+          ),
+        );
+        await _pumpUiFrames(tester);
+
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys')),
+          findsNothing,
+        );
+        expect(terminalRemoteDataSource.createPtyCount, 1);
+
+        await tester.pumpWidget(
+          _testApp(
+            provider,
+            appProvider,
+            settingsProvider: settingsProvider,
+            mediaQueryData: keyboardMediaQueryData,
+          ),
+        );
+        await _pumpUiFrames(tester);
+
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys')),
+          findsOneWidget,
+        );
+        expect(modifierIsToggled('terminal_extra_key_alt'), isFalse);
+        expect(terminalRemoteDataSource.createPtyCount, 1);
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        terminalRemoteDataSource.finishPendingRequest();
+        await tester.pump();
+      },
+      variant: const TargetPlatformVariant(<TargetPlatform>{
+        TargetPlatform.android,
+        TargetPlatform.iOS,
       }),
     );
 

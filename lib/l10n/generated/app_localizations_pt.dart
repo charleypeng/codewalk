@@ -4524,6 +4524,33 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Tecla Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Seta para baixo';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Seta para a esquerda';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Seta para a direita';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Seta para cima';
+
+  @override
+  String get terminalExtraKeyControl => 'Tecla Control';
+
+  @override
+  String get terminalExtraKeyEscape => 'Tecla Escape';
+
+  @override
+  String get terminalExtraKeyTab => 'Tecla Tab';
+
+  @override
+  String get terminalExtraKeys => 'Teclas extras do terminal';
+
+  @override
   String get terminalHide => 'Ocultar terminal';
 
   @override

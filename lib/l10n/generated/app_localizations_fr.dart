@@ -4595,6 +4595,33 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Touche Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Flèche vers le bas';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Flèche vers la gauche';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Flèche vers la droite';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Flèche vers le haut';
+
+  @override
+  String get terminalExtraKeyControl => 'Touche Contrôle';
+
+  @override
+  String get terminalExtraKeyEscape => 'Touche Échap';
+
+  @override
+  String get terminalExtraKeyTab => 'Touche Tabulation';
+
+  @override
+  String get terminalExtraKeys => 'Touches supplémentaires du terminal';
+
+  @override
   String get terminalHide => 'Masquer le terminal';
 
   @override

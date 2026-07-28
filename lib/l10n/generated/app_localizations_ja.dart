@@ -4318,6 +4318,33 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt キー';
+
+  @override
+  String get terminalExtraKeyArrowDown => '下矢印';
+
+  @override
+  String get terminalExtraKeyArrowLeft => '左矢印';
+
+  @override
+  String get terminalExtraKeyArrowRight => '右矢印';
+
+  @override
+  String get terminalExtraKeyArrowUp => '上矢印';
+
+  @override
+  String get terminalExtraKeyControl => 'Control キー';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape キー';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab キー';
+
+  @override
+  String get terminalExtraKeys => 'ターミナルの追加キー';
+
+  @override
   String get terminalHide => 'ターミナルを隠す';
 
   @override
