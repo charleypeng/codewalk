@@ -1,3 +1,4 @@
+import 'package:codewalk/presentation/widgets/codewalk_terminal_extra_keys.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +51,44 @@ void main() {
       }
     },
   );
+
+  testWidgets('xterm preserves raw mobile text for one-shot modifiers', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final terminalOutput = <String>[];
+      final terminal = Terminal(onOutput: terminalOutput.add);
+      final controller = CodewalkTerminalExtraKeysController()
+        ..attach(terminal);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TerminalView(
+              terminal,
+              autofocus: true,
+              onRawTextInput: controller.handleRawTextInput,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(TerminalView));
+      await tester.pump(const Duration(seconds: 1));
+
+      for (final input in ['A', '1', '!']) {
+        controller.toggleAlt();
+        binding.testTextInput.enterText(input);
+        await binding.idle();
+      }
+
+      expect(terminalOutput, ['\x1bA', '\x1b1', '\x1b!']);
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
 
   testWidgets('xterm forwards Windows printable hardware key characters', (
     WidgetTester tester,

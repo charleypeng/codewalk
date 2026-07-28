@@ -4,14 +4,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:xterm/xterm.dart';
 
 import '../_fixture/_fixture.dart';
-
-@GenerateNiceMocks([MockSpec<TerminalInputHandler>()])
-import 'terminal_view_test.mocks.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -394,8 +389,11 @@ void main() {
     });
 
     testWidgets('can convert text input to key events', (tester) async {
-      final inputHandler = MockTerminalInputHandler();
-      when(inputHandler.call(any)).thenAnswer((invocation) => 'AAA');
+      var inputHandlerCalls = 0;
+      final inputHandler = _InputHandler((_) {
+        inputHandlerCalls += 1;
+        return 'AAA';
+      });
 
       final terminalOutput = <String>[];
       final terminal = Terminal(
@@ -415,8 +413,58 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      verify(inputHandler.call(any));
+      expect(inputHandlerCalls, 1);
       expect(terminalOutput.join(), 'AAA');
+    });
+
+    testWidgets('lets a raw text callback consume input before key conversion',
+        (
+      tester,
+    ) async {
+      final terminalOutput = <String>[];
+      final callbackInput = <String>[];
+      final terminal = Terminal(onOutput: terminalOutput.add);
+
+      await tester.pumpWidget(MaterialApp(
+        home: TerminalView(
+          terminal,
+          autofocus: true,
+          onRawTextInput: (text) {
+            callbackInput.add(text);
+            return true;
+          },
+        ),
+      ));
+
+      await tester.tap(find.byType(TerminalView));
+      await tester.pump(const Duration(seconds: 1));
+      binding.testTextInput.enterText('A');
+      await binding.idle();
+
+      expect(callbackInput, ['A']);
+      expect(terminalOutput, isEmpty);
+    });
+
+    testWidgets('uses normal key handling when a raw text callback declines', (
+      tester,
+    ) async {
+      final terminalOutput = <String>[];
+      final terminal = Terminal(onOutput: terminalOutput.add);
+
+      await tester.pumpWidget(MaterialApp(
+        home: TerminalView(
+          terminal,
+          autofocus: true,
+          onRawTextInput: (_) => false,
+        ),
+      ));
+
+      await tester.tap(find.byType(TerminalView));
+      await tester.pump(const Duration(seconds: 1));
+      binding.testTextInput.enterText('c');
+      await binding.idle();
+
+      expect(terminalOutput.join(), 'c');
     });
   });
 
@@ -449,4 +497,13 @@ void main() {
       expect(terminalOutput.join(), isEmpty);
     });
   });
+}
+
+class _InputHandler implements TerminalInputHandler {
+  const _InputHandler(this.handler);
+
+  final String? Function(TerminalKeyboardEvent event) handler;
+
+  @override
+  String? call(TerminalKeyboardEvent event) => handler(event);
 }
