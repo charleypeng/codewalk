@@ -2,6 +2,13 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.179.0 - 2026-07-28
+
+- chore(agent): [Step 3/3] Document mobile terminal extra keys
+- chore(agent): [Step 2/3] Integrate mobile terminal extra keys
+- chore(agent): [Step 1/3] Add mobile terminal input protocol
+- plan: add mobile terminal extra keys
+
 ## v1.178.0 - 2026-07-18
 
 - chore(agent): [Step 2/2] Document OpenCode compatibility
