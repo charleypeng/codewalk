@@ -66,6 +66,9 @@ class OAuthService {
   final String? challengeBody;
   final OAuthTokenStorage _storage;
 
+  /// Last transient network error seen during token exchange retries.
+  Object? _lastExchangeError;
+
   static bool isOAuthChallenge(int statusCode, Map<String, String> headers) {
     if (statusCode != 401 && statusCode != 403) return false;
     final auth = headers['www-authenticate'] ?? '';
@@ -611,6 +614,34 @@ class OAuthService {
     };
     if (clientId != null) bodyParams['client_id'] = clientId;
 
+    // Retry transient network failures (e.g. DNS resolution hiccups on
+    // emulators or mobile networks) with a short backoff. The authorization
+    // code stays valid because a failed lookup/connection never reached the
+    // token endpoint, so retrying cannot consume it.
+    const maxAttempts = 3;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      final outcome = await _exchangeCodeOnce(tokenEp, bodyParams);
+      if (outcome != null) return outcome;
+      if (attempt < maxAttempts) {
+        _log('Token exchange attempt $attempt failed, retrying...');
+        await Future<void>.delayed(Duration(seconds: attempt * 2));
+      }
+    }
+    _log('Token exchange failed after $maxAttempts attempts: '
+        '$_lastExchangeError');
+    return _ExchangeResult.failure(
+      'Token exchange failed after $maxAttempts attempts: '
+      '$_lastExchangeError',
+    );
+  }
+
+  /// Single token-exchange attempt. Returns null on transient network errors
+  /// (worth retrying); returns a result for both success and HTTP-level
+  /// failures (not retryable).
+  Future<_ExchangeResult?> _exchangeCodeOnce(
+    String tokenEp,
+    Map<String, String> bodyParams,
+  ) async {
     HttpClient? client;
     try {
       client = HttpClient();
@@ -640,6 +671,18 @@ class OAuthService {
           'refresh_token=${hasRefresh ? 'present' : 'absent'}, '
           'expires_in=$expiresIn');
       return _ExchangeResult.data(data);
+    } on SocketException catch (e) {
+      _log('Token exchange network error: $e');
+      _lastExchangeError = e;
+      return null;
+    } on TimeoutException catch (e) {
+      _log('Token exchange timeout: $e');
+      _lastExchangeError = e;
+      return null;
+    } on HandshakeException catch (e) {
+      _log('Token exchange TLS error: $e');
+      _lastExchangeError = e;
+      return null;
     } catch (e) {
       _log('Token exchange error: $e');
       return _ExchangeResult.failure('Token exchange error: $e');
