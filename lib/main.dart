@@ -13,6 +13,7 @@ import 'core/di/injection_container.dart' as di;
 import 'core/i18n/app_locales.dart';
 import 'core/i18n/l10n_bridge.dart';
 import 'core/logging/app_logger.dart';
+import 'core/navigation/app_navigator.dart';
 import 'domain/entities/experience_settings.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'presentation/pages/app_shell_page.dart';
@@ -29,11 +30,11 @@ import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/opencode_theme_presets.dart';
 
 Future<void> main(List<String> args) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  if (await runSessionAttentionDesktopChildIfNeeded()) {
-    return;
-  }
   await runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    if (await runSessionAttentionDesktopChildIfNeeded()) {
+      return;
+    }
     AppLogger.installGlobalHandlers();
 
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -168,6 +169,7 @@ class MyApp extends StatelessWidget {
               };
               final systemFontScale = settingsProvider.systemFontScale;
               return MaterialApp(
+                navigatorKey: appNavigatorKey,
                 title: AppConstants.appName,
                 theme: AppTheme.lightFrom(
                   lightScheme,

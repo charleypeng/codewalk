@@ -57,6 +57,7 @@ class OAuthService {
     required this.serverUrl,
     this.challengeHeaders,
     this.challengeBody,
+    this.authUiLauncher,
     OAuthTokenStorage? storage,
   }) : _storage = storage ?? OAuthTokenStorage();
 
@@ -64,6 +65,12 @@ class OAuthService {
   final String serverUrl;
   final Map<String, String>? challengeHeaders;
   final String? challengeBody;
+
+  /// Optional UI-driven authorization launcher (used on Android). When set,
+  /// the consent flow is presented in-app and the launcher resolves with the
+  /// intercepted loopback callback URI — no local callback server is run.
+  final Future<Uri?> Function(Uri authUri)? authUiLauncher;
+
   final OAuthTokenStorage _storage;
 
   /// Last transient network error seen during token exchange retries.
@@ -408,6 +415,11 @@ class OAuthService {
       );
     }
 
+    final uiLauncher = authUiLauncher;
+    if (uiLauncher != null) {
+      return _runPkceFlowWithUi(authEp, tokenEp, meta, uiLauncher);
+    }
+
     final callbackServer = await HttpServer.bind('127.0.0.1', 0);
     try {
       final redirectUri = _redirectUriFor(callbackServer.port);
@@ -461,6 +473,87 @@ class OAuthService {
     } finally {
       await callbackServer.close(force: true);
     }
+  }
+
+  /// PKCE flow driven by an in-app auth UI (Android): the consent runs in an
+  /// embedded WebView which intercepts the loopback redirect, so no local
+  /// callback server is needed. The redirect URI only has to be registered
+  /// via DCR — it is never actually loaded.
+  Future<_PkceResult> _runPkceFlowWithUi(
+    String authEp,
+    String tokenEp,
+    Map<String, dynamic> meta,
+    Future<Uri?> Function(Uri authUri) uiLauncher,
+  ) async {
+    // Fixed loopback URI (accepted by Cloudflare DCR; intercepted in-app).
+    const redirectUri = 'http://127.0.0.1:61308/oauth/callback';
+    const callbackPath = '/oauth/callback';
+
+    final client = await _registerClient(meta, redirectUri);
+
+    final verifier = _generateVerifier();
+    final challenge = _generateChallenge(verifier);
+    final state = _generateVerifier();
+
+    final clientId = client?['client_id'] as String?;
+
+    final params = <String, String>{
+      'response_type': 'code',
+      'redirect_uri': redirectUri,
+      'code_challenge': challenge,
+      'code_challenge_method': 'S256',
+      'state': state,
+      'resource': _baseUrl,
+    };
+    if (clientId != null) params['client_id'] = clientId;
+
+    final authUri = Uri.parse(authEp).replace(queryParameters: params);
+    _log('Opening in-app auth UI: $authEp');
+
+    final callbackUri = await uiLauncher(authUri);
+    if (callbackUri == null) {
+      return _PkceResult.failure('Sign-in was cancelled before completion.');
+    }
+
+    final validation = validateCallback(
+      uri: callbackUri,
+      expectedState: state,
+      expectedPath: callbackPath,
+    );
+    if (validation.decision != OAuthCallbackDecision.acceptCode) {
+      final providerError = callbackUri.queryParameters['error'];
+      if (providerError != null) {
+        final description =
+            callbackUri.queryParameters['error_description'] ?? '';
+        return _PkceResult.failure(
+          'Authorization server returned an error: '
+          '$providerError${description.isEmpty ? '' : ' — $description'}',
+        );
+      }
+      if (callbackUri.queryParameters['code'] != null) {
+        return _PkceResult.failure(
+          'OAuth state mismatch in the callback. Please try again.',
+        );
+      }
+      return _PkceResult.failure(
+        'OAuth callback arrived without an authorization code or error.',
+      );
+    }
+    _log('Authorization code received');
+
+    final exchange = await _exchangeCode(
+      tokenEp,
+      validation.code!,
+      verifier,
+      redirectUri,
+      clientId,
+    );
+    if (exchange.error != null) {
+      return _PkceResult.failure(exchange.error!);
+    }
+    final data = exchange.data!;
+    data['_client'] = client;
+    return _PkceResult.data(data);
   }
 
   Future<_CallbackResult> _launchAndCapture(
@@ -551,16 +644,9 @@ class OAuthService {
       return completer.future;
     }
 
-    // Android: run the whole consent flow in an in-app WebView. The final
-    // redirect to the loopback callback then stays inside this process —
-    // no external browser hand-off, no background delivery, no Chrome
-    // navigation policies can break it. Desktop keeps the system browser.
-    final useInAppWebView = Platform.isAndroid;
     final launched = await launchUrl(
       authUri,
-      mode: useInAppWebView
-          ? LaunchMode.inAppWebView
-          : LaunchMode.externalApplication,
+      mode: LaunchMode.externalApplication,
     );
     if (!launched) {
       _log('Browser failed to open');
@@ -588,12 +674,6 @@ class OAuthService {
     );
     await server.close(force: true);
     _log('Callback server stopped');
-    if (useInAppWebView) {
-      // Dismiss the in-app auth WebView once the flow has concluded.
-      try {
-        await closeInAppWebView();
-      } catch (_) {}
-    }
     return result;
   }
 

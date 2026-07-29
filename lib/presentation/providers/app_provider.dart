@@ -20,6 +20,7 @@ import '../../domain/entities/server_profile.dart';
 import '../../domain/usecases/check_connection.dart';
 import '../../domain/usecases/get_app_info.dart';
 import '../services/cellular_data_saver_service.dart';
+import '../pages/oauth_webview_page.dart';
 import '../services/session_attention/session_attention_completion_resolver.dart';
 import '../services/local_opencode_server_runtime.dart';
 import '../services/local_opencode_server_runtime_types.dart';
@@ -650,6 +651,16 @@ class AppProvider extends ChangeNotifier {
       serverUrl: serverUrl,
       challengeHeaders: challengeHeaders,
       challengeBody: challengeBody,
+      // On Android the consent flow runs in an in-app WebView which
+      // intercepts the loopback redirect — no local callback server,
+      // no external browser hand-off.
+      authUiLauncher:
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? (authUri) => OAuthWebViewPage.launch(
+              authUri,
+              callbackPath: '/oauth/callback',
+            )
+          : null,
     );
 
     final flow = () async {

@@ -8,6 +8,7 @@ class OAuthService {
     required this.serverUrl,
     this.challengeHeaders,
     this.challengeBody,
+    this.authUiLauncher,
     OAuthTokenStorage? storage,
   }) : _storage = storage ?? OAuthTokenStorage();
 
@@ -15,6 +16,7 @@ class OAuthService {
   final String serverUrl;
   final Map<String, String>? challengeHeaders;
   final String? challengeBody;
+  final Future<Uri?> Function(Uri authUri)? authUiLauncher;
   final OAuthTokenStorage _storage;
 
   static bool isOAuthChallenge(int statusCode, Map<String, String> headers) {
