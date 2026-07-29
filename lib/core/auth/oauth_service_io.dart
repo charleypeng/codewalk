@@ -548,9 +548,16 @@ class OAuthService {
       return completer.future;
     }
 
+    // Android: run the whole consent flow in an in-app WebView. The final
+    // redirect to the loopback callback then stays inside this process —
+    // no external browser hand-off, no background delivery, no Chrome
+    // navigation policies can break it. Desktop keeps the system browser.
+    final useInAppWebView = Platform.isAndroid;
     final launched = await launchUrl(
       authUri,
-      mode: LaunchMode.externalApplication,
+      mode: useInAppWebView
+          ? LaunchMode.inAppWebView
+          : LaunchMode.externalApplication,
     );
     if (!launched) {
       _log('Browser failed to open');
@@ -578,6 +585,12 @@ class OAuthService {
     );
     await server.close(force: true);
     _log('Callback server stopped');
+    if (useInAppWebView) {
+      // Dismiss the in-app auth WebView once the flow has concluded.
+      try {
+        await closeInAppWebView();
+      } catch (_) {}
+    }
     return result;
   }
 
