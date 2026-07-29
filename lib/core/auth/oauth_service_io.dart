@@ -22,6 +22,35 @@ class OAuthCallbackValidation {
   bool get isTerminal => decision != OAuthCallbackDecision.ignoreWrongPath;
 }
 
+/// Outcome of the browser round-trip: an authorization [code] on success,
+/// or a user-readable [failureReason] describing exactly which step failed.
+class _CallbackResult {
+  _CallbackResult.code(this.code) : failureReason = null;
+  _CallbackResult.failure(this.failureReason) : code = null;
+
+  final String? code;
+  final String? failureReason;
+}
+
+/// Outcome of the PKCE flow: token [data] on success, or a user-readable
+/// [error] describing exactly which step failed.
+class _PkceResult {
+  _PkceResult.data(this.data) : error = null;
+  _PkceResult.failure(this.error) : data = null;
+
+  final Map<String, dynamic>? data;
+  final String? error;
+}
+
+/// Outcome of the authorization-code exchange at the token endpoint.
+class _ExchangeResult {
+  _ExchangeResult.data(this.data) : error = null;
+  _ExchangeResult.failure(this.error) : data = null;
+
+  final Map<String, dynamic>? data;
+  final String? error;
+}
+
 class OAuthService {
   OAuthService({
     required this.profileId,
@@ -138,16 +167,17 @@ class OAuthService {
     _log('Metadata: auth=${meta['authorization_endpoint']} '
         'token=${meta['token_endpoint']}');
 
-    final tokenData = await _runPkceFlow(meta);
-    if (tokenData == null) {
+    final pkce = await _runPkceFlow(meta);
+    if (pkce.error != null) {
       return OAuthFlowResult(
         log: [],
-        error: 'Browser authentication did not complete',
+        error: pkce.error!,
         token: null,
       );
     }
     _log('Token received');
 
+    final tokenData = pkce.data!;
     final client = tokenData.remove('_client') as Map<String, dynamic>?;
     _log('Client registration ${client == null ? 'not used' : 'completed'}');
 
@@ -364,12 +394,16 @@ class OAuthService {
     return null;
   }
 
-  Future<Map<String, dynamic>?> _runPkceFlow(
+  Future<_PkceResult> _runPkceFlow(
     Map<String, dynamic> meta,
   ) async {
     final authEp = meta['authorization_endpoint'] as String?;
     final tokenEp = meta['token_endpoint'] as String?;
-    if (authEp == null || tokenEp == null) return null;
+    if (authEp == null || tokenEp == null) {
+      return _PkceResult.failure(
+        'OAuth metadata is missing authorization/token endpoints.',
+      );
+    }
 
     final callbackServer = await HttpServer.bind('127.0.0.1', 0);
     try {
@@ -395,45 +429,51 @@ class OAuthService {
       final authUri = Uri.parse(authEp).replace(queryParameters: params);
       _log('Opening browser: $authEp');
 
-      final code = await _launchAndCapture(
+      final callback = await _launchAndCapture(
         authUri,
         redirectUri,
         state,
         callbackServer,
       );
-      if (code == null) return null;
+      if (callback.code == null) {
+        return _PkceResult.failure(
+          callback.failureReason ?? 'Authorization callback was not completed',
+        );
+      }
       _log('Authorization code received');
 
-      final data = await _exchangeCode(
+      final exchange = await _exchangeCode(
         tokenEp,
-        code,
+        callback.code!,
         verifier,
         redirectUri,
         clientId,
       );
-      if (data != null) {
-        data['_client'] = client;
+      if (exchange.error != null) {
+        return _PkceResult.failure(exchange.error!);
       }
-      return data;
+      final data = exchange.data!;
+      data['_client'] = client;
+      return _PkceResult.data(data);
     } finally {
       await callbackServer.close(force: true);
     }
   }
 
-  Future<String?> _launchAndCapture(
+  Future<_CallbackResult> _launchAndCapture(
     Uri authUri,
     String redirectUri,
     String state,
     HttpServer server,
   ) async {
     final callbackPath = Uri.parse(redirectUri).path;
-    final completer = Completer<String?>();
+    final completer = Completer<_CallbackResult>();
     var terminal = false;
 
-    void completeOnce(String? code) {
+    void completeOnce(_CallbackResult result) {
       if (terminal) return;
       terminal = true;
-      completer.complete(code);
+      if (!completer.isCompleted) completer.complete(result);
     }
 
     try {
@@ -461,20 +501,32 @@ class OAuthService {
         }
 
         final accepted = validation.decision == OAuthCallbackDecision.acceptCode;
+        String? rejection;
         if (accepted) {
           _log('Authorization code received (state matched)');
         } else if (req.uri.queryParameters['error'] != null) {
-          _log('Auth error from provider');
+          final providerError = req.uri.queryParameters['error']!;
+          final description =
+              req.uri.queryParameters['error_description'] ?? '';
+          _log('Auth error from provider: $providerError $description');
+          rejection = 'Authorization server returned an error: '
+              '$providerError${description.isEmpty ? '' : ' — $description'}';
         } else if (req.uri.queryParameters['code'] != null) {
           _log('State mismatch; rejecting callback');
+          rejection = 'OAuth state mismatch in the callback. '
+              'Please try again.';
         } else {
           _log('Callback missing both code and error parameters');
+          rejection = 'OAuth callback arrived without an authorization '
+              'code or error.';
         }
 
         req.response.statusCode = accepted ? 200 : 400;
         req.response.headers.contentType = ContentType.html;
         req.response.write(accepted ? _successPage() : _errorPage());
-        final completionCode = accepted ? validation.code : null;
+        final result = accepted
+            ? _CallbackResult.code(validation.code!)
+            : _CallbackResult.failure(rejection!);
         terminal = true;
         try {
           await req.response.close().timeout(const Duration(seconds: 2));
@@ -482,13 +534,17 @@ class OAuthService {
           _log('Callback response closed before page flush completed');
         } finally {
           if (!completer.isCompleted) {
-            completer.complete(completionCode);
+            completer.complete(result);
           }
         }
       });
     } catch (e) {
       _log('Callback server failed: $e');
-      completeOnce(null);
+      completeOnce(
+        _CallbackResult.failure(
+          'Local OAuth callback server failed to start: $e',
+        ),
+      );
       return completer.future;
     }
 
@@ -498,7 +554,11 @@ class OAuthService {
     );
     if (!launched) {
       _log('Browser failed to open');
-      completeOnce(null);
+      completeOnce(
+        _CallbackResult.failure(
+          'Could not open the system browser for OAuth sign-in.',
+        ),
+      );
       return completer.future;
     }
 
@@ -507,7 +567,13 @@ class OAuthService {
       const Duration(minutes: 5),
       onTimeout: () {
         _log('Login timed out after 5 minutes');
-        return null;
+        return _CallbackResult.failure(
+          'No authorization callback reached the app within 5 minutes. '
+          'The browser was expected to redirect to '
+          'http://127.0.0.1:${server.port}$callbackPath after consent. '
+          'If the browser showed a connection error instead, this device '
+          'or network blocks loopback redirects.',
+        );
       },
     );
     await server.close(force: true);
@@ -515,7 +581,7 @@ class OAuthService {
     return result;
   }
 
-  Future<Map<String, dynamic>?> _exchangeCode(
+  Future<_ExchangeResult> _exchangeCode(
     String tokenEp,
     String code,
     String verifier,
@@ -546,8 +612,12 @@ class OAuthService {
       final body = await response.transform(utf8.decoder).join();
 
       if (response.statusCode != 200) {
-        _log('Token exchange failed: ${response.statusCode} body=${body.length > 200 ? '${body.substring(0, 200)}...' : body}');
-        return null;
+        final snippet =
+            body.length > 200 ? '${body.substring(0, 200)}...' : body;
+        _log('Token exchange failed: ${response.statusCode} body=$snippet');
+        return _ExchangeResult.failure(
+          'Token exchange failed (HTTP ${response.statusCode}): $snippet',
+        );
       }
       final data = jsonDecode(body) as Map<String, dynamic>;
       final hasAccess = data.containsKey('access_token');
@@ -556,10 +626,10 @@ class OAuthService {
       _log('Token exchange OK: access_token=${hasAccess ? 'present' : 'MISSING'}, '
           'refresh_token=${hasRefresh ? 'present' : 'absent'}, '
           'expires_in=$expiresIn');
-      return data;
+      return _ExchangeResult.data(data);
     } catch (e) {
       _log('Token exchange error: $e');
-      return null;
+      return _ExchangeResult.failure('Token exchange error: $e');
     } finally {
       client?.close(force: true);
     }
