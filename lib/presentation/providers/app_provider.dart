@@ -20,10 +20,9 @@ import '../../domain/entities/server_profile.dart';
 import '../../domain/usecases/check_connection.dart';
 import '../../domain/usecases/get_app_info.dart';
 import '../services/cellular_data_saver_service.dart';
-import '../pages/oauth_webview_page.dart';
-import '../services/session_attention/session_attention_completion_resolver.dart';
 import '../services/local_opencode_server_runtime.dart';
 import '../services/local_opencode_server_runtime_types.dart';
+import '../services/session_attention/session_attention_completion_resolver.dart';
 
 enum AppStatus { initial, loading, loaded, error, disconnected }
 
@@ -443,11 +442,10 @@ class AppProvider extends ChangeNotifier {
         } else {
           _authenticatedOAuthProfileIds.remove(profile.id);
         }
-      } catch (e) {
+      } catch (_) {
         _authenticatedOAuthProfileIds.remove(profile.id);
         AppLogger.warn(
           'Failed to load cached OAuth credential for active profile',
-          error: e,
         );
       }
     } else if (profile.basicAuthEnabled &&
@@ -651,16 +649,6 @@ class AppProvider extends ChangeNotifier {
       serverUrl: serverUrl,
       challengeHeaders: challengeHeaders,
       challengeBody: challengeBody,
-      // On Android the consent flow runs in an in-app WebView which
-      // intercepts the loopback redirect — no local callback server,
-      // no external browser hand-off.
-      authUiLauncher:
-          !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-          ? (authUri) => OAuthWebViewPage.launch(
-              authUri,
-              callbackPath: '/oauth/callback',
-            )
-          : null,
     );
 
     final flow = () async {
@@ -698,14 +686,14 @@ class AppProvider extends ChangeNotifier {
     _oauthFlowByProfileId[profile.id] = flow;
     try {
       return await flow;
-    } catch (e) {
+    } catch (_) {
       // Any failure inside the flow (token storage, post-auth connection
       // verification) must resolve to a clean auth failure — never an
       // exception, which would leave callers waiting/spinning forever.
-      AppLogger.warn('OAuth flow failed for profile', error: e);
+      AppLogger.warn('OAuth flow failed for profile');
       return false;
     } finally {
-      _oauthFlowByProfileId.remove(profile.id);
+      unawaited(_oauthFlowByProfileId.remove(profile.id));
     }
   }
 
@@ -727,10 +715,9 @@ class AppProvider extends ChangeNotifier {
         serverUrl: profile.url,
       );
       await service.clearCredential();
-    } catch (e) {
+    } catch (_) {
       AppLogger.warn(
         'Failed to clear persisted OAuth credential; clearing memory state only',
-        error: e,
       );
     }
     _authenticatedOAuthProfileIds.remove(profile.id);
@@ -1678,11 +1665,8 @@ class AppProvider extends ChangeNotifier {
           dio.options.headers[ApiConstants.authorization] =
               'Bearer ${credential.accessToken}';
         }
-      } catch (e) {
-        AppLogger.warn(
-          'Failed to load OAuth credential for health check',
-          error: e,
-        );
+      } catch (_) {
+        AppLogger.warn('Failed to load OAuth credential for health check');
       }
     }
 

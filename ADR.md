@@ -1777,19 +1777,19 @@ Official OpenCode does not define a reverse-proxy authentication mechanism. The 
 
 ### Decision
 
-1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop and Android platforms. The flow registers a loopback redirect URI via DCR (the only kind Cloudflare Managed OAuth accepts); desktop opens the system browser and captures the callback with an in-app local HTTP server, while Android runs the consent flow in an in-app WebView that intercepts the loopback redirect before it is loaded — no network round-trip to loopback ever happens on Android. When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
+1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop and Android platforms. Before DCR or browser launch, both platforms bind a real ephemeral `HttpServer` on `127.0.0.1`; the effective bound port defines one exact `http://127.0.0.1:<port>/oauth/callback` redirect URI that is reused unchanged for DCR, authorization, callback validation, and token exchange. Desktop opens the system browser with `LaunchMode.externalApplication`. Android asks `MainActivity` to open a browser-owned native AndroidX Custom Tab and falls back only to an `ACTION_VIEW` external browser; it never uses `OAuthWebViewPage` or another embedded WebView. The browser performs the real loopback network request to the app-owned server on both platforms. When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
 
 2. **Profile-scoped configuration**: Each `ServerProfile` (ADR-001) gains an `oauthEnabled` (bool, default `false`) field. This single toggle controls whether the profile uses Cloudflare Managed OAuth or standard Basic Auth — the two modes are mutually exclusive within a profile. This preserves OpenCode Basic Auth for non-OAuth profiles without interference.
 
-3. **Conditional export architecture**: The `OAuthService` is implemented via Dart conditional exports: `oauth_service_io.dart` provides the real desktop implementation (system browser launch, local redirect server, token exchange), and `oauth_service_stub.dart` provides a no-op stub for mobile platforms. The conditional export pattern ensures compile-time platform resolution without runtime checks.
+3. **Conditional export architecture**: The `OAuthService` is implemented via Dart conditional exports: `oauth_service_io.dart` provides the IO implementation used by desktop and Android (browser launch, real local redirect server, token exchange), and `oauth_service_stub.dart` provides the unsupported implementation for non-IO targets. The conditional export pattern selects the implementation at compile time; separate capability gating prevents unsupported platforms such as iOS from exposing the flow.
 
-4. **Platform gating**: The Cloudflare Managed OAuth flow is gated behind `AppProvider.supportsCloudflareAccessOAuth`. On desktop (macOS/Windows/Linux) and Android, the flow is enabled — desktop uses the system browser + in-app local HTTP redirect server, and Android uses an in-app WebView that intercepts the loopback redirect. iOS remains unsupported (stub). Rationale: reverse-proxy deployments target desktop/server and Android environments; iOS Safari app-bound domain restrictions prevent the loopback redirect pattern.
+4. **Platform gating**: The Cloudflare Managed OAuth flow is gated behind `AppProvider.supportsCloudflareAccessOAuth`. On desktop (macOS/Windows/Linux) and Android, the flow is enabled and uses the same app-owned loopback `HttpServer`; desktop launches an external application and Android launches a native Custom Tab with external-browser fallback. iOS remains unsupported and the UI must not expose OAuth configuration there. Rationale: reverse-proxy deployments target desktop/server and Android environments; iOS Safari app-bound domain restrictions prevent the loopback redirect pattern.
 
-5. **Secure credential storage via `OAuthTokenStorage`**: Access and refresh tokens are stored through `OAuthTokenStorage` backed by `flutter_secure_storage`, with keys scoped by `profileId + serverUrl`. No OAuth credentials are ever written to SharedPreferences, log output, or debug surfaces. `OAuthCredential` encapsulates the token pair and expiry.
+5. **Secure credential storage and diagnostic redaction**: Access and refresh tokens are stored through `OAuthTokenStorage` backed by `flutter_secure_storage`, with keys scoped by `profileId + serverUrl`. No OAuth credentials are written to SharedPreferences, log output, or debug surfaces. Callback queries, authorization codes, PKCE verifiers, provider error descriptions, OAuth endpoint URLs, raw token/DCR bodies, access or refresh tokens, client secrets, and raw exception text must not appear in logs or user-facing errors. `OAuthCredential` encapsulates the token pair and expiry.
 
 6. **Bearer token propagation**: Requests to the OAuth-enabled profile's origin include `Authorization: Bearer <access_token>` via the Dio interceptor. The interceptor matches the request origin against the OAuth profile's server URL — only matching requests receive the Bearer header. On profile switch or when `oauthEnabled` is false, the interceptor is removed. Cross-origin requests never include the OAuth token.
 
-7. **OAuth callback flow**: The callback path is `/oauth/callback`. The flow validates `state` parameter integrity, rejects duplicate callback invocations, and passes the authorization code + PKCE verifier to the token endpoint. On failure, the user sees a clear error and can retry or disable `oauthEnabled` for that profile.
+7. **OAuth callback flow**: The callback accepts only an exact `GET` request using HTTP, host `127.0.0.1`, the effective port of the bound server, raw path `/oauth/callback`, exactly one non-empty matching `state`, and exactly one non-empty authorization `code` xor one non-empty provider `error`. Unrelated raw paths are non-terminal and receive 404. The first valid or invalid callback on the expected path completes the flow exactly once; later callbacks receive 409. An accepted code is exchanged with the same redirect URI and PKCE verifier. On failure, the user sees a redacted error and can retry or disable `oauthEnabled` for that profile.
 
 8. **Health checks and OAuth challenge detection**: Health check requests load cached OAuth tokens and record OAuth challenges (e.g., 401/403 from the proxy) to trigger re-authentication when needed.
 
@@ -1820,15 +1820,17 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 
 ### Consequences
 
-- ✅ Desktop users behind Cloudflare Access can authenticate and use CodeWalk normally.
+- ✅ Desktop and Android share one loopback transport design: bind first, derive one redirect URI from the effective port, and reuse it through DCR, authorization, validation, and token exchange.
+- ✅ Android authorization is browser-owned through a native AndroidX Custom Tab or `ACTION_VIEW` external-browser fallback; the OAuth path has no embedded WebView.
 - ✅ No impact on servers without Cloudflare Managed OAuth — feature is fully opt-in and profile-scoped.
 - ✅ OpenCode server contract is fully preserved on non-OAuth profiles — Basic Auth is always sent.
 - ✅ Secure storage via `OAuthTokenStorage` prevents OAuth credential leakage via plaintext persistence.
-- ✅ Platform gating via `AppProvider.supportsCloudflareAccessOAuth` — desktop (system browser + local redirect server) and Android (in-app WebView with redirect interception), iOS is stub/no-op.
+- ✅ Platform gating via `AppProvider.supportsCloudflareAccessOAuth` exposes the real loopback flow on desktop and Android while keeping iOS unsupported.
 - ✅ Mutual exclusivity of OAuth/Basic Auth per profile prevents auth-header conflicts.
 - ✅ PKCE S256 protects against authorization code interception attacks.
 - ⚠ Adds a second auth layer to the connection flow for OAuth-enabled profiles, increasing time-to-first-message (browser redirect + code exchange).
-- ⚠ Requires maintaining a local HTTP redirect server (for the `/oauth/callback`) on desktop platforms; port conflicts are possible in rare cases.
+- ⚠ Requires maintaining a real local HTTP redirect server for `/oauth/callback` on desktop and Android; bind failures and device/browser policies that block loopback redirects must surface as retryable, redacted errors.
+- ⚠ Automated CI and contributor real-device Android validation remain required; this ADR records the implemented design and does not claim successful Android runtime validation.
 - ⚠ OAuth access token expiration requires re-authentication; health checks detect proxy challenges and re-trigger the flow gracefully.
 - ❌ iOS does not support Cloudflare Managed OAuth (Safari app-bound domain restrictions prevent loopback redirect); users on iOS must use VPN or switch platforms.
 - ❌ Cloudflare Managed OAuth configuration is specific to Cloudflare — other reverse-proxy solutions (Authelia, Tailscale, etc.) are not covered by this ADR and would require separate exceptions if needed.
@@ -1838,7 +1840,10 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - **Medium auth-layer risk**: If the OAuth access token expires mid-session, requests will fail with 401/403 from the proxy. Mitigation: health checks load cached OAuth tokens and record OAuth challenges; the app detects proxy 401/403 responses (distinct from OpenCode 401), re-triggers the OAuth flow with a user-visible prompt, and replays the failed request after re-auth.
 - **Low contract risk**: The OpenCode server API is unmodified. The Dio interceptor adds a Bearer token for matching-origin requests only, consumed upstream. Non-OAuth profiles are completely unaffected. If a future OpenCode version adds its own Bearer-based auth, the OAuth interceptor is scoped to the profile origin and will not conflict.
 - **Low data-risk**: OAuth tokens are stored in `flutter_secure_storage` with keys scoped by `profileId + serverUrl`. Clearing a server profile removes all associated OAuth credentials.
-- **Low port-conflict risk**: The local redirect server binds to a random available port; collision probability is low on desktop. If binding fails, the user receives an error with a retry option.
+- **Medium Android integration risk**: Custom Tab provider selection, `ACTION_VIEW` fallback, browser-to-app loopback routing, and Android network policy vary by device and browser. Mitigation: retain CI coverage for the Android build and callback contract, and require contributor validation on a real Android device before claiming runtime success; never fall back to an embedded WebView.
+- **Low loopback bind risk**: The callback server binds to `127.0.0.1` on an ephemeral port before DCR or browser launch, so ordinary port collisions are avoided. Bind failures or loopback-blocking device/browser policies produce retryable, redacted errors.
+- **Low callback-confusion risk**: An unrelated path must not terminate the flow, while malformed requests on the expected raw path are terminal. Exact method/scheme/host/effective-port/path checks, one matching state, code/error xor validation, and a single-use completion guard limit callback spoofing and races; post-completion requests receive 409.
+- **Low diagnostic-disclosure risk**: OAuth failures can carry credentials and provider details. Mitigation: logs and errors retain only coarse step/status information and omit callback queries, codes, verifiers, provider descriptions, endpoint URLs, raw token/DCR bodies, tokens, client secrets, and raw exceptions. The credential-bearing `tool/qa/oauth_loopback_probe.dart` is not retained.
 
 ### Rollback / Feature-Flag Plan
 
@@ -1852,8 +1857,11 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - **Profile isolation**: Enabling OAuth on profile A must not affect profile B's connection or credential state.
 - **Interceptor scoping**: The Bearer token interceptor must only attach `Authorization: Bearer` to requests matching the OAuth profile's origin; cross-origin requests must not include the OAuth token.
 - **Secure storage boundary**: OAuth credentials must not appear in SharedPreferences, log output, or debug surfaces. Keys must be scoped by `profileId + serverUrl`.
-- **iOS no-op**: On iOS, `OAuthService` (stub) must be a no-op and `AppProvider.supportsCloudflareAccessOAuth` must return false for iOS; UI must not expose OAuth configuration. Android must pass `supportsCloudflareAccessOAuth` as true and the IO implementation must handle the in-app WebView redirect-interception flow on Android.
-- **State/callback validation**: The `/oauth/callback` flow must validate the `state` parameter, reject duplicate callbacks, and handle PKCE verifier mismatches gracefully.
+- **Platform gating**: `AppProvider.supportsCloudflareAccessOAuth` must return false for iOS and the UI must not expose OAuth configuration there. Android must return true and use the IO implementation with a real `127.0.0.1` callback server and browser-owned authorization, never an embedded WebView.
+- **Redirect URI continuity**: Tests must verify that the server is bound before DCR and browser launch and that the exact redirect URI derived from its effective port is reused for DCR, authorization, callback validation, and token exchange.
+- **Callback validation matrix**: Tests must require exact `GET`, HTTP, `127.0.0.1`, effective port, raw `/oauth/callback`, exactly one non-empty matching `state`, and exactly one non-empty `code` xor provider `error`. Encoded or unrelated paths must be non-terminal 404s; malformed expected-path callbacks must terminate; completion must be single-use and later callbacks must receive 409.
+- **Diagnostic confidentiality**: Tests must ensure logs and errors omit callback queries, codes, PKCE verifiers, provider descriptions, endpoint URLs, raw token/DCR bodies, tokens, client secrets, and raw exceptions. Credential-bearing QA probes must not be added to the repository.
+- **Android browser ownership**: Android build/tests must cover the `MainActivity` method-channel launch contract, native AndroidX Custom Tab selection, and `ACTION_VIEW`-only fallback with no WebView path. CI and contributor real-device Android validation are both required; passing unit tests alone is not runtime proof.
 - **Health check OAuth awareness**: Health checks must load cached OAuth tokens and record OAuth challenges for re-auth triggering.
 - **Profile deletion cleanup**: Deleting a server profile must remove all associated OAuth credentials from `OAuthTokenStorage`.
 - **Mutual exclusivity**: An OAuth-enabled profile must not send Basic Auth headers, and a non-OAuth profile must not send Bearer OAuth tokens.
@@ -1861,15 +1869,18 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 ### Key Files
 
 - `lib/core/auth/oauth_service.dart` — `OAuthService` public API with conditional export
-- `lib/core/auth/oauth_service_io.dart` — IO platforms (desktop + Android) implementation: desktop uses system browser + local HTTP redirect server; Android runs the consent flow in an in-app WebView that intercepts the registered loopback redirect before it is loaded (Cloudflare DCR rejects non-loopback redirect URIs; interception removes any real loopback network dependency); Cloudflare Managed OAuth authorization code + PKCE S256, DCR when `registration_endpoint` available, `/oauth/callback` handling with state/path/duplicate rejection, token exchange
-- `lib/core/auth/oauth_service_stub.dart` — no-op stub for mobile platforms
+- `lib/core/auth/oauth_service_io.dart` — shared desktop + Android IO implementation: binds the ephemeral `127.0.0.1` `HttpServer` before DCR/browser launch, reuses the exact redirect URI throughout the PKCE flow, launches desktop with `externalApplication`, invokes Android browser launch through the platform channel, validates callbacks, enforces single-use completion, redacts diagnostics, and exchanges the code
+- `lib/core/auth/oauth_service_stub.dart` — unsupported implementation for non-IO targets
 - `lib/core/auth/oauth_service_result.dart` — `OAuthServiceResult` type for flow outcomes
 - `lib/core/auth/oauth_token_storage.dart` — `OAuthTokenStorage` backed by `flutter_secure_storage`, keys scoped by `profileId + serverUrl`
 - `lib/core/auth/oauth_credential.dart` — `OAuthCredential` encapsulating access/refresh tokens and expiry
 - `lib/core/network/dio_client.dart` — Bearer token interceptor management for matching OAuth profile origin, proxy-401/403 detection
-- `lib/core/providers/app_provider.dart` — `supportsCloudflareAccessOAuth` desktop + Android gating
+- `lib/presentation/providers/app_provider.dart` — `supportsCloudflareAccessOAuth` desktop + Android gating with iOS excluded
+- `android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt` — native Android OAuth launcher using AndroidX Custom Tabs with `ACTION_VIEW` external-browser fallback only
+- `android/app/build.gradle.kts` — AndroidX Browser dependency for native Custom Tabs
 - Onboarding and settings pages — `oauthEnabled` toggle and configuration UI
-- Tests under `test/unit/auth` — OAuth service, token storage, credential, PKCE, DCR, callback validation
+- `test/unit/auth/oauth_service_io_test.dart` — exact callback-origin/path/query validation, single-use completion guard, redacted token-exchange errors, trusted Cloudflare host checks, HTTPS-only OAuth endpoint trust, and metadata-origin trust for the exact configured HTTPS origin or a trusted Cloudflare Access HTTPS origin
+- `test/unit/auth/oauth_token_storage_test.dart` — secure OAuth credential storage and scoping
 - Tests under `test/unit/network` — Bearer interceptor scoping, health check OAuth challenge detection, Basic Auth non-regression
 
 ---

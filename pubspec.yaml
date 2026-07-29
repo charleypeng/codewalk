@@ -119,7 +119,6 @@ dependencies:
   re_editor: ^0.10.0
   re_highlight: ^0.0.3
   web_socket_channel: ^3.0.3
-  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:
