@@ -1115,6 +1115,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatSessionCreateConversationStart => '대화를 시작하려면 새 대화를 만드세요';
 
   @override
+  String get chatSessionTabsToggle => '세션 탭';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

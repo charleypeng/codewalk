@@ -1,0 +1,280 @@
+part of '../chat_page.dart';
+
+extension _ChatPageSessionTabs on _ChatPageState {
+  Widget _buildSessionTabStrip({
+    required bool isCompact,
+    required SettingsProvider settingsProvider,
+  }) {
+    if (!settingsProvider.showSessionTabs) {
+      return const SizedBox.shrink();
+    }
+    return Consumer2<ChatProvider, ProjectProvider>(
+      builder: (context, chatProvider, projectProvider, _) {
+        final tabs = chatProvider.sessionTabs;
+        if (tabs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return SessionTabStrip(
+          tabs: tabs,
+          projects: projectProvider.projects,
+          openProjectIds: projectProvider.openProjectIds.toSet(),
+          isCompact: isCompact,
+          onActivate: (tab) => unawaited(_activateSessionTab(tab)),
+          onClose: (tab) => unawaited(_closeSessionTab(tab)),
+        );
+      },
+    );
+  }
+
+  Future<bool> _activateSessionTab(SessionTabRecord tab) async {
+    final inFlight = _sessionTabActivationTask;
+    if (inFlight != null) {
+      if (_activatingSessionTabIdentity == tab.identity) {
+        return inFlight;
+      }
+      await inFlight;
+      if (!mounted) {
+        return false;
+      }
+    }
+
+    final task = _performSessionTabActivation(tab);
+    _activatingSessionTabIdentity = tab.identity;
+    _sessionTabActivationTask = task;
+    try {
+      return await task;
+    } finally {
+      if (identical(_sessionTabActivationTask, task)) {
+        _sessionTabActivationTask = null;
+        _activatingSessionTabIdentity = null;
+      }
+    }
+  }
+
+  Future<bool> _performSessionTabActivation(SessionTabRecord tab) async {
+    final projectProvider = context.read<ProjectProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final priorProject = projectProvider.currentProject;
+    final priorSession = chatProvider.currentSession;
+    final priorWasNewChatDraft = priorSession == null;
+
+    try {
+      if (tab.identity.serverId != chatProvider.activeServerId) {
+        _showSessionTabNavigationError();
+        return false;
+      }
+
+      await _switchToSessionTabContext(tab);
+      if (!mounted || !_isSessionTabContextActive(tab)) {
+        await _restoreSessionTabNavigation(
+          project: priorProject,
+          session: priorSession,
+          wasNewChatDraft: priorWasNewChatDraft,
+        );
+        _showSessionTabNavigationError();
+        return false;
+      }
+
+      final target = await _waitForSessionTabTarget(tab);
+      if (target == null) {
+        await _restoreSessionTabNavigation(
+          project: priorProject,
+          session: priorSession,
+          wasNewChatDraft: priorWasNewChatDraft,
+        );
+        _showSessionTabNavigationError();
+        return false;
+      }
+
+      await _handleSessionSwitch(target);
+      final activated =
+          mounted &&
+          _isSessionTabContextActive(tab) &&
+          context.read<ChatProvider>().currentSession?.id ==
+              tab.identity.sessionId;
+      if (activated) {
+        return true;
+      }
+
+      await _restoreSessionTabNavigation(
+        project: priorProject,
+        session: priorSession,
+        wasNewChatDraft: priorWasNewChatDraft,
+      );
+      _showSessionTabNavigationError();
+      return false;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to activate session tab',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      await _restoreSessionTabNavigation(
+        project: priorProject,
+        session: priorSession,
+        wasNewChatDraft: priorWasNewChatDraft,
+      );
+      _showSessionTabNavigationError();
+      return false;
+    }
+  }
+
+  Future<void> _switchToSessionTabContext(SessionTabRecord tab) async {
+    if (_isSessionTabContextActive(tab)) {
+      return;
+    }
+    final projectProvider = context.read<ProjectProvider>();
+    final project = _projectForSessionTab(projectProvider, tab);
+    if (project == null) {
+      await _switchDirectoryContext(tab.identity.directory);
+      return;
+    }
+    if (projectProvider.openProjectIds.contains(project.id)) {
+      await _switchProjectContext(project.id);
+      return;
+    }
+    await _reopenProjectContext(project.id);
+  }
+
+  Project? _projectForSessionTab(
+    ProjectProvider projectProvider,
+    SessionTabRecord tab,
+  ) {
+    for (final project in projectProvider.projects) {
+      if (areEquivalentFilePaths(project.path, tab.identity.directory)) {
+        return project;
+      }
+    }
+    final projectId = tab.projectId?.trim();
+    if (projectId == null || projectId.isEmpty) {
+      return null;
+    }
+    return projectProvider.projects
+        .where((project) => project.id == projectId)
+        .firstOrNull;
+  }
+
+  bool _isSessionTabContextActive(SessionTabRecord tab) {
+    final projectProvider = context.read<ProjectProvider>();
+    final currentPath = projectProvider.currentProject?.path;
+    return currentPath != null &&
+        areEquivalentFilePaths(currentPath, tab.identity.directory);
+  }
+
+  Future<ChatSession?> _waitForSessionTabTarget(SessionTabRecord tab) async {
+    final chatProvider = context.read<ChatProvider>();
+    final deadline = DateTime.now().add(const Duration(seconds: 8));
+    while (true) {
+      if (chatProvider.activeServerId != tab.identity.serverId ||
+          !_isSessionTabContextActive(tab)) {
+        return null;
+      }
+      final target = chatProvider.sessions.where((session) {
+        if (session.id != tab.identity.sessionId) {
+          return false;
+        }
+        final directory = normalizeOptionalFilePath(
+          session.directory ?? session.path?.workspace ?? session.path?.root,
+        );
+        return directory == null || directory == tab.identity.directory;
+      }).firstOrNull;
+      if (target != null) {
+        return target;
+      }
+      if (chatProvider.hasLoadedSessionsAuthoritatively) {
+        return null;
+      }
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        return null;
+      }
+      const pollInterval = Duration(milliseconds: 80);
+      await Future<void>.delayed(
+        remaining.compareTo(pollInterval) < 0 ? remaining : pollInterval,
+      );
+      if (!mounted) {
+        return null;
+      }
+    }
+  }
+
+  Future<void> _restoreSessionTabNavigation({
+    required Project? project,
+    required ChatSession? session,
+    required bool wasNewChatDraft,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+    try {
+      final projectProvider = context.read<ProjectProvider>();
+      if (project != null && projectProvider.currentProject?.id != project.id) {
+        if (projectProvider.openProjectIds.contains(project.id)) {
+          await _switchProjectContext(project.id);
+        } else {
+          await _reopenProjectContext(project.id);
+        }
+      }
+      if (!mounted) {
+        return;
+      }
+
+      final chatProvider = context.read<ChatProvider>();
+      if (wasNewChatDraft) {
+        await chatProvider.beginNewChatDraft();
+        return;
+      }
+      if (session == null) {
+        return;
+      }
+      final restoredSession = chatProvider.sessions
+          .where((candidate) => candidate.id == session.id)
+          .firstOrNull;
+      await _handleSessionSwitch(restoredSession ?? session);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to restore session tab navigation',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  void _showSessionTabNavigationError() {
+    if (!mounted) {
+      return;
+    }
+    _showChatPageMessageSnackBar(
+      context.l10n.sessionNotAvailable,
+      hideCurrent: false,
+    );
+  }
+
+  Future<void> _closeSessionTab(SessionTabRecord tab) async {
+    final chatProvider = context.read<ChatProvider>();
+    final tabs = chatProvider.sessionTabs;
+    final current = tabs
+        .where((candidate) => candidate.identity == tab.identity)
+        .firstOrNull;
+    if (current == null) {
+      return;
+    }
+    final wasActive =
+        current.isSelected ||
+        (chatProvider.currentSession?.id == current.identity.sessionId &&
+            _isSessionTabContextActive(current));
+    final fallback = wasActive
+        ? sessionTabCloseFallback(tabs, current.identity)
+        : null;
+
+    chatProvider.closeSessionTab(current.identity);
+    if (!wasActive) {
+      return;
+    }
+    if (fallback != null) {
+      await _activateSessionTab(fallback);
+      return;
+    }
+    await _createNewSession();
+  }
+}

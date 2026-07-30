@@ -1208,6 +1208,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Créez une nouvelle conversation pour commencer à discuter';
 
   @override
+  String get chatSessionTabsToggle => 'Onglets de session';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

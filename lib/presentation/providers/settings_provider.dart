@@ -161,6 +161,7 @@ class SettingsProvider extends ChangeNotifier {
   // Whether the platform actually provided a dynamic color scheme at runtime.
   // Set from main.dart's DynamicColorBuilder callback.
   bool _dynamicColorAvailable = false;
+  bool? _initialWebSessionTabsDefault;
 
   bool get initialized => _initialized;
   bool get dynamicColorAvailable => _dynamicColorAvailable;
@@ -201,6 +202,13 @@ class SettingsProvider extends ChangeNotifier {
   bool get showTaskList => _settings.showTaskList;
   bool get showReviewChanges => _settings.showReviewChanges;
   bool get showRecentSessions => _settings.showRecentSessions;
+  bool get showSessionTabs =>
+      _settings.showSessionTabsOverride ??
+      defaultSessionTabsVisibility(
+        isWeb: kIsWeb,
+        platform: defaultTargetPlatform,
+        initialWebDefault: _initialWebSessionTabsDefault ?? false,
+      );
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
   bool get showMathRendering => _settings.showMathRendering;
@@ -264,6 +272,32 @@ class SettingsProvider extends ChangeNotifier {
   double get terminalFontSize => _settings.terminalFontSize;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
+
+  @visibleForTesting
+  static bool defaultSessionTabsVisibility({
+    required bool isWeb,
+    required TargetPlatform platform,
+    required bool initialWebDefault,
+  }) {
+    if (isWeb) {
+      return initialWebDefault;
+    }
+    return switch (platform) {
+      TargetPlatform.linux ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
+      TargetPlatform.android ||
+      TargetPlatform.fuchsia ||
+      TargetPlatform.iOS => false,
+    };
+  }
+
+  void captureInitialWebSessionTabsDefault(bool value) {
+    if (!kIsWeb || _initialWebSessionTabsDefault != null) {
+      return;
+    }
+    _initialWebSessionTabsDefault = value;
+  }
 
   bool notifyOnlyWhenBackground(NotificationCategory category) {
     return _settings.notifyOnlyWhenBackground[category] ?? false;
@@ -724,6 +758,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showRecentSessions: visible);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowSessionTabsOverride(bool? value) async {
+    if (_settings.showSessionTabsOverride == value) {
+      return;
+    }
+    _settings = _settings.copyWith(showSessionTabsOverride: () => value);
     notifyListeners();
     await _persist();
   }

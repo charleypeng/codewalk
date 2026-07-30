@@ -1174,6 +1174,9 @@ class AppLocalizationsBn extends AppLocalizations {
       'চ্যাটিং শুরু করতে একটি নতুন কথোপকথন তৈরি করুন';
 
   @override
+  String get chatSessionTabsToggle => 'সেশন ট্যাব';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

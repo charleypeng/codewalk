@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "گفتگو {nextAction}",
   "chatSessionConversations": "کوئی بات چیت نہیں۔",
   "chatSessionCreateConversationStart": "چیٹنگ شروع کرنے کے لیے ایک نئی گفتگو بنائیں",
+  "chatSessionTabsToggle": "سیشن ٹیبز",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "سرور مرتب کریں۔",
   "chatSettings": "ترتیبات",

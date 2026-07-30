@@ -131,7 +131,18 @@ extension _ChatPageWorkspaceController on _ChatPageState {
 
   Future<void> _archiveClosedProjectContext(String projectId) async {
     final projectProvider = context.read<ProjectProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final project = projectProvider.projects
+        .where((candidate) => candidate.id == projectId)
+        .firstOrNull;
+    final serverId = chatProvider.activeServerId;
     final ok = await projectProvider.archiveClosedProject(projectId);
+    if (ok && project != null) {
+      await chatProvider.removeSessionTabsForProjectHistory(
+        project.path,
+        serverId: serverId,
+      );
+    }
     if (!mounted) {
       return;
     }

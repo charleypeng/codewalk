@@ -78,6 +78,8 @@ extension _ChatProviderSessionOps on ChatProvider {
     _activeContextKey = nextContextKey;
     _currentProjectId = projectProvider.currentProjectId;
     _restoreContextSnapshot(nextContextKey);
+    await _ensureSessionTabsLoaded(serverId: serverId);
+    _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
 
     _errorMessage = null;
     _isLoadingSessionInsights = false;

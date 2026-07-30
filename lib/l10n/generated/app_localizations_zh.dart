@@ -1097,6 +1097,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatSessionCreateConversationStart => '创建一个新对话以开始聊天';
 
   @override
+  String get chatSessionTabsToggle => '会话标签页';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

@@ -1192,6 +1192,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Erstellen Sie eine neue Konversation, um mit dem Chatten zu beginnen';
 
   @override
+  String get chatSessionTabsToggle => 'Sitzungs-Tabs';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

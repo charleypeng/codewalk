@@ -1193,6 +1193,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Cree una nueva conversación para comenzar a chatear';
 
   @override
+  String get chatSessionTabsToggle => 'Pestañas de sesión';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

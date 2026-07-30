@@ -503,6 +503,33 @@
 - **Then** any recent row whose session is still busy shows the same sweep-style running indicator used by the composer, including sessions from other open/cached project contexts
 - **Then** if the currently open session also appears in `Recent sessions`, that row uses the same selected accent indicator and foreground emphasis as the project session list below it
 
+### Recent session tabs
+
+- **Given** the active server has session candidates across its known project contexts
+- **When** recent session tabs are reconciled
+- **Then** the strip contains only recent non-archived root sessions from that server, keyed by normalized project directory and session ID; child sessions and sessions from other servers are excluded
+- **Then** eligibility uses the later of the server/session time and successful local open time within a rolling 3-hour window, while selected and busy/retry sessions remain eligible
+- **Then** persisted tab order remains stable through selection, title, status, and attention changes; newly eligible or explicitly reopened tabs append to the end
+- **Then** explicitly closing a tab only writes local suppression, never archives, deletes, or mutates the OpenCode session, and ordinary refresh/replay does not resurrect it; a successful explicit reopen or strictly newer authoritative interaction can append it again
+
+- **Given** the user closes a session tab
+- **When** the closed tab is active or inactive
+- **Then** closing the active tab selects the tab to its right, then the tab to its left; closing the sole active tab enters a local `New Chat` draft, while closing an inactive tab does not navigate
+
+- **Given** the user activates a tab for another project context
+- **When** that context is closed or not current
+- **Then** CodeWalk switches or reopens the project cache-first, waits boundedly for authoritative target session data, and restores the prior coherent project/session with an error if the target is unavailable
+
+- **Given** the session-tab display toggle is enabled and tabs are nonempty
+- **When** the chat surface is rendered
+- **Then** the strip spans the content width below the app bar on compact and expanded layouts
+- **Then** native desktop defaults to enabled, Android/iOS defaults to disabled, and web captures the initial compact/non-compact layout default; an explicit `Display` toggle choice persists
+
+- **Given** a session tab has attention or activity state
+- **When** its leading indicator is rendered
+- **Then** visual priority is error, question, then completion, while busy/retry remains an independent status indicator; closed projects use their cached/default icon without discovery
+- **Then** the strip supports horizontal overflow, ensures the selected tab is visible, exposes the full title in a tooltip and semantics, reports selected and busy/retry status semantics, and supports mouse, keyboard, and touch activation/close behavior
+
 ### Sidebar session actions are available from row gestures
 
 - **Given** a session row is visible in the main Conversations list

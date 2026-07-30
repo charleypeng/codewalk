@@ -735,6 +735,7 @@ class ExperienceSettings {
       showTaskList: true,
       showReviewChanges: true,
       showRecentSessions: true,
+      showSessionTabsOverride: null,
       taskListCollapsed: false,
       showComposerTips: true,
       showMathRendering: true,
@@ -803,6 +804,7 @@ class ExperienceSettings {
     required this.showTaskList,
     required this.showReviewChanges,
     required this.showRecentSessions,
+    this.showSessionTabsOverride,
     required this.taskListCollapsed,
     required this.showComposerTips,
     required this.showMathRendering,
@@ -871,6 +873,7 @@ class ExperienceSettings {
   final bool showTaskList;
   final bool showReviewChanges;
   final bool showRecentSessions;
+  final bool? showSessionTabsOverride;
   final bool taskListCollapsed;
   final bool showComposerTips;
   final bool showMathRendering;
@@ -941,6 +944,7 @@ class ExperienceSettings {
     bool? showTaskList,
     bool? showReviewChanges,
     bool? showRecentSessions,
+    bool? Function()? showSessionTabsOverride,
     bool? taskListCollapsed,
     bool? showComposerTips,
     bool? showMathRendering,
@@ -1021,6 +1025,9 @@ class ExperienceSettings {
       showTaskList: showTaskList ?? this.showTaskList,
       showReviewChanges: showReviewChanges ?? this.showReviewChanges,
       showRecentSessions: showRecentSessions ?? this.showRecentSessions,
+      showSessionTabsOverride: showSessionTabsOverride != null
+          ? showSessionTabsOverride()
+          : this.showSessionTabsOverride,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
       showMathRendering: showMathRendering ?? this.showMathRendering,
@@ -1148,6 +1155,8 @@ class ExperienceSettings {
       'showTaskList': showTaskList,
       'showReviewChanges': showReviewChanges,
       'showRecentSessions': showRecentSessions,
+      if (showSessionTabsOverride != null)
+        'showSessionTabsOverride': showSessionTabsOverride,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
       'showMathRendering': showMathRendering,
@@ -1236,6 +1245,7 @@ class ExperienceSettings {
     var showTaskList = defaults.showTaskList;
     var showReviewChanges = defaults.showReviewChanges;
     var showRecentSessions = defaults.showRecentSessions;
+    var showSessionTabsOverride = defaults.showSessionTabsOverride;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
     var showMathRendering = defaults.showMathRendering;
@@ -1436,6 +1446,11 @@ class ExperienceSettings {
     final showRecentSessionsJson = json['showRecentSessions'];
     if (showRecentSessionsJson is bool) {
       showRecentSessions = showRecentSessionsJson;
+    }
+
+    final showSessionTabsOverrideJson = json['showSessionTabsOverride'];
+    if (showSessionTabsOverrideJson is bool) {
+      showSessionTabsOverride = showSessionTabsOverrideJson;
     }
 
     final taskListCollapsedJson = json['taskListCollapsed'];
@@ -1747,6 +1762,7 @@ class ExperienceSettings {
       showTaskList: showTaskList,
       showReviewChanges: showReviewChanges,
       showRecentSessions: showRecentSessions,
+      showSessionTabsOverride: showSessionTabsOverride,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
       showMathRendering: showMathRendering,

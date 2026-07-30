@@ -1174,6 +1174,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create a new conversation to start chatting';
 
   @override
+  String get chatSessionTabsToggle => 'Session tabs';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

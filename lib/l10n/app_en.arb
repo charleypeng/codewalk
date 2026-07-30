@@ -1447,6 +1447,10 @@
   "@chatSessionCreateConversationStart": {
     "description": "CodeWalk UI string — chatSessionCreateConversationStart"
   },
+  "chatSessionTabsToggle": "Session tabs",
+  "@chatSessionTabsToggle": {
+    "description": "CodeWalk UI string — chatSessionTabsToggle"
+  },
   "chatSessionsLength": "{length}",
   "@chatSessionsLength": {
     "description": "CodeWalk UI string — chatSessionsLength"

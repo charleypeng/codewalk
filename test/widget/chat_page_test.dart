@@ -17,6 +17,7 @@ import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
+import 'package:codewalk/domain/entities/persisted_session_tabs_state.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/entities/quota.dart';
@@ -66,6 +67,7 @@ import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:codewalk/presentation/widgets/session_context_menu.dart';
+import 'package:codewalk/presentation/widgets/session_tab_strip.dart';
 import 'package:codewalk/presentation/widgets/sidebar_selection_indicator.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
@@ -2742,7 +2744,13 @@ void main() {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
         await tester.pumpAndSettle();
+        await _ensureDesktopSessionTabsVisible(tester);
 
+        final sessionTabStrip = find.byKey(
+          const ValueKey<String>('session_tab_strip'),
+        );
+        expect(sessionTabStrip, findsOneWidget);
+        expect(tester.getSize(sessionTabStrip).width, 1000);
         expect(find.text('Thinking Process'), findsOneWidget);
         expect(
           find.byKey(
@@ -2752,6 +2760,19 @@ void main() {
           ),
           findsOneWidget,
         );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(
+            const ValueKey<String>('display_toggle_item_session_tabs'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(sessionTabStrip, findsNothing);
 
         await tester.tap(
           find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
@@ -4084,6 +4105,92 @@ void main() {
       expect(find.text('Replay chat tour'), findsOneWidget);
     });
 
+    testWidgets('mobile display toggle opts into the hidden session strip', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final now = DateTime.now();
+      final project = Project(
+        id: 'proj_mobile',
+        name: 'Mobile Project',
+        path: '/repo/mobile',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_mobile_tab',
+            workspaceId: 'default',
+            time: now,
+            title: 'Mobile Tab',
+            directory: project.path,
+          ),
+        ],
+      );
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'showSessionTabsOverride': false,
+        });
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        chatRepository: repository,
+        projectRepository: FakeProjectRepository(
+          currentProject: project,
+          projects: <Project>[project],
+        ),
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, settingsProvider: settingsProvider),
+      );
+      await tester.pumpAndSettle();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.single);
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.showSessionTabs, isFalse);
+      expect(
+        find.byKey(const ValueKey<String>('session_tab_strip')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mobile_overflow_item_display')),
+      );
+      await tester.pumpAndSettle();
+
+      final toggleFinder = find.byKey(
+        const ValueKey<String>('display_toggle_item_session_tabs'),
+      );
+      expect(tester.widget<CheckboxListTile>(toggleFinder).value, isFalse);
+
+      await tester.tap(toggleFinder);
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.showSessionTabs, isTrue);
+      expect(tester.widget<CheckboxListTile>(toggleFinder).value, isTrue);
+      expect(
+        find.byKey(const ValueKey<String>('session_tab_strip')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('pending tour flag survives startup retries', (
       WidgetTester tester,
     ) async {
@@ -4769,6 +4876,336 @@ void main() {
     expect(provider.projectProvider.currentProject?.id, 'proj_b');
     expect(expandIconFor('proj_a'), Symbols.expand_more);
     expect(expandIconFor('proj_b'), Symbols.expand_less);
+  });
+
+  testWidgets('session tab reopens its project and activates the target', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    addTearDown(() => SharedPreferences.setMockInitialValues({}));
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime.now();
+    final projectA = Project(
+      id: 'proj_a',
+      name: 'Project A',
+      path: '/repo/a',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+    final projectB = Project(
+      id: 'proj_b',
+      name: 'Project B',
+      path: '/repo/b',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+    );
+    final sessionA = ChatSession(
+      id: 'ses_a',
+      workspaceId: 'default',
+      time: now,
+      title: 'Session A',
+      directory: projectA.path,
+    );
+    final sessionB = ChatSession(
+      id: 'ses_b',
+      workspaceId: 'default',
+      time: now,
+      title: 'Session B',
+      directory: projectB.path,
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    await localDataSource.saveCurrentProjectId(
+      projectA.id,
+      serverId: 'srv_test',
+    );
+    await localDataSource.saveOpenProjectIdsJson(
+      jsonEncode(<String>[projectA.id]),
+      serverId: 'srv_test',
+    );
+    await localDataSource.saveSessionTabsStateJson(
+      PersistedSessionTabsState(
+        open: <PersistedSessionTab>[
+          PersistedSessionTab(
+            directory: projectA.path,
+            projectId: projectA.id,
+            sessionId: sessionA.id,
+            title: sessionA.title!,
+            lastOpenedAtMs: now.millisecondsSinceEpoch,
+            serverUpdatedAtMs: now.millisecondsSinceEpoch,
+          ),
+          PersistedSessionTab(
+            directory: projectB.path,
+            projectId: projectB.id,
+            sessionId: sessionB.id,
+            title: sessionB.title!,
+            lastOpenedAtMs: now.millisecondsSinceEpoch,
+            serverUpdatedAtMs: now.millisecondsSinceEpoch,
+          ),
+        ],
+      ).encode(),
+      serverId: 'srv_test',
+    );
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[sessionA, sessionB],
+    );
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      chatRepository: repository,
+      projectRepository: FakeProjectRepository(
+        currentProject: projectA,
+        projects: <Project>[projectA, projectB],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+    await provider.loadSessions();
+    await provider.selectSession(
+      provider.sessions.singleWhere((session) => session.id == sessionA.id),
+    );
+    await tester.pumpAndSettle();
+    await _ensureDesktopSessionTabsVisible(tester);
+
+    final identityB = SessionTabIdentity(
+      serverId: 'srv_test',
+      directory: projectB.path,
+      sessionId: sessionB.id,
+    );
+    final stripFinder = find.byKey(const ValueKey<String>('session_tab_strip'));
+    expect(stripFinder, findsOneWidget);
+    expect(tester.getSize(stripFinder).width, 1000);
+    expect(
+      provider.projectProvider.openProjectIds,
+      isNot(contains(projectB.id)),
+    );
+    repository.getSessionsDelay = () =>
+        Future<void>.delayed(const Duration(seconds: 1));
+
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_activate_${sessionTabIdentityKey(identityB)}',
+        ),
+      ),
+    );
+    await _pumpSessionTabNavigation(tester);
+
+    expect(provider.projectProvider.currentProject?.id, projectB.id);
+    expect(provider.projectProvider.openProjectIds, contains(projectB.id));
+    expect(provider.currentSession?.id, sessionB.id);
+    expect(
+      provider.sessionTabs
+          .singleWhere((tab) => tab.identity == identityB)
+          .isSelected,
+      isTrue,
+    );
+    expect(repository.lastGetSessionsDirectory, projectB.path);
+  });
+
+  testWidgets('missing session tab target restores prior project and session', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    addTearDown(() => SharedPreferences.setMockInitialValues({}));
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime.now();
+    final projectA = Project(
+      id: 'proj_a',
+      name: 'Project A',
+      path: '/repo/a',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+    final projectB = Project(
+      id: 'proj_b',
+      name: 'Project B',
+      path: '/repo/b',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+    );
+    final sessionA = ChatSession(
+      id: 'ses_a',
+      workspaceId: 'default',
+      time: now,
+      title: 'Session A',
+      directory: projectA.path,
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    await localDataSource.saveCurrentProjectId(
+      projectA.id,
+      serverId: 'srv_test',
+    );
+    await localDataSource.saveOpenProjectIdsJson(
+      jsonEncode(<String>[projectA.id]),
+      serverId: 'srv_test',
+    );
+    await localDataSource.saveSessionTabsStateJson(
+      PersistedSessionTabsState(
+        open: <PersistedSessionTab>[
+          PersistedSessionTab(
+            directory: projectA.path,
+            projectId: projectA.id,
+            sessionId: sessionA.id,
+            title: sessionA.title!,
+            lastOpenedAtMs: now.millisecondsSinceEpoch,
+            serverUpdatedAtMs: now.millisecondsSinceEpoch,
+          ),
+          PersistedSessionTab(
+            directory: projectB.path,
+            projectId: projectB.id,
+            sessionId: 'ses_missing',
+            title: 'Missing Session',
+            lastOpenedAtMs: now.millisecondsSinceEpoch,
+            serverUpdatedAtMs: now.millisecondsSinceEpoch,
+          ),
+        ],
+      ).encode(),
+      serverId: 'srv_test',
+    );
+    final repository = FakeChatRepository(sessions: <ChatSession>[sessionA]);
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      chatRepository: repository,
+      projectRepository: FakeProjectRepository(
+        currentProject: projectA,
+        projects: <Project>[projectA, projectB],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.single);
+    await tester.pumpAndSettle();
+    await _ensureDesktopSessionTabsVisible(tester);
+
+    final missingIdentity = SessionTabIdentity(
+      serverId: 'srv_test',
+      directory: projectB.path,
+      sessionId: 'ses_missing',
+    );
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_activate_${sessionTabIdentityKey(missingIdentity)}',
+        ),
+      ),
+    );
+    await _pumpSessionTabNavigation(tester);
+
+    expect(provider.projectProvider.currentProject?.id, projectA.id);
+    expect(provider.currentSession?.id, sessionA.id);
+    expect(
+      provider.sessionTabs
+          .singleWhere((tab) => tab.identity.sessionId == sessionA.id)
+          .isSelected,
+      isTrue,
+    );
+    expect(
+      find.text('Conversation is not available for this project yet'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('active tab close selects right then enters local New Chat', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime.now();
+    final project = Project(
+      id: 'proj_a',
+      name: 'Project A',
+      path: '/repo/a',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+    final sessionA = ChatSession(
+      id: 'ses_a',
+      workspaceId: 'default',
+      time: now,
+      title: 'Session A',
+      directory: project.path,
+    );
+    final sessionB = ChatSession(
+      id: 'ses_b',
+      workspaceId: 'default',
+      time: now,
+      title: 'Session B',
+      directory: project.path,
+    );
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[sessionA, sessionB],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      chatRepository: repository,
+      projectRepository: FakeProjectRepository(
+        currentProject: project,
+        projects: <Project>[project],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+    await provider.loadSessions();
+    await provider.selectSession(
+      provider.sessions.singleWhere((session) => session.id == sessionA.id),
+    );
+    await tester.pumpAndSettle();
+    await _ensureDesktopSessionTabsVisible(tester);
+
+    final identityA = SessionTabIdentity(
+      serverId: 'srv_test',
+      directory: project.path,
+      sessionId: sessionA.id,
+    );
+    final identityB = SessionTabIdentity(
+      serverId: 'srv_test',
+      directory: project.path,
+      sessionId: sessionB.id,
+    );
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_close_${sessionTabIdentityKey(identityA)}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(provider.currentSession?.id, sessionB.id);
+    expect(
+      provider.sessionTabs.map((tab) => tab.identity),
+      <SessionTabIdentity>[identityB],
+    );
+    expect(
+      repository.sessions.map((session) => session.id),
+      contains(sessionA.id),
+    );
+
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_close_${sessionTabIdentityKey(identityB)}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(provider.currentSession, isNull);
+    expect(provider.sessionTabs, isEmpty);
+    expect(
+      repository.sessions.map((session) => session.id),
+      containsAll(<String>[sessionA.id, sessionB.id]),
+    );
   });
 
   testWidgets('closed project can be archived from closed list', (
@@ -19841,6 +20278,30 @@ void main() {
 Future<void> _pumpUiFrames(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 250));
+}
+
+Future<void> _ensureDesktopSessionTabsVisible(WidgetTester tester) async {
+  if (find
+      .byKey(const ValueKey<String>('session_tab_strip'))
+      .evaluate()
+      .isNotEmpty) {
+    return;
+  }
+  await tester.tap(
+    find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.byKey(const ValueKey<String>('display_toggle_item_session_tabs')),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpSessionTabNavigation(WidgetTester tester) async {
+  for (var i = 0; i < 20; i += 1) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.pumpAndSettle();
 }
 
 Future<void> _pumpPostOnboardingTourStart(WidgetTester tester) async {

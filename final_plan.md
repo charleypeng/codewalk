@@ -2,10 +2,9 @@
 
 ## Status
 
-Ready for implementation.
-
-No production code has been changed for issue #113. This plan supersedes the
-completed issue #122 plan that previously occupied this file.
+Implementation and documentation are complete; the code steps were reviewed,
+and focused checks plus the stable `make check` gate pass. Consolidation and
+delivery are in progress.
 
 - Delivery branch: `main`.
 - Temporary execution branch: `agent/issue-113-session-tabs-20260730`.

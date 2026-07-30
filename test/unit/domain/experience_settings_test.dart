@@ -3,6 +3,55 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('session tabs visibility serialization', () {
+    test('defaults to a platform-resolved override', () {
+      final settings = ExperienceSettings.defaults();
+
+      expect(settings.showSessionTabsOverride, isNull);
+      expect(settings.toJson(), isNot(contains('showSessionTabsOverride')));
+    });
+
+    test('round-trips explicit visibility overrides', () {
+      for (final value in <bool>[true, false]) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          showSessionTabsOverride: () => value,
+        );
+
+        expect(settings.toJson()['showSessionTabsOverride'], value);
+        expect(
+          ExperienceSettings.fromJson(
+            settings.toJson(),
+          ).showSessionTabsOverride,
+          value,
+        );
+      }
+    });
+
+    test('copyWith can clear the visibility override', () {
+      final settings = ExperienceSettings.defaults()
+          .copyWith(showSessionTabsOverride: () => true)
+          .copyWith(showSessionTabsOverride: () => null);
+
+      expect(settings.showSessionTabsOverride, isNull);
+      expect(settings.toJson(), isNot(contains('showSessionTabsOverride')));
+    });
+
+    test('ignores null and invalid persisted overrides', () {
+      expect(
+        ExperienceSettings.fromJson(const <String, dynamic>{
+          'showSessionTabsOverride': null,
+        }).showSessionTabsOverride,
+        isNull,
+      );
+      expect(
+        ExperienceSettings.fromJson(const <String, dynamic>{
+          'showSessionTabsOverride': 'yes',
+        }).showSessionTabsOverride,
+        isNull,
+      );
+    });
+  });
+
   group('session attention presentation serialization', () {
     test('defaults new and migrated settings to off', () {
       expect(

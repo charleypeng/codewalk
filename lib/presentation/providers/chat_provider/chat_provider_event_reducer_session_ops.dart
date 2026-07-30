@@ -14,6 +14,8 @@ extension _ChatProviderEventReducerSessionOps on ChatProvider {
     );
     try {
       _applyChatEventInner(event);
+      _updateSessionTabSignalsForEvent(event, contextKey: _activeContextKey);
+      _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
       task.end();
     } catch (error, stackTrace) {
       task.end(status: 'error', error: error, stackTrace: stackTrace);

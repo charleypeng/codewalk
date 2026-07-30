@@ -418,6 +418,7 @@ extension _ChatPageChrome on _ChatPageState {
       _DisplayToggleAction.taskList => context.l10n.settingsAppearanceTaskList,
       _DisplayToggleAction.reviewChanges => context.l10n.chatReviewChanges,
       _DisplayToggleAction.recentSessions => context.l10n.chatRecentSessions,
+      _DisplayToggleAction.sessionTabs => context.l10n.chatSessionTabsToggle,
       _DisplayToggleAction.composerTips =>
         context.l10n.settingsAppearanceComposerTips,
       _DisplayToggleAction.replayTour =>
@@ -816,6 +817,13 @@ extension _ChatPageChrome on _ChatPageState {
                         ),
                       );
                       break;
+                    case _DisplayToggleAction.sessionTabs:
+                      unawaited(
+                        settingsProvider.setShowSessionTabsOverride(
+                          !settingsProvider.showSessionTabs,
+                        ),
+                      );
+                      break;
                     case _DisplayToggleAction.composerTips:
                       unawaited(
                         settingsProvider.setShowComposerTips(
@@ -891,6 +899,16 @@ extension _ChatPageChrome on _ChatPageState {
                         _displayToggleLabel(
                           _DisplayToggleAction.recentSessions,
                         ),
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_session_tabs',
+                      ),
+                      value: _DisplayToggleAction.sessionTabs,
+                      checked: settingsProvider.showSessionTabs,
+                      child: Text(
+                        _displayToggleLabel(_DisplayToggleAction.sessionTabs),
                       ),
                     ),
                     CheckedPopupMenuItem<_DisplayToggleAction>(

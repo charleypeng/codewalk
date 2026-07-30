@@ -2129,6 +2129,12 @@ abstract class AppLocalizations {
   /// **'Create a new conversation to start chatting'**
   String get chatSessionCreateConversationStart;
 
+  /// CodeWalk UI string — chatSessionTabsToggle
+  ///
+  /// In en, this message translates to:
+  /// **'Session tabs'**
+  String get chatSessionTabsToggle;
+
   /// CodeWalk UI string — chatSessionsLength
   ///
   /// In en, this message translates to:

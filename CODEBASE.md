@@ -11,6 +11,7 @@
 - Visual style layer (issue #86): `VisualStyle` (`classic` / `refined`) persisted in `ExperienceSettings`, exposed via `SettingsProvider`, and propagated through `AppVisualStyleTokens` `ThemeExtension` so chat surfaces can consume shape/surface tokens while `OpenCodeThemeTokens` continue to drive markdown/syntax palettes. New installs default to `VisualStyle.refined`; legacy persisted JSON missing the `visualStyle` key falls back to `VisualStyle.classic` for backward compatibility.
 - LaTeX math rendering (`$...$` and `$$...$$`) supported in chat messages via `flutter_math_fork` with custom markdown syntaxes and styled fallback on parse failure.
 - Session attention adds encrypted completion snapshots, root-session aggregation, and Android, desktop, and iOS presentation hosts.
+- Session tabs persist server-scoped open/closed session state and provide cross-project chat navigation with attention and busy indicators.
 
 ## Folder Structure
 
@@ -36,11 +37,14 @@ codewalk/
 │   │   ├── tailscale/                    # Tailscale transport: service (IO/stub), node state, Dio adapter
 │   │   └── utils/                       # Core utilities (path, timeline search)
 │   ├── data/                           # Data layer: datasources, API/storage models, repositories
+│   │   ├── datasources/                # Remote/local IO boundaries
+│   │   │   └── app_local_datasource.dart # SharedPreferences-backed local state, including server-scoped session tabs
 │   │   └── session_attention/          # Encrypted completion snapshot store and conditional atomic file storage
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
+│   │   ├── entities/persisted_session_tabs_state.dart # Versioned open/closed session-tab payload models
 │   │   └── entities/session_attention_overlay/ # Session-attention identity, item, aggregate, and transport models
 │   ├── l10n/                           # Flutter gen_l10n ARB files (14 locales) and generated delegates
-│   │   ├── app_en.arb                  # English source ARB (1393 UI keys with metadata)
+│   │   ├── app_en.arb                  # English source ARB (1394 UI keys with metadata)
 │   │   ├── app_*.arb                   # Translation ARBs (ar, bn, de, es, fr, hi, it, ja, ko, pt, ru, ur, zh)
 │   │   └── generated/                  # Auto-generated AppLocalizations classes via flutter gen-l10n
 │   └── presentation/                   # UI, state providers, runtime services
@@ -50,10 +54,12 @@ codewalk/
 │       │   ├── chat_page.dart          # Chat orchestrator/facade
 │       │   ├── chat_page_types_part.dart # Shared intents, configurations, and keys (incl. scoped Selector/Selector2 build keys used by desktop chat body to avoid full shell rebuilds on composer selection changes)
 │       │   ├── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
-│       │   └── chat_page/              # ChatPage decomposed clusters (24 modules)
+│       │   └── chat_page/              # ChatPage decomposed clusters (26 modules)
+│       │       └── chat_page_session_tabs.dart # Cross-project session-tab activation, rollback, and close fallback
 │       ├── providers/                  # App/Chat/Project/Settings state orchestration
 │       │   ├── chat_provider.dart      # Chat provider orchestrator/facade
-│       │   └── chat_provider/          # ChatProvider decomposed clusters (19 modules)
+│       │   └── chat_provider/          # ChatProvider decomposed clusters (22 modules)
+│       │       └── chat_provider_session_tab_ops.dart # Session-tab load/write, reconciliation, and lifecycle hooks
 │       ├── widgets/
 │       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_message/            # ChatMessageWidget decomposed part renderers (consume visualStyleTokens — issue #86)
@@ -61,7 +67,8 @@ codewalk/
 │       │   ├── chat_input/             # ChatInput decomposed clusters (8 modules; consume visualStyleTokens — issue #86)
 │       │   ├── math_expression_widget.dart # LaTeX math renderer with parse-failure styled fallback
 │       │   ├── codewalk_terminal_extra_keys.dart # Native Android/iOS terminal extra-key widget and controller
-│       │   └── session_attention_overlay/ # Shared bubble/panel overlay widget and controller
+│       │   ├── session_attention_overlay/ # Shared bubble/panel overlay widget and controller
+│       │   └── session_tab_strip.dart # Responsive full-width session-tab strip with project, attention, busy, overflow, focus, and semantics support
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, read-aloud/TTS, terminal, etc.)
 │       │   ├── session_attention/       # Attention coordinator, completion resolver, host contract/protocol, and platform entrypoints
 │       │   └── tts/                    # Read-aloud TTS backend contracts, adapters, fresh-install default resolver, generated-audio player, and text extraction
@@ -111,6 +118,7 @@ lib/presentation/pages/logs_page.dart           # In-app App Logs surface; gated
 
 ```text
 lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers, TailscaleService, WorkspaceFileOperationsService, TtsApiKeyStorage, and ReadAloudService TTS backends; injects SettingsProvider's nativeReadAloudAvailabilityProbe from ReadAloudService.isProviderAvailable(ReadAloudProvider.native); wires tailscaleService into AppProvider factory; _loadLocalConfig applies tailscaleEnabled on active profile
+lib/core/constants/app_constants.dart             # Shared persistence keys, including `AppConstants.sessionTabsStateKey` (`session_tabs_state`)
 lib/core/i18n/app_locales.dart                     # Locale registry: 14 supported locales, resolution callback, native-name metadata, PT_BR normalization
 lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
 lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
@@ -136,13 +144,14 @@ lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/provide
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures; SSE backoff loop fix — streamAliveStart enforces 5-second threshold before resetting reconnect counter, ±20% jitter to prevent thundering-herd
   └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc); structured named error extraction (`_extractServerMessage`, `_extractValidationErrors`, `_extractNamedServerError`, `_extractTypedDetails`) preserves typed upstream error names/codes/details in surfaced failures
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
-lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, SharedPreferences-backed caches, credentials, favorite models, session composer drafts, and per-agent selection memory
+lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, SharedPreferences-backed caches, credentials, favorite models, session composer drafts, per-agent selection memory, and server-scoped session-tab state
   └── app_local_datasource_storage_helpers.dart # Secure storage, scoped SharedPreferences keys, and large-cache helper wrappers (part of app_local_datasource.dart)
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
   └── quota_remote_datasource.part.js.dart # JS payload generation part file: shared helpers + shell probes for Claude, OpenRouter, Codex, Google, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, MiniMax CN, z.ai, Cursor, and Ollama Cloud; `_supportedAuthKeys` also recognizes newer provider aliases for diagnostics
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
+lib/domain/entities/persisted_session_tabs_state.dart # Versioned persisted open/closed session-tab payload and model entities
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle, Tailscale transport orchestration; supportsTailscale (Android/iOS/Linux/macOS), _applyTailscaleTransport() drives per-profile Tailscale node lifecycle (upForProfile/auth URL launch/down), swaps Dio adapter via TailscaleHttpAdapter, propagates active adapter to health-check Dio via createHealthCheckDio; tailscaleEnabled in addServerProfile/updateServerProfile CRUD; exposes reactive Tailscale state getters: tailscaleState, tailscaleNodeState, tailscaleAuthUrl, tailscaleMessage, tailscaleNeedsAuth, tailscaleNeedsMachineAuth, and authenticateTailscale() method; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out; production health checks probe `GET /global/health` and fall back to `GET /path` on `DioException` (`_checkServerHealth` records OAuth challenges from either response); constructor accepts optional `serverHealthProbe` and `localServerHealthProbe` test seams that bypass the production endpoints when supplied
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence; exposes file-name, file-content, and workspace-symbol search for Quick Open and composer mentions
 lib/presentation/providers/project_icon_provider.dart # Client-owned project icon orchestration (ADR-040, issue #73): loads cached icons from `ProjectIconStore`, runs discovery via `ProjectIconDiscoveryService`, and exposes per-project `iconFor`/`isLoading`/`isDiscovering` state; `loadStoredIcon(project)` resolves cached/default icons only (used by closed project rows), `autoDiscoverIcon(project)` triggers one-shot discovery after loading stored state (used by open/active project surfaces; tracks per-key attempts via `_autoDiscoveryAttemptedKeys` to avoid repeats), and `discoverIcon(project)` is the lower-level discovery/save operation invoked by `autoDiscoverIcon(project)` and retained for provider orchestration/testing (not a UI button trigger); OpenCode project payloads remain authoritative/unchanged
@@ -155,7 +164,7 @@ lib/presentation/services/project_icon_discovery_service.dart       # Conditiona
 lib/presentation/services/project_icon_discovery_service_base.dart  # Abstract `ProjectIconDiscoveryService` contract: `isSupported` flag, `discover(Project)` returning `ProjectIconDiscoveryResult`; never mutates the project or any global state
 lib/presentation/services/project_icon_discovery_service_io.dart    # IO implementation: bounded IO icon discovery invoked by `ProjectIconProvider` auto-discovery, with existing local/remote file endpoint discovery and priority rules — Tauri `src-tauri/icons/*`, Electron direct `build/icon.*`, Flutter/React Native/native Apple `AppIcon.appiconset/*.png`, Flutter Windows `windows/runner/resources/app_icon.ico`, Flutter Linux `linux/runner/resources/app_icon.png`, Android `mipmap-*/ic_launcher*.png`, common app assets (`icon.*`, `app_icon.*`, `logo.*`), then web favicons/sized web icons; supports PNG/JPEG/SVG/WebP/ICO, 5 MB cap, shortest relative path ranking, skips heavy/generated dirs (`.git`, `node_modules`, `dist`, `build`, `.dart_tool`, `.gradle`, `.next`, `.turbo`, `.cache`, `coverage`, `tmp`, `logs`, `pods`, `ephemeral`) while checking `build/icon.*` directly without traversing build output, and converts ICO to PNG via the `image` package
 lib/presentation/services/project_icon_discovery_service_stub.dart  # Non-IO platforms: returns `unsupportedPlatform`; `isSupported == false`
-lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, **Visual style**, provider-aware read-aloud settings (provider, voice id/locale, model, base URL, response format), session-attention presentation/host lifecycle, fresh-install read-aloud defaults via nativeReadAloudAvailabilityProbe, composer tips visibility, sounds, update checks, complete OpenCode shared settings coverage, and debug logging toggles; exposes `dynamicColorAvailable`; manages update install lifecycle and logging preference sync
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, **Visual style**, nullable session-tab visibility override with platform/web defaults, provider-aware read-aloud settings (provider, voice id/locale, model, base URL, response format), session-attention presentation/host lifecycle, fresh-install read-aloud defaults via nativeReadAloudAvailabilityProbe, composer tips visibility, sounds, update checks, complete OpenCode shared settings coverage, and debug logging toggles; exposes `dynamicColorAvailable`; manages update install lifecycle and logging preference sync
   └── settings_provider_opencode_defaults.dart # Extension for OpenCode shared defaults (part of settings_provider.dart; see commit 8759defc)
   └── settings_provider_update_install.dart # Extension for update check and install lifecycle (part of settings_provider.dart; see commit 8759defc)
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch; Codex single-window label preserved using provider name instead of raw API label (guarded by `result.providerId != 'codex'`)
@@ -237,6 +246,7 @@ lib/presentation/pages/settings/sections/servers_settings_section.dart # Server 
 lib/presentation/pages/settings/sections/speech_settings_section.dart # Speech settings UI: STT engine/model controls plus read-aloud provider selection, secure API-key entry, and voice/model/base-URL fields
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; app/window lifecycle changes keep ReadAloudService playback untouched; guards startup (checkConnection/loadSessions) against no-active-server; holds scroll state (follow mode, current scroll owner, viewport restore targets); holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path; desktop chat body uses scoped Selector/Selector2 build keys (chat content, session panel, file pane, utility pane, composer controls) so composer selection changes skip full shell rebuilds; `_ChatPageState` constants gate scroll/FAB/final-reveal behavior — `_olderMessagesTopLoadThreshold` (72), `_olderMessagesTopLoadArmThreshold` (220), `_jumpToFirstFabThreshold` (360), `_scrollToBottomEpsilon` (1 px), `_maxScrollToBottomPasses` (3), `_scrollToBottomFirstPassDuration`/`_scrollToBottomNextPassDuration` (both `Duration.zero` for instant layout-anchor follow); final-assistant reveal constants `_finalAssistantRevealDuration` (220 ms), `_finalAssistantRevealAlignment` (0.4), `_maxFinalAssistantRevealAttempts` (8), `_returnLatestRevealAlignment` (0.0), `_maxReturnLatestRevealAttempts` (8); viewport helper `_isLatestAssistantMessageVisibleInViewport` resolves latest revealable assistant via reveal measurement/anchor keys and viewport geometry
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
+  └── chat_page/chat_page_session_tabs.dart # ChatPage extension for cross-project activation, rollback after failed navigation, and close fallback handling
   └── chat_page/chat_page_widgets.dart # UI components part of chat_page.dart: _ComposerStatusLanternText, _ComposerStatusLanternTextState, _DirectoryPickerSheet, _DirectoryPickerSheetState
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; accepts appDensity parameter for density-aware spacing; speech controller resolves Native, Sherpa, Moonshine, Parakeet, and SenseVoice backends and routes model-required setup dialogs accordingly; consumes `theme.visualStyleTokens` (issue #86) for composer surface/control radius/border tokens
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet, provider-aware sanitized read-aloud controls with loading state and Settings > Speech long-press routing, compact collapsed-copy variants, task navigation callbacks, inline undo/revert, clickable file paths, and Mermaid routing; consumes `theme.visualStyleTokens` (issue #86)
@@ -246,6 +256,7 @@ lib/presentation/widgets/project_icon.dart # `ProjectIcon` widget renders cached
 lib/presentation/widgets/session_diff_viewer.dart # Rich diff review surface: DiffViewMode enum (summary/unified/split), 3 view toggles, line number gutters, per-line syntax highlighting, lazy hunk collapse/expand keyed by file/hunk identity, selected-file preservation across diff refreshes, onFileTap jump action (wired at all 3 call sites)
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/session_context_menu.dart # Shared session popup/context menu entries, row gesture wrapper, and dispatch helpers for main sidebar sessions and Recent sessions tiles
+lib/presentation/widgets/session_tab_strip.dart # Responsive full-width session-tab strip with project icons, attention and busy visuals, horizontal overflow, selected-tab focus, and semantics
 lib/presentation/widgets/sidebar_selection_indicator.dart # Thin primary accent indicator reused by selected sidebar rows without painting row-wide backgrounds
 lib/presentation/widgets/file_tree_context_menu.dart # Desktop secondary-click / mobile long-press context menu region (`FileTreeContextMenuActionType` newFile/newFolder/rename/delete/copyPath/refresh) wrapping `showMenu` with overlay-relative positioning; `fileTreeActionIcon` maps actions to Material Symbols (note_add/create_new_folder/drive_file_rename_outline/delete/content_copy/refresh_rounded); destructive styling on `delete`
 lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; responsive vertical tile padding, shared session context menu, transparent selected-row accent affordance; consumes `Theme.of(context).visualStyleTokens` (issue #86) for refined surfaces and rounded tile radius
@@ -266,11 +277,11 @@ lib/presentation/widgets/quota/pace_label.dart               # Pace % chip: desk
 lib/presentation/pages/chat_page.dart
 lib/presentation/pages/chat_page_types_part.dart   # Shared intents, configurations, and keys including `_ViewportBuildKey`, `_AssistantWorkCompactionDecision`, and scoped desktop Selector/Selector2 build-key typedefs so composer selection changes skip full ChatProvider rebuilds
 lib/presentation/pages/chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc); `_FileExplorerContextState` carries `WorkspaceFileOperationsCapabilities?` plus `fileOperationCapabilitiesLoading` flag and `fileOperationCapabilitiesLoad` Future (issue #90), `rootDirectory`, `directoryChildren`, `expandedDirectories`, `loadingDirectories`, `directoryErrors`, `tabsByPath`, `editorDraftsByPath` (issue #90), `FileTabSelectionState`, line-selection maps (`selectedLinesByPath`, `lastSelectedLineByPath`), `pendingScrollToLine`, `rootLoadScheduled`, and `treeError`; `_FileEditorDraftState` (issue #90) wraps a per-path `CodeLineEditingController.fromText` (built with `CodeLineOptions(lineBreak: ...)` so the original LF / CRLF / CR line-break style is preserved via `_detectTextLineBreak`) + `CodeScrollController`, tracks `savedContent`, `isSaving`, `saveErrorMessage`, exposes `isDirty`, and provides `markSavedContent`/`replaceSavedContent`/`dispose`; `resetForRoot(nextRootDirectory)` clears capabilities + tab selection + drafts on context switch (issues #89 and #90)
-lib/presentation/providers/chat_provider.dart
+lib/presentation/providers/chat_provider.dart        # ChatProvider facade and owner of session-tab state and persistence orchestration
 lib/presentation/widgets/chat_input_widget.dart
 ```
 
-### `lib/presentation/pages/chat_page/` clusters (current)
+### `lib/presentation/pages/chat_page/` clusters (current, 26 files)
 
 ```text
 chat_page_lifecycle.dart                           # App/window lifecycle, foreground policy, resume refresh, and background permission context; does not stop read-aloud on lifecycle state changes
@@ -297,6 +308,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 chat_page_widgets.dart                       # UI components part of chat_page.dart: _ComposerStatusLanternText, _ComposerStatusLanternTextState, _DirectoryPickerSheet, _DirectoryPickerSheetState
 chat_page_search.dart                   # Timeline full-text search: inline AppBar input with 300ms debounce, case-insensitive text/reasoning matching, message-level next/previous navigation, and transient TextSpan highlighting; uses dedicated _ScrollOwner.searchResult for scroll coordination
 chat_page_mobile_overflow.dart                    # Renders pinned and overflow actions for mobile app bar, including display toggles, search, and terminal panel trigger
+chat_page_session_tabs.dart                        # Cross-project session-tab activation, rollback, and close fallback
 ```
 
 ### Chat message widgets
@@ -311,7 +323,7 @@ lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart # Reorders
 lib/presentation/utils/tool_presentation.dart                      # Shared tool label/icon formatting reused by chat bubbles and the fixed composer live-progress surface
 ```
 
-### `lib/presentation/providers/chat_provider/` clusters (current)
+### `lib/presentation/providers/chat_provider/` clusters (current, 22 files)
 
 ```text
 chat_provider_core.dart
@@ -335,6 +347,7 @@ chat_provider_auto_title_ops.dart               # Auto-title execution (main/roo
 chat_provider_error_policy.dart
 chat_provider_cache_persistence_ops.dart
 chat_provider_abort_policy_ops.dart / chat_provider_session_attention_ops.dart
+chat_provider_session_tab_ops.dart              # ChatProvider-owned generation-safe load/write, recency/order/tombstone/attention reconciliation, lifecycle hooks, and project-history cleanup
 ```
 
 ### `lib/presentation/widgets/chat_input/` clusters (current)
@@ -380,7 +393,7 @@ lib/presentation/widgets/codewalk_terminal_extra_keys.dart      # Core native An
 third_party/xterm/lib/src/terminal_view.dart                    # Vendored `TerminalView` opt-in raw committed-text interception callback; absent/false keeps the existing input and Windows printable/AltGr fallback behavior unchanged
 lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start, close/minimize/maximize actions, persisted panel height/maximize handling, and fallback info sheet; passes the parent keyboard inset because Scaffold consumes descendant `MediaQuery.viewInsets`, preserving maximize/restore and PTY reuse
 lib/presentation/pages/chat_page/chat_page_timeline_builder.dart # Main chat workspace layout: renders terminal full-width below the constrained chat column and hides composer-adjacent controls on compact/mobile while terminal is visible
-lib/domain/entities/experience_settings.dart                    # Shared experience settings: terminal state, provider-aware read-aloud settings (`ReadAloudProvider`, voice id/locale, model, base URL, response format), debug logging toggles, and **visual style**; `fromJson` keeps legacy visual/logging/read-aloud payloads compatible
+lib/domain/entities/experience_settings.dart                    # Shared experience settings: terminal state, nullable session-tab visibility override (resolved with platform/web defaults by SettingsProvider), provider-aware read-aloud settings (`ReadAloudProvider`, voice id/locale, model, base URL, response format), debug logging toggles, and **visual style**; `fromJson` keeps legacy visual/logging/read-aloud payloads compatible
 lib/presentation/providers/settings_provider.dart               # In-memory + persisted mutators for terminal visibility, height, and maximize state
   └── settings_provider_opencode_defaults.dart # Shared defaults (part of settings_provider.dart; see commit 8759defc)
   └── settings_provider_update_install.dart # Update check / install lifecycle (part of settings_provider.dart; see commit 8759defc)
@@ -403,6 +416,9 @@ lib/data/datasources/      # Remote/local IO boundaries, including SharedPrefere
 ```text
 lib/data/datasources/app_remote_datasource.dart
   - /path, /app (fallback), /app/init (fallback), /provider, /agent, /config; scoped discovery/config calls add both directory and workspace query params; implements directory-only and unscoped retries for discovery contracts; `/agent` parsing handles multiple upstream response formats
+
+lib/data/datasources/app_local_datasource.dart
+  - Server-scoped `AppConstants.sessionTabsStateKey` (`session_tabs_state`) persistence through `getSessionTabsStateJson` / `saveSessionTabsStateJson`, backed by the shared-preferences scoped-key helper
 
 lib/data/datasources/chat_remote_datasource.dart
   └── chat_remote_datasource_helpers.dart # Command, send, error, tool, and reasoning helpers (part of chat_remote_datasource.dart; see commit 8759defc)
@@ -461,12 +477,13 @@ test/unit/presentation/session_attention_delay_coordinator_test.dart # Attention
 test/unit/presentation/session_attention_completion_resolver_test.dart # Completion snapshot resolution coverage
 test/unit/presentation/session_attention_host_protocol_test.dart # Versioned host snapshot and command-protocol coverage
 test/unit/domain/experience_settings_test.dart # `ExperienceSettings` JSON round-trip covers `visualStyle` and provider-aware read-aloud settings (`ReadAloudProvider`, voice/model/baseUrl/format)
+test/unit/domain/persisted_session_tabs_state_test.dart # Versioned persisted open/closed session-tab payload round trips and invalid-input handling
 test/unit/auth/                        # OAuth auth unit tests
 test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare Managed OAuth flow, PKCE S256 challenge/verifier generation, local callback server lifecycle, credential caching/refresh, isOAuthChallenge detection, trusted endpoint validation, cross-profile isolation
 test/unit/auth/oauth_token_storage_test.dart # OAuth token storage tests: save/load/delete credential, hasValidCredential, OAuthTokenStorageException backend error handling, cross-profile key isolation
 test/unit/auth/tts_api_key_storage_test.dart # TTS API-key storage tests: trim/save/load/delete, per-provider isolation, secure-storage exception mapping
 test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth, sticky OpenCode `X-Session-Id` echo (echoed on later requests, cleared on base URL change, cleared on `clearAuth`)
-test/unit/providers/                   # ChatProvider split tests (8 files, parallelized with -j 12); `settings_provider_test.dart` covers visual style, provider-aware read-aloud preference persistence, and fresh-install read-aloud default/probe preservation behavior
+test/unit/providers/                   # ChatProvider split tests (9 files, parallelized with -j 12); `settings_provider_test.dart` covers visual style, provider-aware read-aloud preference persistence, and fresh-install read-aloud default/probe preservation behavior
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
   chat_provider_messaging_test.dart    #   15 tests — sessions, sendMessage, draft restore; delta-like SWR fallback coverage
@@ -475,6 +492,7 @@ test/unit/providers/                   # ChatProvider split tests (8 files, para
   chat_provider_project_test.dart      #   13 tests — permissions, questions, project scope, favorites; project-switch SWR behavior + draft isolation + dirty-context cache retention
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
   chat_provider_selection_fallback_test.dart # Message-derived selection fallback tests (Feature 7): override isExplicit semantics, _restoreSelectionFromMessages() recovery paths, stale override → message fallback, non-explicit override → message fallback precedence
+  chat_provider_session_tabs_test.dart # Session-tab load, reconciliation, persistence, tombstone, attention, and project-scope coverage
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
 test/unit/quota/                        # Quota/rate-limit unit tests (provider groups, TTL cache validation, shell fallback, pace utility)
 test/unit/services/                     # Platform and runtime service unit tests:
@@ -490,6 +508,7 @@ test/unit/services/                     # Platform and runtime service unit test
 test/unit/presentation/                 # Presentation-level service tests; includes `workspace_file_operations_service_test.dart` (issues #89 and #90) covering official tool-state parsing, malformed responses, shell quoting, capability probes, create/rename/delete session teardown, write-path validation, 48 KiB content chunking, and negotiated GNU/BSD/Python decoding; `app_theme_test.dart` (issue #86) covers `AppVisualStyleTokens.classic`/`refined` factories, theme-extension wiring through `AppTheme.lightFrom`/`darkFrom`, `withResponsiveSnackBars` shape switching, and the `ThemeData.visualStyleTokens` fallback getter
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, terminal mobile backspace simulation, Windows printable hardware key forwarding, Windows AltGr printable forwarding, AppShell update toast coverage in `app_shell_page_test.dart` with explicit teardown of ChatProvider/AppProvider/SettingsProvider in `finally` for clean run isolation, issue #86 Visual style coverage in `settings_page_test.dart` for the Appearance `SegmentedButton<VisualStyle>` (`settings_visual_style_segmented`) calling `setVisualStyle` and persisting `visualStyle: 'refined'`; `chat_message_widget_test.dart` and `chat_page_test.dart` were additionally run as regression suites to confirm no refined-surface regression on the chat surfaces, issue #89 file-tree coverage in `chat_page_test.dart` covering file-tree refresh, root New menu, new-file/new-folder dialogs, rename, delete confirmation + reconciliation, Quick Open lookup, and absolute/relative path resolution, and issue #90 editor coverage in `chat_page_test.dart` covering file-editor save from the open-files dialog, CRLF save round-trip, current-draft Add-to-chat via gutter selection, dirty-state preservation on save failure, dirty close-blocker, dirty relative-path rename blocker, and a `file editor opens empty text files as editable drafts` widget test that taps a known empty non-binary file and confirms the editor renders with the editable `CodeEditor`)
   session_attention_overlay_test.dart  # Shared bubble/panel ordering and action wiring, including disabled read-aloud
+  session_tab_strip_test.dart           # Session-tab strip activation, attention/busy visuals, overflow visibility, close fallback focus, and semantics coverage
   chat_message_widget_test.dart         #   Read-aloud button loading indicator and long-press Settings > Speech routing
   chat_page_test.dart                   #   ChatPage lifecycle regression keeps active/loading read-aloud alive across inactive/hidden/paused/resumed transitions; issue #122 integration coverage keeps mobile extra-key visibility and maximize/restore on the same PTY without overflow
 test/widget/codewalk_terminal_extra_keys_test.dart # Issue #122 terminal key sequences, one-shot modifiers, repeat lifecycle, focus, semantics, visibility, and compact layout
@@ -510,7 +529,7 @@ tool/release/changelog.py              # Changelog update/extract helper used by
 ## Internationalization (i18n)
 
 - Comprehensive localization with 14 supported languages: English (template), Arabic, Bengali, German, Spanish, French, Hindi, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Urdu, and Chinese (Simplified).
-- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, 1393 UI keys).
+- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, 1394 UI keys).
 - Generated `AppLocalizations` classes in `lib/l10n/generated/` provide type-safe translation accessors.
 - UI code uses `context.l10n.keyName` via the `L10nContext` extension (`lib/core/i18n/l10n_context.dart`).
 - Context-free services (tray, background tasks, notification planning) use the stabilized `L10nBridge.current` pattern (`lib/core/i18n/l10n_bridge.dart`) for context-free access to translations.

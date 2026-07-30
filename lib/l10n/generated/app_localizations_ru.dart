@@ -1186,6 +1186,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'Создайте новую беседу, чтобы начать общение';
 
   @override
+  String get chatSessionTabsToggle => 'Вкладки сессий';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

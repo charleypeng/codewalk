@@ -389,6 +389,7 @@ const englishTemplate = <String, String>{
   'chatSessionCreateConversationStart':
       'Create a new conversation to start chatting',
   'chatSessionsLength': '{length}',
+  'chatSessionTabsToggle': 'Session tabs',
   'chatSetUpServer': 'Set up server',
   'chatSettings': 'Settings',
   'chatShortcutsCloseApp': 'Close app using platform close behavior',
@@ -1986,6 +1987,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionConversations': 'لا توجد محادثات',
     'chatSessionCreateConversationStart': 'أنشئ محادثة جديدة لبدء الدردشة',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'علامات تبويب الجلسات',
     'chatSetUpServer': 'إعداد الخادم',
     'chatSettings': 'الإعدادات',
     'chatShortcutsCloseApp': 'إغلاق التطبيق باستخدام سلوك إغلاق المنصة',
@@ -3584,6 +3586,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'চ্যাটিং শুরু করতে একটি নতুন কথোপকথন তৈরি করুন',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'সেশন ট্যাব',
     'chatSetUpServer': 'সার্ভার সেট আপ করুন',
     'chatSettings': 'সেটিংস',
     'chatShortcutsCloseApp': 'প্ল্যাটফর্ম আচরণ ব্যবহার করে অ্যাপ বন্ধ করুন',
@@ -5241,6 +5244,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'Erstellen Sie eine neue Konversation, um mit dem Chatten zu beginnen',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'Sitzungs-Tabs',
     'chatSetUpServer': 'Server einrichten',
     'chatSettings': 'Einstellungen',
     'chatShortcutsCloseApp': 'App mit Plattform-Schließverhalten schließen',
@@ -6923,6 +6927,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'Cree una nueva conversación para comenzar a chatear',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'Pestañas de sesión',
     'chatSetUpServer': 'Configurar servidor',
     'chatSettings': 'Configuraciones',
     'chatShortcutsCloseApp':
@@ -8630,6 +8635,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'Créez une nouvelle conversation pour commencer à discuter',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'Onglets de session',
     'chatSetUpServer': 'Configurer le serveur',
     'chatSettings': 'Paramètres',
     'chatShortcutsCloseApp':
@@ -10338,6 +10344,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'चैटिंग शुरू करने के लिए एक नई बातचीत बनाएं',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'सत्र टैब',
     'chatSetUpServer': 'सर्वर सेट अप करें',
     'chatSettings': 'सेटिंग्स',
     'chatShortcutsCloseApp': 'प्लेटफ़ॉर्म व्यवहार का उपयोग करके ऐप बंद करें',
@@ -12008,6 +12015,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'Crea una nuova conversazione per iniziare a chattare',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'Schede delle sessioni',
     'chatSetUpServer': 'Configura server',
     'chatSettings': 'Impostazioni',
     'chatShortcutsCloseApp':
@@ -13651,6 +13659,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionConversations': '会話はありません',
     'chatSessionCreateConversationStart': '新しい会話を作成してチャットを開始してください',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'セッションタブ',
     'chatSetUpServer': 'サーバーを設定',
     'chatSettings': '設定',
     'chatShortcutsCloseApp': 'プラットフォームの終了動作を使用してアプリを閉じる',
@@ -15132,6 +15141,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionConversations': '대화 없음',
     'chatSessionCreateConversationStart': '대화를 시작하려면 새 대화를 만드세요',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': '세션 탭',
     'chatSetUpServer': '서버 설정',
     'chatSettings': '설정',
     'chatShortcutsCloseApp': '플랫폼 종료 동작을 사용하여 앱 닫기',
@@ -16652,6 +16662,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'Crie uma nova conversa para começar a chatear',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'Abas de sessões',
     'chatSetUpServer': 'Configurar servidor',
     'chatSettings': 'Configurações',
     'chatShortcutsCloseApp':
@@ -18330,6 +18341,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'Создайте новую беседу, чтобы начать общение',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'Вкладки сессий',
     'chatSetUpServer': 'Настроить сервер',
     'chatSettings': 'Настройки',
     'chatShortcutsCloseApp':
@@ -19989,6 +20001,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionCreateConversationStart':
         'چیٹنگ شروع کرنے کے لیے ایک نئی گفتگو بنائیں',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': 'سیشن ٹیبز',
     'chatSetUpServer': 'سرور مرتب کریں۔',
     'chatSettings': 'ترتیبات',
     'chatShortcutsCloseApp': 'پلیٹ فارم کا رویہ استعمال کرتے ہوئے ایپ بند کریں',
@@ -21565,6 +21578,7 @@ const translations = <String, Map<String, String>>{
     'chatSessionConversations': '无对话',
     'chatSessionCreateConversationStart': '创建一个新对话以开始聊天',
     'chatSessionsLength': '{length}',
+    'chatSessionTabsToggle': '会话标签页',
     'chatSetUpServer': '设置服务器',
     'chatSettings': '设置',
     'chatShortcutsCloseApp': '使用平台关闭行为关闭应用',

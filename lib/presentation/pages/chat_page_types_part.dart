@@ -579,6 +579,7 @@ enum _DisplayToggleAction {
   taskList,
   reviewChanges,
   recentSessions,
+  sessionTabs,
   composerTips,
   replayTour,
 }

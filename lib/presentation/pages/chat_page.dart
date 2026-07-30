@@ -85,8 +85,8 @@ import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
 import '../services/read_aloud_service.dart';
 import '../services/session_attention/session_attention_completion_resolver.dart';
-import '../services/tts/tts_executor.dart';
 import '../services/session_export_service.dart';
+import '../services/tts/tts_executor.dart';
 import '../services/workspace_file_operations_service.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_shapes.dart';
@@ -94,8 +94,6 @@ import '../theme/app_theme.dart';
 import '../theme/app_visual_style_tokens.dart';
 import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
-import '../widgets/session_attention_overlay/session_attention_overlay.dart';
-import '../widgets/session_attention_overlay/session_attention_overlay_controller.dart';
 import '../utils/app_page_route.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_server_error_formatter.dart';
@@ -119,8 +117,11 @@ import '../widgets/permission_request_card.dart';
 import '../widgets/project_icon.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/quota/quota_popup_section.dart';
+import '../widgets/session_attention_overlay/session_attention_overlay.dart';
+import '../widgets/session_attention_overlay/session_attention_overlay_controller.dart';
 import '../widgets/session_context_menu.dart';
 import '../widgets/session_diff_viewer.dart';
+import '../widgets/session_tab_strip.dart';
 import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import '../widgets/sidebar_selection_indicator.dart';
@@ -132,6 +133,7 @@ part 'chat_page_local_models_part.dart';
 part 'chat_page/chat_page_lifecycle.dart';
 part 'chat_page/chat_page_scroll_coordinator.dart';
 part 'chat_page/chat_page_workspace_controller.dart';
+part 'chat_page/chat_page_session_tabs.dart';
 part 'chat_page/chat_page_shortcuts.dart';
 part 'chat_page/chat_page_status_presenter.dart';
 part 'chat_page/chat_page_selector_flow.dart';
@@ -351,6 +353,8 @@ class _ChatPageState extends State<ChatPage>
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
   Future<void>? _projectScopeTransitionTask;
+  SessionTabIdentity? _activatingSessionTabIdentity;
+  Future<bool>? _sessionTabActivationTask;
   bool _isProjectSelectorActionInFlight = false;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
   // Stores the last expanded history group ID for each session ID.
@@ -2080,6 +2084,7 @@ class _ChatPageState extends State<ChatPage>
             MediaQuery.viewInsetsOf(context).bottom > 0 ||
             View.of(context).viewInsets.bottom > 0;
         final settingsProvider = context.watch<SettingsProvider>();
+        settingsProvider.captureInitialWebSessionTabsDefault(!isMobile);
         final attentionController = _sessionAttentionOverlayController;
         final attentionPresentation =
             settingsProvider.settings.sessionAttentionPresentation;
@@ -2400,13 +2405,24 @@ class _ChatPageState extends State<ChatPage>
                                 );
                               }
 
+                              final bodyContent = Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildSessionTabStrip(
+                                    isCompact: isMobile,
+                                    settingsProvider: settingsProvider,
+                                  ),
+                                  Expanded(child: content),
+                                ],
+                              );
+
                               if (!_isProjectScopeTransitioning) {
-                                return content;
+                                return bodyContent;
                               }
 
                               return Stack(
                                 children: [
-                                  Positioned.fill(child: content),
+                                  Positioned.fill(child: bodyContent),
                                   Positioned.fill(
                                     child: _buildProjectScopeLoadingOverlay(),
                                   ),

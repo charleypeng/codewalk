@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "Беседа {nextAction}",
   "chatSessionConversations": "Бесед нет",
   "chatSessionCreateConversationStart": "Создайте новую беседу, чтобы начать общение",
+  "chatSessionTabsToggle": "Вкладки сессий",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "Настроить сервер",
   "chatSettings": "Настройки",

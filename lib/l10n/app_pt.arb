@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "Conversa {nextAction}",
   "chatSessionConversations": "Nenhuma conversa",
   "chatSessionCreateConversationStart": "Crie uma nova conversa para começar a chatear",
+  "chatSessionTabsToggle": "Abas de sessões",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "Configurar servidor",
   "chatSettings": "Configurações",

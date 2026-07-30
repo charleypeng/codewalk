@@ -317,6 +317,7 @@ extension _ChatPageMobileOverflow on _ChatPageState {
             final showTaskList = settingsProvider.showTaskList;
             final showReviewChanges = settingsProvider.showReviewChanges;
             final showRecentSessions = settingsProvider.showRecentSessions;
+            final showSessionTabs = settingsProvider.showSessionTabs;
             final showComposerTips = settingsProvider.showComposerTips;
             return AlertDialog(
               key: const ValueKey<String>('mobile_display_toggles_dialog'),
@@ -387,6 +388,23 @@ extension _ChatPageMobileOverflow on _ChatPageState {
                         _displayToggleLabel(
                           _DisplayToggleAction.recentSessions,
                         ),
+                      ),
+                    ),
+                    CheckboxListTile(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_session_tabs',
+                      ),
+                      value: showSessionTabs,
+                      onChanged: (v) {
+                        unawaited(
+                          settingsProvider.setShowSessionTabsOverride(
+                            v ?? false,
+                          ),
+                        );
+                        setDialogState(() {});
+                      },
+                      title: Text(
+                        _displayToggleLabel(_DisplayToggleAction.sessionTabs),
                       ),
                     ),
                     CheckboxListTile(

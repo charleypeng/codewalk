@@ -663,6 +663,11 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   Future<String?> getExperienceSettingsJson() async => experienceSettingsJson;
 
   @override
+  Future<String?> getSessionTabsStateJson({required String serverId}) async {
+    return scopedStrings[_key('session_tabs_state', serverId: serverId)];
+  }
+
+  @override
   Future<void> saveActiveServerId(String serverId) async {
     activeServerId = serverId;
   }
@@ -1206,6 +1211,14 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   @override
   Future<void> saveExperienceSettingsJson(String settingsJson) async {
     experienceSettingsJson = settingsJson;
+  }
+
+  @override
+  Future<void> saveSessionTabsStateJson(
+    String stateJson, {
+    required String serverId,
+  }) async {
+    scopedStrings[_key('session_tabs_state', serverId: serverId)] = stateJson;
   }
 
   @override

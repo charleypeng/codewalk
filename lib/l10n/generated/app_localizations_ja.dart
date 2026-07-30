@@ -1115,6 +1115,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSessionCreateConversationStart => '新しい会話を作成してチャットを開始してください';
 
   @override
+  String get chatSessionTabsToggle => 'セッションタブ';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

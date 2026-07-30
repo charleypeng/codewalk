@@ -1150,6 +1150,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'أنشئ محادثة جديدة لبدء الدردشة';
 
   @override
+  String get chatSessionTabsToggle => 'علامات تبويب الجلسات';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

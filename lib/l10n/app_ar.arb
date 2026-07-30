@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "محادثة {nextAction}",
   "chatSessionConversations": "لا توجد محادثات",
   "chatSessionCreateConversationStart": "أنشئ محادثة جديدة لبدء الدردشة",
+  "chatSessionTabsToggle": "علامات تبويب الجلسات",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "إعداد الخادم",
   "chatSettings": "الإعدادات",

@@ -1185,6 +1185,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Crie uma nova conversa para começar a chatear';
 
   @override
+  String get chatSessionTabsToggle => 'Abas de sessões';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

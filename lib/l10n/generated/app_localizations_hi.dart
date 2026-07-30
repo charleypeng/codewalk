@@ -1176,6 +1176,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'चैटिंग शुरू करने के लिए एक नई बातचीत बनाएं';
 
   @override
+  String get chatSessionTabsToggle => 'सत्र टैब';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }

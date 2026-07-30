@@ -510,6 +510,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       _pendingPermissionsBySession = <String, List<ChatPermissionRequest>>{};
       _pendingQuestionsBySession = <String, List<ChatQuestionRequest>>{};
       _threadPermissionsVersion++;
+      _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
       _notifyListeners();
       await _syncCellularDataSaverRealtimePolicy(
         reason: 'pending-interactions:not-visible',
@@ -597,6 +598,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       },
     );
 
+    _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
     _notifyListeners();
     await _syncCellularDataSaverRealtimePolicy(reason: 'pending-interactions');
   }

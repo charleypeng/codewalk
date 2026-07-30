@@ -787,6 +787,67 @@ void main() {
       expect(second.showRecentSessions, isTrue);
     });
 
+    test('resolves session tabs defaults by platform and web viewport', () {
+      expect(
+        SettingsProvider.defaultSessionTabsVisibility(
+          isWeb: false,
+          platform: TargetPlatform.linux,
+          initialWebDefault: false,
+        ),
+        isTrue,
+      );
+      expect(
+        SettingsProvider.defaultSessionTabsVisibility(
+          isWeb: false,
+          platform: TargetPlatform.android,
+          initialWebDefault: true,
+        ),
+        isFalse,
+      );
+      expect(
+        SettingsProvider.defaultSessionTabsVisibility(
+          isWeb: true,
+          platform: TargetPlatform.android,
+          initialWebDefault: true,
+        ),
+        isTrue,
+      );
+      expect(
+        SettingsProvider.defaultSessionTabsVisibility(
+          isWeb: true,
+          platform: TargetPlatform.linux,
+          initialWebDefault: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('persists and clears the session tabs visibility override', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await provider.initialize();
+
+      await provider.setShowSessionTabsOverride(false);
+
+      expect(provider.showSessionTabs, isFalse);
+      expect(
+        jsonDecode(local.experienceSettingsJson!)['showSessionTabsOverride'],
+        isFalse,
+      );
+
+      await provider.setShowSessionTabsOverride(null);
+
+      expect(provider.settings.showSessionTabsOverride, isNull);
+      expect(
+        jsonDecode(local.experienceSettingsJson!),
+        isNot(contains('showSessionTabsOverride')),
+      );
+    });
+
     test('persists background behavior preferences', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

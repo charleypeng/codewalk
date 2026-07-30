@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "대화 {nextAction}",
   "chatSessionConversations": "대화 없음",
   "chatSessionCreateConversationStart": "대화를 시작하려면 새 대화를 만드세요",
+  "chatSessionTabsToggle": "세션 탭",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "서버 설정",
   "chatSettings": "설정",

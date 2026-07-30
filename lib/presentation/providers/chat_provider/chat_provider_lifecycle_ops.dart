@@ -5,6 +5,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
+    if (isActive && !wasActive) {
+      _markCurrentSessionTabViewed();
+    }
     if (!isActive) {
       _cancelResumeGrace(reason: 'background');
       _stopForegroundResumeSyncIndicator(reason: 'background');
@@ -74,6 +77,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
       return;
     }
     _isChatRouteActive = isActive;
+    if (isActive) {
+      _markCurrentSessionTabViewed();
+    }
     if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
       return;
     }
@@ -357,6 +363,15 @@ extension ChatProviderLifecycleOps on ChatProvider {
     final previousCurrent = _currentSession;
     final previousMessages = List<ChatMessage>.from(_messages);
     final wasCurrent = previousCurrent?.id == sessionId;
+    final deletedSession = previousSessions
+        .where((session) => session.id == sessionId)
+        .firstOrNull;
+    final tabIdentity = deletedSession == null
+        ? null
+        : _sessionTabIdentityForSession(
+            deletedSession,
+            contextKey: _activeContextKey,
+          );
     final attentionIdentity = _sessionAttentionIdentityFor(
       contextKey: _activeContextKey,
       sessionId: sessionId,
@@ -409,6 +424,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
         _handleFailure(failure);
       },
       (_) async {
+        if (tabIdentity != null) {
+          _removeSessionTabAuthoritatively(tabIdentity);
+        }
         if (attentionIdentity != null) {
           _deleteSessionAttentionSnapshotIdentity(attentionIdentity);
         }

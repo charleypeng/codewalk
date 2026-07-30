@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "会話 {nextAction}",
   "chatSessionConversations": "会話はありません",
   "chatSessionCreateConversationStart": "新しい会話を作成してチャットを開始してください",
+  "chatSessionTabsToggle": "セッションタブ",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "サーバーを設定",
   "chatSettings": "設定",

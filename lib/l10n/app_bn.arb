@@ -334,6 +334,7 @@
   "chatSessionConversationNextAction": "কথোপকথন {nextAction}",
   "chatSessionConversations": "কোনো কথোপকথন নেই",
   "chatSessionCreateConversationStart": "চ্যাটিং শুরু করতে একটি নতুন কথোপকথন তৈরি করুন",
+  "chatSessionTabsToggle": "সেশন ট্যাব",
   "chatSessionsLength": "{length}",
   "chatSetUpServer": "সার্ভার সেট আপ করুন",
   "chatSettings": "সেটিংস",

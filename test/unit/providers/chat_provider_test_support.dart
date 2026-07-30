@@ -211,6 +211,7 @@ ChatProvider buildChatProvider({
   Duration syncHealthCheckInterval = const Duration(seconds: 5),
   Duration abortSuppressionWindow = const Duration(milliseconds: 30),
   Duration shortcutCycleWindow = const Duration(seconds: 3),
+  DateTime Function()? sessionTabsNow,
   SettingsProvider? settingsProvider,
   CellularDataSaverService? cellularDataSaverService,
   EventFeedbackDispatcher? eventFeedbackDispatcher,
@@ -258,6 +259,7 @@ ChatProvider buildChatProvider({
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,
     shortcutCycleWindow: shortcutCycleWindow,
+    sessionTabsNow: sessionTabsNow,
   );
 }
 

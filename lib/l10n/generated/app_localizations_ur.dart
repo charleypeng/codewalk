@@ -1170,6 +1170,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'چیٹنگ شروع کرنے کے لیے ایک نئی گفتگو بنائیں';
 
   @override
+  String get chatSessionTabsToggle => 'سیشن ٹیبز';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
