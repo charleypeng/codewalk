@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.180.0 - 2026-07-30
+
+- feat: add recent session tabs
+- plan: implement recent session tabs
+- delete roadmap done
+
 ## v1.179.0 - 2026-07-28
 
 - chore(agent): [Step 3/3] Document mobile terminal extra keys
