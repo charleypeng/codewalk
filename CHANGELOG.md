@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.181.0 - 2026-07-31
+
+- chore: ignore the local agent task checkpoint
+- feat(desktop): move session tabs into the window title bar
+- fix(ui): drop duplicated card wrappers from auxiliary sidebars
+
 ## v1.180.0 - 2026-07-30
 
 - feat: add recent session tabs
