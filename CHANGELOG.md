@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.182.0 - 2026-07-31
+
+- fix(desktop): make the attention bubble frameless and stop focus theft
+
 ## v1.181.0 - 2026-07-31
 
 - chore: ignore the local agent task checkpoint
