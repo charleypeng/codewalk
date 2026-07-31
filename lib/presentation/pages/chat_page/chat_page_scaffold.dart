@@ -1471,26 +1471,19 @@ extension _ChatPageScaffold on _ChatPageState {
                     icon: const Icon(Symbols.right_panel_close_rounded),
                   ),
                 ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.sessionKeyboardShortcuts,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      for (final hint in _keyboardShortcutHints(
-                        settingsProvider,
-                      ))
-                        _buildShortcutHint(hint.shortcut, hint.description),
-                    ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.sessionKeyboardShortcuts,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  for (final hint in _keyboardShortcutHints(settingsProvider))
+                    _buildShortcutHint(hint.shortcut, hint.description),
+                ],
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
@@ -1508,119 +1501,116 @@ extension _ChatPageScaffold on _ChatPageState {
               ],
               const SizedBox(height: 12),
               if (chatProvider.currentSession != null)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Builder(
-                                builder: (context) {
-                                  final currentSession =
-                                      chatProvider.currentSession!;
-                                  return SessionTitleInlineEditor(
-                                    key: ValueKey<String>(
-                                      'desktop_session_title_editor_${currentSession.id}',
-                                    ),
-                                    title: _sessionDisplayTitle(currentSession),
-                                    editingValue: _sessionEditingValue(
-                                      currentSession,
-                                    ),
-                                    textStyle: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                    onRename: (title) => chatProvider
-                                        .renameSession(currentSession, title),
-                                  );
-                                },
-                              ),
-                            ),
-                            if (!FeatureFlags.refreshlessRealtime)
-                              IconButton(
-                                onPressed: () {
-                                  final session = chatProvider.currentSession;
-                                  if (session != null) {
-                                    unawaited(
-                                      chatProvider.loadSessionInsights(
-                                        session.id,
-                                        userInitiated: true,
-                                      ),
-                                    );
-                                  }
-                                },
-                                icon: const Icon(Symbols.sync, size: 18),
-                                tooltip: context.l10n.chatRefreshSessionDetails,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _sessionStatusLabel(
-                            chatProvider.currentSessionStatus ??
-                                const SessionStatusInfo(
-                                  type: SessionStatusType.idle,
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final currentSession =
+                                  chatProvider.currentSession!;
+                              return SessionTitleInlineEditor(
+                                key: ValueKey<String>(
+                                  'desktop_session_title_editor_${currentSession.id}',
                                 ),
+                                title: _sessionDisplayTitle(currentSession),
+                                editingValue: _sessionEditingValue(
+                                  currentSession,
+                                ),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                                onRename: (title) => chatProvider.renameSession(
+                                  currentSession,
+                                  title,
+                                ),
+                              );
+                            },
                           ),
-                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          context.l10n.sessionChildrenCount(
-                            chatProvider.currentSessionChildren.length,
-                          ),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        SessionTodoListWidget(
-                          todos: chatProvider.currentSessionTodo,
-                          collapsed: settingsProvider.taskListCollapsed,
-                          onToggleCollapsed: () => unawaited(
-                            settingsProvider.setTaskListCollapsed(
-                              !settingsProvider.taskListCollapsed,
-                            ),
-                          ),
-                          maxVisibleItems: 10,
-                        ),
-                        if (settingsProvider.showReviewChanges) ...[
-                          if (chatProvider.currentSessionDiff.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            SessionDiffViewer(
-                              key: ValueKey<String>(
-                                'desktop_session_diff_${chatProvider.currentSession?.id ?? 'none'}',
-                              ),
-                              diffs: chatProvider.currentSessionDiff,
-                              compact: false,
-                              onFileTap: (path, line) =>
-                                  unawaited(_onFilePathTap(path, line, null)),
-                            ),
-                          ] else if (chatProvider.isCurrentSessionDiffLoaded)
-                            Text(
-                              context.l10n.sessionDiffFilesCount(0),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                        ],
-                        if (chatProvider.isLoadingSessionInsights)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: LinearProgressIndicator(minHeight: 2),
-                          ),
-                        if (chatProvider.sessionInsightsError != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              chatProvider.sessionInsightsError!,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).colorScheme.error,
+                        if (!FeatureFlags.refreshlessRealtime)
+                          IconButton(
+                            onPressed: () {
+                              final session = chatProvider.currentSession;
+                              if (session != null) {
+                                unawaited(
+                                  chatProvider.loadSessionInsights(
+                                    session.id,
+                                    userInitiated: true,
                                   ),
-                            ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Symbols.sync, size: 18),
+                            tooltip: context.l10n.chatRefreshSessionDetails,
                           ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _sessionStatusLabel(
+                        chatProvider.currentSessionStatus ??
+                            const SessionStatusInfo(
+                              type: SessionStatusType.idle,
+                            ),
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      context.l10n.sessionChildrenCount(
+                        chatProvider.currentSessionChildren.length,
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    SessionTodoListWidget(
+                      todos: chatProvider.currentSessionTodo,
+                      collapsed: settingsProvider.taskListCollapsed,
+                      onToggleCollapsed: () => unawaited(
+                        settingsProvider.setTaskListCollapsed(
+                          !settingsProvider.taskListCollapsed,
+                        ),
+                      ),
+                      maxVisibleItems: 10,
+                    ),
+                    if (settingsProvider.showReviewChanges) ...[
+                      if (chatProvider.currentSessionDiff.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        SessionDiffViewer(
+                          key: ValueKey<String>(
+                            'desktop_session_diff_${chatProvider.currentSession?.id ?? 'none'}',
+                          ),
+                          diffs: chatProvider.currentSessionDiff,
+                          compact: false,
+                          onFileTap: (path, line) =>
+                              unawaited(_onFilePathTap(path, line, null)),
+                        ),
+                      ] else if (chatProvider.isCurrentSessionDiffLoaded)
+                        Text(
+                          context.l10n.sessionDiffFilesCount(0),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
+                    if (chatProvider.isLoadingSessionInsights)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
+                    if (chatProvider.sessionInsightsError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          chatProvider.sessionInsightsError!,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                        ),
+                      ),
+                  ],
                 ),
             ],
           ),
