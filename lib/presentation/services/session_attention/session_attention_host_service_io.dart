@@ -29,6 +29,7 @@ class _IoSessionAttentionHostService
   bool _desktopChannelRegistered = false;
   SessionAttentionHostSnapshot? _desktopSnapshot;
   bool _desktopHostActive = false;
+  bool _desktopWindowVisible = false;
   bool _iosHostActive = false;
   Timer? _androidHeartbeatTimer;
 
@@ -147,7 +148,7 @@ class _IoSessionAttentionHostService
             ),
           );
       _desktopWindow = controller;
-      await controller.show();
+      await _showDesktopWindow(controller);
       _desktopHostActive = true;
       return SessionAttentionHostActivationResult.success(await capability());
     }
@@ -182,7 +183,7 @@ class _IoSessionAttentionHostService
       return;
     }
     final controller = await _findDesktopWindow();
-    await controller?.hide();
+    await _hideDesktopWindow(controller);
     _desktopHostActive = false;
   }
 
@@ -211,7 +212,7 @@ class _IoSessionAttentionHostService
       final controller = await _findDesktopWindow();
       if (snapshot.presentation == SessionAttentionPresentation.off ||
           snapshot.items.isEmpty) {
-        await controller?.hide();
+        await _hideDesktopWindow(controller);
         return;
       }
       try {
@@ -222,8 +223,30 @@ class _IoSessionAttentionHostService
       } on WindowChannelException {
         // The child requests _desktopSnapshot after registering its channel.
       }
-      await controller?.show();
+      await _showDesktopWindow(controller);
     }
+  }
+
+  /// Shows the bubble only when it is not already on screen.
+  ///
+  /// `show()` activates the window on every desktop platform, so calling it on
+  /// each snapshot update was pulling keyboard focus away from whatever the
+  /// user was typing in. Snapshot content is delivered over the method channel
+  /// and does not need a new show.
+  Future<void> _showDesktopWindow(WindowController? controller) async {
+    if (controller == null || _desktopWindowVisible) {
+      return;
+    }
+    await controller.show();
+    _desktopWindowVisible = true;
+  }
+
+  Future<void> _hideDesktopWindow(WindowController? controller) async {
+    if (controller == null) {
+      return;
+    }
+    await controller.hide();
+    _desktopWindowVisible = false;
   }
 
   Future<void> _ensureDesktopChannel() async {

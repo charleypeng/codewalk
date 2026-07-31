@@ -53,7 +53,12 @@ Future<bool> runSessionAttentionDesktopChildIfNeeded() async {
     return false;
   }
   await windowManager.ensureInitialized();
+  // The bubble is a floating surface, not a regular window: it must not show a
+  // title bar, frame or system buttons on any desktop platform. Applied before
+  // runApp so the decoration is never visible, not even for one frame.
+  await windowManager.setAsFrameless();
   await windowManager.setAlwaysOnTop(true);
+  await windowManager.setSkipTaskbar(true);
   runApp(SessionAttentionHostApp.desktop(controller: controller));
   return true;
 }
