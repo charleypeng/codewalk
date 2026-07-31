@@ -307,6 +307,87 @@ void main() {
     );
     expect(sessionTabCloseFallback(tabs, _identity('missing')), isNull);
   });
+
+  testWidgets('selected tab merges with the content surface below', (
+    tester,
+  ) async {
+    final selected = _tab('alpha', isSelected: true);
+    final inactive = _tab('beta');
+
+    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[selected, inactive]));
+    await tester.pump();
+
+    final context = tester.element(
+      find.byKey(const ValueKey<String>('session_tab_strip')),
+    );
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // The selected tab takes the content surface colour so it reads as
+    // continuous with the panel underneath; inactive tabs stay transparent
+    // over the strip band.
+    expect(_tabMaterial(tester, selected).color, colorScheme.surface);
+    expect(_tabMaterial(tester, inactive).color, Colors.transparent);
+  });
+
+  testWidgets('tabs use browser geometry with only top corners rounded', (
+    tester,
+  ) async {
+    final selected = _tab('alpha', isSelected: true);
+
+    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[selected]));
+    await tester.pump();
+
+    final shape =
+        _tabMaterial(tester, selected).shape! as RoundedRectangleBorder;
+    final borderRadius = shape.borderRadius as BorderRadius;
+
+    expect(borderRadius.topLeft.x, greaterThan(0));
+    expect(borderRadius.topRight.x, greaterThan(0));
+    expect(borderRadius.bottomLeft, Radius.zero);
+    expect(borderRadius.bottomRight, Radius.zero);
+  });
+
+  testWidgets('selection is conveyed by more than colour', (tester) async {
+    final selected = _tab('alpha', isSelected: true);
+    final inactive = _tab('beta');
+
+    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[selected, inactive]));
+    await tester.pump();
+
+    Text titleOf(SessionTabRecord tab) => tester.widget<Text>(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_title_${sessionTabIdentityKey(tab.identity)}',
+        ),
+      ),
+    );
+
+    // Weight differs and the selected tab carries an accent bar, so the state
+    // survives for users who cannot rely on colour alone.
+    expect(
+      titleOf(selected).style!.fontWeight,
+      isNot(titleOf(inactive).style!.fontWeight),
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(
+          ValueKey<String>(
+            'session_tab_${sessionTabIdentityKey(selected.identity)}',
+          ),
+        ),
+        matching: find.byType(PositionedDirectional),
+      ),
+      findsOneWidget,
+    );
+  });
+}
+
+Material _tabMaterial(WidgetTester tester, SessionTabRecord tab) {
+  return tester.widget<Material>(
+    find.byKey(
+      ValueKey<String>('session_tab_${sessionTabIdentityKey(tab.identity)}'),
+    ),
+  );
 }
 
 Widget _app({

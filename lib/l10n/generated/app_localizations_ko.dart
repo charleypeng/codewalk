@@ -1439,6 +1439,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get composerShellMode => '셸 모드';
 
   @override
+  String get desktopWindowClose => '닫기';
+
+  @override
+  String get desktopWindowMaximize => '최대화';
+
+  @override
+  String get desktopWindowMinimize => '최소화';
+
+  @override
+  String get desktopWindowRestore => '복원';
+
+  @override
   String get dialogDownload => '다운로드';
 
   @override
@@ -3285,6 +3297,27 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       '배경화면 색상을 사용하려면 CodeWalk 클래식으로 전환하세요.';
+
+  @override
+  String get settingsAppearanceWindowChrome => '창 탭';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      '데스크톱에서 세션 탭과 제목 표시줄을 결합하는 방식을 선택합니다.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => '통합 탭';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      '탭이 창 상단에 위치하고 시스템 제목 표시줄이 숨겨집니다.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => '시스템 장식';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      '네이티브 제목 표시줄을 유지하고 탭을 앱 바 아래에 표시합니다.';
 
   @override
   String get settingsBack => '뒤로';

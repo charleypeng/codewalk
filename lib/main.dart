@@ -24,6 +24,7 @@ import 'presentation/providers/project_provider.dart';
 import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/services/android_background_alert_worker.dart';
+import 'presentation/services/desktop_window_chrome_service.dart';
 import 'presentation/services/session_attention/session_overlay_entrypoint.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/opencode_theme_presets.dart';
@@ -47,6 +48,7 @@ Future<void> main(List<String> args) async {
 
     if (_isDesktopRuntime()) {
       await windowManager.ensureInitialized();
+      await DesktopWindowChromeService.applyPersisted();
     }
 
     if (_isAndroidRuntime()) {

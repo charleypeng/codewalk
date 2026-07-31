@@ -1532,6 +1532,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get composerShellMode => 'Modo shell';
 
   @override
+  String get desktopWindowClose => 'Fechar';
+
+  @override
+  String get desktopWindowMaximize => 'Maximizar';
+
+  @override
+  String get desktopWindowMinimize => 'Minimizar';
+
+  @override
+  String get desktopWindowRestore => 'Restaurar';
+
+  @override
   String get dialogDownload => 'Baixar';
 
   @override
@@ -3443,6 +3455,27 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Mude para CodeWalk Clássico para usar cores do papel de parede.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Abas da janela';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Escolha como as abas de sessão e a barra de título se combinam no desktop.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Abas integradas';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'As abas ficam no topo da janela e a barra de título do sistema fica oculta.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Decoração do sistema';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Mantém a barra de título nativa e mostra as abas abaixo da barra do app.';
 
   @override
   String get settingsBack => 'Voltar';

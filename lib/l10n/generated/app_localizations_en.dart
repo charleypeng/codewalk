@@ -1518,6 +1518,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get composerShellMode => 'Shell mode';
 
   @override
+  String get desktopWindowClose => 'Close';
+
+  @override
+  String get desktopWindowMaximize => 'Maximize';
+
+  @override
+  String get desktopWindowMinimize => 'Minimize';
+
+  @override
+  String get desktopWindowRestore => 'Restore';
+
+  @override
   String get dialogDownload => 'Download';
 
   @override
@@ -3410,6 +3422,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Switch to CodeWalk Classic to use wallpaper colors.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Window tabs';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Choose how session tabs and the window title bar are combined on desktop.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Integrated tabs';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Tabs sit at the top of the window and the system title bar is hidden.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'System decoration';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Keep the native title bar and show tabs below the app bar.';
 
   @override
   String get settingsBack => 'Back';

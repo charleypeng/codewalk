@@ -2747,6 +2747,30 @@ abstract class AppLocalizations {
   /// **'Shell mode'**
   String get composerShellMode;
 
+  /// CodeWalk UI string — desktopWindowClose
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get desktopWindowClose;
+
+  /// CodeWalk UI string — desktopWindowMaximize
+  ///
+  /// In en, this message translates to:
+  /// **'Maximize'**
+  String get desktopWindowMaximize;
+
+  /// CodeWalk UI string — desktopWindowMinimize
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get desktopWindowMinimize;
+
+  /// CodeWalk UI string — desktopWindowRestore
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get desktopWindowRestore;
+
   /// CodeWalk UI string — dialogDownload
   ///
   /// In en, this message translates to:
@@ -6049,6 +6073,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switch to CodeWalk Classic to use wallpaper colors.'**
   String get settingsAppearanceWallpaperPresetBlocked;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChrome
+  ///
+  /// In en, this message translates to:
+  /// **'Window tabs'**
+  String get settingsAppearanceWindowChrome;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how session tabs and the window title bar are combined on desktop.'**
+  String get settingsAppearanceWindowChromeDescription;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeIntegrated
+  ///
+  /// In en, this message translates to:
+  /// **'Integrated tabs'**
+  String get settingsAppearanceWindowChromeIntegrated;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeIntegratedDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs sit at the top of the window and the system title bar is hidden.'**
+  String get settingsAppearanceWindowChromeIntegratedDescription;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeSystem
+  ///
+  /// In en, this message translates to:
+  /// **'System decoration'**
+  String get settingsAppearanceWindowChromeSystem;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeSystemDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the native title bar and show tabs below the app bar.'**
+  String get settingsAppearanceWindowChromeSystemDescription;
 
   /// CodeWalk UI string — settingsBack
   ///

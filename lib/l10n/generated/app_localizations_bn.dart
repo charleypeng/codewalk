@@ -1520,6 +1520,18 @@ class AppLocalizationsBn extends AppLocalizations {
   String get composerShellMode => 'শেল মোড';
 
   @override
+  String get desktopWindowClose => 'বন্ধ';
+
+  @override
+  String get desktopWindowMaximize => 'ম্যাক্সিমাইজ';
+
+  @override
+  String get desktopWindowMinimize => 'মিনিমাইজ';
+
+  @override
+  String get desktopWindowRestore => 'পুনরুদ্ধার';
+
+  @override
   String get dialogDownload => 'ডাউনলোড করুন';
 
   @override
@@ -3427,6 +3439,27 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'ওয়ালপেপার রং ব্যবহার করতে CodeWalk ক্লাসিকে স্যুইচ করুন।';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'উইন্ডো ট্যাব';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'ডেস্কটপে সেশন ট্যাব ও টাইটেল বার কীভাবে যুক্ত হবে তা বেছে নিন।';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'সমন্বিত ট্যাব';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'ট্যাবগুলো উইন্ডোর উপরে থাকে এবং সিস্টেম টাইটেল বার লুকানো হয়।';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'সিস্টেম সজ্জা';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'নেটিভ টাইটেল বার রাখে এবং অ্যাপ বারের নিচে ট্যাব দেখায়।';
 
   @override
   String get settingsBack => 'ব্যাক';

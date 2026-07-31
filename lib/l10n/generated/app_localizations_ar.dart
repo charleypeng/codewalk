@@ -1493,6 +1493,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get composerShellMode => 'وضع الصدفة (Shell)';
 
   @override
+  String get desktopWindowClose => 'إغلاق';
+
+  @override
+  String get desktopWindowMaximize => 'تكبير';
+
+  @override
+  String get desktopWindowMinimize => 'تصغير';
+
+  @override
+  String get desktopWindowRestore => 'استعادة';
+
+  @override
   String get dialogDownload => 'تنزيل';
 
   @override
@@ -3375,6 +3387,27 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'قم بالتحويل إلى CodeWalk Classic لاستخدام ألوان الخلفية.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'علامات تبويب النافذة';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'اختر كيفية دمج علامات تبويب الجلسات مع شريط العنوان على سطح المكتب.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'علامات تبويب مدمجة';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'تظهر علامات التبويب أعلى النافذة ويُخفى شريط عنوان النظام.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'زخرفة النظام';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'يحتفظ بشريط العنوان الأصلي ويعرض علامات التبويب أسفل شريط التطبيق.';
 
   @override
   String get settingsBack => 'رجوع';

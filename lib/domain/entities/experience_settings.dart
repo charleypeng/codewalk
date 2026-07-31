@@ -82,6 +82,8 @@ enum ReadAloudProvider { native, edgeExperimental, openAiCompatible }
 
 enum DesktopCloseBehavior { tray, minimize, close }
 
+enum DesktopWindowChrome { integratedTabs, systemDecoration }
+
 const String kSherpaLanguageSystem = 'system';
 const String kMoonshineModelTiny = 'tiny';
 const String kMoonshineModelBase = 'base';
@@ -489,6 +491,20 @@ DesktopCloseBehavior desktopCloseBehaviorFromKey(String value) {
   };
 }
 
+String desktopWindowChromeKey(DesktopWindowChrome chrome) {
+  return switch (chrome) {
+    DesktopWindowChrome.integratedTabs => 'integrated',
+    DesktopWindowChrome.systemDecoration => 'system',
+  };
+}
+
+DesktopWindowChrome desktopWindowChromeFromKey(String value) {
+  return switch (value) {
+    'system' => DesktopWindowChrome.systemDecoration,
+    _ => DesktopWindowChrome.integratedTabs,
+  };
+}
+
 DesktopPane? desktopPaneFromKey(String value) {
   return switch (value) {
     'conversations' => DesktopPane.conversations,
@@ -742,6 +758,7 @@ class ExperienceSettings {
       composerSpellCheckEnabled: true,
       composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
+      desktopWindowChrome: DesktopWindowChrome.integratedTabs,
       dataSaverEnabled: true,
       dataSaverLevel: DataSaverLevel.standard,
       androidBackgroundAlertsEnabled: true,
@@ -811,6 +828,7 @@ class ExperienceSettings {
     this.composerSpellCheckEnabled = true,
     required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
+    this.desktopWindowChrome = DesktopWindowChrome.integratedTabs,
     required this.dataSaverEnabled,
     required this.dataSaverLevel,
     required this.androidBackgroundAlertsEnabled,
@@ -880,6 +898,7 @@ class ExperienceSettings {
   final bool composerSpellCheckEnabled;
   final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
+  final DesktopWindowChrome desktopWindowChrome;
   final bool dataSaverEnabled;
   final DataSaverLevel dataSaverLevel;
   final bool androidBackgroundAlertsEnabled;
@@ -951,6 +970,7 @@ class ExperienceSettings {
     bool? composerSpellCheckEnabled,
     bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
+    DesktopWindowChrome? desktopWindowChrome,
     bool? dataSaverEnabled,
     DataSaverLevel? dataSaverLevel,
     bool? androidBackgroundAlertsEnabled,
@@ -1036,6 +1056,7 @@ class ExperienceSettings {
       composerAutoApprovePermissions:
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
+      desktopWindowChrome: desktopWindowChrome ?? this.desktopWindowChrome,
       dataSaverEnabled: nextDataSaverLevel != DataSaverLevel.off,
       dataSaverLevel: nextDataSaverLevel,
       androidBackgroundAlertsEnabled:
@@ -1163,6 +1184,7 @@ class ExperienceSettings {
       'composerSpellCheckEnabled': composerSpellCheckEnabled,
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
+      'desktopWindowChrome': desktopWindowChromeKey(desktopWindowChrome),
       'dataSaverEnabled': dataSaverEnabled,
       'dataSaverLevel': dataSaverLevelKey(dataSaverLevel),
       'keepDesktopRunningInTray':
@@ -1253,6 +1275,7 @@ class ExperienceSettings {
     var composerAutoApprovePermissions =
         defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
+    var desktopWindowChrome = defaults.desktopWindowChrome;
     var dataSaverEnabled = defaults.dataSaverEnabled;
     var dataSaverLevel = defaults.dataSaverLevel;
     var androidBackgroundAlertsEnabled =
@@ -1492,6 +1515,16 @@ class ExperienceSettings {
             ? DesktopCloseBehavior.tray
             : DesktopCloseBehavior.close;
       }
+    }
+
+    // Absent key keeps the default, so existing installs migrate to integrated
+    // tabs without an explicit opt-in, as required by the desktop chrome rollout.
+    final desktopWindowChromeJson = json['desktopWindowChrome'];
+    if (desktopWindowChromeJson is String &&
+        desktopWindowChromeJson.trim().isNotEmpty) {
+      desktopWindowChrome = desktopWindowChromeFromKey(
+        desktopWindowChromeJson.trim().toLowerCase(),
+      );
     }
 
     final dataSaverEnabledJson = json['dataSaverEnabled'];
@@ -1769,6 +1802,7 @@ class ExperienceSettings {
       composerSpellCheckEnabled: composerSpellCheckEnabled,
       composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
+      desktopWindowChrome: desktopWindowChrome,
       dataSaverEnabled: dataSaverEnabled,
       dataSaverLevel: dataSaverLevel,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,

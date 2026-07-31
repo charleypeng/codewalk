@@ -1544,6 +1544,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get composerShellMode => 'Modalità shell';
 
   @override
+  String get desktopWindowClose => 'Chiudi';
+
+  @override
+  String get desktopWindowMaximize => 'Ingrandisci';
+
+  @override
+  String get desktopWindowMinimize => 'Riduci a icona';
+
+  @override
+  String get desktopWindowRestore => 'Ripristina';
+
+  @override
   String get dialogDownload => 'Scarica';
 
   @override
@@ -3464,6 +3476,27 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Passa a CodeWalk Classico per utilizzare i colori dello sfondo.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Schede della finestra';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Scegli come combinare le schede di sessione e la barra del titolo sul desktop.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Schede integrate';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Le schede stanno in cima alla finestra e la barra del titolo di sistema è nascosta.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Decorazione di sistema';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Mantiene la barra del titolo nativa e mostra le schede sotto la barra dell’app.';
 
   @override
   String get settingsBack => 'Indietro';

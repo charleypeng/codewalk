@@ -1536,6 +1536,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get composerShellMode => 'Режим терминала';
 
   @override
+  String get desktopWindowClose => 'Закрыть';
+
+  @override
+  String get desktopWindowMaximize => 'Развернуть';
+
+  @override
+  String get desktopWindowMinimize => 'Свернуть';
+
+  @override
+  String get desktopWindowRestore => 'Восстановить';
+
+  @override
   String get dialogDownload => 'Скачать';
 
   @override
@@ -3449,6 +3461,27 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Переключитесь на CodeWalk Classic, чтобы использовать цвета обоев.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Вкладки окна';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Выберите, как вкладки сессий сочетаются с заголовком окна на десктопе.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Встроенные вкладки';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Вкладки расположены вверху окна, системный заголовок скрыт.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Системное оформление';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Сохраняет системный заголовок и показывает вкладки под панелью приложения.';
 
   @override
   String get settingsBack => 'Назад';

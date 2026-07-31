@@ -1515,6 +1515,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get composerShellMode => 'شیل موڈ';
 
   @override
+  String get desktopWindowClose => 'بند کریں';
+
+  @override
+  String get desktopWindowMaximize => 'بڑا کریں';
+
+  @override
+  String get desktopWindowMinimize => 'چھوٹا کریں';
+
+  @override
+  String get desktopWindowRestore => 'بحال کریں';
+
+  @override
   String get dialogDownload => 'ڈاؤن لوڈ کریں۔';
 
   @override
@@ -3417,6 +3429,27 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'وال پیپر کے رنگ استعمال کرنے کے لیے CodeWalk Classic پر جائیں۔';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'ونڈو ٹیبز';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'منتخب کریں کہ ڈیسک ٹاپ پر سیشن ٹیبز اور ٹائٹل بار کیسے یکجا ہوں۔';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'مربوط ٹیبز';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'ٹیبز ونڈو کے اوپر ہوتے ہیں اور سسٹم ٹائٹل بار چھپ جاتا ہے۔';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'سسٹم سجاوٹ';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'مقامی ٹائٹل بار برقرار رکھتا ہے اور ٹیبز کو ایپ بار کے نیچے دکھاتا ہے۔';
 
   @override
   String get settingsBack => 'پیچھے';

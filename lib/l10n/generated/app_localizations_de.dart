@@ -1543,6 +1543,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get composerShellMode => 'Shell-Modus';
 
   @override
+  String get desktopWindowClose => 'Schließen';
+
+  @override
+  String get desktopWindowMaximize => 'Maximieren';
+
+  @override
+  String get desktopWindowMinimize => 'Minimieren';
+
+  @override
+  String get desktopWindowRestore => 'Wiederherstellen';
+
+  @override
   String get dialogDownload => 'Herunterladen';
 
   @override
@@ -3460,6 +3472,27 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Wechseln Sie zu CodeWalk Classic, um Hintergrundbildfarben zu verwenden.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Fenster-Tabs';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Legen Sie fest, wie Sitzungs-Tabs und Titelleiste auf dem Desktop kombiniert werden.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Integrierte Tabs';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Die Tabs sitzen oben im Fenster und die Titelleiste des Systems wird ausgeblendet.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Systemdekoration';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Behält die native Titelleiste und zeigt die Tabs unter der App-Leiste.';
 
   @override
   String get settingsBack => 'Zurück';

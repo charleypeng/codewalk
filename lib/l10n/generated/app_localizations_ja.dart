@@ -1439,6 +1439,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get composerShellMode => 'シェルモード';
 
   @override
+  String get desktopWindowClose => '閉じる';
+
+  @override
+  String get desktopWindowMaximize => '最大化';
+
+  @override
+  String get desktopWindowMinimize => '最小化';
+
+  @override
+  String get desktopWindowRestore => '元のサイズに戻す';
+
+  @override
   String get dialogDownload => 'ダウンロード';
 
   @override
@@ -3282,6 +3294,27 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       '壁紙の色を使用するには、CodeWalk クラシックに切り替えてください。';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'ウィンドウのタブ';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'デスクトップでセッションタブとタイトルバーをどう組み合わせるか選びます。';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => '統合タブ';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'タブがウィンドウ最上部に配置され、システムのタイトルバーは非表示になります。';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'システムの装飾';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'ネイティブのタイトルバーを維持し、タブをアプリバーの下に表示します。';
 
   @override
   String get settingsBack => '戻る';

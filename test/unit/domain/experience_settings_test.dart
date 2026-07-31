@@ -593,4 +593,55 @@ void main() {
       );
     });
   });
+
+  group('desktop window chrome serialization', () {
+    test('defaults to integrated tabs', () {
+      expect(
+        ExperienceSettings.defaults().desktopWindowChrome,
+        DesktopWindowChrome.integratedTabs,
+      );
+    });
+
+    test('round-trips both modes', () {
+      for (final value in DesktopWindowChrome.values) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          desktopWindowChrome: value,
+        );
+
+        expect(
+          ExperienceSettings.fromJson(settings.toJson()).desktopWindowChrome,
+          value,
+        );
+      }
+    });
+
+    test('existing installs without the key migrate to integrated tabs', () {
+      final legacy = ExperienceSettings.defaults().toJson()
+        ..remove('desktopWindowChrome');
+
+      expect(
+        ExperienceSettings.fromJson(legacy).desktopWindowChrome,
+        DesktopWindowChrome.integratedTabs,
+      );
+    });
+
+    test('unknown persisted values fall back to integrated tabs', () {
+      final json = ExperienceSettings.defaults().toJson()
+        ..['desktopWindowChrome'] = 'not-a-mode';
+
+      expect(
+        ExperienceSettings.fromJson(json).desktopWindowChrome,
+        DesktopWindowChrome.integratedTabs,
+      );
+    });
+
+    test('keys stay lowercase so parsing survives case normalization', () {
+      for (final value in DesktopWindowChrome.values) {
+        final key = desktopWindowChromeKey(value);
+
+        expect(key, key.toLowerCase());
+        expect(desktopWindowChromeFromKey(key), value);
+      }
+    });
+  });
 }

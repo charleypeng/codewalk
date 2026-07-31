@@ -1877,6 +1877,22 @@
   "@composerShellMode": {
     "description": "CodeWalk UI string — composerShellMode"
   },
+  "desktopWindowClose": "Close",
+  "@desktopWindowClose": {
+    "description": "CodeWalk UI string — desktopWindowClose"
+  },
+  "desktopWindowMaximize": "Maximize",
+  "@desktopWindowMaximize": {
+    "description": "CodeWalk UI string — desktopWindowMaximize"
+  },
+  "desktopWindowMinimize": "Minimize",
+  "@desktopWindowMinimize": {
+    "description": "CodeWalk UI string — desktopWindowMinimize"
+  },
+  "desktopWindowRestore": "Restore",
+  "@desktopWindowRestore": {
+    "description": "CodeWalk UI string — desktopWindowRestore"
+  },
   "dialogDownload": "Download",
   "@dialogDownload": {
     "description": "CodeWalk UI string — dialogDownload"
@@ -4229,6 +4245,30 @@
   "settingsAppearanceWallpaperPresetBlocked": "Switch to CodeWalk Classic to use wallpaper colors.",
   "@settingsAppearanceWallpaperPresetBlocked": {
     "description": "CodeWalk UI string — settingsAppearanceWallpaperPresetBlocked"
+  },
+  "settingsAppearanceWindowChrome": "Window tabs",
+  "@settingsAppearanceWindowChrome": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChrome"
+  },
+  "settingsAppearanceWindowChromeDescription": "Choose how session tabs and the window title bar are combined on desktop.",
+  "@settingsAppearanceWindowChromeDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeDescription"
+  },
+  "settingsAppearanceWindowChromeIntegrated": "Integrated tabs",
+  "@settingsAppearanceWindowChromeIntegrated": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeIntegrated"
+  },
+  "settingsAppearanceWindowChromeIntegratedDescription": "Tabs sit at the top of the window and the system title bar is hidden.",
+  "@settingsAppearanceWindowChromeIntegratedDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeIntegratedDescription"
+  },
+  "settingsAppearanceWindowChromeSystem": "System decoration",
+  "@settingsAppearanceWindowChromeSystem": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeSystem"
+  },
+  "settingsAppearanceWindowChromeSystemDescription": "Keep the native title bar and show tabs below the app bar.",
+  "@settingsAppearanceWindowChromeSystemDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeSystemDescription"
   },
   "settingsBack": "Back",
   "@settingsBack": {

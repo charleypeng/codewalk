@@ -1,9 +1,43 @@
 part of '../chat_page.dart';
 
 extension _ChatPageSessionTabs on _ChatPageState {
+  /// True when the tab strip lives in the window title bar instead of the body.
+  bool _usesIntegratedWindowChrome(SettingsProvider settingsProvider) {
+    return _isDesktopRuntime &&
+        settingsProvider.desktopWindowChrome ==
+            DesktopWindowChrome.integratedTabs;
+  }
+
+  /// Wraps the page in the custom window chrome when the integrated mode is
+  /// active. The title bar is always rendered in that mode, even with no tabs,
+  /// so the window keeps a drag region and its controls.
+  Widget _wrapWithIntegratedWindowChrome({
+    required Widget child,
+    required SettingsProvider settingsProvider,
+  }) {
+    if (!_usesIntegratedWindowChrome(settingsProvider)) {
+      return child;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DesktopWindowTitleBar(
+          height: kSessionTabStripHeight,
+          child: _buildSessionTabStrip(
+            isCompact: false,
+            settingsProvider: settingsProvider,
+            fillWidth: false,
+          ),
+        ),
+        Expanded(child: child),
+      ],
+    );
+  }
+
   Widget _buildSessionTabStrip({
     required bool isCompact,
     required SettingsProvider settingsProvider,
+    bool fillWidth = true,
   }) {
     if (!settingsProvider.showSessionTabs) {
       return const SizedBox.shrink();
@@ -19,6 +53,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
           projects: projectProvider.projects,
           openProjectIds: projectProvider.openProjectIds.toSet(),
           isCompact: isCompact,
+          fillWidth: fillWidth,
           onActivate: (tab) => unawaited(_activateSessionTab(tab)),
           onClose: (tab) => unawaited(_closeSessionTab(tab)),
         );

@@ -1541,6 +1541,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get composerShellMode => 'Modo shell';
 
   @override
+  String get desktopWindowClose => 'Cerrar';
+
+  @override
+  String get desktopWindowMaximize => 'Maximizar';
+
+  @override
+  String get desktopWindowMinimize => 'Minimizar';
+
+  @override
+  String get desktopWindowRestore => 'Restaurar';
+
+  @override
   String get dialogDownload => 'Descargar';
 
   @override
@@ -3457,6 +3469,27 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Cambie a CodeWalk Clásico para usar colores del fondo de pantalla.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Pestañas de la ventana';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Elige cómo se combinan las pestañas de sesión y la barra de título en el escritorio.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Pestañas integradas';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Las pestañas van en la parte superior de la ventana y se oculta la barra de título del sistema.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Decoración del sistema';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Mantiene la barra de título nativa y muestra las pestañas debajo de la barra de la app.';
 
   @override
   String get settingsBack => 'Volver';

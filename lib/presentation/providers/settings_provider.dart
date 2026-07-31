@@ -220,6 +220,7 @@ class SettingsProvider extends ChangeNotifier {
       _settings.composerAutoApprovePermissions;
   DesktopCloseBehavior get desktopCloseBehavior =>
       _settings.desktopCloseBehavior;
+  DesktopWindowChrome get desktopWindowChrome => _settings.desktopWindowChrome;
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get dataSaverEnabled => _settings.dataSaverEnabled;
@@ -821,6 +822,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(desktopCloseBehavior: behavior);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setDesktopWindowChrome(DesktopWindowChrome chrome) async {
+    if (_settings.desktopWindowChrome == chrome) {
+      return;
+    }
+    _settings = _settings.copyWith(desktopWindowChrome: chrome);
     notifyListeners();
     await _persist();
   }

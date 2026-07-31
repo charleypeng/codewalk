@@ -1418,6 +1418,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get composerShellMode => 'Shell 模式';
 
   @override
+  String get desktopWindowClose => '关闭';
+
+  @override
+  String get desktopWindowMaximize => '最大化';
+
+  @override
+  String get desktopWindowMinimize => '最小化';
+
+  @override
+  String get desktopWindowRestore => '还原';
+
+  @override
   String get dialogDownload => '下载';
 
   @override
@@ -3214,6 +3226,27 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       '切换到 CodeWalk 经典以使用壁纸颜色。';
+
+  @override
+  String get settingsAppearanceWindowChrome => '窗口标签页';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      '选择桌面端会话标签页与标题栏的组合方式。';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => '集成标签页';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      '标签页位于窗口顶部，系统标题栏被隐藏。';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => '系统装饰';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      '保留原生标题栏，并在应用栏下方显示标签页。';
 
   @override
   String get settingsBack => '返回';

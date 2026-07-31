@@ -1560,6 +1560,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get composerShellMode => 'Mode Shell';
 
   @override
+  String get desktopWindowClose => 'Fermer';
+
+  @override
+  String get desktopWindowMaximize => 'Agrandir';
+
+  @override
+  String get desktopWindowMinimize => 'Réduire';
+
+  @override
+  String get desktopWindowRestore => 'Restaurer';
+
+  @override
   String get dialogDownload => 'Télécharger';
 
   @override
@@ -3491,6 +3503,27 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
       'Basculez vers CodeWalk Classique pour utiliser les couleurs du fond d\'écran.';
+
+  @override
+  String get settingsAppearanceWindowChrome => 'Onglets de la fenêtre';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Choisissez comment les onglets de session et la barre de titre sont combinés sur ordinateur.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Onglets intégrés';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Les onglets occupent le haut de la fenêtre et la barre de titre du système est masquée.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Décoration système';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Conserve la barre de titre native et affiche les onglets sous la barre d’application.';
 
   @override
   String get settingsBack => 'Retour';

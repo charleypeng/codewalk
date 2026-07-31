@@ -109,6 +109,7 @@ import '../widgets/chat_session_list.dart';
 import '../widgets/chat_skeleton_shimmer.dart';
 import '../widgets/chat_tour_showcase.dart';
 import '../widgets/codewalk_terminal_panel.dart';
+import '../widgets/desktop_window_title_bar.dart';
 import '../widgets/file_tree_context_menu.dart';
 import '../widgets/forward_message_dialog.dart';
 import '../widgets/message_entrance_animation.dart';
@@ -2286,213 +2287,227 @@ class _ChatPageState extends State<ChatPage>
                     }
                     unawaited(_handleMobileBackPress());
                   },
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Scaffold(
-                          key: _scaffoldKey,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
-                          resizeToAvoidBottomInset: true,
-                          appBar: _buildAppBar(
-                            isMobile:
-                                isMobile || (isMedium && !showConversationPane),
-                            isLargeDesktop: isLargeDesktop,
-                            settingsProvider: settingsProvider,
-                          ),
-                          drawer:
-                              (isMobile || (isMedium && !showConversationPane))
-                              ? _buildSessionDrawer()
-                              : null,
-                          body: Builder(
-                            builder: (context) {
-                              late final Widget content;
-                              if (isMobile) {
-                                content = _buildChatContentSelector(
-                                  isKeyboardOpen: keyboardOpen,
-                                  maxContentWidth: double.infinity,
-                                  horizontalPadding: 0,
-                                  verticalPadding: 0,
-                                );
-                              } else {
-                                final filePaneWidth = settingsProvider
-                                    .desktopPaneWidth(DesktopPane.files);
-                                final utilityPaneWidth = settingsProvider
-                                    .desktopPaneWidth(DesktopPane.utility);
-                                final rowChildren = <Widget>[
-                                  if (showConversationPane) ...[
-                                    SizedBox(
-                                      width: sessionPaneWidth,
-                                      child: _buildSessionPanel(
-                                        closeOnSelect: false,
-                                        isMobileLayout: false,
-                                        onCollapseRequested: () {
-                                          unawaited(
-                                            settingsProvider
-                                                .setDesktopPaneVisible(
-                                                  DesktopPane.conversations,
-                                                  false,
-                                                ),
-                                          );
-                                        },
+                  child: _wrapWithIntegratedWindowChrome(
+                    settingsProvider: settingsProvider,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Scaffold(
+                            key: _scaffoldKey,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+                            resizeToAvoidBottomInset: true,
+                            appBar: _buildAppBar(
+                              isMobile:
+                                  isMobile ||
+                                  (isMedium && !showConversationPane),
+                              isLargeDesktop: isLargeDesktop,
+                              settingsProvider: settingsProvider,
+                            ),
+                            drawer:
+                                (isMobile ||
+                                    (isMedium && !showConversationPane))
+                                ? _buildSessionDrawer()
+                                : null,
+                            body: Builder(
+                              builder: (context) {
+                                late final Widget content;
+                                if (isMobile) {
+                                  content = _buildChatContentSelector(
+                                    isKeyboardOpen: keyboardOpen,
+                                    maxContentWidth: double.infinity,
+                                    horizontalPadding: 0,
+                                    verticalPadding: 0,
+                                  );
+                                } else {
+                                  final filePaneWidth = settingsProvider
+                                      .desktopPaneWidth(DesktopPane.files);
+                                  final utilityPaneWidth = settingsProvider
+                                      .desktopPaneWidth(DesktopPane.utility);
+                                  final rowChildren = <Widget>[
+                                    if (showConversationPane) ...[
+                                      SizedBox(
+                                        width: sessionPaneWidth,
+                                        child: _buildSessionPanel(
+                                          closeOnSelect: false,
+                                          isMobileLayout: false,
+                                          onCollapseRequested: () {
+                                            unawaited(
+                                              settingsProvider
+                                                  .setDesktopPaneVisible(
+                                                    DesktopPane.conversations,
+                                                    false,
+                                                  ),
+                                            );
+                                          },
+                                        ),
                                       ),
-                                    ),
-                                    if (isMedium)
-                                      _buildPaneDivider()
-                                    else
+                                      if (isMedium)
+                                        _buildPaneDivider()
+                                      else
+                                        _buildResizableHandle(
+                                          pane: DesktopPane.conversations,
+                                          settingsProvider: settingsProvider,
+                                          paneOnLeft: true,
+                                        ),
+                                    ],
+                                    if (showDesktopFilePane) ...[
+                                      SizedBox(
+                                        width: filePaneWidth,
+                                        child: _buildDesktopFilePane(
+                                          onCollapseRequested: () {
+                                            unawaited(
+                                              settingsProvider
+                                                  .setDesktopPaneVisible(
+                                                    DesktopPane.files,
+                                                    false,
+                                                  ),
+                                            );
+                                          },
+                                        ),
+                                      ),
                                       _buildResizableHandle(
-                                        pane: DesktopPane.conversations,
+                                        pane: DesktopPane.files,
                                         settingsProvider: settingsProvider,
                                         paneOnLeft: true,
                                       ),
-                                  ],
-                                  if (showDesktopFilePane) ...[
-                                    SizedBox(
-                                      width: filePaneWidth,
-                                      child: _buildDesktopFilePane(
-                                        onCollapseRequested: () {
-                                          unawaited(
-                                            settingsProvider
-                                                .setDesktopPaneVisible(
-                                                  DesktopPane.files,
-                                                  false,
-                                                ),
-                                          );
-                                        },
+                                    ],
+                                    Expanded(
+                                      child: _buildChatContentSelector(
+                                        isKeyboardOpen: keyboardOpen,
+                                        maxContentWidth: mainContentWidth,
+                                        horizontalPadding: 12,
+                                        verticalPadding: 2,
                                       ),
                                     ),
-                                    _buildResizableHandle(
-                                      pane: DesktopPane.files,
-                                      settingsProvider: settingsProvider,
-                                      paneOnLeft: true,
-                                    ),
-                                  ],
-                                  Expanded(
-                                    child: _buildChatContentSelector(
-                                      isKeyboardOpen: keyboardOpen,
-                                      maxContentWidth: mainContentWidth,
-                                      horizontalPadding: 12,
-                                      verticalPadding: 2,
-                                    ),
-                                  ),
-                                  if (showDesktopUtilityPane) ...[
-                                    _buildResizableHandle(
-                                      pane: DesktopPane.utility,
-                                      settingsProvider: settingsProvider,
-                                      paneOnLeft: false,
-                                    ),
-                                    SizedBox(
-                                      width: utilityPaneWidth,
-                                      child: _buildDesktopUtilityPane(
-                                        onCollapseRequested: () {
-                                          unawaited(
-                                            settingsProvider
-                                                .setDesktopPaneVisible(
-                                                  DesktopPane.utility,
-                                                  false,
-                                                ),
-                                          );
-                                        },
+                                    if (showDesktopUtilityPane) ...[
+                                      _buildResizableHandle(
+                                        pane: DesktopPane.utility,
+                                        settingsProvider: settingsProvider,
+                                        paneOnLeft: false,
                                       ),
-                                    ),
-                                  ],
-                                ];
-                                content = Row(
+                                      SizedBox(
+                                        width: utilityPaneWidth,
+                                        child: _buildDesktopUtilityPane(
+                                          onCollapseRequested: () {
+                                            unawaited(
+                                              settingsProvider
+                                                  .setDesktopPaneVisible(
+                                                    DesktopPane.utility,
+                                                    false,
+                                                  ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ];
+                                  content = Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: rowChildren,
+                                  );
+                                }
+
+                                final bodyContent = Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
-                                  children: rowChildren,
+                                  children: [
+                                    // In the integrated chrome the strip is drawn
+                                    // in the window title bar instead.
+                                    if (!_usesIntegratedWindowChrome(
+                                      settingsProvider,
+                                    ))
+                                      _buildSessionTabStrip(
+                                        isCompact: isMobile,
+                                        settingsProvider: settingsProvider,
+                                      ),
+                                    Expanded(child: content),
+                                  ],
                                 );
-                              }
 
-                              final bodyContent = Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  _buildSessionTabStrip(
-                                    isCompact: isMobile,
-                                    settingsProvider: settingsProvider,
-                                  ),
-                                  Expanded(child: content),
-                                ],
-                              );
+                                if (!_isProjectScopeTransitioning) {
+                                  return bodyContent;
+                                }
 
-                              if (!_isProjectScopeTransitioning) {
-                                return bodyContent;
-                              }
-
-                              return Stack(
-                                children: [
-                                  Positioned.fill(child: bodyContent),
-                                  Positioned.fill(
-                                    child: _buildProjectScopeLoadingOverlay(),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      if (showFullscreenTerminalPanel)
-                        Positioned.fill(
-                          child: _buildFullscreenTerminalOverlay(
-                            settingsProvider,
-                          ),
-                        ),
-                      if (showInAppAttention &&
-                          attentionController.items.isNotEmpty)
-                        PositionedDirectional(
-                          end: 16,
-                          bottom: 16 + MediaQuery.paddingOf(context).bottom,
-                          child: SessionAttentionOverlay(
-                            items: attentionController.items,
-                            expanded:
-                                attentionPresentation ==
-                                SessionAttentionPresentation.panel,
-                            semanticLabel:
-                                context.l10n.settingsSessionAttentionTitle,
-                            stateLabelBuilder: (kind) => kind.name,
-                            openLabel: context.l10n.notificationOpenToClear,
-                            expandLabel: context.l10n.chatExpandGroup,
-                            collapseLabel: context.l10n.chatCollapseGroup,
-                            readLabel: context.l10n.msgReadAloud,
-                            stopReadingLabel: context.l10n.msgStopReadAloud,
-                            dismissLabel: context.l10n.settingsAboutDismiss,
-                            stopOverlayLabel:
-                                context.l10n.settingsSessionAttentionStop,
-                            activeSpeechSnapshotId:
-                                attentionController.activeSpeechSnapshotId,
-                            onOpen: (item) {
-                              _scheduleNotificationTap(
-                                NotificationTapPayload(
-                                  category: 'session_attention',
-                                  action: 'open',
-                                  serverId: item.identity.serverId,
-                                  directory: item.identity.directory,
-                                  sessionId: item.identity.rootSessionId,
-                                  snapshotId: item.snapshotId,
-                                ),
-                              );
-                            },
-                            onRead: (item) =>
-                                unawaited(attentionController.readOrStop(item)),
-                            onDismiss: (item) =>
-                                unawaited(attentionController.dismiss(item)),
-                            onToggleExpanded: () => unawaited(
-                              settingsProvider.setSessionAttentionPresentation(
-                                attentionPresentation ==
-                                        SessionAttentionPresentation.panel
-                                    ? SessionAttentionPresentation.bubble
-                                    : SessionAttentionPresentation.panel,
-                              ),
-                            ),
-                            onStopOverlay: () => unawaited(
-                              settingsProvider.setSessionAttentionPresentation(
-                                SessionAttentionPresentation.off,
-                              ),
+                                return Stack(
+                                  children: [
+                                    Positioned.fill(child: bodyContent),
+                                    Positioned.fill(
+                                      child: _buildProjectScopeLoadingOverlay(),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                         ),
-                    ],
+                        if (showFullscreenTerminalPanel)
+                          Positioned.fill(
+                            child: _buildFullscreenTerminalOverlay(
+                              settingsProvider,
+                            ),
+                          ),
+                        if (showInAppAttention &&
+                            attentionController.items.isNotEmpty)
+                          PositionedDirectional(
+                            end: 16,
+                            bottom: 16 + MediaQuery.paddingOf(context).bottom,
+                            child: SessionAttentionOverlay(
+                              items: attentionController.items,
+                              expanded:
+                                  attentionPresentation ==
+                                  SessionAttentionPresentation.panel,
+                              semanticLabel:
+                                  context.l10n.settingsSessionAttentionTitle,
+                              stateLabelBuilder: (kind) => kind.name,
+                              openLabel: context.l10n.notificationOpenToClear,
+                              expandLabel: context.l10n.chatExpandGroup,
+                              collapseLabel: context.l10n.chatCollapseGroup,
+                              readLabel: context.l10n.msgReadAloud,
+                              stopReadingLabel: context.l10n.msgStopReadAloud,
+                              dismissLabel: context.l10n.settingsAboutDismiss,
+                              stopOverlayLabel:
+                                  context.l10n.settingsSessionAttentionStop,
+                              activeSpeechSnapshotId:
+                                  attentionController.activeSpeechSnapshotId,
+                              onOpen: (item) {
+                                _scheduleNotificationTap(
+                                  NotificationTapPayload(
+                                    category: 'session_attention',
+                                    action: 'open',
+                                    serverId: item.identity.serverId,
+                                    directory: item.identity.directory,
+                                    sessionId: item.identity.rootSessionId,
+                                    snapshotId: item.snapshotId,
+                                  ),
+                                );
+                              },
+                              onRead: (item) => unawaited(
+                                attentionController.readOrStop(item),
+                              ),
+                              onDismiss: (item) =>
+                                  unawaited(attentionController.dismiss(item)),
+                              onToggleExpanded: () => unawaited(
+                                settingsProvider
+                                    .setSessionAttentionPresentation(
+                                      attentionPresentation ==
+                                              SessionAttentionPresentation.panel
+                                          ? SessionAttentionPresentation.bubble
+                                          : SessionAttentionPresentation.panel,
+                                    ),
+                              ),
+                              onStopOverlay: () => unawaited(
+                                settingsProvider
+                                    .setSessionAttentionPresentation(
+                                      SessionAttentionPresentation.off,
+                                    ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
