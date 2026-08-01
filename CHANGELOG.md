@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.187.0 - 2026-08-01
+
+- fix(chat): stop stale payloads and subagent traffic from disturbing the timeline
+
 ## v1.186.0 - 2026-08-01
 
 - fix(ui): refine tab silhouette, background and close affordance
