@@ -834,6 +834,21 @@ extension _ChatPageFileViewer on _ChatPageState {
               onSave();
             }
           },
+          // Keyboards with dedicated clipboard keys emit these instead of
+          // Ctrl+V and friends, and re_editor only binds the Ctrl/Cmd
+          // combinations, so the keyboard's own paste button did nothing
+          // inside the editor while working everywhere else (#121).
+          const SingleActivator(LogicalKeyboardKey.copy): () {
+            unawaited(draft.controller.copy());
+          },
+          if (!readOnly) ...<ShortcutActivator, VoidCallback>{
+            const SingleActivator(LogicalKeyboardKey.paste): () {
+              draft.controller.paste();
+            },
+            const SingleActivator(LogicalKeyboardKey.cut): () {
+              draft.controller.cut();
+            },
+          },
         },
         child: stack,
       ),
