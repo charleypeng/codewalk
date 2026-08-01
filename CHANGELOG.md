@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.183.0 - 2026-08-01
+
+- feat(desktop): show the attention bubble without stealing focus
+- feat(ui): give session tabs a real browser silhouette
+- fix(desktop): keep window buttons flush against the trailing edge
+
 ## v1.182.0 - 2026-07-31
 
 - fix(desktop): make the attention bubble frameless and stop focus theft
