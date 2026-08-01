@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.185.0 - 2026-08-01
+
+- fix(desktop): drop native registrations for the removed multi-window plugin
+
 ## v1.184.0 - 2026-08-01
 
 - feat(desktop): remove the Bubble and Panel attention surfaces
