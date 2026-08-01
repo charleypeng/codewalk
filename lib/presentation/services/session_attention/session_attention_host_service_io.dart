@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../../../domain/entities/experience_settings.dart';
 import 'session_attention_host_contract.dart';
 import 'session_attention_host_protocol.dart';
-import 'session_overlay_entrypoint.dart';
 
 SessionAttentionHostService createSessionAttentionHostService() {
   return _IoSessionAttentionHostService();
@@ -21,24 +17,8 @@ class _IoSessionAttentionHostService
         SessionAttentionSnapshotHostService {
   static const _androidChannel = MethodChannel('codewalk/session_overlay_host');
 
-  WindowController? _desktopWindow;
-  final WindowMethodChannel _desktopChannel = const WindowMethodChannel(
-    sessionAttentionDesktopChannelName,
-    mode: ChannelMode.bidirectional,
-  );
-  bool _desktopChannelRegistered = false;
-  SessionAttentionHostSnapshot? _desktopSnapshot;
-  bool _desktopHostActive = false;
-  bool _desktopWindowVisible = false;
   bool _iosHostActive = false;
   Timer? _androidHeartbeatTimer;
-
-  bool get _isDesktop => switch (defaultTargetPlatform) {
-    TargetPlatform.linux ||
-    TargetPlatform.macOS ||
-    TargetPlatform.windows => true,
-    _ => false,
-  };
 
   @override
   Future<SessionAttentionHostCapability> capability() async {
@@ -63,21 +43,6 @@ class _IoSessionAttentionHostService
         explanation: permissionGranted
             ? null
             : 'Display-over-other-apps permission is required.',
-      );
-    }
-    if (_isDesktop) {
-      final wayland =
-          defaultTargetPlatform == TargetPlatform.linux &&
-          (Platform.environment['WAYLAND_DISPLAY']?.isNotEmpty ?? false);
-      return SessionAttentionHostCapability(
-        kind: SessionAttentionHostKind.desktopWindow,
-        supported: true,
-        permissionGranted: true,
-        running: _desktopHostActive,
-        topmostSupported: !wayland,
-        explanation: wayland
-            ? 'Always-on-top depends on the active Wayland compositor.'
-            : null,
       );
     }
     if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -138,20 +103,6 @@ class _IoSessionAttentionHostService
               'The Android session attention service could not start.',
             );
     }
-    if (_isDesktop) {
-      await _ensureDesktopChannel();
-      final controller =
-          await _findDesktopWindow() ??
-          await WindowController.create(
-            const WindowConfiguration(
-              arguments: sessionAttentionDesktopChildRole,
-            ),
-          );
-      _desktopWindow = controller;
-      await _showDesktopWindow(controller);
-      _desktopHostActive = true;
-      return SessionAttentionHostActivationResult.success(await capability());
-    }
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       _iosHostActive = true;
       return SessionAttentionHostActivationResult.success(await capability());
@@ -180,11 +131,7 @@ class _IoSessionAttentionHostService
     }
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       _iosHostActive = false;
-      return;
     }
-    final controller = await _findDesktopWindow();
-    await _hideDesktopWindow(controller);
-    _desktopHostActive = false;
   }
 
   SessionAttentionHostCapability _startAndroidHeartbeat(
@@ -206,87 +153,6 @@ class _IoSessionAttentionHostService
       await _invokeAndroid<void>('updateOverlaySnapshot', snapshot.toJson());
       return;
     }
-    if (_isDesktop) {
-      _desktopSnapshot = snapshot;
-      await _ensureDesktopChannel();
-      final controller = await _findDesktopWindow();
-      if (snapshot.presentation == SessionAttentionPresentation.off ||
-          snapshot.items.isEmpty) {
-        await _hideDesktopWindow(controller);
-        return;
-      }
-      try {
-        await _desktopChannel.invokeMethod<void>(
-          'applySnapshot',
-          snapshot.toJson(),
-        );
-      } on WindowChannelException {
-        // The child requests _desktopSnapshot after registering its channel.
-      }
-      await _showDesktopWindow(controller);
-    }
-  }
-
-  /// Shows the bubble without taking keyboard focus, and only when it is not
-  /// already on screen.
-  ///
-  /// `show()` activates the window on every desktop platform, so it is never
-  /// used here: `showWithoutActivating` comes from our fork of
-  /// `desktop_multi_window` (see ADR.md) and maps to a no-activate
-  /// presentation per platform. Skipping redundant calls also keeps snapshot
-  /// refreshes from touching window state at all.
-  Future<void> _showDesktopWindow(WindowController? controller) async {
-    if (controller == null || _desktopWindowVisible) {
-      return;
-    }
-    await controller.showWithoutActivating();
-    _desktopWindowVisible = true;
-  }
-
-  Future<void> _hideDesktopWindow(WindowController? controller) async {
-    if (controller == null) {
-      return;
-    }
-    await controller.hide();
-    _desktopWindowVisible = false;
-  }
-
-  Future<void> _ensureDesktopChannel() async {
-    if (_desktopChannelRegistered) return;
-    await _desktopChannel.setMethodCallHandler((call) async {
-      if (call.method == 'requestFullSnapshot') {
-        return _desktopSnapshot?.toJson();
-      }
-      if (call.method == 'command' && call.arguments is Map) {
-        final command = Map<String, dynamic>.from(call.arguments as Map);
-        SessionAttentionHostCommandBus.emit(command);
-        if (command['action'] == 'open') {
-          await windowManager.show();
-          await windowManager.focus();
-        }
-        return true;
-      }
-      return null;
-    });
-    _desktopChannelRegistered = true;
-  }
-
-  Future<WindowController?> _findDesktopWindow() async {
-    if (!_isDesktop) {
-      return null;
-    }
-    final cached = _desktopWindow;
-    if (cached != null) {
-      return cached;
-    }
-    final windows = await WindowController.getAll();
-    for (final window in windows) {
-      if (window.arguments == sessionAttentionDesktopChildRole) {
-        _desktopWindow = window;
-        return window;
-      }
-    }
-    return null;
   }
 
   Future<T?> _invokeAndroid<T>(String method, [Object? arguments]) {

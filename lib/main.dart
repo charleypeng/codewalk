@@ -25,15 +25,11 @@ import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/services/android_background_alert_worker.dart';
 import 'presentation/services/desktop_window_chrome_service.dart';
-import 'presentation/services/session_attention/session_overlay_entrypoint.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/opencode_theme_presets.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (await runSessionAttentionDesktopChildIfNeeded()) {
-    return;
-  }
   await runZonedGuarded<Future<void>>(() async {
     AppLogger.installGlobalHandlers();
 

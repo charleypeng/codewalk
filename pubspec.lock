@@ -281,15 +281,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.12"
-  desktop_multi_window:
-    dependency: "direct main"
-    description:
-      path: "packages/desktop_multi_window"
-      ref: "feat/show-without-activating"
-      resolved-ref: d6aff61a18f56b2744212aef333c5e254d8bfe9b
-      url: "https://github.com/insign/flutter-plugins.git"
-    source: git
-    version: "0.3.1"
   dio:
     dependency: "direct main"
     description:

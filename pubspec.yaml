@@ -100,13 +100,6 @@ dependencies:
   open_filex: ^4.6.0
   crypto: ^3.0.6
   cryptography: 2.9.0
-  # Fork: adds showWithoutActivating so the attention bubble can appear
-  # without stealing keyboard focus. See ADR.md. Upstream has no equivalent.
-  desktop_multi_window:
-    git:
-      url: https://github.com/insign/flutter-plugins.git
-      ref: feat/show-without-activating
-      path: packages/desktop_multi_window
   simple_icons:
     git:
       url: https://github.com/jlnrrg/simple_icons.git

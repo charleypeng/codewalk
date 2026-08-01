@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../../../core/auth/tts_api_key_storage.dart';
 import '../../../core/constants/app_constants.dart';
@@ -31,37 +28,9 @@ import '../tts/tts_backend.dart';
 import 'session_attention_completion_resolver.dart';
 import 'session_attention_host_protocol.dart';
 
-const sessionAttentionDesktopChildRole = 'session_attention_child_v1';
-const sessionAttentionDesktopChannelName =
-    'codewalk/session_attention_desktop_v1';
 const _androidServiceChannel = MethodChannel(
   'codewalk/session_overlay_service',
 );
-
-bool get _isDesktopRuntime =>
-    !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows);
-
-Future<bool> runSessionAttentionDesktopChildIfNeeded() async {
-  if (!_isDesktopRuntime) {
-    return false;
-  }
-  final controller = await WindowController.fromCurrentEngine();
-  if (controller.arguments != sessionAttentionDesktopChildRole) {
-    return false;
-  }
-  await windowManager.ensureInitialized();
-  // The bubble is a floating surface, not a regular window: it must not show a
-  // title bar, frame or system buttons on any desktop platform. Applied before
-  // runApp so the decoration is never visible, not even for one frame.
-  await windowManager.setAsFrameless();
-  await windowManager.setAlwaysOnTop(true);
-  await windowManager.setSkipTaskbar(true);
-  runApp(SessionAttentionHostApp.desktop(controller: controller));
-  return true;
-}
 
 @pragma('vm:entry-point')
 void sessionOverlayAndroidMain() {
@@ -70,24 +39,15 @@ void sessionOverlayAndroidMain() {
 }
 
 class SessionAttentionHostApp extends StatefulWidget {
-  const SessionAttentionHostApp.android({super.key}) : desktopController = null;
-
-  const SessionAttentionHostApp.desktop({
-    super.key,
-    required WindowController controller,
-  }) : desktopController = controller;
-
-  final WindowController? desktopController;
+  const SessionAttentionHostApp.android({super.key});
 
   @override
   State<SessionAttentionHostApp> createState() =>
       _SessionAttentionHostAppState();
 }
 
-class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
-    with WindowListener {
+class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
   SessionAttentionHostSnapshot? _snapshot;
-  SessionAttentionPresentation? _desktopPresentation;
   ReadAloudService? _androidReadAloudService;
   SessionAttentionOverlayController? _androidController;
   SessionAttentionSnapshotStore? _androidStore;
@@ -105,38 +65,12 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
   final Map<String, DateTime> _androidBusyStarted = <String, DateTime>{};
   final Set<String> _androidErrorSessions = <String>{};
   ExperienceSettings _androidSettings = ExperienceSettings.defaults();
-  final WindowMethodChannel _desktopChannel = const WindowMethodChannel(
-    sessionAttentionDesktopChannelName,
-    mode: ChannelMode.bidirectional,
-  );
-
   @override
   void initState() {
     super.initState();
-    if (widget.desktopController == null) {
-      _androidServiceChannel.setMethodCallHandler(_handleMethodCall);
-      _androidServiceChannel.invokeMethod<void>('requestFullSnapshot');
-      unawaited(_initializeAndroidHost());
-    } else {
-      _desktopChannel.setMethodCallHandler(_handleMethodCall);
-      windowManager.addListener(this);
-      unawaited(windowManager.setPreventClose(true));
-      unawaited(_restoreDesktopSnapshot());
-    }
-  }
-
-  @override
-  void onWindowClose() {
-    unawaited(windowManager.hide());
-  }
-
-  Future<void> _restoreDesktopSnapshot() async {
-    final raw = await _desktopChannel.invokeMethod<Map<dynamic, dynamic>>(
-      'requestFullSnapshot',
-    );
-    if (raw != null) {
-      await _handleMethodCall(MethodCall('applySnapshot', raw));
-    }
+    _androidServiceChannel.setMethodCallHandler(_handleMethodCall);
+    _androidServiceChannel.invokeMethod<void>('requestFullSnapshot');
+    unawaited(_initializeAndroidHost());
   }
 
   Future<void> _initializeAndroidHost() async {
@@ -843,8 +777,7 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
   }
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
-    if (widget.desktopController == null &&
-        call.method == 'persistPresentationOff') {
+    if (call.method == 'persistPresentationOff') {
       await _stopAndroidFallbackNetwork();
       await _androidReadAloudService?.stop();
       await _persistAndroidPresentation(SessionAttentionPresentation.off);
@@ -865,29 +798,17 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
       return false;
     }
     if (!next.supersedes(_snapshot)) return false;
-    if (widget.desktopController == null && next.producer == 'main') {
+    if (next.producer == 'main') {
       await _stopAndroidFallbackNetwork();
     }
     if (mounted) {
       setState(() => _snapshot = next);
     }
-    if (widget.desktopController != null) {
-      if (_desktopPresentation != next.presentation) {
-        _desktopPresentation = next.presentation;
-        await windowManager.setSize(
-          next.presentation == SessionAttentionPresentation.panel
-              ? const Size(420, 560)
-              : const Size(112, 112),
-        );
-        await windowManager.setAlwaysOnTop(true);
-        await windowManager.setSkipTaskbar(true);
-      }
-    }
     return true;
   }
 
   Future<void> _command(String action, [SessionAttentionItem? item]) async {
-    if (widget.desktopController == null && item != null) {
+    if (item != null) {
       final controller = _androidController;
       if (controller != null && action == 'read') {
         await _reloadAndroidSettings();
@@ -904,8 +825,7 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
         return;
       }
     }
-    if (widget.desktopController == null &&
-        (action == 'expand' || action == 'collapse')) {
+    if (action == 'expand' || action == 'collapse') {
       final presentation = action == 'expand'
           ? SessionAttentionPresentation.panel
           : SessionAttentionPresentation.bubble;
@@ -913,7 +833,7 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
       await _applyAndroidLocalState(presentation: presentation);
       return;
     }
-    if (widget.desktopController == null && action == 'stop') {
+    if (action == 'stop') {
       await _androidReadAloudService?.stop();
       await _persistAndroidPresentation(SessionAttentionPresentation.off);
       await _androidServiceChannel.invokeMethod<void>('stopLocal');
@@ -926,29 +846,20 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
         'snapshotId': item.snapshotId,
       },
     };
-    if (widget.desktopController == null) {
-      await _androidServiceChannel.invokeMethod<void>('command', payload);
-    } else {
-      await _desktopChannel.invokeMethod<void>('command', payload);
-    }
+    await _androidServiceChannel.invokeMethod<void>('command', payload);
   }
 
   @override
   void dispose() {
-    if (widget.desktopController == null) {
-      _androidServiceChannel.setMethodCallHandler(null);
-      _androidFallbackTimer?.cancel();
-      _androidFallbackSignalTimer?.cancel();
-      _androidFallbackSseSubscription?.cancel();
-      _androidDataSaverService?.dispose();
-      _androidController
-        ?..removeListener(_handleAndroidControllerChanged)
-        ..dispose();
-      _androidReadAloudService?.dispose();
-    } else {
-      _desktopChannel.setMethodCallHandler(null);
-      windowManager.removeListener(this);
-    }
+    _androidServiceChannel.setMethodCallHandler(null);
+    _androidFallbackTimer?.cancel();
+    _androidFallbackSignalTimer?.cancel();
+    _androidFallbackSseSubscription?.cancel();
+    _androidDataSaverService?.dispose();
+    _androidController
+      ?..removeListener(_handleAndroidControllerChanged)
+      ..dispose();
+    _androidReadAloudService?.dispose();
     super.dispose();
   }
 
@@ -957,18 +868,14 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp>
     final snapshot = _snapshot;
     final expanded = snapshot?.presentation.name == 'panel';
     final items = snapshot?.items ?? const <SessionAttentionItem>[];
-    final activeSpeechSnapshotId = widget.desktopController == null
-        ? _androidController?.activeSpeechSnapshotId
-        : snapshot?.activeSpeechSnapshotId;
+    final activeSpeechSnapshotId = _androidController?.activeSpeechSnapshotId;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorSchemeSeed: const Color(0xff6750a4)),
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: Align(
-          alignment: widget.desktopController == null
-              ? Alignment.topCenter
-              : Alignment.center,
+          alignment: Alignment.topCenter,
           child: SessionAttentionOverlay(
             items: items,
             expanded: expanded,

@@ -100,8 +100,12 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection>
             const SizedBox(height: 16),
             _buildDataSaverCard(context, settingsProvider),
             const SizedBox(height: 16),
-            _buildSessionAttentionCard(context, settingsProvider),
-            const SizedBox(height: 16),
+            // Platforms without an attention surface (desktop and web) do not
+            // show the control at all instead of showing a dead one.
+            if (settingsProvider.sessionAttentionHostCapability.supported) ...[
+              _buildSessionAttentionCard(context, settingsProvider),
+              const SizedBox(height: 16),
+            ],
             _buildChatRenderModeCard(context, settingsProvider),
             const SizedBox(height: 16),
             _buildComposerSpellCheckCard(context, settingsProvider),

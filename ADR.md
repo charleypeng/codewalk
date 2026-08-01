@@ -3108,9 +3108,9 @@ The bounded final root-session fetch is solely the explicit ADR-003 event-scope 
 
 ---
 
-## ADR-050: Fork of `desktop_multi_window` for Non-Activating Window Presentation (2026-08-01)
+## ADR-050: Fork of `desktop_multi_window` for Non-Activating Window Presentation (2026-08-01) ⚠️ SUPERSEDED by ADR-051
 
-**Status**: Accepted
+**Status**: Superseded
 
 **Related**: GitHub issue #129; ADR-049 (cross-platform attention surfaces).
 
@@ -3153,3 +3153,42 @@ Submit the change upstream as a pull request. If it is accepted and released, dr
 - `lib/presentation/services/session_attention/session_attention_host_service_io.dart` — `_showDesktopWindow` calls `showWithoutActivating` and skips redundant presentations.
 - `lib/presentation/services/session_attention/session_overlay_entrypoint.dart` — frameless and skip-taskbar applied before `runApp`.
 - Fork: `insign/flutter-plugins`, branch `feat/show-without-activating`.
+
+---
+
+## ADR-051: Removal of Desktop Attention Surfaces (2026-08-01)
+
+**Status**: Accepted
+
+**Related**: Supersedes ADR-050; narrows ADR-049; GitHub issues #98 and #129.
+
+### Context
+
+ADR-049 gave every platform an attention surface. On desktop that meant a `desktop_multi_window` child window rendering the Bubble or Panel. Making that window behave like an overlay rather than an ordinary window required, in sequence: hiding it from the taskbar, removing its frame, forcing always-on-top, suppressing redundant re-presentations, and finally forking the plugin (ADR-050) to add a non-activating show with native patches on Linux, Windows and macOS.
+
+That cost bought a surface that duplicates what desktop already provides. The project initialises native notifications for Linux, macOS and Windows in `notification_service.dart`, ships a tray icon with tooltip and context menu in `desktop_tray_service_io.dart`, and, since the session tab strip landed, shows per-session error, question, completion and activity indicators in the top band of the window.
+
+A self-drawn floating window is also a worse notification than the native one: it does not appear in the notification centre, does not respect Do Not Disturb or Focus modes, has no history, does not stack, and ignores the position the user configured at system level.
+
+The calculus differs on Android, where the overlay is the only way to draw over other applications and the pattern is familiar to users, and on iOS, where the surface is in-app only.
+
+### Decision
+
+Remove Bubble and Panel from desktop entirely. Desktop reports `SessionAttentionHostKind.unsupported`, the preference is not offered there, and no attention window is created. Attention on desktop is carried by native notifications, the tray, and the session tab indicators.
+
+Drop the `desktop_multi_window` dependency and delete the fork created in ADR-050. Android and iOS behaviour is unchanged.
+
+### Consequences
+
+- The project no longer depends on `desktop_multi_window`, and no longer maintains a fork with native code on three platforms. The native no-activate patches are discarded along with it.
+- Desktop users lose a persistent floating list of sessions needing attention. This is the accepted trade: the same information is available from notifications, the tray, and the tab indicators, all of which integrate with the operating system.
+- `SessionAttentionPresentation` remains in the settings model because Android and iOS still use it. Only the desktop producer and consumer are gone.
+- ADR-049 stays valid for Android and iOS; its desktop window lifecycle section no longer applies.
+
+### Key Files
+
+- `pubspec.yaml` — `desktop_multi_window` removed.
+- `lib/presentation/services/session_attention/session_attention_host_service_io.dart` — desktop capability, activation, snapshot and window helpers removed; desktop now falls through to unsupported.
+- `lib/presentation/services/session_attention/session_overlay_entrypoint.dart` — desktop child entry point, window channel and `WindowListener` removed; the host app is Android-only.
+- `lib/main.dart` — desktop child bootstrap removed.
+- `lib/presentation/pages/settings/sections/behavior_settings_section.dart` — the control is hidden where the capability is unsupported.
