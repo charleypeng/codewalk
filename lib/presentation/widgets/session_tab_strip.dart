@@ -125,6 +125,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   final Map<SessionTabIdentity, FocusNode> _tabFocusNodes =
       <SessionTabIdentity, FocusNode>{};
   SessionTabIdentity? _hoveredIdentity;
+  SessionTabIdentity? _focusedIdentity;
   SessionTabIdentity? _touchRevealedIdentity;
   Timer? _touchRevealTimer;
   SessionTabIdentity? _lastSelectedIdentity;
@@ -139,6 +140,9 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     // at a tab which no longer exists.
     if (_hoveredIdentity != null && !identities.contains(_hoveredIdentity)) {
       _hoveredIdentity = null;
+    }
+    if (_focusedIdentity != null && !identities.contains(_focusedIdentity)) {
+      _focusedIdentity = null;
     }
     if (_touchRevealedIdentity != null &&
         !identities.contains(_touchRevealedIdentity)) {
@@ -238,6 +242,13 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     setState(() => _hoveredIdentity = identity);
   }
 
+  void _setFocused(SessionTabIdentity? identity) {
+    if (!mounted || _focusedIdentity == identity) {
+      return;
+    }
+    setState(() => _focusedIdentity = identity);
+  }
+
   /// Touch devices have no hover, so tapping a tab reveals its close button
   /// for a short while instead of showing it permanently.
   void _revealCloseForTouch(SessionTabIdentity identity) {
@@ -250,6 +261,14 @@ class _SessionTabStripState extends State<SessionTabStrip> {
         setState(() => _touchRevealedIdentity = null);
       }
     });
+  }
+
+  void _handlePointerDown(SessionTabIdentity identity, PointerDownEvent event) {
+    if (event.kind == PointerDeviceKind.touch ||
+        event.kind == PointerDeviceKind.stylus ||
+        event.kind == PointerDeviceKind.invertedStylus) {
+      _revealCloseForTouch(identity);
+    }
   }
 
   Widget _buildTab(BuildContext context, SessionTabRecord tab) {
@@ -265,183 +284,202 @@ class _SessionTabStripState extends State<SessionTabStrip> {
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
     final hovered = _hoveredIdentity == tab.identity;
-    // Pointer devices reveal the close button on hover; touch devices reveal it
-    // for a few seconds after the tab is tapped. Either way the title keeps the
-    // extra width the rest of the time.
-    final showClose = widget.isCompact
-        ? _touchRevealedIdentity == tab.identity
-        : hovered;
+    // Mouse hover, keyboard focus and touch/stylus input each reveal the close
+    // action without making layout width stand in for the input device type.
+    final showClose =
+        hovered ||
+        _focusedIdentity == tab.identity ||
+        _touchRevealedIdentity == tab.identity;
 
     return MouseRegion(
       onEnter: (_) => _setHovered(tab.identity),
       onExit: (_) => _setHovered(null),
-      child: SizedBox(
-        key: _tabKeys.putIfAbsent(tab.identity, GlobalKey.new),
-        width: widget.isCompact ? 214 : 244,
-        child: Material(
-          key: ValueKey<String>('session_tab_$key'),
-          // The selected tab shares the content surface colour, which is what
-          // creates the visual continuity with the chat panel underneath. No
-          // border on any side: a bottom stroke would draw a hairline between
-          // the tab and the content it is supposed to be joined to.
-          color: selected
-              ? colorScheme.surface
-              : hovered
-              ? colorScheme.surface.withValues(alpha: 0.45)
-              : Colors.transparent,
-          shape: const _ChromeTabBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Semantics(
-                        button: true,
-                        selected: selected,
-                        label: _semanticLabel(context, tab, title),
-                        onTap: () => widget.onActivate(tab),
-                        child: Tooltip(
-                          message: title,
-                          excludeFromSemantics: true,
-                          child: ExcludeSemantics(
-                            child: InkWell(
-                              key: ValueKey<String>(
-                                'session_tab_activate_$key',
-                              ),
-                              focusNode: _tabFocusNodes.putIfAbsent(
-                                tab.identity,
-                                () => FocusNode(debugLabel: 'Session tab $key'),
-                              ),
-                              borderRadius: radius,
-                              overlayColor:
-                                  WidgetStateProperty.resolveWith<Color?>((
-                                    states,
-                                  ) {
-                                    if (states.contains(WidgetState.pressed)) {
-                                      return colorScheme.primary.withValues(
-                                        alpha: 0.18,
-                                      );
-                                    }
-                                    if (states.contains(WidgetState.focused)) {
-                                      return colorScheme.primary.withValues(
-                                        alpha: 0.14,
-                                      );
-                                    }
-                                    if (states.contains(WidgetState.hovered)) {
-                                      return colorScheme.primary.withValues(
-                                        alpha: 0.09,
-                                      );
-                                    }
-                                    return null;
-                                  }),
-                              onTap: () {
-                                if (widget.isCompact) {
-                                  _revealCloseForTouch(tab.identity);
-                                }
-                                widget.onActivate(tab);
-                              },
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  minHeight: 48,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsetsDirectional.only(
-                                    start: 10,
+      child: Listener(
+        onPointerDown: (event) => _handlePointerDown(tab.identity, event),
+        child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onFocusChange: (hasFocus) {
+            if (hasFocus) {
+              _setFocused(tab.identity);
+            } else if (_focusedIdentity == tab.identity) {
+              _setFocused(null);
+            }
+          },
+          child: SizedBox(
+            key: _tabKeys.putIfAbsent(tab.identity, GlobalKey.new),
+            width: widget.isCompact ? 214 : 244,
+            child: Material(
+              key: ValueKey<String>('session_tab_$key'),
+              // The selected tab shares the content surface colour, which is what
+              // creates the visual continuity with the chat panel underneath. No
+              // border on any side: a bottom stroke would draw a hairline between
+              // the tab and the content it is supposed to be joined to.
+              color: selected
+                  ? colorScheme.surface
+                  : hovered
+                  ? colorScheme.surface.withValues(alpha: 0.45)
+                  : Colors.transparent,
+              shape: const _ChromeTabBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Semantics(
+                            button: true,
+                            selected: selected,
+                            label: _semanticLabel(context, tab, title),
+                            onTap: () => widget.onActivate(tab),
+                            onDismiss: () => _handleClose(tab),
+                            child: Tooltip(
+                              message: title,
+                              excludeFromSemantics: true,
+                              child: ExcludeSemantics(
+                                child: InkWell(
+                                  key: ValueKey<String>(
+                                    'session_tab_activate_$key',
                                   ),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 28,
-                                        height: 28,
-                                        child: Center(
-                                          child: _buildLeading(
-                                            context,
-                                            tab,
-                                            project,
-                                            title,
-                                          ),
-                                        ),
+                                  focusNode: _tabFocusNodes.putIfAbsent(
+                                    tab.identity,
+                                    () => FocusNode(
+                                      debugLabel: 'Session tab $key',
+                                    ),
+                                  ),
+                                  borderRadius: radius,
+                                  overlayColor:
+                                      WidgetStateProperty.resolveWith<Color?>((
+                                        states,
+                                      ) {
+                                        if (states.contains(
+                                          WidgetState.pressed,
+                                        )) {
+                                          return colorScheme.primary.withValues(
+                                            alpha: 0.18,
+                                          );
+                                        }
+                                        if (states.contains(
+                                          WidgetState.focused,
+                                        )) {
+                                          return colorScheme.primary.withValues(
+                                            alpha: 0.14,
+                                          );
+                                        }
+                                        if (states.contains(
+                                          WidgetState.hovered,
+                                        )) {
+                                          return colorScheme.primary.withValues(
+                                            alpha: 0.09,
+                                          );
+                                        }
+                                        return null;
+                                      }),
+                                  onTap: () => widget.onActivate(tab),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      minHeight: 48,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        start: 10,
                                       ),
-                                      const SizedBox(width: 7),
-                                      Expanded(
-                                        child: Text(
-                                          title,
-                                          key: ValueKey<String>(
-                                            'session_tab_title_$key',
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelLarge
-                                              ?.copyWith(
-                                                color: foreground,
-                                                fontWeight: selected
-                                                    ? FontWeight.w700
-                                                    : FontWeight.w600,
+                                      child: Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: Center(
+                                              child: _buildLeading(
+                                                context,
+                                                tab,
+                                                project,
+                                                title,
                                               ),
-                                        ),
-                                      ),
-                                      if (tab.isBusy) ...[
-                                        const SizedBox(width: 6),
-                                        Icon(
-                                          Symbols.sync_rounded,
-                                          key: ValueKey<String>(
-                                            'session_tab_busy_${tab.status.name}_$key',
+                                            ),
                                           ),
-                                          size: 17,
-                                          color:
-                                              tab.status ==
-                                                  SessionStatusType.retry
-                                              ? colorScheme.tertiary
-                                              : colorScheme.primary,
-                                        ),
-                                      ],
-                                      const SizedBox(width: 2),
-                                    ],
+                                          const SizedBox(width: 7),
+                                          Expanded(
+                                            child: Text(
+                                              title,
+                                              key: ValueKey<String>(
+                                                'session_tab_title_$key',
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelLarge
+                                                  ?.copyWith(
+                                                    color: foreground,
+                                                    fontWeight: selected
+                                                        ? FontWeight.w700
+                                                        : FontWeight.w600,
+                                                  ),
+                                            ),
+                                          ),
+                                          if (tab.isBusy) ...[
+                                            const SizedBox(width: 6),
+                                            Icon(
+                                              Symbols.sync_rounded,
+                                              key: ValueKey<String>(
+                                                'session_tab_busy_${tab.status.name}_$key',
+                                              ),
+                                              size: 17,
+                                              color:
+                                                  tab.status ==
+                                                      SessionStatusType.retry
+                                                  ? colorScheme.tertiary
+                                                  : colorScheme.primary,
+                                            ),
+                                          ],
+                                          const SizedBox(width: 2),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    if (!showClose)
-                      const SizedBox(width: _kTabShoulder)
-                    else
-                      Semantics(
-                        button: true,
-                        label: context.l10n.chatClose,
-                        onTap: () => _handleClose(tab),
-                        child: ExcludeSemantics(
-                          child: IconButton(
-                            key: ValueKey<String>('session_tab_close_$key'),
-                            tooltip: context.l10n.chatClose,
-                            // A full 48px splash swamped the tab and clashed
-                            // with its curved shoulders; the tap target stays
-                            // comfortable on touch, tighter with a pointer.
-                            constraints: BoxConstraints.tightFor(
-                              width: widget.isCompact ? 40 : 26,
-                              height: widget.isCompact ? 40 : 26,
+                        if (!showClose)
+                          const SizedBox(width: _kTabShoulder)
+                        else
+                          Semantics(
+                            button: true,
+                            label: context.l10n.chatClose,
+                            onTap: () => _handleClose(tab),
+                            child: ExcludeSemantics(
+                              child: IconButton(
+                                key: ValueKey<String>('session_tab_close_$key'),
+                                tooltip: context.l10n.chatClose,
+                                // A full 48px splash swamped the tab and clashed
+                                // with its curved shoulders; the tap target stays
+                                // comfortable on touch, tighter with a pointer.
+                                constraints: BoxConstraints.tightFor(
+                                  width: widget.isCompact ? 40 : 26,
+                                  height: widget.isCompact ? 40 : 26,
+                                ),
+                                style: IconButton.styleFrom(
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                padding: EdgeInsets.zero,
+                                iconSize: 16,
+                                color: foreground,
+                                icon: const Icon(Symbols.close_rounded),
+                                onPressed: () => _handleClose(tab),
+                              ),
                             ),
-                            style: IconButton.styleFrom(
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            padding: EdgeInsets.zero,
-                            iconSize: 16,
-                            color: foreground,
-                            icon: const Icon(Symbols.close_rounded),
-                            onPressed: () => _handleClose(tab),
                           ),
-                        ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

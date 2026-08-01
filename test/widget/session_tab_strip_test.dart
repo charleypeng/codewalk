@@ -26,9 +26,14 @@ void main() {
   ) async {
     final tab = _tab('alpha', title: 'Alpha session', isSelected: true);
     final activated = <SessionTabIdentity>[];
+    final closed = <SessionTabIdentity>[];
 
     await tester.pumpWidget(
-      _app(tabs: <SessionTabRecord>[tab], onActivate: activated.add),
+      _app(
+        tabs: <SessionTabRecord>[tab],
+        onActivate: activated.add,
+        onClose: closed.add,
+      ),
     );
     await tester.pump();
 
@@ -62,6 +67,105 @@ void main() {
     await tester.pump();
 
     expect(activated, <SessionTabIdentity>[tab.identity]);
+
+    final closeFinder = find.byKey(
+      ValueKey<String>('session_tab_close_$identityKey'),
+    );
+    expect(closeFinder, findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(closed, <SessionTabIdentity>[tab.identity]);
+  });
+
+  testWidgets('exposes close as a permanent semantics action', (tester) async {
+    final tab = _tab('alpha', title: 'Alpha session', isSelected: true);
+    final closed = <SessionTabIdentity>[];
+    final identityKey = sessionTabIdentityKey(tab.identity);
+
+    await tester.pumpWidget(
+      _app(tabs: <SessionTabRecord>[tab], onClose: closed.add),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(ValueKey<String>('session_tab_close_$identityKey')),
+      findsNothing,
+    );
+    final tabSemantics = tester.widget<Semantics>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Chat session: Alpha session' &&
+            widget.properties.onDismiss != null,
+      ),
+    );
+
+    tabSemantics.properties.onDismiss!.call();
+    await tester.pump();
+
+    expect(closed, <SessionTabIdentity>[tab.identity]);
+  });
+
+  testWidgets('keyboard traversal keeps close visible on the focused tab', (
+    tester,
+  ) async {
+    final first = _tab('first', isSelected: true);
+    final second = _tab('second');
+    final closed = <SessionTabIdentity>[];
+
+    await tester.pumpWidget(
+      _app(tabs: <SessionTabRecord>[first, second], onClose: closed.add),
+    );
+    await tester.pump();
+
+    final firstKey = sessionTabIdentityKey(first.identity);
+    final secondKey = sessionTabIdentityKey(second.identity);
+    tester
+        .widget<InkWell>(
+          find.byKey(ValueKey<String>('session_tab_activate_$firstKey')),
+        )
+        .focusNode!
+        .requestFocus();
+    await tester.pump();
+
+    expect(
+      find.byKey(ValueKey<String>('session_tab_close_$firstKey')),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<InkWell>(
+            find.byKey(ValueKey<String>('session_tab_activate_$secondKey')),
+          )
+          .focusNode
+          ?.hasFocus,
+      isTrue,
+    );
+    expect(
+      find.byKey(ValueKey<String>('session_tab_close_$firstKey')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(ValueKey<String>('session_tab_close_$secondKey')),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(closed, <SessionTabIdentity>[second.identity]);
   });
 
   testWidgets('prioritizes error attention without replacing retry status', (
@@ -378,7 +482,7 @@ void main() {
     expect(path.contains(const Offset(122, 2)), isTrue);
   });
 
-  testWidgets('touch reveals the close button and hides it after 3s', (
+  testWidgets('touch reveals close in compact and wide layouts for 3s', (
     tester,
   ) async {
     final tab = _tab('alpha', isSelected: true);
@@ -388,30 +492,31 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
-      _app(tabs: <SessionTabRecord>[tab], isCompact: true),
-    );
-    await tester.pump();
+    for (final isCompact in <bool>[true, false]) {
+      await tester.pumpWidget(
+        _app(tabs: <SessionTabRecord>[tab], isCompact: isCompact),
+      );
+      await tester.pump();
 
-    // No hover on touch devices, so the button starts hidden even though the
-    // tab is selected.
-    expect(closeFinder, findsNothing);
+      // Touch has no hover regardless of how wide the layout is.
+      expect(closeFinder, findsNothing);
 
-    await tester.tap(
-      find.byKey(
-        ValueKey<String>(
-          'session_tab_activate_${sessionTabIdentityKey(tab.identity)}',
+      await tester.tap(
+        find.byKey(
+          ValueKey<String>(
+            'session_tab_activate_${sessionTabIdentityKey(tab.identity)}',
+          ),
         ),
-      ),
-    );
-    await tester.pump();
-    expect(closeFinder, findsOneWidget);
+      );
+      await tester.pump();
+      expect(closeFinder, findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 2));
-    expect(closeFinder, findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(closeFinder, findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 1, milliseconds: 100));
-    expect(closeFinder, findsNothing);
+      await tester.pump(const Duration(seconds: 1, milliseconds: 100));
+      expect(closeFinder, findsNothing);
+    }
   });
 
   testWidgets('selection is conveyed by more than colour', (tester) async {
