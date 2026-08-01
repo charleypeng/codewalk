@@ -4010,6 +4010,24 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsServersTitle => 'सर्वर';
 
   @override
+  String get settingsSessionAttentionSize => 'बबल का आकार';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'बहुत बड़ा';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'बहुत छोटा';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'बड़ा';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'छोटा';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'मानक';
+
+  @override
   String get settingsSetupWizard => 'सेटअप विज़ार्ड';
 
   @override

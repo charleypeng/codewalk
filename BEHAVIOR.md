@@ -2153,6 +2153,33 @@ When the association is ambiguous, nothing is opened and the user is told no
 sub-conversation was found. Opening some other subagent is worse than opening
 none.
 
+## Android Attention Overlay
+
+The external overlay exists to follow work while the user is away from
+CodeWalk, so it steps aside whenever the app itself is on screen. Any CodeWalk
+screen counts, not just the conversation: with the app in the foreground the
+overlay detaches, and it comes back when the app is backgrounded and there are
+still eligible items. A foreground change republishes the attention snapshot
+immediately rather than waiting for the next unrelated update.
+
+The overlay also stays hidden when there are no items and while the device is
+locked.
+
+Its Flutter engine is hosted by a Service, which never receives an Activity
+lifecycle. The engine is therefore told explicitly that the app is resumed when
+the view attaches and paused when it detaches; without that the framework
+ignores pointer events and every control appears dead.
+
+Dragging and tapping are distinct: the native touch listener only consumes
+events once movement passes the touch slop, so a plain tap always reaches the
+Flutter widgets underneath.
+
+The Bubble's size is a five-level user preference, persisted with the rest of
+the experience settings and defaulting to a factor of 0.7 of its base size. The
+scale applies to the Bubble only — the Panel keeps fixed dimensions so its
+summary stays legible — and a floor is enforced so the smallest setting still
+leaves a usable touch target.
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.

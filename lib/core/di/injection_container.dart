@@ -158,13 +158,16 @@ Future<void> init() async {
           (await sl<SessionAttentionSnapshotStore>().read()).payload;
       var presentation =
           sl<SettingsProvider>().settings.sessionAttentionPresentation;
+      var bubbleSize = sl<SettingsProvider>().settings.sessionAttentionBubbleSize;
       final persistedSettings = await sl<AppLocalDataSource>()
           .getExperienceSettingsJson();
       if (persistedSettings != null && persistedSettings.isNotEmpty) {
         try {
-          presentation = ExperienceSettings.fromJson(
+          final restored = ExperienceSettings.fromJson(
             Map<String, dynamic>.from(jsonDecode(persistedSettings) as Map),
-          ).sessionAttentionPresentation;
+          );
+          presentation = restored.sessionAttentionPresentation;
+          bubbleSize = restored.sessionAttentionBubbleSize;
         } catch (_) {
           // Keep the initialized provider value if persisted data is malformed.
         }
@@ -255,6 +258,10 @@ Future<void> init() async {
           generation: sessionAttentionHostGeneration,
           revision: revision,
           presentation: presentation,
+          bubbleScale: sessionAttentionBubbleScale(bubbleSize),
+          appInForeground: sl.isRegistered<ChatProvider>()
+              ? sl<ChatProvider>().isForegroundActive
+              : false,
           activeServerId: activeServerId ?? '',
           items: items,
           fullResynchronization: revision == 1,

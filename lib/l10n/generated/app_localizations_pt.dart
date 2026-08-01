@@ -4032,6 +4032,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsServersTitle => 'Servidores';
 
   @override
+  String get settingsSessionAttentionSize => 'Tamanho da Bubble';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'Extra grande';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'Extra pequeno';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'Grande';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'Pequeno';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'Padrão';
+
+  @override
   String get settingsSetupWizard => 'Assistente de configuração';
 
   @override

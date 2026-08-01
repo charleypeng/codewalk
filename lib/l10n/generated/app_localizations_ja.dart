@@ -3843,6 +3843,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsServersTitle => 'サーバー';
 
   @override
+  String get settingsSessionAttentionSize => 'バブルのサイズ';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => '特大';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => '極小';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => '大';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => '小';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => '標準';
+
+  @override
   String get settingsSetupWizard => 'セットアップウィザード';
 
   @override

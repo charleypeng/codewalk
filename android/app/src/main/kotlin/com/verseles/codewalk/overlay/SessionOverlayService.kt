@@ -51,6 +51,9 @@ class SessionOverlayService : Service() {
         private const val NOTIFICATION_ID = 9801
         private const val ACTION_STOP = "com.verseles.codewalk.overlay.STOP"
         private const val ACTION_OPEN = "com.verseles.codewalk.overlay.OPEN"
+        // Floor for the scaled Bubble so the touch target never becomes
+        // unusable at the smallest setting.
+        private const val MIN_BUBBLE_DP = 40
         private const val BUBBLE_WIDTH_DP = 96
         private const val BUBBLE_HEIGHT_DP = 96
         private const val PANEL_WIDTH_DP = 360
@@ -130,6 +133,9 @@ class SessionOverlayService : Service() {
 
     private var engine: FlutterEngine? = null
     private var flutterView: FlutterView? = null
+
+    // Linear factor for the Bubble, delivered with each snapshot (#132).
+    private var bubbleScale = 0.7f
     private var serviceChannel: MethodChannel? = null
     private var currentSnapshot: Map<String, Any?>? = null
     private var currentGeneration: String? = null
@@ -370,6 +376,8 @@ class SessionOverlayService : Service() {
             stopForNativeReason("permission_revoked")
             return
         }
+        bubbleScale = (snapshot["bubbleScale"] as? Number)?.toFloat()?.coerceIn(0.3f, 1.5f)
+            ?: bubbleScale
         val presentation = snapshot["presentation"] as? String ?: "off"
         @Suppress("UNCHECKED_CAST")
         val items = snapshot["items"] as? List<Map<String, Any?>> ?: emptyList()
@@ -378,7 +386,11 @@ class SessionOverlayService : Service() {
             return
         }
         val keyguard = getSystemService(KeyguardManager::class.java)
-        if (items.isEmpty() || keyguard?.isDeviceLocked == true) {
+        // The external overlay exists to follow work while the user is away
+        // from CodeWalk. With the app itself on screen it would only cover the
+        // real thing, so it steps aside and comes back on backgrounding (#128).
+        val appInForeground = snapshot["appInForeground"] as? Boolean ?: false
+        if (items.isEmpty() || appInForeground || keyguard?.isDeviceLocked == true) {
             detachOverlay()
         } else {
             attachOrResizeOverlay(presentation)
@@ -433,6 +445,11 @@ class SessionOverlayService : Service() {
         windowManager.addView(view, params)
         flutterView = view
         view.attachToFlutterEngine(flutterEngine)
+        // A FlutterEngine hosted by a Service never receives an Activity
+        // lifecycle, so without this it stays un-resumed and the framework
+        // ignores pointer events: taps on Open, Read and Dismiss did nothing
+        // (#131). The drag listener was never the culprit.
+        flutterEngine.lifecycleChannel.appIsResumed()
         scheduleFirstFrameTimeout(view)
     }
 
@@ -443,10 +460,16 @@ class SessionOverlayService : Service() {
     }
 
     private fun overlaySize(presentation: String, bounds: Rect): Pair<Int, Int> {
-        val widthDp = if (presentation == "panel") PANEL_WIDTH_DP else BUBBLE_WIDTH_DP
-        val heightDp = if (presentation == "panel") PANEL_HEIGHT_DP else BUBBLE_HEIGHT_DP
-        val width = dp(widthDp).coerceAtMost(bounds.width().coerceAtLeast(1))
-        val height = dp(heightDp).coerceAtMost(bounds.height().coerceAtLeast(1))
+        val isPanel = presentation == "panel"
+        // Only the Bubble scales; the Panel keeps its fixed dimensions so its
+        // summary layout stays legible at every setting (#132).
+        val scale = if (isPanel) 1f else bubbleScale
+        val widthDp = if (isPanel) PANEL_WIDTH_DP else BUBBLE_WIDTH_DP
+        val heightDp = if (isPanel) PANEL_HEIGHT_DP else BUBBLE_HEIGHT_DP
+        val scaledWidthDp = (widthDp * scale).toInt().coerceAtLeast(MIN_BUBBLE_DP)
+        val scaledHeightDp = (heightDp * scale).toInt().coerceAtLeast(MIN_BUBBLE_DP)
+        val width = dp(scaledWidthDp).coerceAtMost(bounds.width().coerceAtLeast(1))
+        val height = dp(scaledHeightDp).coerceAtMost(bounds.height().coerceAtLeast(1))
         return width to height
     }
 
@@ -498,6 +521,7 @@ class SessionOverlayService : Service() {
                     startX = params.x
                     startY = params.y
                     dragging = false
+                    logTouch("down")
                     false
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -517,6 +541,7 @@ class SessionOverlayService : Service() {
                     }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    logTouch(if (dragging) "up-drag" else "up-tap")
                     if (dragging) {
                         persistBounds(params)
                         true
@@ -526,6 +551,14 @@ class SessionOverlayService : Service() {
                 }
                 else -> false
             }
+        }
+    }
+
+    // Traces the overlay touch path so a tap that produces no action can be
+    // told apart from one that never arrived (#131). Debug builds only.
+    private fun logTouch(phase: String) {
+        if (isDebuggable(this)) {
+            Log.d(TAG, "overlay touch phase=" + phase)
         }
     }
 
@@ -544,6 +577,7 @@ class SessionOverlayService : Service() {
     private fun detachOverlay() {
         firstFrameTimeout?.let(handler::removeCallbacks)
         firstFrameTimeout = null
+        engine?.lifecycleChannel?.appIsPaused()
         flutterView?.let { view ->
             firstFrameLayoutListener?.let(view::removeOnLayoutChangeListener)
             view.detachFromFlutterEngine()

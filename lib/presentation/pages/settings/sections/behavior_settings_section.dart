@@ -148,6 +148,24 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection>
     );
   }
 
+  String _sessionAttentionSizeLabel(
+    BuildContext context,
+    SessionAttentionBubbleSize size,
+  ) {
+    return switch (size) {
+      SessionAttentionBubbleSize.extraSmall =>
+        context.l10n.settingsSessionAttentionSizeExtraSmall,
+      SessionAttentionBubbleSize.small =>
+        context.l10n.settingsSessionAttentionSizeSmall,
+      SessionAttentionBubbleSize.standard =>
+        context.l10n.settingsSessionAttentionSizeStandard,
+      SessionAttentionBubbleSize.large =>
+        context.l10n.settingsSessionAttentionSizeLarge,
+      SessionAttentionBubbleSize.extraLarge =>
+        context.l10n.settingsSessionAttentionSizeExtraLarge,
+    };
+  }
+
   Widget _buildSessionAttentionCard(
     BuildContext context,
     SettingsProvider settingsProvider,
@@ -198,6 +216,32 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection>
                     )
                   : null,
             ),
+            if (settingsProvider.sessionAttentionPresentation !=
+                SessionAttentionPresentation.off) ...[
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.settingsSessionAttentionSize,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              Slider(
+                key: const ValueKey<String>('settings_session_attention_size'),
+                min: 0,
+                max: (SessionAttentionBubbleSize.values.length - 1).toDouble(),
+                divisions: SessionAttentionBubbleSize.values.length - 1,
+                value: SessionAttentionBubbleSize.values
+                    .indexOf(settingsProvider.sessionAttentionBubbleSize)
+                    .toDouble(),
+                label: _sessionAttentionSizeLabel(
+                  context,
+                  settingsProvider.sessionAttentionBubbleSize,
+                ),
+                onChanged: (value) => unawaited(
+                  settingsProvider.setSessionAttentionBubbleSize(
+                    SessionAttentionBubbleSize.values[value.round()],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Text(
               context.l10n.settingsSessionAttentionPrivacy,

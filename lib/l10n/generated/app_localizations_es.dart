@@ -4055,6 +4055,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsServersTitle => 'Servidores';
 
   @override
+  String get settingsSessionAttentionSize => 'Tamaño de la burbuja';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'Extra grande';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'Extra pequeño';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'Grande';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'Pequeño';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'Estándar';
+
+  @override
   String get settingsSetupWizard => 'Asistente de configuración';
 
   @override

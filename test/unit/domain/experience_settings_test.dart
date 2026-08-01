@@ -594,6 +594,64 @@ void main() {
     });
   });
 
+  group('session attention bubble size serialization', () {
+    test('defaults to standard, about 30% smaller than the base size', () {
+      expect(
+        ExperienceSettings.defaults().sessionAttentionBubbleSize,
+        SessionAttentionBubbleSize.standard,
+      );
+      expect(
+        sessionAttentionBubbleScale(SessionAttentionBubbleSize.standard),
+        0.7,
+      );
+    });
+
+    test('round-trips every level', () {
+      for (final size in SessionAttentionBubbleSize.values) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          sessionAttentionBubbleSize: size,
+        );
+
+        expect(
+          ExperienceSettings.fromJson(
+            settings.toJson(),
+          ).sessionAttentionBubbleSize,
+          size,
+        );
+      }
+    });
+
+    test('scale is monotonic across the five levels', () {
+      final scales = SessionAttentionBubbleSize.values
+          .map(sessionAttentionBubbleScale)
+          .toList();
+
+      for (var i = 1; i < scales.length; i += 1) {
+        expect(scales[i], greaterThan(scales[i - 1]));
+      }
+    });
+
+    test('unknown persisted values fall back to standard', () {
+      final json = ExperienceSettings.defaults().toJson()
+        ..['sessionAttentionBubbleSize'] = 'gigantic';
+
+      expect(
+        ExperienceSettings.fromJson(json).sessionAttentionBubbleSize,
+        SessionAttentionBubbleSize.standard,
+      );
+    });
+
+    test('installs without the key keep standard', () {
+      final legacy = ExperienceSettings.defaults().toJson()
+        ..remove('sessionAttentionBubbleSize');
+
+      expect(
+        ExperienceSettings.fromJson(legacy).sessionAttentionBubbleSize,
+        SessionAttentionBubbleSize.standard,
+      );
+    });
+  });
+
   group('editor autosave serialization', () {
     test('defaults to off so manual saving is unchanged', () {
       expect(ExperienceSettings.defaults().editorAutosaveEnabled, isFalse);

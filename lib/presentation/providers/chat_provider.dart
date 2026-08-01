@@ -469,6 +469,12 @@ class ChatProvider extends ChangeNotifier {
   DateTime? _lastRealtimeSignalAt;
   ChatSyncState _syncState = ChatSyncState.reconnecting;
   bool _isForegroundActive = true;
+
+  /// Whether CodeWalk is currently in the foreground on any screen.
+  ///
+  /// The Android attention overlay uses this to stay out of the way while the
+  /// app itself is visible (#128).
+  bool get isForegroundActive => _isForegroundActive;
   bool _degradedMode = false;
   bool _isInResumeGrace = false;
   bool _isForegroundResumeSyncing = false;

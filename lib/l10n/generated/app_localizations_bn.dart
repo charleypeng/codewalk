@@ -4015,6 +4015,24 @@ class AppLocalizationsBn extends AppLocalizations {
   String get settingsServersTitle => 'সার্ভার';
 
   @override
+  String get settingsSessionAttentionSize => 'বাবলের আকার';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'অতি বড়';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'অতি ছোট';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'বড়';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'ছোট';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'আদর্শ';
+
+  @override
   String get settingsSetupWizard => 'সেটআপ উইজার্ড';
 
   @override

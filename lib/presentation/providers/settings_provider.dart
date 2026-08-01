@@ -222,6 +222,8 @@ class SettingsProvider extends ChangeNotifier {
       _settings.desktopCloseBehavior;
   DesktopWindowChrome get desktopWindowChrome => _settings.desktopWindowChrome;
   bool get editorAutosaveEnabled => _settings.editorAutosaveEnabled;
+  SessionAttentionBubbleSize get sessionAttentionBubbleSize =>
+      _settings.sessionAttentionBubbleSize;
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get dataSaverEnabled => _settings.dataSaverEnabled;
@@ -834,6 +836,20 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(desktopWindowChrome: chrome);
     notifyListeners();
     await _persist();
+  }
+
+  Future<void> setSessionAttentionBubbleSize(
+    SessionAttentionBubbleSize size,
+  ) async {
+    if (_settings.sessionAttentionBubbleSize == size) {
+      return;
+    }
+    _settings = _settings.copyWith(sessionAttentionBubbleSize: size);
+    notifyListeners();
+    await _persist();
+    // Republish so the running overlay resizes immediately instead of waiting
+    // for the next unrelated snapshot.
+    await _sessionAttentionRepublish?.call();
   }
 
   Future<void> setEditorAutosaveEnabled(bool enabled) async {

@@ -3844,6 +3844,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsServersTitle => '서버';
 
   @override
+  String get settingsSessionAttentionSize => '버블 크기';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => '아주 크게';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => '아주 작게';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => '크게';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => '작게';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => '표준';
+
+  @override
   String get settingsSetupWizard => '설정 마법사';
 
   @override

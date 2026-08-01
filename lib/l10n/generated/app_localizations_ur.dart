@@ -4000,6 +4000,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsServersTitle => 'سرورز';
 
   @override
+  String get settingsSessionAttentionSize => 'ببل کا سائز';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'بہت بڑا';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'بہت چھوٹا';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'بڑا';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'چھوٹا';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'معیاری';
+
+  @override
   String get settingsSetupWizard => 'سیٹ اپ وزرڈ';
 
   @override

@@ -7064,6 +7064,42 @@ abstract class AppLocalizations {
   /// **'Servers'**
   String get settingsServersTitle;
 
+  /// CodeWalk UI string — settingsSessionAttentionSize
+  ///
+  /// In en, this message translates to:
+  /// **'Bubble size'**
+  String get settingsSessionAttentionSize;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeExtraLarge
+  ///
+  /// In en, this message translates to:
+  /// **'Extra large'**
+  String get settingsSessionAttentionSizeExtraLarge;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeExtraSmall
+  ///
+  /// In en, this message translates to:
+  /// **'Extra small'**
+  String get settingsSessionAttentionSizeExtraSmall;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeLarge
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get settingsSessionAttentionSizeLarge;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeSmall
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get settingsSessionAttentionSizeSmall;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeStandard
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get settingsSessionAttentionSizeStandard;
+
   /// CodeWalk UI string — settingsSetupWizard
   ///
   /// In en, this message translates to:

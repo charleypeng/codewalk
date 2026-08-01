@@ -3951,6 +3951,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsServersTitle => 'الخوادم';
 
   @override
+  String get settingsSessionAttentionSize => 'حجم الفقاعة';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'كبير جدًا';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'صغير جدًا';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'كبير';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'صغير';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'قياسي';
+
+  @override
   String get settingsSetupWizard => 'معالج الإعداد';
 
   @override

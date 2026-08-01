@@ -13,6 +13,8 @@ class SessionAttentionHostSnapshot {
     this.fullResynchronization = false,
     this.producer = 'main',
     this.activeSpeechSnapshotId,
+    this.bubbleScale = 0.7,
+    this.appInForeground = false,
   });
 
   final String generation;
@@ -24,11 +26,21 @@ class SessionAttentionHostSnapshot {
   final String producer;
   final String? activeSpeechSnapshotId;
 
+  /// Linear factor the Android host applies to the Bubble's base size.
+  /// The Panel is unaffected and keeps its fixed dimensions.
+  final double bubbleScale;
+
+  /// True while CodeWalk itself is on screen. The external overlay hides then,
+  /// so it never covers the app the user is already looking at (#128).
+  final bool appInForeground;
+
   Map<String, dynamic> toJson() => <String, dynamic>{
     'schemaVersion': 1,
     'generation': generation,
     'revision': revision,
     'presentation': presentation.name,
+    'bubbleScale': bubbleScale,
+    'appInForeground': appInForeground,
     'activeServerId': activeServerId,
     'items': items
         .map(
@@ -59,6 +71,8 @@ class SessionAttentionHostSnapshot {
       generation: json['generation'] as String? ?? '',
       revision: json['revision'] as int? ?? 0,
       presentation: presentation,
+      bubbleScale: (json['bubbleScale'] as num?)?.toDouble() ?? 0.7,
+      appInForeground: json['appInForeground'] as bool? ?? false,
       activeServerId: json['activeServerId'] as String? ?? '',
       items: (json['items'] as List? ?? const <dynamic>[])
           .whereType<Map>()

@@ -30,6 +30,33 @@ enum DataSaverLevel { off, standard, aggressive }
 
 enum SessionAttentionPresentation { off, bubble, panel }
 
+/// Size of the Android attention Bubble. Panel keeps a fixed size.
+enum SessionAttentionBubbleSize { extraSmall, small, standard, large, extraLarge }
+
+/// Linear factor applied to the Bubble's base dimensions.
+///
+/// `standard` is 0.7, i.e. about 30% smaller than the original fixed size.
+double sessionAttentionBubbleScale(SessionAttentionBubbleSize size) {
+  return switch (size) {
+    SessionAttentionBubbleSize.extraSmall => 0.5,
+    SessionAttentionBubbleSize.small => 0.6,
+    SessionAttentionBubbleSize.standard => 0.7,
+    SessionAttentionBubbleSize.large => 0.85,
+    SessionAttentionBubbleSize.extraLarge => 1.0,
+  };
+}
+
+String sessionAttentionBubbleSizeKey(SessionAttentionBubbleSize size) => size.name;
+
+SessionAttentionBubbleSize sessionAttentionBubbleSizeFromKey(String value) {
+  for (final size in SessionAttentionBubbleSize.values) {
+    if (size.name.toLowerCase() == value.toLowerCase()) {
+      return size;
+    }
+  }
+  return SessionAttentionBubbleSize.standard;
+}
+
 enum ChatRenderMode { live, block }
 
 enum ThemeModeOption { system, light, dark }
@@ -760,6 +787,7 @@ class ExperienceSettings {
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       desktopWindowChrome: DesktopWindowChrome.integratedTabs,
       editorAutosaveEnabled: false,
+      sessionAttentionBubbleSize: SessionAttentionBubbleSize.standard,
       dataSaverEnabled: true,
       dataSaverLevel: DataSaverLevel.standard,
       androidBackgroundAlertsEnabled: true,
@@ -831,6 +859,7 @@ class ExperienceSettings {
     required this.desktopCloseBehavior,
     this.desktopWindowChrome = DesktopWindowChrome.integratedTabs,
     this.editorAutosaveEnabled = false,
+    this.sessionAttentionBubbleSize = SessionAttentionBubbleSize.standard,
     required this.dataSaverEnabled,
     required this.dataSaverLevel,
     required this.androidBackgroundAlertsEnabled,
@@ -904,6 +933,7 @@ class ExperienceSettings {
 
   /// Autosave in the file micro editor. Global: applies to every open tab.
   final bool editorAutosaveEnabled;
+  final SessionAttentionBubbleSize sessionAttentionBubbleSize;
   final bool dataSaverEnabled;
   final DataSaverLevel dataSaverLevel;
   final bool androidBackgroundAlertsEnabled;
@@ -977,6 +1007,7 @@ class ExperienceSettings {
     DesktopCloseBehavior? desktopCloseBehavior,
     DesktopWindowChrome? desktopWindowChrome,
     bool? editorAutosaveEnabled,
+    SessionAttentionBubbleSize? sessionAttentionBubbleSize,
     bool? dataSaverEnabled,
     DataSaverLevel? dataSaverLevel,
     bool? androidBackgroundAlertsEnabled,
@@ -1064,6 +1095,8 @@ class ExperienceSettings {
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
       desktopWindowChrome: desktopWindowChrome ?? this.desktopWindowChrome,
       editorAutosaveEnabled: editorAutosaveEnabled ?? this.editorAutosaveEnabled,
+      sessionAttentionBubbleSize:
+          sessionAttentionBubbleSize ?? this.sessionAttentionBubbleSize,
       dataSaverEnabled: nextDataSaverLevel != DataSaverLevel.off,
       dataSaverLevel: nextDataSaverLevel,
       androidBackgroundAlertsEnabled:
@@ -1193,6 +1226,9 @@ class ExperienceSettings {
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
       'desktopWindowChrome': desktopWindowChromeKey(desktopWindowChrome),
       'editorAutosaveEnabled': editorAutosaveEnabled,
+      'sessionAttentionBubbleSize': sessionAttentionBubbleSizeKey(
+        sessionAttentionBubbleSize,
+      ),
       'dataSaverEnabled': dataSaverEnabled,
       'dataSaverLevel': dataSaverLevelKey(dataSaverLevel),
       'keepDesktopRunningInTray':
@@ -1285,6 +1321,7 @@ class ExperienceSettings {
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
     var desktopWindowChrome = defaults.desktopWindowChrome;
     var editorAutosaveEnabled = defaults.editorAutosaveEnabled;
+    var sessionAttentionBubbleSize = defaults.sessionAttentionBubbleSize;
     var dataSaverEnabled = defaults.dataSaverEnabled;
     var dataSaverLevel = defaults.dataSaverLevel;
     var androidBackgroundAlertsEnabled =
@@ -1539,6 +1576,13 @@ class ExperienceSettings {
     final editorAutosaveEnabledJson = json['editorAutosaveEnabled'];
     if (editorAutosaveEnabledJson is bool) {
       editorAutosaveEnabled = editorAutosaveEnabledJson;
+    }
+
+    final bubbleSizeJson = json['sessionAttentionBubbleSize'];
+    if (bubbleSizeJson is String && bubbleSizeJson.trim().isNotEmpty) {
+      sessionAttentionBubbleSize = sessionAttentionBubbleSizeFromKey(
+        bubbleSizeJson.trim(),
+      );
     }
 
     final dataSaverEnabledJson = json['dataSaverEnabled'];
@@ -1818,6 +1862,7 @@ class ExperienceSettings {
       desktopCloseBehavior: desktopCloseBehavior,
       desktopWindowChrome: desktopWindowChrome,
       editorAutosaveEnabled: editorAutosaveEnabled,
+      sessionAttentionBubbleSize: sessionAttentionBubbleSize,
       dataSaverEnabled: dataSaverEnabled,
       dataSaverLevel: dataSaverLevel,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,

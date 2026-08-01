@@ -5,6 +5,12 @@ extension ChatProviderLifecycleOps on ChatProvider {
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
+    if (isActive != wasActive) {
+      // The external overlay hides while CodeWalk is on screen, so a
+      // foreground change has to reach the host right away instead of waiting
+      // for the next unrelated attention update (#128).
+      _scheduleSessionAttentionPublish();
+    }
     if (isActive && !wasActive) {
       _markCurrentSessionTabViewed();
     }

@@ -4912,6 +4912,30 @@
   "@settingsServersTitle": {
     "description": "CodeWalk UI string — settingsServersTitle"
   },
+  "settingsSessionAttentionSize": "Bubble size",
+  "@settingsSessionAttentionSize": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSize"
+  },
+  "settingsSessionAttentionSizeExtraLarge": "Extra large",
+  "@settingsSessionAttentionSizeExtraLarge": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeExtraLarge"
+  },
+  "settingsSessionAttentionSizeExtraSmall": "Extra small",
+  "@settingsSessionAttentionSizeExtraSmall": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeExtraSmall"
+  },
+  "settingsSessionAttentionSizeLarge": "Large",
+  "@settingsSessionAttentionSizeLarge": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeLarge"
+  },
+  "settingsSessionAttentionSizeSmall": "Small",
+  "@settingsSessionAttentionSizeSmall": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeSmall"
+  },
+  "settingsSessionAttentionSizeStandard": "Standard",
+  "@settingsSessionAttentionSizeStandard": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeStandard"
+  },
   "settingsSetupWizard": "Setup Wizard",
   "@settingsSetupWizard": {
     "description": "CodeWalk UI string — settingsSetupWizard"

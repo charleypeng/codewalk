@@ -4062,6 +4062,24 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settingsServersTitle => 'Server';
 
   @override
+  String get settingsSessionAttentionSize => 'Dimensione della bolla';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'Molto grande';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'Molto piccolo';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'Grande';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'Piccolo';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'Standard';
+
+  @override
   String get settingsSetupWizard => 'Configurazione guidata';
 
   @override

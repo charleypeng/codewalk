@@ -3760,6 +3760,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsServersTitle => '服务器';
 
   @override
+  String get settingsSessionAttentionSize => '气泡大小';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => '特大';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => '特小';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => '大';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => '小';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => '标准';
+
+  @override
   String get settingsSetupWizard => '设置向导';
 
   @override

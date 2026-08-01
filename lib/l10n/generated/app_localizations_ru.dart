@@ -4039,6 +4039,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsServersTitle => 'Серверы';
 
   @override
+  String get settingsSessionAttentionSize => 'Размер пузырька';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'Очень большой';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'Очень маленький';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'Большой';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'Маленький';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'Стандартный';
+
+  @override
   String get settingsSetupWizard => 'Мастер настройки';
 
   @override
