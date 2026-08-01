@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.184.0 - 2026-08-01
+
+- feat(desktop): remove the Bubble and Panel attention surfaces
+
 ## v1.183.0 - 2026-08-01
 
 - feat(desktop): show the attention bubble without stealing focus
