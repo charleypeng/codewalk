@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.189.0 - 2026-08-01
+
+- feat(files): add undo, redo and autosave to the file editor
+- fix(files): offer cut and paste in the file editor selection menu
+- fix(files): give the file editor a selection toolbar
+
 ## v1.188.0 - 2026-08-01
 
 - fix(files): revalidate file content when a tab is reopened
