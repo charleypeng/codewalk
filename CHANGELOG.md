@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.192.0 - 2026-08-01
+
+- fix(chat): publish finished blocks while a Block-mode turn continues
+
 ## v1.191.0 - 2026-08-01
 
 - feat(composer): attach images and PDFs by dragging or pasting
