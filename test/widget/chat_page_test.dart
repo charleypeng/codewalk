@@ -16837,7 +16837,7 @@ void main() {
   });
 
   testWidgets(
-    'block render mode hides active first-token and tool-only response',
+    'block render mode publishes finished tools while the turn continues',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -16959,9 +16959,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 120));
 
+      // #116: Block mode withholds only the block still being written. Tools
+      // that already reached a terminal state are published immediately, with
+      // the placeholder still trailing them while the turn continues.
       expect(find.text('Generating response'), findsOneWidget);
-      expect(find.text('Details'), findsNothing);
-      expect(find.text('hidden tool output'), findsNothing);
+      expect(find.text('Details'), findsOneWidget);
 
       repository.messagesBySession[sessionId] = <ChatMessage>[
         ...repository.messagesBySession[sessionId]!,

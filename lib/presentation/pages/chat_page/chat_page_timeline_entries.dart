@@ -410,13 +410,30 @@ extension _ChatPageTimelineEntries on _ChatPageState {
             chatRenderMode: chatRenderMode,
           );
       if (shouldBlockActiveAssistantRun) {
+        // Publish whatever already finished and hold back only the tail that
+        // is still being written (#116).
+        final publishableEnd = _publishableAssistantPrefixEnd(
+          messages: messages,
+          startIndex: assistantRunStart,
+          endExclusive: assistantRunEnd,
+        );
+        if (publishableEnd > assistantRunStart) {
+          _appendRangeWithAssistantToolMerging(
+            entries: entries,
+            messages: messages,
+            startIndex: assistantRunStart,
+            endExclusive: publishableEnd,
+            isActivelyResponding: isSessionActivelyResponding,
+          );
+        }
         entries.add(
           _TimelinePendingAssistantEntry(anchorMessageId: current.id),
         );
         _traceFinalUi(
           'timeline-block-render-active-assistant-run',
           details:
-              'userMessageId=${current.id} assistantRunStart=$assistantRunStart assistantRunEnd=$assistantRunEnd',
+              'userMessageId=${current.id} assistantRunStart=$assistantRunStart '
+              'publishedUntil=$publishableEnd assistantRunEnd=$assistantRunEnd',
         );
         index = assistantRunEnd;
         continue;
@@ -507,6 +524,36 @@ extension _ChatPageTimelineEntries on _ChatPageState {
 
       index = assistantRunEnd;
     }
+  }
+
+  /// How much of an in-flight assistant run may already be shown in Block mode.
+  ///
+  /// Block mode exists to avoid streaming half-written blocks, not to withhold
+  /// the whole turn (#116). A message is publishable once it has reached a
+  /// terminal state of its own: an assistant message that is completed, or one
+  /// that errored — the server reports tool parts individually, so a finished
+  /// tool does not have to wait for the final text.
+  ///
+  /// Returns the exclusive end of the publishable prefix, which equals
+  /// [startIndex] when nothing may be shown yet.
+  int _publishableAssistantPrefixEnd({
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+  }) {
+    var end = startIndex;
+    while (end < endExclusive) {
+      final message = messages[end];
+      if (message is! AssistantMessage) {
+        break;
+      }
+      final isTerminal = message.isCompleted || message.error != null;
+      if (!isTerminal) {
+        break;
+      }
+      end += 1;
+    }
+    return end;
   }
 
   bool _shouldBlockAssistantRunForBlockRenderMode({

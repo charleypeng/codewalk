@@ -2202,6 +2202,21 @@ and any attachable file found is added alongside it.
 Files whose extension is not one the composer accepts are counted as skipped
 rather than inspected, so arbitrary content is never classified as an image.
 
+## Block Render Mode
+
+Block mode exists to avoid showing half-written content, not to withhold a
+whole turn. While a session is responding it hides only the block still being
+written; every block that has reached a terminal state of its own is published
+immediately and keeps its chronological position.
+
+An assistant message counts as terminal once it is completed or has errored.
+Because the server reports tool parts individually, a finished tool appears
+without waiting for the final text — including one that ended in error.
+
+The compact placeholder stays after the blocks already published, for as long
+as generation continues, and disappears when the last block lands. Live mode is
+unaffected and keeps rendering text, reasoning and tools as they stream.
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.
