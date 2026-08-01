@@ -552,6 +552,7 @@ extension _ChatPageFileViewer on _ChatPageState {
       scrollController: draft.scrollController,
       readOnly: readOnly,
       showCursorWhenReadOnly: false,
+      toolbarController: fileEditorSelectionToolbarController,
       wordWrap: false,
       chunkAnalyzer: const NonCodeChunkAnalyzer(),
       onChanged: (_) {
@@ -1009,6 +1010,47 @@ extension _ChatPageFileViewer on _ChatPageState {
     return 'plaintext';
   }
 }
+
+/// Selection toolbar for the file editor.
+///
+/// `CodeEditor` only shows a copy/select-all menu when a toolbar controller is
+/// supplied; without one it calls `toolbarController?.show(...)` and nothing
+/// happens, which is why selecting text on Android offered no copy action
+/// (#121). Button labels come from `ContextMenuButtonType`, so they are
+/// localised by Flutter and need no new strings.
+final SelectionToolbarController fileEditorSelectionToolbarController =
+    MobileSelectionToolbarController(
+      builder:
+          ({
+            required BuildContext context,
+            required TextSelectionToolbarAnchors anchors,
+            required CodeLineEditingController controller,
+            required VoidCallback onDismiss,
+            required VoidCallback onRefresh,
+          }) {
+            final hasSelection = controller.selectedText.isNotEmpty;
+            return AdaptiveTextSelectionToolbar.buttonItems(
+              anchors: anchors,
+              buttonItems: <ContextMenuButtonItem>[
+                if (hasSelection)
+                  ContextMenuButtonItem(
+                    type: ContextMenuButtonType.copy,
+                    onPressed: () {
+                      unawaited(controller.copy());
+                      onDismiss();
+                    },
+                  ),
+                ContextMenuButtonItem(
+                  type: ContextMenuButtonType.selectAll,
+                  onPressed: () {
+                    controller.selectAll();
+                    onRefresh();
+                  },
+                ),
+              ],
+            );
+          },
+    );
 
 class _EditorLineSelectionPainter extends CustomPainter {
   _EditorLineSelectionPainter({
