@@ -2,6 +2,12 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.188.0 - 2026-08-01
+
+- fix(files): revalidate file content when a tab is reopened
+- feat(files): highlight every language the package ships with
+- feat(files): duplicate a file from the micro file manager
+
 ## v1.187.0 - 2026-08-01
 
 - fix(chat): stop stale payloads and subagent traffic from disturbing the timeline
