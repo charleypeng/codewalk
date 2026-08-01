@@ -1602,6 +1602,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get filesContents => 'コンテンツ';
 
   @override
+  String get filesDuplicate => '複製';
+
+  @override
+  String get filesDuplicated => 'ファイルを複製しました';
+
+  @override
   String get filesFileEmpty => 'ファイルは空です。';
 
   @override

@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "A visualização de arquivo binário não está disponível.",
   "filesClear": "Limpar",
   "filesContents": "Conteúdo",
+  "filesDuplicate": "Duplicar",
+  "filesDuplicated": "Arquivo duplicado",
   "filesFileEmpty": "O arquivo está vazio.",
   "filesFilesFound": "Nenhum arquivo encontrado",
   "filesHideSidebar": "Ocultar barra de Arquivos",

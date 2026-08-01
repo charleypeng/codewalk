@@ -1713,6 +1713,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filesContents => 'Содержимое';
 
   @override
+  String get filesDuplicate => 'Дублировать';
+
+  @override
+  String get filesDuplicated => 'Файл продублирован';
+
+  @override
   String get filesFileEmpty => 'Файл пуст.';
 
   @override

@@ -1575,6 +1575,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filesContents => '内容';
 
   @override
+  String get filesDuplicate => '复制';
+
+  @override
+  String get filesDuplicated => '文件已复制';
+
+  @override
   String get filesFileEmpty => '文件为空。';
 
   @override

@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "バイナリファイルのプレビューは利用できません。",
   "filesClear": "クリア",
   "filesContents": "コンテンツ",
+  "filesDuplicate": "複製",
+  "filesDuplicated": "ファイルを複製しました",
   "filesFileEmpty": "ファイルは空です。",
   "filesFilesFound": "ファイルが見つかりません",
   "filesHideSidebar": "ファイルサイドバーを非表示",

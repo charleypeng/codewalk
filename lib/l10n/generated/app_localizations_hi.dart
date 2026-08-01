@@ -1697,6 +1697,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get filesContents => 'सामग्री';
 
   @override
+  String get filesDuplicate => 'डुप्लिकेट';
+
+  @override
+  String get filesDuplicated => 'फ़ाइल डुप्लिकेट की गई';
+
+  @override
   String get filesFileEmpty => 'फ़ाइल खाली है।';
 
   @override

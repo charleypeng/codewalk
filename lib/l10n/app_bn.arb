@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "বাইনারি ফাইল প্রিভিউ উপলব্ধ নয়।",
   "filesClear": "পরিষ্কার",
   "filesContents": "বিষয়বস্তু",
+  "filesDuplicate": "ডুপ্লিকেট",
+  "filesDuplicated": "ফাইল ডুপ্লিকেট হয়েছে",
   "filesFileEmpty": "ফাইলটি খালি।",
   "filesFilesFound": "কোন ফাইল পাওয়া যায়নি",
   "filesHideSidebar": "ফাইল সাইডবার লুকান",

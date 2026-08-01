@@ -3047,6 +3047,18 @@ abstract class AppLocalizations {
   /// **'Contents'**
   String get filesContents;
 
+  /// CodeWalk UI string — filesDuplicate
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get filesDuplicate;
+
+  /// CodeWalk UI string — filesDuplicated
+  ///
+  /// In en, this message translates to:
+  /// **'File duplicated'**
+  String get filesDuplicated;
+
   /// CodeWalk UI string — filesFileEmpty
   ///
   /// In en, this message translates to:

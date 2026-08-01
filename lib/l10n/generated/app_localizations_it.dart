@@ -1720,6 +1720,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get filesContents => 'Contenuti';
 
   @override
+  String get filesDuplicate => 'Duplica';
+
+  @override
+  String get filesDuplicated => 'File duplicato';
+
+  @override
   String get filesFileEmpty => 'Il file è vuoto.';
 
   @override

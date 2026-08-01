@@ -1665,6 +1665,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get filesContents => 'المحتويات';
 
   @override
+  String get filesDuplicate => 'تكرار';
+
+  @override
+  String get filesDuplicated => 'تم تكرار الملف';
+
+  @override
   String get filesFileEmpty => 'الملف فارغ.';
 
   @override

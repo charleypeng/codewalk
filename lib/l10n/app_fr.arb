@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "L''aperçu du fichier binaire n''est pas disponible.",
   "filesClear": "Effacer",
   "filesContents": "Contenus",
+  "filesDuplicate": "Dupliquer",
+  "filesDuplicated": "Fichier dupliqué",
   "filesFileEmpty": "Le fichier est vide.",
   "filesFilesFound": "Aucun fichier trouvé",
   "filesHideSidebar": "Masquer la barre latérale des fichiers",

@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "बाइनरी फ़ाइल पूर्वावलोकन उपलब्ध नहीं है।",
   "filesClear": "साफ़ करें",
   "filesContents": "सामग्री",
+  "filesDuplicate": "डुप्लिकेट",
+  "filesDuplicated": "फ़ाइल डुप्लिकेट की गई",
   "filesFileEmpty": "फ़ाइल खाली है।",
   "filesFilesFound": "कोई फ़ाइल नहीं मिली",
   "filesHideSidebar": "फ़ाइलें साइडबार छुपाएं",

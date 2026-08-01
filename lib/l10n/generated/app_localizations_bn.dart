@@ -1694,6 +1694,12 @@ class AppLocalizationsBn extends AppLocalizations {
   String get filesContents => 'বিষয়বস্তু';
 
   @override
+  String get filesDuplicate => 'ডুপ্লিকেট';
+
+  @override
+  String get filesDuplicated => 'ফাইল ডুপ্লিকেট হয়েছে';
+
+  @override
   String get filesFileEmpty => 'ফাইলটি খালি।';
 
   @override

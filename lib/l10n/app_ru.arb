@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "Предпросмотр бинарного файла недоступен.",
   "filesClear": "Очистить",
   "filesContents": "Содержимое",
+  "filesDuplicate": "Дублировать",
+  "filesDuplicated": "Файл продублирован",
   "filesFileEmpty": "Файл пуст.",
   "filesFilesFound": "Файлы не найдены",
   "filesHideSidebar": "Скрыть боковую панель файлов",

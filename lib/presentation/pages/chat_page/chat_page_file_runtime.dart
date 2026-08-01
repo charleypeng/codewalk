@@ -708,9 +708,11 @@ extension _ChatPageFileRuntime on _ChatPageState {
           ..add(_fileTreeAction(FileTreeContextMenuActionType.newFile))
           ..add(_fileTreeAction(FileTreeContextMenuActionType.newFolder));
       }
-      actions
-        ..add(_fileTreeAction(FileTreeContextMenuActionType.rename))
-        ..add(_fileTreeAction(FileTreeContextMenuActionType.delete));
+      actions.add(_fileTreeAction(FileTreeContextMenuActionType.rename));
+      if (!node.isDirectory) {
+        actions.add(_fileTreeAction(FileTreeContextMenuActionType.duplicate));
+      }
+      actions.add(_fileTreeAction(FileTreeContextMenuActionType.delete));
     }
     actions
       ..add(_fileTreeAction(FileTreeContextMenuActionType.copyPath))
@@ -737,6 +739,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return context.l10n.filesNewFolder;
       case FileTreeContextMenuActionType.rename:
         return context.l10n.filesRename;
+      case FileTreeContextMenuActionType.duplicate:
+        return context.l10n.filesDuplicate;
       case FileTreeContextMenuActionType.delete:
         return context.l10n.filesDelete;
       case FileTreeContextMenuActionType.copyPath:
@@ -772,6 +776,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
         );
         return;
       case FileTreeContextMenuActionType.rename:
+      case FileTreeContextMenuActionType.duplicate:
       case FileTreeContextMenuActionType.delete:
       case FileTreeContextMenuActionType.copyPath:
       case FileTreeContextMenuActionType.refresh:
@@ -816,6 +821,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return;
       case FileTreeContextMenuActionType.rename:
         await _renameFileTreeNode(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          node: node,
+          parentCacheKey: parentCacheKey,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.duplicate:
+        await _duplicateFileTreeNode(
           fileState: fileState,
           projectProvider: projectProvider,
           node: node,
@@ -994,6 +1008,66 @@ extension _ChatPageFileRuntime on _ChatPageState {
         newPath: _siblingFileTreePath(originalNodePath, nextName),
       );
     }
+    await _refreshFileTreeDirectory(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      directory: parentDirectory,
+      cacheKey: parentCacheKey,
+      requestPath: _requestPathForFileTreeCacheKey(
+        fileState: fileState,
+        cacheKey: parentCacheKey,
+        fallbackDirectory: parentDirectory,
+      ),
+      onUpdated: onUpdated,
+    );
+    _showFileOperationSnackBar(successMessage);
+  }
+
+  Future<void> _duplicateFileTreeNode({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required FileNode node,
+    required String parentCacheKey,
+    VoidCallback? onUpdated,
+  }) async {
+    final successMessage = context.l10n.filesDuplicated;
+    final nodePath = _absoluteFileTreePath(fileState, node.path);
+    final parentDirectory = _parentDirectoryForFilePath(nodePath);
+
+    final source = await _readFileContentWithFallback(
+      projectProvider: projectProvider,
+      path: nodePath,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (source == null) {
+      _showFileOperationSnackBar(
+        _fileOperationErrorLabel(WorkspaceFileOperationCode.failed),
+      );
+      return;
+    }
+
+    final siblings = fileState.directoryChildren[parentCacheKey] ?? const [];
+    final existingNames = siblings.map((child) => child.name).toSet();
+    final copyName = duplicateFileName(node.name, existingNames);
+
+    final result = await di.sl<WorkspaceFileOperationsService>().writeFile(
+      serverScopeKey: projectProvider.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      path: _joinFilePath(parentDirectory, copyName),
+      content: source.content,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (!result.ok) {
+      _showFileOperationSnackBar(
+        _fileOperationErrorLabel(result.code, message: result.message),
+      );
+      return;
+    }
+
     await _refreshFileTreeDirectory(
       fileState: fileState,
       projectProvider: projectProvider,

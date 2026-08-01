@@ -2086,6 +2086,14 @@
   "@filesContents": {
     "description": "CodeWalk UI string — filesContents"
   },
+  "filesDuplicate": "Duplicate",
+  "@filesDuplicate": {
+    "description": "CodeWalk UI string — filesDuplicate"
+  },
+  "filesDuplicated": "File duplicated",
+  "@filesDuplicated": {
+    "description": "CodeWalk UI string — filesDuplicated"
+  },
   "filesFileEmpty": "File is empty.",
   "@filesFileEmpty": {
     "description": "CodeWalk UI string — filesFileEmpty"

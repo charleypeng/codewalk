@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "معاينة الملف الثنائي غير متوفرة.",
   "filesClear": "مسح",
   "filesContents": "المحتويات",
+  "filesDuplicate": "تكرار",
+  "filesDuplicated": "تم تكرار الملف",
   "filesFileEmpty": "الملف فارغ.",
   "filesFilesFound": "لم يتم العثور على ملفات",
   "filesHideSidebar": "إخفاء شريط الملفات الجانبي",

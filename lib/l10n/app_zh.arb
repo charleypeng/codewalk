@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "二进制文件预览不可用。",
   "filesClear": "清除",
   "filesContents": "内容",
+  "filesDuplicate": "复制",
+  "filesDuplicated": "文件已复制",
   "filesFileEmpty": "文件为空。",
   "filesFilesFound": "未找到文件",
   "filesHideSidebar": "隐藏文件侧边栏",

@@ -1719,6 +1719,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get filesContents => 'Inhalt';
 
   @override
+  String get filesDuplicate => 'Duplizieren';
+
+  @override
+  String get filesDuplicated => 'Datei dupliziert';
+
+  @override
   String get filesFileEmpty => 'Datei ist leer.';
 
   @override

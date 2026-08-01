@@ -1605,6 +1605,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get filesContents => '콘텐츠';
 
   @override
+  String get filesDuplicate => '복제';
+
+  @override
+  String get filesDuplicated => '파일이 복제되었습니다';
+
+  @override
   String get filesFileEmpty => '파일이 비어 있습니다.';
 
   @override

@@ -487,6 +487,8 @@
   "filesBinaryFilePreview": "بائنری فائل کا پیش نظارہ دستیاب نہیں ہے۔",
   "filesClear": "صاف",
   "filesContents": "مشمولات",
+  "filesDuplicate": "نقل بنائیں",
+  "filesDuplicated": "فائل کی نقل بن گئی",
   "filesFileEmpty": "فائل خالی ہے۔",
   "filesFilesFound": "کوئی فائل نہیں ملی",
   "filesHideSidebar": "فائلوں کی سائڈبار کو چھپائیں۔",

@@ -1690,6 +1690,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get filesContents => 'مشمولات';
 
   @override
+  String get filesDuplicate => 'نقل بنائیں';
+
+  @override
+  String get filesDuplicated => 'فائل کی نقل بن گئی';
+
+  @override
   String get filesFileEmpty => 'فائل خالی ہے۔';
 
   @override
