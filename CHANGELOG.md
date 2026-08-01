@@ -2,6 +2,14 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.191.0 - 2026-08-01
+
+- feat(composer): attach images and PDFs by dragging or pasting
+- feat(composer): show a collapse arrow while the extras popover is open
+- chore(terminal): trace header control activations
+- feat(terminal): acknowledge opening and fit the extra keys on narrow phones
+- fix(files): honour dedicated clipboard keys in the file editor
+
 ## v1.190.0 - 2026-08-01
 
 - fix(android): revive overlay taps, hide it in foreground, make it sizeable
