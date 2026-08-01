@@ -27,6 +27,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
             isCompact: false,
             settingsProvider: settingsProvider,
             fillWidth: false,
+            transparentBackground: true,
           ),
         ),
         Expanded(child: child),
@@ -38,6 +39,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
     required bool isCompact,
     required SettingsProvider settingsProvider,
     bool fillWidth = true,
+    bool transparentBackground = false,
   }) {
     if (!settingsProvider.showSessionTabs) {
       return const SizedBox.shrink();
@@ -54,6 +56,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
           openProjectIds: projectProvider.openProjectIds.toSet(),
           isCompact: isCompact,
           fillWidth: fillWidth,
+          transparentBackground: transparentBackground,
           onActivate: (tab) => unawaited(_activateSessionTab(tab)),
           onClose: (tab) => unawaited(_closeSessionTab(tab)),
         );

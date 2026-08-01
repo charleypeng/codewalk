@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -15,7 +17,13 @@ const double kSessionTabStripHeight = 54;
 const double kSessionTabStripHeightCompact = 58;
 
 /// Horizontal room each tab gives to its curved shoulders.
-const double _kTabShoulder = 13;
+const double _kTabShoulder = 14;
+
+/// Radius of the tab's top corners.
+const double _kTabTopRadius = 10;
+
+/// How long a tapped tab keeps its close button visible on touch devices.
+const Duration _kTouchCloseReveal = Duration(seconds: 3);
 
 /// Browser-style tab silhouette: the sides flare outwards at the bottom so the
 /// tab reads as a tab instead of a rounded rectangle, and neighbours interlock.
@@ -32,21 +40,33 @@ class _ChromeTabBorder extends ShapeBorder {
   @override
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
     const shoulder = _kTabShoulder;
+    const r = _kTabTopRadius;
+    // The shoulder curve stops short of the top edge so a proper rounded
+    // corner can take over; going straight to the top made the corners read
+    // as sharp next to the soft flare below them.
     return Path()
       ..moveTo(rect.left, rect.bottom)
       ..cubicTo(
-        rect.left + shoulder * 0.62,
+        rect.left + shoulder * 0.55,
         rect.bottom,
-        rect.left + shoulder * 0.38,
-        rect.top,
+        rect.left + shoulder * 0.42,
+        rect.top + r,
         rect.left + shoulder,
-        rect.top,
+        rect.top + r,
       )
-      ..lineTo(rect.right - shoulder, rect.top)
+      ..arcToPoint(
+        Offset(rect.left + shoulder + r, rect.top),
+        radius: const Radius.circular(r),
+      )
+      ..lineTo(rect.right - shoulder - r, rect.top)
+      ..arcToPoint(
+        Offset(rect.right - shoulder, rect.top + r),
+        radius: const Radius.circular(r),
+      )
       ..cubicTo(
-        rect.right - shoulder * 0.38,
-        rect.top,
-        rect.right - shoulder * 0.62,
+        rect.right - shoulder * 0.42,
+        rect.top + r,
+        rect.right - shoulder * 0.55,
         rect.bottom,
         rect.right,
         rect.bottom,
@@ -75,6 +95,7 @@ class SessionTabStrip extends StatefulWidget {
     required this.onActivate,
     required this.onClose,
     this.fillWidth = true,
+    this.transparentBackground = false,
   });
 
   final List<SessionTabRecord> tabs;
@@ -85,6 +106,11 @@ class SessionTabStrip extends StatefulWidget {
   /// When false the strip sizes itself to its tabs instead of expanding, so the
   /// integrated window chrome can use the leftover space as a drag region.
   final bool fillWidth;
+
+  /// When true the strip paints no band of its own, so it blends into the
+  /// surface behind it. The integrated window chrome already paints that band;
+  /// standing alone under the app bar the strip still needs its own.
+  final bool transparentBackground;
   final ValueChanged<SessionTabRecord> onActivate;
   final ValueChanged<SessionTabRecord> onClose;
 
@@ -99,6 +125,8 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   final Map<SessionTabIdentity, FocusNode> _tabFocusNodes =
       <SessionTabIdentity, FocusNode>{};
   SessionTabIdentity? _hoveredIdentity;
+  SessionTabIdentity? _touchRevealedIdentity;
+  Timer? _touchRevealTimer;
   SessionTabIdentity? _lastSelectedIdentity;
   double? _lastViewportWidth;
   bool _ensureVisibleScheduled = false;
@@ -107,6 +135,16 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   void didUpdateWidget(covariant SessionTabStrip oldWidget) {
     super.didUpdateWidget(oldWidget);
     final identities = widget.tabs.map((tab) => tab.identity).toSet();
+    // A closed tab never gets a pointer-exit, so drop reveal state that points
+    // at a tab which no longer exists.
+    if (_hoveredIdentity != null && !identities.contains(_hoveredIdentity)) {
+      _hoveredIdentity = null;
+    }
+    if (_touchRevealedIdentity != null &&
+        !identities.contains(_touchRevealedIdentity)) {
+      _touchRevealTimer?.cancel();
+      _touchRevealedIdentity = null;
+    }
     _tabKeys.removeWhere((identity, _) => !identities.contains(identity));
     final removedFocusNodes = _tabFocusNodes.entries
         .where((entry) => !identities.contains(entry.key))
@@ -119,6 +157,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
 
   @override
   void dispose() {
+    _touchRevealTimer?.cancel();
     _scrollController.dispose();
     for (final focusNode in _tabFocusNodes.values) {
       focusNode.dispose();
@@ -151,7 +190,11 @@ class _SessionTabStripState extends State<SessionTabStrip> {
           width: widget.fillWidth ? double.infinity : null,
           // No bottom border: the selected tab reaches the strip edge and
           // merges with the content panel below, like a browser tab.
-          decoration: BoxDecoration(color: colorScheme.surfaceContainerHigh),
+          decoration: BoxDecoration(
+            color: widget.transparentBackground
+                ? Colors.transparent
+                : colorScheme.surfaceContainerHigh,
+          ),
           child: Listener(
             onPointerSignal: _handlePointerSignal,
             child: Scrollbar(
@@ -195,6 +238,20 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     setState(() => _hoveredIdentity = identity);
   }
 
+  /// Touch devices have no hover, so tapping a tab reveals its close button
+  /// for a short while instead of showing it permanently.
+  void _revealCloseForTouch(SessionTabIdentity identity) {
+    _touchRevealTimer?.cancel();
+    if (mounted) {
+      setState(() => _touchRevealedIdentity = identity);
+    }
+    _touchRevealTimer = Timer(_kTouchCloseReveal, () {
+      if (mounted) {
+        setState(() => _touchRevealedIdentity = null);
+      }
+    });
+  }
+
   Widget _buildTab(BuildContext context, SessionTabRecord tab) {
     final colorScheme = Theme.of(context).colorScheme;
     final title = tab.title.trim().isEmpty
@@ -208,9 +265,12 @@ class _SessionTabStripState extends State<SessionTabStrip> {
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
     final hovered = _hoveredIdentity == tab.identity;
-    // Chrome only shows the close affordance where it is actionable, which
-    // also frees horizontal room for the title on the other tabs.
-    final showClose = selected || hovered;
+    // Pointer devices reveal the close button on hover; touch devices reveal it
+    // for a few seconds after the tab is tapped. Either way the title keeps the
+    // extra width the rest of the time.
+    final showClose = widget.isCompact
+        ? _touchRevealedIdentity == tab.identity
+        : hovered;
 
     return MouseRegion(
       onEnter: (_) => _setHovered(tab.identity),
@@ -276,7 +336,12 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                     }
                                     return null;
                                   }),
-                              onTap: () => widget.onActivate(tab),
+                              onTap: () {
+                                if (widget.isCompact) {
+                                  _revealCloseForTouch(tab.identity);
+                                }
+                                widget.onActivate(tab);
+                              },
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(
                                   minHeight: 48,
@@ -355,12 +420,18 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                           child: IconButton(
                             key: ValueKey<String>('session_tab_close_$key'),
                             tooltip: context.l10n.chatClose,
-                            constraints: const BoxConstraints(
-                              minWidth: 48,
-                              minHeight: 48,
+                            // A full 48px splash swamped the tab and clashed
+                            // with its curved shoulders; the tap target stays
+                            // comfortable on touch, tighter with a pointer.
+                            constraints: BoxConstraints.tightFor(
+                              width: widget.isCompact ? 40 : 26,
+                              height: widget.isCompact ? 40 : 26,
+                            ),
+                            style: IconButton.styleFrom(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             padding: EdgeInsets.zero,
-                            iconSize: 17,
+                            iconSize: 16,
                             color: foreground,
                             icon: const Icon(Symbols.close_rounded),
                             onPressed: () => _handleClose(tab),
@@ -370,15 +441,6 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                   ],
                 ),
               ),
-              // Shape cue so selection is not conveyed by colour alone. Inset by
-              // the shoulders so the bar follows the tab silhouette.
-              if (selected)
-                const PositionedDirectional(
-                  top: 0,
-                  start: _kTabShoulder,
-                  end: _kTabShoulder,
-                  child: _SelectionAccent(),
-                ),
             ],
           ),
         ),
@@ -570,14 +632,5 @@ class _SessionTabStripState extends State<SessionTabStrip> {
       position.maxScrollExtent,
     );
     _scrollController.jumpTo(next.toDouble());
-  }
-}
-
-class _SelectionAccent extends StatelessWidget {
-  const _SelectionAccent();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 2, color: Theme.of(context).colorScheme.primary);
   }
 }

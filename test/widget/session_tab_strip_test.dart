@@ -241,8 +241,8 @@ void main() {
       ),
     );
 
-    // The close affordance only materialises for the selected or hovered tab,
-    // so the pointer has to be over `second` before it can be tapped.
+    // With a pointer the close affordance only materialises on hover, so the
+    // mouse has to be over `second` before it can be tapped.
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer(location: Offset.zero);
     addTearDown(gesture.removePointer);
@@ -281,6 +281,17 @@ void main() {
           ?.hasFocus,
       isTrue,
     );
+
+    await gesture.moveTo(
+      tester.getCenter(
+        find.byKey(
+          ValueKey<String>(
+            'session_tab_${sessionTabIdentityKey(first.identity)}',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
 
     await tester.tap(
       find.byKey(
@@ -367,6 +378,42 @@ void main() {
     expect(path.contains(const Offset(122, 2)), isTrue);
   });
 
+  testWidgets('touch reveals the close button and hides it after 3s', (
+    tester,
+  ) async {
+    final tab = _tab('alpha', isSelected: true);
+    final closeFinder = find.byKey(
+      ValueKey<String>(
+        'session_tab_close_${sessionTabIdentityKey(tab.identity)}',
+      ),
+    );
+
+    await tester.pumpWidget(
+      _app(tabs: <SessionTabRecord>[tab], isCompact: true),
+    );
+    await tester.pump();
+
+    // No hover on touch devices, so the button starts hidden even though the
+    // tab is selected.
+    expect(closeFinder, findsNothing);
+
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_activate_${sessionTabIdentityKey(tab.identity)}',
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(closeFinder, findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(closeFinder, findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1, milliseconds: 100));
+    expect(closeFinder, findsNothing);
+  });
+
   testWidgets('selection is conveyed by more than colour', (tester) async {
     final selected = _tab('alpha', isSelected: true);
     final inactive = _tab('beta');
@@ -382,22 +429,11 @@ void main() {
       ),
     );
 
-    // Weight differs and the selected tab carries an accent bar, so the state
-    // survives for users who cannot rely on colour alone.
+    // Weight differs, so selection survives for users who cannot rely on
+    // colour alone even though the accent bar was dropped.
     expect(
       titleOf(selected).style!.fontWeight,
       isNot(titleOf(inactive).style!.fontWeight),
-    );
-    expect(
-      find.descendant(
-        of: find.byKey(
-          ValueKey<String>(
-            'session_tab_${sessionTabIdentityKey(selected.identity)}',
-          ),
-        ),
-        matching: find.byType(PositionedDirectional),
-      ),
-      findsOneWidget,
     );
   });
 }
@@ -417,6 +453,7 @@ Widget _app({
   ValueChanged<SessionTabIdentity>? onActivate,
   ValueChanged<SessionTabIdentity>? onClose,
   double width = 800,
+  bool isCompact = false,
 }) {
   return localizedMaterialApp(
     home: Scaffold(
@@ -428,7 +465,7 @@ Widget _app({
             tabs: tabs,
             projects: projects,
             openProjectIds: openProjectIds,
-            isCompact: false,
+            isCompact: isCompact,
             onActivate: (tab) => onActivate?.call(tab.identity),
             onClose: (tab) => onClose?.call(tab.identity),
           ),

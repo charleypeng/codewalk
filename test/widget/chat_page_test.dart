@@ -5172,6 +5172,21 @@ void main() {
       directory: project.path,
       sessionId: sessionB.id,
     );
+    // The close button is revealed by hover on pointer devices.
+    final closeHover = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await closeHover.addPointer(location: Offset.zero);
+    addTearDown(closeHover.removePointer);
+    await closeHover.moveTo(
+      tester.getCenter(
+        find.byKey(
+          ValueKey<String>('session_tab_${sessionTabIdentityKey(identityA)}'),
+        ),
+      ),
+    );
+    await tester.pump();
+
     await tester.tap(
       find.byKey(
         ValueKey<String>(
@@ -5190,6 +5205,19 @@ void main() {
       repository.sessions.map((session) => session.id),
       contains(sessionA.id),
     );
+
+    // Leave the strip first so the pointer produces a fresh enter on the tab
+    // that took the closed one's place.
+    await closeHover.moveTo(Offset.zero);
+    await tester.pump();
+    await closeHover.moveTo(
+      tester.getCenter(
+        find.byKey(
+          ValueKey<String>('session_tab_${sessionTabIdentityKey(identityB)}'),
+        ),
+      ),
+    );
+    await tester.pump();
 
     await tester.tap(
       find.byKey(
