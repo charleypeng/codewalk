@@ -2217,6 +2217,20 @@ The compact placeholder stays after the blocks already published, for as long
 as generation continues, and disappears when the last block lands. Live mode is
 unaffected and keeps rendering text, reasoning and tools as they stream.
 
+## Empty Project Draft
+
+Opening a project that has no sessions puts CodeWalk straight into a local New
+Chat draft, so the composer is usable immediately instead of waiting behind a
+"New chat" button. Nothing is created remotely by opening a project: the
+session is still created lazily on the first send.
+
+The draft is entered only after an authoritative load reports the context
+empty, never during loading, a transient error, or an unresolved context
+switch. It never replaces an existing session or a draft already in place.
+
+A missing server outranks it: with no server configured the setup call to
+action is shown instead, because there is nothing to draft into.
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.

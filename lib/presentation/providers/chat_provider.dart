@@ -3162,6 +3162,22 @@ class ChatProvider extends ChangeNotifier {
             _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
             _setState(ChatState.loaded);
 
+            // #134: a project with no sessions has exactly one useful next
+            // state — an empty conversation ready for input — so the redundant
+            // "New chat" gate is skipped. Only reached after an authoritative
+            // load, never during loading, an error or an unresolved context,
+            // and it never overrides a session or a draft already in place.
+            // No remote session is created here; that still happens lazily on
+            // the first send.
+            if (filteredSessions.isEmpty &&
+                _currentSession == null &&
+                !_isNewChatDraftActive) {
+              await beginNewChatDraft();
+              if (fetchId != _sessionsFetchId) {
+                return;
+              }
+            }
+
             await _saveCachedSessions(
               filteredSessions,
               serverId: serverId,

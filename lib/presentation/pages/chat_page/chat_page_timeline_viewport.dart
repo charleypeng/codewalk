@@ -210,8 +210,15 @@ extension _ChatPageTimelineViewport on _ChatPageState {
       }
     }
 
+    // Without a server there is nothing to draft into, so the setup call to
+    // action outranks the automatic draft introduced for empty projects
+    // (#134). With a server configured, an active draft owns the view and this
+    // whole empty-state block is skipped.
+    final hasConfiguredServerForEmptyState =
+        context.watch<AppProvider>().activeServer != null;
     if (chatProvider.currentSession == null &&
-        !chatProvider.isDraftingNewChat) {
+        (!chatProvider.isDraftingNewChat ||
+            !hasConfiguredServerForEmptyState)) {
       final appProvider = context.watch<AppProvider>();
       final hasConfiguredServer = appProvider.activeServer != null;
       if (!hasConfiguredServer) {
