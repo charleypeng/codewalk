@@ -552,7 +552,9 @@ extension _ChatPageFileViewer on _ChatPageState {
       scrollController: draft.scrollController,
       readOnly: readOnly,
       showCursorWhenReadOnly: false,
-      toolbarController: fileEditorSelectionToolbarController,
+      toolbarController: fileEditorSelectionToolbarController(
+        readOnly: readOnly,
+      ),
       wordWrap: false,
       chunkAnalyzer: const NonCodeChunkAnalyzer(),
       onChanged: (_) {
@@ -1011,15 +1013,22 @@ extension _ChatPageFileViewer on _ChatPageState {
   }
 }
 
-/// Selection toolbar for the file editor.
+/// Selection toolbars for the file editor, one per edit mode.
 ///
-/// `CodeEditor` only shows a copy/select-all menu when a toolbar controller is
+/// `CodeEditor` only shows a selection menu when a toolbar controller is
 /// supplied; without one it calls `toolbarController?.show(...)` and nothing
-/// happens, which is why selecting text on Android offered no copy action
-/// (#121). Button labels come from `ContextMenuButtonType`, so they are
-/// localised by Flutter and need no new strings.
-final SelectionToolbarController fileEditorSelectionToolbarController =
-    MobileSelectionToolbarController(
+/// happens, which is why copying and pasting were unavailable on Android
+/// (#121). Button labels come from `ContextMenuButtonType`, so Flutter
+/// localises them and no new strings are needed.
+final Map<bool, SelectionToolbarController> _fileEditorToolbarControllers =
+    <bool, SelectionToolbarController>{};
+
+SelectionToolbarController fileEditorSelectionToolbarController({
+  required bool readOnly,
+}) {
+  return _fileEditorToolbarControllers.putIfAbsent(
+    readOnly,
+    () => MobileSelectionToolbarController(
       builder:
           ({
             required BuildContext context,
@@ -1040,6 +1049,24 @@ final SelectionToolbarController fileEditorSelectionToolbarController =
                       onDismiss();
                     },
                   ),
+                if (hasSelection && !readOnly)
+                  ContextMenuButtonItem(
+                    type: ContextMenuButtonType.cut,
+                    onPressed: () {
+                      controller.cut();
+                      onDismiss();
+                    },
+                  ),
+                // Pasting needs a writable buffer, so it is offered only when
+                // the file is actually editable.
+                if (!readOnly)
+                  ContextMenuButtonItem(
+                    type: ContextMenuButtonType.paste,
+                    onPressed: () {
+                      controller.paste();
+                      onDismiss();
+                    },
+                  ),
                 ContextMenuButtonItem(
                   type: ContextMenuButtonType.selectAll,
                   onPressed: () {
@@ -1050,7 +1077,9 @@ final SelectionToolbarController fileEditorSelectionToolbarController =
               ],
             );
           },
-    );
+    ),
+  );
+}
 
 class _EditorLineSelectionPainter extends CustomPainter {
   _EditorLineSelectionPainter({
