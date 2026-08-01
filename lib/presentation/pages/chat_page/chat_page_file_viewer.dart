@@ -729,69 +729,15 @@ extension _ChatPageFileViewer on _ChatPageState {
     );
   }
 
+  /// Resolves the highlight mode for [language].
+  ///
+  /// Backed by the package's full language map rather than a hand-curated
+  /// switch, so every language it ships with is available (#107). Unknown
+  /// names fall back to plaintext, which stays readable instead of erroring.
   Mode _resolveEditorLanguageMode(String language) {
-    switch (language) {
-      case 'bash':
-        return re_bash.langBash;
-      case 'c':
-        return re_c.langC;
-      case 'cpp':
-        return re_cpp.langCpp;
-      case 'csharp':
-        return re_csharp.langCsharp;
-      case 'css':
-        return re_css.langCss;
-      case 'dart':
-        return re_dart.langDart;
-      case 'dockerfile':
-        return re_dockerfile.langDockerfile;
-      case 'go':
-        return re_go.langGo;
-      case 'ini':
-        return re_ini.langIni;
-      case 'java':
-        return re_java.langJava;
-      case 'javascript':
-        return re_javascript.langJavascript;
-      case 'json':
-        return re_json.langJson;
-      case 'kotlin':
-        return re_kotlin.langKotlin;
-      case 'less':
-        return re_less.langLess;
-      case 'makefile':
-        return re_makefile.langMakefile;
-      case 'markdown':
-        return re_markdown.langMarkdown;
-      case 'php':
-        return re_php.langPhp;
-      case 'powershell':
-        return re_powershell.langPowershell;
-      case 'python':
-        return re_python.langPython;
-      case 'ruby':
-        return re_ruby.langRuby;
-      case 'rust':
-        return re_rust.langRust;
-      case 'scss':
-        return re_scss.langScss;
-      case 'shell':
-        return re_shell.langShell;
-      case 'sql':
-        return re_sql.langSql;
-      case 'swift':
-        return re_swift.langSwift;
-      case 'typescript':
-        return re_typescript.langTypescript;
-      case 'vue':
-        return re_vue.langVue;
-      case 'xml':
-        return re_xml.langXml;
-      case 'yaml':
-        return re_yaml.langYaml;
-      default:
-        return re_plaintext.langPlaintext;
-    }
+    return builtinAllLanguages[language] ??
+        builtinAllLanguages['plaintext'] ??
+        builtinAllLanguages.values.first;
   }
 
   int? _lineNumberForEditorGutterTap({
@@ -1052,9 +998,15 @@ extension _ChatPageFileViewer on _ChatPageState {
         return 'ini';
       case 'vue':
         return 'vue';
-      default:
-        return 'plaintext';
     }
+
+    // Anything the package ships with is reachable by extension: `.lua`,
+    // `.zig`, `.r` and friends need no hand-written case (#107). The curated
+    // switch above stays for extensions whose name differs from the language.
+    if (builtinAllLanguages.containsKey(extension)) {
+      return extension;
+    }
+    return 'plaintext';
   }
 }
 
