@@ -496,6 +496,22 @@ extension _ChatPageFileExplorerController on _ChatPageState {
         cached.status != _FileTabLoadStatus.error &&
         cached.status != _FileTabLoadStatus.loading) {
       onUpdated?.call();
+      // Cache-first, stale-while-revalidate (ADR-020, applied to the file
+      // domain of ADR-008): the cached content is shown immediately, and a
+      // fresh read runs in the background so edits made outside the editor —
+      // by the agent or another client — appear when the file is reopened.
+      // Silent, so the editor is never covered by a spinner, and background,
+      // so a dirty draft is left alone without reporting an error.
+      unawaited(
+        _reloadFileTab(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          path: normalizedPath,
+          silent: true,
+          background: true,
+          onUpdated: onUpdated,
+        ),
+      );
       return;
     }
 

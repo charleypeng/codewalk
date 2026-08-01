@@ -496,11 +496,18 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required ProjectProvider projectProvider,
     required String path,
     bool silent = false,
+    bool background = false,
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
     final dirtyDraft = fileState.editorDraftsByPath[normalizedPath];
     if (dirtyDraft != null && dirtyDraft.isDirty) {
+      // A background revalidation the user did not ask for must stay invisible
+      // when there are unsaved changes: the draft is protected (ADR-043) but
+      // reporting it as an error would be noise.
+      if (background) {
+        return;
+      }
       const message = 'Unsaved changes; reload skipped.';
       _setState(() {
         dirtyDraft.saveErrorMessage = message;
