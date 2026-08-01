@@ -26,6 +26,7 @@ extension _ChatProviderEventReducerHelpers on ChatProvider {
     if (info.containsKey('time')) {
       merged = merged.copyWith(
         time: incoming.time,
+        createdAt: incoming.createdAt ?? merged.createdAt,
         archivedAt: incoming.archivedAt,
       );
     }

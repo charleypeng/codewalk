@@ -11337,7 +11337,7 @@ void main() {
   );
 
   testWidgets(
-    'task tool bubble opens matching sub-conversation from parent session',
+    'task tool bubble opens output-matched sub-conversation among siblings',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -11355,9 +11355,16 @@ void main() {
         title: 'Child Session',
         parentId: rootSession.id,
       );
+      final siblingSession = ChatSession(
+        id: 'ses_sibling_task_tool_nav',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1050),
+        title: 'Sibling Session',
+        parentId: rootSession.id,
+      );
 
       final repository = FakeChatRepository(
-        sessions: <ChatSession>[rootSession, childSession],
+        sessions: <ChatSession>[rootSession, siblingSession, childSession],
       );
       repository.messagesBySession[rootSession.id] = <ChatMessage>[
         AssistantMessage(
@@ -11374,9 +11381,12 @@ void main() {
               tool: 'task',
               state: ToolStateCompleted(
                 input: const <String, dynamic>{
-                  'childSessionID': 'ses_child_task_tool_nav',
+                  'sessionID': 'ses_sibling_task_tool_nav',
                 },
-                output: 'created',
+                output:
+                    '<task id="ses_child_task_tool_nav" state="completed">\n'
+                    '<task_result>created</task_result>\n'
+                    '</task>',
                 time: ToolTime(
                   start: DateTime.fromMillisecondsSinceEpoch(1200),
                   end: DateTime.fromMillisecondsSinceEpoch(1205),
@@ -11402,6 +11412,7 @@ void main() {
         ),
       ];
       repository.sessionChildrenById[rootSession.id] = <ChatSession>[
+        siblingSession,
         childSession,
       ];
 
@@ -11442,6 +11453,214 @@ void main() {
         ),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets('ambiguous task tool bubble does not open an unrelated child', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final rootSession = ChatSession(
+      id: 'ses_root_task_tool_ambiguous',
+      workspaceId: 'default',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      title: 'Root Session',
+    );
+    final firstChild = ChatSession(
+      id: 'ses_first_task_tool_ambiguous',
+      workspaceId: 'default',
+      time: DateTime.fromMillisecondsSinceEpoch(1100),
+      title: 'First Child',
+      parentId: rootSession.id,
+    );
+    final secondChild = ChatSession(
+      id: 'ses_second_task_tool_ambiguous',
+      workspaceId: 'default',
+      time: DateTime.fromMillisecondsSinceEpoch(1200),
+      title: 'Second Child',
+      parentId: rootSession.id,
+    );
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[rootSession, firstChild, secondChild],
+    );
+    repository.messagesBySession[rootSession.id] = <ChatMessage>[
+      AssistantMessage(
+        id: 'msg_root_task_tool_ambiguous',
+        sessionId: rootSession.id,
+        time: DateTime.fromMillisecondsSinceEpoch(1300),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_root_task_tool_ambiguous',
+            messageId: 'msg_root_task_tool_ambiguous',
+            sessionId: rootSession.id,
+            callId: 'call_root_task_tool_ambiguous',
+            tool: 'task',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{},
+              output: 'created',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1300),
+                end: DateTime.fromMillisecondsSinceEpoch(1305),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ];
+    repository.sessionChildrenById[rootSession.id] = <ChatSession>[
+      firstChild,
+      secondChild,
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+    await provider.loadSessions();
+    await provider.selectSession(rootSession);
+    await provider.loadSessionInsights(rootSession.id, silent: true);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'task_tool_open_session_part_root_task_tool_ambiguous',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(provider.currentSession?.id, rootSession.id);
+    expect(
+      find.text('No sub-conversation found for this task.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'unknown explicit task id blocks fallback and positional matching uses creation time',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final rootSession = ChatSession(
+        id: 'ses_root_task_tool_order',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'Root Session',
+      );
+      final firstCreatedChild = ChatSession(
+        id: 'ses_first_created_task_tool',
+        workspaceId: 'default',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(1100),
+        time: DateTime.fromMillisecondsSinceEpoch(5000),
+        title: 'First Created Child',
+        parentId: rootSession.id,
+      );
+      final secondCreatedChild = ChatSession(
+        id: 'ses_second_created_task_tool',
+        workspaceId: 'default',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(1200),
+        time: DateTime.fromMillisecondsSinceEpoch(2000),
+        title: 'Second Created Child',
+        parentId: rootSession.id,
+      );
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          rootSession,
+          firstCreatedChild,
+          secondCreatedChild,
+        ],
+      );
+      repository.messagesBySession[rootSession.id] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_root_task_tool_order',
+          sessionId: rootSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1300),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+          parts: <MessagePart>[
+            for (var index = 0; index < 2; index++)
+              ToolPart(
+                id: 'part_root_task_tool_order_$index',
+                messageId: 'msg_root_task_tool_order',
+                sessionId: rootSession.id,
+                callId: 'call_root_task_tool_order_$index',
+                tool: 'task',
+                state: ToolStateCompleted(
+                  input: index == 0
+                      ? const <String, dynamic>{
+                          'sessionID': 'ses_first_created_task_tool',
+                        }
+                      : const <String, dynamic>{},
+                  output: index == 0
+                      ? '<task id="ses_missing_task_tool" state="completed">\n'
+                            '<task_result>created</task_result>\n'
+                            '</task>'
+                      : 'created',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(1300 + index),
+                    end: DateTime.fromMillisecondsSinceEpoch(1305 + index),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ];
+      repository.sessionChildrenById[rootSession.id] = <ChatSession>[
+        secondCreatedChild,
+        firstCreatedChild,
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+      await provider.loadSessions();
+      await provider.selectSession(rootSession);
+      await provider.loadSessionInsights(rootSession.id, silent: true);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'task_tool_open_session_part_root_task_tool_order_0',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.currentSession?.id, rootSession.id);
+      expect(
+        find.text('No sub-conversation found for this task.'),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'task_tool_open_session_part_root_task_tool_order_1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.currentSession?.id, secondCreatedChild.id);
     },
   );
 

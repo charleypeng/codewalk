@@ -2102,10 +2102,11 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 ## Message Reconciliation
 
-The visible message collection is monotonic during normal updates. Roughly
-twenty code paths can replace it — the realtime reducer, HTTP fallbacks,
-session refreshes, cache hydration and local mutations — so every one of them
-goes through a single rule instead of guarding itself.
+The visible message collection is monotonic during normal updates. Asynchronous
+server snapshots, HTTP fallbacks, active-session refreshes and cache hydration
+that replace the visible list go through a shared rule instead of guarding
+themselves. Explicit resets and targeted realtime/local mutations remain
+authoritative dedicated paths.
 
 An update carries its provenance (origin) and what it claims to be (kind). The
 rule is: an update may never remove a message that is newer than everything the
@@ -2141,8 +2142,9 @@ A message genuinely added to the main timeline still triggers unread as before.
 ## Subagent Navigation
 
 Opening a subagent from a task part prefers the child session id carried by the
-part itself. When the part does not carry one and there is exactly one child
-candidate, that candidate is used.
+part metadata or the official completed-output `<task id="...">` envelope.
+When the part does not carry one and there is exactly one child candidate, that
+candidate is used.
 
 Otherwise the Nth task part is paired with the Nth child session by start time,
 but only when the number of task parts equals the number of candidates. With

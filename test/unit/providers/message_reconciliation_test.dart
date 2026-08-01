@@ -51,8 +51,8 @@ void main() {
       );
 
       expect(outcome.decision, MessageUpdateDecision.mergedNonRegressive);
-      expect(_ids(outcome.messages), containsAll(<String>['b', 'c']));
-      expect(outcome.preservedIds, <String>['c']);
+      expect(_ids(outcome.messages), <String>['a', 'b', 'c']);
+      expect(outcome.preservedIds, <String>['a', 'c']);
     });
 
     test('preserved messages are reinserted in timeline order', () {

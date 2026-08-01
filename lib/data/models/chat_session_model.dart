@@ -153,6 +153,9 @@ class ChatSessionModel {
       id: id,
       workspaceId: workspaceId ?? 'default',
       time: time.toDomain(),
+      createdAt: time.created <= 0
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(time.created),
       title: title,
       parentId: parentId,
       directory: directory,
@@ -170,11 +173,13 @@ class ChatSessionModel {
   /// Technical comment translated to English.
   static ChatSessionModel fromDomain(ChatSession session) {
     final timestamp = session.time.millisecondsSinceEpoch;
+    final createdTimestamp =
+        session.createdAt?.millisecondsSinceEpoch ?? timestamp;
     return ChatSessionModel(
       id: session.id,
       workspaceId: session.workspaceId,
       time: SessionTimeModel(
-        created: timestamp,
+        created: createdTimestamp,
         updated: timestamp,
         archived: session.archivedAt?.millisecondsSinceEpoch,
       ),

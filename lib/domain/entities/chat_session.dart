@@ -8,6 +8,7 @@ class ChatSession extends Equatable {
     required this.id,
     required this.workspaceId,
     required this.time,
+    this.createdAt,
     this.title,
     this.parentId,
     this.directory,
@@ -27,6 +28,8 @@ class ChatSession extends Equatable {
 
   /// Technical comment translated to English.
   final DateTime time;
+
+  final DateTime? createdAt;
 
   /// Technical comment translated to English.
   final String? title;
@@ -57,6 +60,7 @@ class ChatSession extends Equatable {
     id,
     workspaceId,
     time,
+    createdAt,
     title,
     parentId,
     directory,
@@ -73,6 +77,7 @@ class ChatSession extends Equatable {
     String? id,
     String? workspaceId,
     DateTime? time,
+    Object? createdAt = _unset,
     Object? title = _unset,
     Object? parentId = _unset,
     Object? directory = _unset,
@@ -92,6 +97,9 @@ class ChatSession extends Equatable {
       id: id ?? this.id,
       workspaceId: workspaceId ?? this.workspaceId,
       time: time ?? this.time,
+      createdAt: identical(createdAt, _unset)
+          ? this.createdAt
+          : createdAt as DateTime?,
       title: identical(title, _unset) ? this.title : title as String?,
       parentId: identical(parentId, _unset)
           ? this.parentId

@@ -1219,11 +1219,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (candidates.isEmpty) {
       return null;
     }
+    final sessionIds = _extractChildSessionIdsFromTaskToolPart(part);
     return _resolveSubConversationFromCandidatesByPartOrder(
       chatProvider,
       candidates: candidates,
       targetPartId: part.id,
-      explicitSessionIds: _extractChildSessionIdsFromTaskToolPart(part),
+      authoritativeSessionIds: sessionIds.authoritative,
+      explicitSessionIds: sessionIds.heuristic,
       anchorMatcher: (messagePart) =>
           messagePart is ToolPart &&
           _normalizeToolNameForSubConversation(messagePart.tool) == 'task',
@@ -1262,22 +1264,44 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required String targetPartId,
     required Iterable<String> explicitSessionIds,
     required bool Function(MessagePart part) anchorMatcher,
+    Iterable<String> authoritativeSessionIds = const <String>[],
   }) {
-    final sortedCandidates = List<ChatSession>.from(candidates)
-      ..sort((a, b) => a.time.compareTo(b.time));
+    final sortedCandidates = List<ChatSession>.from(
+      candidates,
+    )..sort((a, b) => (a.createdAt ?? a.time).compareTo(b.createdAt ?? b.time));
     final candidateIds = sortedCandidates.map((session) => session.id).toSet();
 
-    for (final sessionId in explicitSessionIds) {
-      final normalizedSessionId = sessionId.trim();
-      if (normalizedSessionId.isEmpty ||
-          !candidateIds.contains(normalizedSessionId)) {
-        continue;
-      }
-      for (final session in sortedCandidates) {
-        if (session.id == normalizedSessionId) {
-          return session;
+    ChatSession? resolveExplicit(Iterable<String> sessionIds) {
+      for (final sessionId in sessionIds) {
+        final normalizedSessionId = sessionId.trim();
+        if (normalizedSessionId.isEmpty ||
+            !candidateIds.contains(normalizedSessionId)) {
+          continue;
+        }
+        for (final session in sortedCandidates) {
+          if (session.id == normalizedSessionId) {
+            return session;
+          }
         }
       }
+      return null;
+    }
+
+    final authoritativeIds = authoritativeSessionIds
+        .map((sessionId) => sessionId.trim())
+        .where((sessionId) => sessionId.isNotEmpty)
+        .toList(growable: false);
+    final authoritativeTarget = resolveExplicit(authoritativeIds);
+    if (authoritativeTarget != null) {
+      return authoritativeTarget;
+    }
+    if (authoritativeIds.isNotEmpty) {
+      return null;
+    }
+
+    final heuristicTarget = resolveExplicit(explicitSessionIds);
+    if (heuristicTarget != null) {
+      return heuristicTarget;
     }
 
     if (sortedCandidates.length == 1) {
@@ -1327,9 +1351,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     return compactName.replaceAll('-', '_');
   }
 
-  List<String> _extractChildSessionIdsFromTaskToolPart(ToolPart part) {
-    final ids = <String>[];
-    final seen = <String>{};
+  ({List<String> authoritative, List<String> heuristic})
+  _extractChildSessionIdsFromTaskToolPart(ToolPart part) {
+    final authoritative = <String>[];
+    final heuristic = <String>[];
+    final authoritativeSeen = <String>{};
+    final heuristicSeen = <String>{};
 
     bool shouldCaptureKey(String key) {
       final normalized = key
@@ -1349,7 +1376,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return candidateKeys.contains(normalized);
     }
 
-    void visit(dynamic value, {String? key}) {
+    void visit(
+      dynamic value, {
+      String? key,
+      required List<String> ids,
+      required Set<String> seen,
+    }) {
       if (value == null) {
         return;
       }
@@ -1365,38 +1397,52 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       if (value is Map) {
         for (final entry in value.entries) {
           final entryKey = entry.key.toString();
-          visit(entry.value, key: entryKey);
+          visit(entry.value, key: entryKey, ids: ids, seen: seen);
         }
         return;
       }
       if (value is Iterable) {
         for (final item in value) {
-          visit(item, key: key);
+          visit(item, key: key, ids: ids, seen: seen);
         }
+      }
+    }
+
+    void visitTaskOutput(String output) {
+      final match = RegExp(
+        r'<task\s+id="([^"]+)"(?:\s+[^>]*)?>',
+        caseSensitive: false,
+      ).firstMatch(output);
+      final sessionId = match?.group(1)?.trim();
+      if (sessionId != null &&
+          sessionId.isNotEmpty &&
+          authoritativeSeen.add(sessionId)) {
+        authoritative.add(sessionId);
       }
     }
 
     switch (part.state.status) {
       case ToolStatus.running:
         final state = part.state as ToolStateRunning;
-        visit(state.input);
-        visit(state.metadata);
+        visit(state.metadata, ids: authoritative, seen: authoritativeSeen);
+        visit(state.input, ids: heuristic, seen: heuristicSeen);
         break;
       case ToolStatus.completed:
         final state = part.state as ToolStateCompleted;
-        visit(state.input);
-        visit(state.metadata);
+        visit(state.metadata, ids: authoritative, seen: authoritativeSeen);
+        visitTaskOutput(state.output);
+        visit(state.input, ids: heuristic, seen: heuristicSeen);
         break;
       case ToolStatus.error:
         final state = part.state as ToolStateError;
-        visit(state.input);
-        visit(state.metadata);
+        visit(state.metadata, ids: authoritative, seen: authoritativeSeen);
+        visit(state.input, ids: heuristic, seen: heuristicSeen);
         break;
       case ToolStatus.pending:
         break;
     }
 
-    return ids;
+    return (authoritative: authoritative, heuristic: heuristic);
   }
 
   void _showSubConversationNotice(String message) {

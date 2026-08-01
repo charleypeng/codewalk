@@ -3872,7 +3872,7 @@ class ChatProvider extends ChangeNotifier {
               return;
             }
 
-            _applyMessages(
+            final messagesApplied = _applyMessages(
               mergedMessages,
               origin: MessageUpdateOrigin.sessionRefresh,
               kind: MessageUpdateKind.fullSnapshot,
@@ -3880,7 +3880,7 @@ class ChatProvider extends ChangeNotifier {
               reason: 'session-refresh-merge',
             );
             _cacheSessionMessages(sessionId, _messages);
-            if (messagesChanged) {
+            if (messagesApplied) {
               _messagesVersion++;
             }
             _hasMoreOldMessages = nextHasMoreOldMessages;
@@ -3902,7 +3902,7 @@ class ChatProvider extends ChangeNotifier {
               }
             }
             if (_state != ChatState.loaded ||
-                messagesChanged ||
+                messagesApplied ||
                 hasMoreOldMessagesChanged) {
               _setState(ChatState.loaded);
             }
@@ -3974,7 +3974,7 @@ class ChatProvider extends ChangeNotifier {
             messages,
             sessionId: sessionId,
           );
-          _applyMessages(
+          final messagesApplied = _applyMessages(
             _mergeServerMessagesWithActiveLocalTail(
               filteredMessages,
               sessionId: sessionId,
@@ -3985,9 +3985,16 @@ class ChatProvider extends ChangeNotifier {
             reason: 'server-messages-merge',
           );
           _cacheSessionMessages(sessionId, _messages);
-          _messagesVersion++;
+          if (messagesApplied) {
+            _messagesVersion++;
+          }
+          final hasMoreOldMessagesChanged =
+              _hasMoreOldMessages !=
+              (filteredMessages.length >= requestedLimit);
           _hasMoreOldMessages = filteredMessages.length >= requestedLimit;
-          _notifyListeners();
+          if (messagesApplied || hasMoreOldMessagesChanged) {
+            _notifyListeners();
+          }
           unawaited(_persistLastSessionSnapshotBestEffort());
           unawaited(
             _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
@@ -4323,7 +4330,9 @@ class ChatProvider extends ChangeNotifier {
                     _sessionStatusById[streamSessionId] =
                         const SessionStatusInfo(type: SessionStatusType.idle);
                     _clearSessionUnreadCompletion(streamSessionId);
-                    _sessionErrorAttentionIds.add(streamSessionId);
+                    if (!_isChildSessionId(streamSessionId)) {
+                      _sessionErrorAttentionIds.add(streamSessionId);
+                    }
                     _notifyListeners();
                     return;
                   }
@@ -4385,7 +4394,9 @@ class ChatProvider extends ChangeNotifier {
                   type: SessionStatusType.idle,
                 );
                 _clearSessionUnreadCompletion(streamSessionId);
-                _sessionErrorAttentionIds.add(streamSessionId);
+                if (!_isChildSessionId(streamSessionId)) {
+                  _sessionErrorAttentionIds.add(streamSessionId);
+                }
                 _notifyListeners();
                 return;
               }

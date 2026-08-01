@@ -61,10 +61,9 @@ class MessageReconciliation {
 /// Decides what the visible message collection should become.
 ///
 /// Issue #111 had been patched twice (#76, #48) at individual call sites and
-/// came back both times, because roughly twenty places replace the collection
-/// outright. This is the single rule they all go through: an update may never
-/// remove a message newer than everything the update itself carries, unless it
-/// is an explicit removal or a reset.
+/// came back both times. Asynchronous snapshot replacements therefore share one
+/// rule: an update may never remove a message newer than everything the update
+/// itself carries, unless it is an explicit removal or a reset.
 ///
 /// Pure on purpose, so the invariant can be tested against fabricated event
 /// orderings without standing up a provider.
@@ -94,6 +93,37 @@ MessageReconciliation reconcileMessages({
   final dropped = scopedPrevious
       .where((message) => !nextIds.contains(message.id))
       .toList(growable: false);
+
+  if (kind == MessageUpdateKind.partialDelta && dropped.isNotEmpty) {
+    final incomingById = <String, ChatMessage>{
+      for (final message in next) message.id: message,
+    };
+    final merged = <ChatMessage>[];
+    for (final message in scopedPrevious) {
+      merged.add(incomingById.remove(message.id) ?? message);
+    }
+    for (final message in next) {
+      if (incomingById.remove(message.id) == null) {
+        continue;
+      }
+      final insertionIndex = merged.indexWhere(
+        (existing) => existing.time.isAfter(message.time),
+      );
+      if (insertionIndex == -1) {
+        merged.add(message);
+      } else {
+        merged.insert(insertionIndex, message);
+      }
+    }
+    return MessageReconciliation(
+      messages: merged,
+      decision: MessageUpdateDecision.mergedNonRegressive,
+      reason: 'partial-delta',
+      preservedIds: dropped
+          .map((message) => message.id)
+          .toList(growable: false),
+    );
+  }
 
   if (dropped.isEmpty) {
     return MessageReconciliation(

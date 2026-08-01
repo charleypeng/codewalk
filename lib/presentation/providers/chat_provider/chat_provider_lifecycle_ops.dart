@@ -300,14 +300,22 @@ extension ChatProviderLifecycleOps on ChatProvider {
             return;
           }
 
-          _messages = List<ChatMessage>.from(mergedMessages);
+          final messagesApplied = _applyMessages(
+            mergedMessages,
+            origin: MessageUpdateOrigin.sessionRefresh,
+            kind: MessageUpdateKind.fullSnapshot,
+            sessionId: session.id,
+            reason: 'active-session-refresh',
+          );
           _cacheSessionMessages(session.id, _messages);
-          if (messagesChanged) {
+          if (messagesApplied) {
             _messagesVersion++;
           }
           _hasMoreOldMessages = nextHasMoreOldMessages;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
-          notifyListeners();
+          if (messagesApplied || hasMoreOldMessagesChanged) {
+            _notifyListeners();
+          }
           _traceFinal(
             'refresh-active-merged',
             sessionId: session.id,

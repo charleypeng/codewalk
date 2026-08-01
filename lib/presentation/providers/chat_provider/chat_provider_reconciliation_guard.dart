@@ -1,7 +1,7 @@
 part of '../chat_provider.dart';
 
-/// Funnels every write to the visible message collection through the
-/// non-regressive rule in [reconcileMessages], and records the decision.
+/// Funnels asynchronous snapshot replacements through the non-regressive rule
+/// in [reconcileMessages], and records the decision.
 extension _ChatProviderReconciliationGuard on ChatProvider {
   /// Applies [next] to [_messages] unless doing so would regress the timeline.
   ///
