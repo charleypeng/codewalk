@@ -241,6 +241,22 @@ void main() {
       ),
     );
 
+    // The close affordance only materialises for the selected or hovered tab,
+    // so the pointer has to be over `second` before it can be tapped.
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: Offset.zero);
+    addTearDown(gesture.removePointer);
+    await gesture.moveTo(
+      tester.getCenter(
+        find.byKey(
+          ValueKey<String>(
+            'session_tab_${sessionTabIdentityKey(second.identity)}',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
     await tester.tap(
       find.byKey(
         ValueKey<String>(
@@ -329,7 +345,7 @@ void main() {
     expect(_tabMaterial(tester, inactive).color, Colors.transparent);
   });
 
-  testWidgets('tabs use browser geometry with only top corners rounded', (
+  testWidgets('tabs use a browser tab silhouette with flared shoulders', (
     tester,
   ) async {
     final selected = _tab('alpha', isSelected: true);
@@ -337,14 +353,18 @@ void main() {
     await tester.pumpWidget(_app(tabs: <SessionTabRecord>[selected]));
     await tester.pump();
 
-    final shape =
-        _tabMaterial(tester, selected).shape! as RoundedRectangleBorder;
-    final borderRadius = shape.borderRadius as BorderRadius;
+    final shape = _tabMaterial(tester, selected).shape!;
+    const rect = Rect.fromLTWH(0, 0, 244, 54);
+    final path = shape.getOuterPath(rect);
 
-    expect(borderRadius.topLeft.x, greaterThan(0));
-    expect(borderRadius.topRight.x, greaterThan(0));
-    expect(borderRadius.bottomLeft, Radius.zero);
-    expect(borderRadius.bottomRight, Radius.zero);
+    // Browser silhouette: the tab is full width at the bottom and narrows at
+    // the top, so its shoulders flare outwards instead of forming a plain
+    // rounded rectangle.
+    expect(path.contains(const Offset(10, 52)), isTrue);
+    expect(path.contains(const Offset(234, 52)), isTrue);
+    expect(path.contains(const Offset(2, 2)), isFalse);
+    expect(path.contains(const Offset(242, 2)), isFalse);
+    expect(path.contains(const Offset(122, 2)), isTrue);
   });
 
   testWidgets('selection is conveyed by more than colour', (tester) async {
