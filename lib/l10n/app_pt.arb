@@ -430,6 +430,8 @@
   "composerCannedText": "Texto",
   "composerChatInput": "Entrada de chat",
   "composerDeleteAction": "Excluir",
+  "composerDropHint": "Solte imagens ou PDFs para anexar",
+  "composerPastedImageName": "Imagem colada",
   "composerEdit": "Editar",
   "composerExtras": "Extras",
   "composerExtrasHide": "Ocultar extras",

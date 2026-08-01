@@ -1494,6 +1494,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get composerDeleteAction => 'حذف کریں۔';
 
   @override
+  String get composerDropHint => 'منسلک کرنے کے لیے تصاویر یا PDF چھوڑیں';
+
+  @override
+  String get composerPastedImageName => 'چسپاں کردہ تصویر';
+
+  @override
   String get composerEdit => 'ترمیم کریں۔';
 
   @override

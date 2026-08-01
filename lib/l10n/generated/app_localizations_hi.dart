@@ -1502,6 +1502,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get composerDeleteAction => 'हटाएं';
 
   @override
+  String get composerDropHint => 'संलग्न करने के लिए इमेज या PDF छोड़ें';
+
+  @override
+  String get composerPastedImageName => 'चिपकाई गई इमेज';
+
+  @override
   String get composerEdit => 'संपादित करें';
 
   @override

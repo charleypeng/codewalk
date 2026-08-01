@@ -1418,6 +1418,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get composerDeleteAction => '삭제';
 
   @override
+  String get composerDropHint => '이미지나 PDF를 놓아 첨부';
+
+  @override
+  String get composerPastedImageName => '붙여넣은 이미지';
+
+  @override
   String get composerEdit => '편집';
 
   @override

@@ -430,6 +430,8 @@
   "composerCannedText": "পাঠ্য",
   "composerChatInput": "চ্যাট ইনপুট",
   "composerDeleteAction": "মুছে দিন",
+  "composerDropHint": "সংযুক্ত করতে ছবি বা PDF ছাড়ুন",
+  "composerPastedImageName": "পেস্ট করা ছবি",
   "composerEdit": "সম্পাদনা করুন",
   "composerExtras": "অতিরিক্ত",
   "composerExtrasHide": "অতিরিক্ত লুকান",

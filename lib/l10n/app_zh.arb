@@ -430,6 +430,8 @@
   "composerCannedText": "文本",
   "composerChatInput": "聊天输入",
   "composerDeleteAction": "删除",
+  "composerDropHint": "拖放图片或 PDF 以附加",
+  "composerPastedImageName": "粘贴的图片",
   "composerEdit": "编辑",
   "composerExtras": "附加功能",
   "composerExtrasHide": "隐藏更多",

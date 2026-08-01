@@ -430,6 +430,8 @@
   "composerCannedText": "متن",
   "composerChatInput": "چیٹ ان پٹ",
   "composerDeleteAction": "حذف کریں۔",
+  "composerDropHint": "منسلک کرنے کے لیے تصاویر یا PDF چھوڑیں",
+  "composerPastedImageName": "چسپاں کردہ تصویر",
   "composerEdit": "ترمیم کریں۔",
   "composerExtras": "اضافی",
   "composerExtrasHide": "اضافی چھپائیں",

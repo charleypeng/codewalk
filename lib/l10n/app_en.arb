@@ -1849,6 +1849,14 @@
   "@composerDeleteAction": {
     "description": "CodeWalk UI string — composerDeleteAction"
   },
+  "composerDropHint": "Drop images or PDFs to attach",
+  "@composerDropHint": {
+    "description": "CodeWalk UI string — composerDropHint"
+  },
+  "composerPastedImageName": "Pasted image",
+  "@composerPastedImageName": {
+    "description": "CodeWalk UI string — composerPastedImageName"
+  },
   "composerEdit": "Edit",
   "@composerEdit": {
     "description": "CodeWalk UI string — composerEdit"

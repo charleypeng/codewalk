@@ -2705,6 +2705,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get composerDeleteAction;
 
+  /// CodeWalk UI string — composerDropHint
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images or PDFs to attach'**
+  String get composerDropHint;
+
+  /// CodeWalk UI string — composerPastedImageName
+  ///
+  /// In en, this message translates to:
+  /// **'Pasted image'**
+  String get composerPastedImageName;
+
   /// CodeWalk UI string — composerEdit
   ///
   /// In en, this message translates to:

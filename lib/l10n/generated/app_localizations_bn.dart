@@ -1499,6 +1499,12 @@ class AppLocalizationsBn extends AppLocalizations {
   String get composerDeleteAction => 'মুছে দিন';
 
   @override
+  String get composerDropHint => 'সংযুক্ত করতে ছবি বা PDF ছাড়ুন';
+
+  @override
+  String get composerPastedImageName => 'পেস্ট করা ছবি';
+
+  @override
   String get composerEdit => 'সম্পাদনা করুন';
 
   @override

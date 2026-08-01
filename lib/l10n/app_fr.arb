@@ -430,6 +430,8 @@
   "composerCannedText": "Texte",
   "composerChatInput": "Saisie de discussion",
   "composerDeleteAction": "Supprimer",
+  "composerDropHint": "Déposez des images ou PDF à joindre",
+  "composerPastedImageName": "Image collée",
   "composerEdit": "Modifier",
   "composerExtras": "Extras",
   "composerExtrasHide": "Masquer les extras",

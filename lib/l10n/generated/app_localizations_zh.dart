@@ -1397,6 +1397,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get composerDeleteAction => '删除';
 
   @override
+  String get composerDropHint => '拖放图片或 PDF 以附加';
+
+  @override
+  String get composerPastedImageName => '粘贴的图片';
+
+  @override
   String get composerEdit => '编辑';
 
   @override

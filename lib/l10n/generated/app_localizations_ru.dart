@@ -1515,6 +1515,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get composerDeleteAction => 'Удалить';
 
   @override
+  String get composerDropHint => 'Перетащите изображения или PDF';
+
+  @override
+  String get composerPastedImageName => 'Вставленное изображение';
+
+  @override
   String get composerEdit => 'Редактировать';
 
   @override

@@ -430,6 +430,8 @@
   "composerCannedText": "Text",
   "composerChatInput": "Chateingabe",
   "composerDeleteAction": "Löschen",
+  "composerDropHint": "Bilder oder PDFs zum Anhängen ablegen",
+  "composerPastedImageName": "Eingefügtes Bild",
   "composerEdit": "Bearbeiten",
   "composerExtras": "Extras",
   "composerExtrasHide": "Extras ausblenden",

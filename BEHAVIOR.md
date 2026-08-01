@@ -2180,6 +2180,28 @@ scale applies to the Bubble only — the Panel keeps fixed dimensions so its
 summary stays legible — and a floor is enforced so the smallest setting still
 leaves a usable touch target.
 
+## Composer External Files
+
+Images and PDFs reach the composer three ways — the file picker, dragging them
+onto it, and pasting — and all three end at the same attachment pipeline. The
+accepted formats, the model's allowed modalities, deduplication, draft
+persistence and the "some items were ignored" message therefore behave
+identically no matter how the file arrived.
+
+Dragging is offered on desktop and web, where the host can hand over external
+files; mobile keeps the picker. The drop zone highlights only when the composer
+can actually accept a file, so it never looks receptive while disabled, in
+shell mode, or when the selected model supports neither images nor PDFs.
+
+Pasting reads the clipboard for file references first and for raw image bytes
+second, so a screenshot with no filename still becomes an attachment. Its name
+is localised and its extension comes from the image's own signature rather than
+a guess. The paste keystroke is not consumed: text pasting proceeds untouched,
+and any attachable file found is added alongside it.
+
+Files whose extension is not one the composer accepts are counted as skipped
+rather than inspected, so arbitrary content is never classified as an image.
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.

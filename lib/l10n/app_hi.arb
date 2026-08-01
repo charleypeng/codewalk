@@ -430,6 +430,8 @@
   "composerCannedText": "पाठ",
   "composerChatInput": "चैट इनपुट",
   "composerDeleteAction": "हटाएं",
+  "composerDropHint": "संलग्न करने के लिए इमेज या PDF छोड़ें",
+  "composerPastedImageName": "चिपकाई गई इमेज",
   "composerEdit": "संपादित करें",
   "composerExtras": "अतिरिक्त सुविधाएं",
   "composerExtrasHide": "अतिरिक्त छिपाएँ",

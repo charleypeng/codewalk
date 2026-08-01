@@ -1,0 +1,185 @@
+part of '../chat_input_widget.dart';
+
+/// Drag and drop (#118) and clipboard files (#119) for the composer.
+///
+/// Both entry points end at [_appendAttachments], the same path the file
+/// picker uses, so MIME rules, the model's allowed modalities, deduplication,
+/// draft persistence and the "some items were ignored" message stay in one
+/// place instead of being reimplemented per gesture.
+extension _ChatInputExternalDropController on _ChatInputWidgetState {
+  /// True where the host can hand external files to the app by dragging.
+  ///
+  /// Mobile keeps the picker as its flow, as the issue requires.
+  bool get _supportsFileDrop {
+    if (kIsWeb) {
+      return true;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
+  /// Whether a drop should be offered at all right now.
+  ///
+  /// A zone that looks receptive while the composer cannot accept files would
+  /// be a lie, so the highlight never appears in those states.
+  bool get _acceptsExternalFiles {
+    if (!widget.enabled || !widget.showAttachmentButton) {
+      return false;
+    }
+    return widget.allowImageAttachment || widget.allowPdfAttachment;
+  }
+
+  /// Wraps the composer in a drop zone where the host supports file drags.
+  Widget _wrapComposerWithExternalFiles(Widget composer) {
+    if (!_supportsFileDrop) {
+      return composer;
+    }
+
+    final Widget result = DropTarget(
+      key: const ValueKey<String>('composer_drop_target'),
+      enable: _acceptsExternalFiles,
+      onDragEntered: (_) => _setDropHighlight(true),
+      onDragExited: (_) => _setDropHighlight(false),
+      onDragDone: (details) {
+        _setDropHighlight(false);
+        unawaited(_handleExternalDrop(details));
+      },
+      child: composer,
+    );
+
+    if (!_isDropHighlighted) {
+      return result;
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Stack(
+      children: [
+        result,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              key: const ValueKey<String>('composer_drop_highlight'),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.75),
+                border: Border.all(color: colorScheme.primary, width: 2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: Text(
+                  context.l10n.composerDropHint,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _setDropHighlight(bool highlighted) {
+    if (!mounted || _isDropHighlighted == highlighted) {
+      return;
+    }
+    _setState(() => _isDropHighlighted = highlighted);
+  }
+
+  Future<void> _handleExternalDrop(DropDoneDetails details) async {
+    if (!_acceptsExternalFiles) {
+      return;
+    }
+    final fallbackName = context.l10n.composerPastedImageName;
+    final files = <PlatformFile>[];
+    var skipped = 0;
+    for (final dropped in details.files) {
+      final file = composerFileFromPath(
+        dropped.path,
+        fallbackName: fallbackName,
+      );
+      if (file == null) {
+        skipped += 1;
+        continue;
+      }
+      files.add(file);
+    }
+    if (!mounted) {
+      return;
+    }
+    if (files.isEmpty) {
+      _showAttachmentSnack(context.l10n.msgNoValidFilesSelected);
+      return;
+    }
+    _appendAttachments(
+      composerDedupeFiles(files),
+      allowImageMimeFallback: false,
+    );
+    if (skipped > 0 && mounted) {
+      _showAttachmentSnack(context.l10n.msgSomeSelectedFilesNotAttached);
+    }
+  }
+
+  /// Attaches images or files sitting on the clipboard.
+  ///
+  /// Returns true when something was attached, in which case the caller must
+  /// not also paste text: the platform often exposes a path or source URL
+  /// alongside the file, and inserting that as text would be noise.
+  Future<bool> _attachClipboardFiles() async {
+    if (!_acceptsExternalFiles) {
+      return false;
+    }
+    final fallbackName = context.l10n.composerPastedImageName;
+    final collected = <PlatformFile>[];
+
+    try {
+      final paths = await Pasteboard.files();
+      for (final path in paths) {
+        final file = composerFileFromPath(path, fallbackName: fallbackName);
+        if (file != null) {
+          collected.add(file);
+        }
+      }
+    } catch (error, stackTrace) {
+      // A clipboard that cannot report files must not cost us the image.
+      AppLogger.warn(
+        'Failed to read files from the clipboard',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    if (collected.isEmpty) {
+      try {
+        final image = await Pasteboard.image;
+        if (image != null) {
+          final file = composerFileFromImageBytes(
+            image,
+            baseName: fallbackName,
+          );
+          if (file != null) {
+            collected.add(file);
+          }
+        }
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Failed to read an image from the clipboard',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    if (collected.isEmpty || !mounted) {
+      return false;
+    }
+    _appendAttachments(
+      composerDedupeFiles(collected),
+      allowImageMimeFallback: false,
+    );
+    return true;
+  }
+}

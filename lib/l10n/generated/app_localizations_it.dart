@@ -1523,6 +1523,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get composerDeleteAction => 'Elimina';
 
   @override
+  String get composerDropHint => 'Rilascia immagini o PDF da allegare';
+
+  @override
+  String get composerPastedImageName => 'Immagine incollata';
+
+  @override
   String get composerEdit => 'Modifica';
 
   @override

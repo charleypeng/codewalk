@@ -430,6 +430,8 @@
   "composerCannedText": "النص",
   "composerChatInput": "مدخلات الدردشة",
   "composerDeleteAction": "حذف",
+  "composerDropHint": "أفلت الصور أو ملفات PDF للإرفاق",
+  "composerPastedImageName": "صورة ملصقة",
   "composerEdit": "تعديل",
   "composerExtras": "إضافات",
   "composerExtrasHide": "إخفاء الإضافات",

@@ -430,6 +430,8 @@
   "composerCannedText": "テキスト",
   "composerChatInput": "チャット入力",
   "composerDeleteAction": "削除",
+  "composerDropHint": "画像やPDFをドロップして添付",
+  "composerPastedImageName": "貼り付けた画像",
   "composerEdit": "編集",
   "composerExtras": "その他",
   "composerExtrasHide": "その他を隠す",

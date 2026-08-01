@@ -1418,6 +1418,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get composerDeleteAction => '削除';
 
   @override
+  String get composerDropHint => '画像やPDFをドロップして添付';
+
+  @override
+  String get composerPastedImageName => '貼り付けた画像';
+
+  @override
   String get composerEdit => '編集';
 
   @override

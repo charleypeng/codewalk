@@ -1497,6 +1497,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get composerDeleteAction => 'Delete';
 
   @override
+  String get composerDropHint => 'Drop images or PDFs to attach';
+
+  @override
+  String get composerPastedImageName => 'Pasted image';
+
+  @override
   String get composerEdit => 'Edit';
 
   @override

@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:pasteboard/pasteboard.dart';
 import 'package:provider/provider.dart';
 import 'package:showcaseview/showcaseview.dart' show TooltipPosition;
 
@@ -31,6 +33,7 @@ import '../theme/app_theme.dart';
 import '../theme/app_visual_style_tokens.dart';
 import '../utils/speech_engine_platform_support.dart';
 import '../utils/windows_settings_links.dart';
+import 'chat_input/chat_input_external_files.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
 import 'parakeet_model_download_dialog.dart';
@@ -45,6 +48,7 @@ part 'chat_input/chat_input_mentions_controller.dart';
 part 'chat_input/chat_input_commands_controller.dart';
 part 'chat_input/chat_input_suggestion_popover.dart';
 part 'chat_input/chat_input_attachment_controller.dart';
+part 'chat_input/chat_input_external_drop_controller.dart';
 part 'chat_input/chat_input_send_controller.dart';
 part 'chat_input/chat_input_speech_controller.dart';
 part 'chat_input/chat_input_canned_controller.dart';
@@ -361,6 +365,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   bool _isLoadingSuggestions = false;
   ChatComposerMode _mode = ChatComposerMode.normal;
   ChatComposerPopoverType _popoverType = ChatComposerPopoverType.none;
+
+  /// True while an external file drag hovers the composer (#118).
+  bool _isDropHighlighted = false;
   List<ChatComposerMentionSuggestion> _mentionSuggestions =
       <ChatComposerMentionSuggestion>[];
   List<ChatComposerSlashCommandSuggestion> _slashSuggestions =
@@ -706,6 +713,21 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final logicalKey = event.logicalKey;
     final hasPopover = _popoverType != ChatComposerPopoverType.none;
 
+    // Paste (#119). Reading the clipboard is asynchronous, so the event is
+    // deliberately not consumed: text pasting proceeds untouched and any
+    // attachable image or file found is added alongside it. Consuming the key
+    // would require reimplementing selection-aware text paste.
+    final isPasteChord =
+        logicalKey == LogicalKeyboardKey.keyV &&
+        (HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed);
+    if (isPasteChord || logicalKey == LogicalKeyboardKey.paste) {
+      unawaited(_attachClipboardFiles());
+      if (logicalKey == LogicalKeyboardKey.paste) {
+        return KeyEventResult.ignored;
+      }
+    }
+
     if (hasPopover && _activeSuggestionsCount > 0) {
       if (logicalKey == LogicalKeyboardKey.arrowDown) {
         setState(() {
@@ -1013,7 +1035,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       );
     }
 
-    return Container(
+    final composerRoot = Container(
       key: const ValueKey<String>('composer_root_container'),
       decoration: const BoxDecoration(color: composerBackgroundColor),
       child: SafeArea(
@@ -1564,6 +1586,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         ),
       ),
     );
+
+    return _wrapComposerWithExternalFiles(composerRoot);
   }
 
   bool get _canOpenAttachmentOptions =>

@@ -1522,6 +1522,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get composerDeleteAction => 'Löschen';
 
   @override
+  String get composerDropHint => 'Bilder oder PDFs zum Anhängen ablegen';
+
+  @override
+  String get composerPastedImageName => 'Eingefügtes Bild';
+
+  @override
   String get composerEdit => 'Bearbeiten';
 
   @override

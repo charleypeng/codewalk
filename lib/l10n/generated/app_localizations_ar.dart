@@ -1472,6 +1472,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get composerDeleteAction => 'حذف';
 
   @override
+  String get composerDropHint => 'أفلت الصور أو ملفات PDF للإرفاق';
+
+  @override
+  String get composerPastedImageName => 'صورة ملصقة';
+
+  @override
   String get composerEdit => 'تعديل';
 
   @override

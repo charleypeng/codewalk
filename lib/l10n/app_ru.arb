@@ -430,6 +430,8 @@
   "composerCannedText": "Текст",
   "composerChatInput": "Ввод чата",
   "composerDeleteAction": "Удалить",
+  "composerDropHint": "Перетащите изображения или PDF",
+  "composerPastedImageName": "Вставленное изображение",
   "composerEdit": "Редактировать",
   "composerExtras": "Дополнительно",
   "composerExtrasHide": "Скрыть дополнительно",
