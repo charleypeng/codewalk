@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../core/i18n/l10n_context.dart';
+import '../../core/logging/app_logger.dart';
 import '../providers/settings_provider.dart';
 import '../services/codewalk_terminal_controller.dart';
 import 'codewalk_terminal_extra_keys.dart';
@@ -111,24 +112,43 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
     }
   }
 
+  /// Records that a header control actually fired.
+  ///
+  /// #124 reports these buttons going dead intermittently while the terminal
+  /// below keeps accepting input. Everything downstream of the tap has been
+  /// ruled out by inspection — the handlers are unguarded, the provider
+  /// setters notify, and the page rebuilds on any settings change — so the
+  /// open question is whether the tap reaches the button at all. This makes
+  /// the next reproduction answer that instead of guessing.
+  void _traceHeaderAction(String action) {
+    AppLogger.debug(
+      'terminal header action=$action maximized=${widget.isMaximized} '
+      'keyboardInset=${widget.keyboardInset}',
+    );
+  }
+
   void _reconnect() {
+    _traceHeaderAction('reconnect');
     _extraKeysController.reset();
     widget.onReconnect();
   }
 
   void _stop() {
+    _traceHeaderAction('stop');
     _extraKeysController.reset();
     _extraKeysController.detach();
     widget.onStop();
   }
 
   void _hide() {
+    _traceHeaderAction('hide');
     _extraKeysController.reset();
     _extraKeysController.detach();
     widget.onHide();
   }
 
   void _toggleMaximize() {
+    _traceHeaderAction('toggleMaximize');
     _extraKeysController.reset();
     _extraKeysController.detach();
     widget.onToggleMaximize();
