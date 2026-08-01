@@ -937,13 +937,24 @@ extension _ChatPageChrome on _ChatPageState {
               ),
               IconButton(
                 key: const ValueKey<String>('appbar_terminal_button'),
-                icon: const Icon(Symbols.terminal_rounded),
+                // Feedback stays in the button itself, so the press is
+                // acknowledged where the user looked (#125).
+                icon: _isOpeningTerminal
+                    ? const SizedBox(
+                        key: ValueKey<String>('appbar_terminal_button_loading'),
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Symbols.terminal_rounded),
                 tooltip: settingsProvider.terminalPanelVisible
                     ? context.l10n.terminalHide
                     : (_terminalController.supportsRemoteTerminal
                           ? context.l10n.terminalOpen
                           : context.l10n.terminalOpenInfo),
-                onPressed: () => unawaited(_toggleTerminalPanel()),
+                onPressed: _isOpeningTerminal
+                    ? null
+                    : () => unawaited(_toggleTerminalPanel()),
               ),
               if (refreshlessEnabled && !isMobile)
                 Consumer2<ChatProvider, AppProvider>(

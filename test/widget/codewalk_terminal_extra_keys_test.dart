@@ -311,6 +311,99 @@ void main() {
     });
   });
 
+  group('extra-key strip responsiveness', () {
+    Future<void> pumpAtWidth(WidgetTester tester, double width) async {
+      await tester.binding.setSurfaceSize(Size(width, 720));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final controller = CodewalkTerminalExtraKeysController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await tester.pumpWidget(
+        localizedMaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                width: width,
+                child: CodewalkTerminalExtraKeys(
+                  controller: controller,
+                  requestTerminalFocus: focusNode.requestFocus,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    for (final width in <double>[320, 360, 390]) {
+      testWidgets('every key is reachable without scrolling at $width', (
+        tester,
+      ) async {
+        await pumpAtWidth(tester, width);
+
+        // No horizontal scroller left to hide anything behind.
+        expect(
+          find.byKey(const ValueKey<String>('terminal_extra_keys_scroll')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+
+        for (final key in <String>[
+          'terminal_extra_key_escape',
+          'terminal_extra_key_tab',
+          'terminal_extra_key_control',
+          'terminal_extra_key_alt',
+          'terminal_extra_key_arrow_left',
+          'terminal_extra_key_arrow_up',
+          'terminal_extra_key_arrow_down',
+          'terminal_extra_key_arrow_right',
+        ]) {
+          final finder = find.byKey(ValueKey<String>(key));
+          expect(finder, findsOneWidget, reason: '$key missing at $width');
+          final rect = tester.getRect(finder);
+          expect(
+            rect.left,
+            greaterThanOrEqualTo(-0.5),
+            reason: '$key starts off-screen at $width',
+          );
+          expect(
+            rect.right,
+            lessThanOrEqualTo(width + 0.5),
+            reason: '$key overflows at $width',
+          );
+        }
+      });
+    }
+
+    testWidgets('narrow widths wrap instead of shrinking the touch target', (
+      tester,
+    ) async {
+      await pumpAtWidth(tester, 320);
+
+      expect(
+        find.byKey(const ValueKey<String>('terminal_extra_keys_wrap')),
+        findsOneWidget,
+      );
+      final escape = tester.getRect(
+        find.byKey(const ValueKey<String>('terminal_extra_key_escape')),
+      );
+      expect(escape.width, greaterThanOrEqualTo(40));
+    });
+
+    testWidgets('roomy widths keep a single row', (tester) async {
+      await pumpAtWidth(tester, 600);
+
+      expect(
+        find.byKey(const ValueKey<String>('terminal_extra_keys_row')),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('mobile terminal extra-key strip', () {
     test('shows only for an active Android or iOS terminal above the IME', () {
       expect(
@@ -379,7 +472,7 @@ void main() {
     });
 
     testWidgets(
-      'keeps accessible controls scrollable and terminal focus on narrow screens',
+      'keeps accessible controls laid out and terminal focus on narrow screens',
       (tester) async {
         await tester.binding.setSurfaceSize(const Size(320, 180));
         addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -410,9 +503,11 @@ void main() {
         terminalFocusNode.requestFocus();
         await tester.pump();
 
+        // #123 replaced the horizontal scroller with an adaptive layout, so
+        // every key is laid out on screen rather than parked off-view.
         expect(
           find.byKey(const ValueKey<String>('terminal_extra_keys_scroll')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(find.bySemanticsLabel('Terminal extra keys'), findsOneWidget);
         expect(tester.takeException(), isNull);

@@ -44,18 +44,34 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
           container: true,
           explicitChildNodes: true,
           label: context.l10n.terminalExtraKeys,
-          child: SizedBox(
-            height: 56,
-            child: SingleChildScrollView(
-              key: const ValueKey<String>('terminal_extra_keys_scroll'),
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: AnimatedBuilder(
-                animation: controller,
-                builder: (context, _) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const keyCount = 8;
+              const gap = 4.0;
+              const horizontalPadding = 8.0;
+              final available =
+                  constraints.maxWidth -
+                  horizontalPadding * 2 -
+                  gap * (keyCount - 1);
+              final singleRowSize = (available / keyCount).clamp(
+                0.0,
+                kMinInteractiveDimension,
+              );
+              // Keys never shrink below the platform's minimum touch target:
+              // when a single row cannot hold them all at that size they wrap
+              // onto a second row instead, rather than hiding behind a
+              // horizontal scroll (#123).
+              final wraps = singleRowSize < kMinInteractiveDimension;
+              const dimension = kMinInteractiveDimension;
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 4,
+                ),
+                child: AnimatedBuilder(
+                  animation: controller,
+                  builder: (context, _) {
+                    final keys = <Widget>[
                       _TerminalExtraKeyButton(
                         key: const ValueKey<String>(
                           'terminal_extra_key_escape',
@@ -63,17 +79,17 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
                         visibleLabel: 'Esc',
                         semanticLabel: context.l10n.terminalExtraKeyEscape,
                         tooltip: context.l10n.terminalExtraKeyEscape,
+                        dimension: dimension,
                         onTap: () => _dispatchKey(TerminalKey.escape),
                       ),
-                      const SizedBox(width: 4),
                       _TerminalExtraKeyButton(
                         key: const ValueKey<String>('terminal_extra_key_tab'),
                         visibleLabel: 'Tab',
                         semanticLabel: context.l10n.terminalExtraKeyTab,
                         tooltip: context.l10n.terminalExtraKeyTab,
+                        dimension: dimension,
                         onTap: () => _dispatchKey(TerminalKey.tab),
                       ),
-                      const SizedBox(width: 4),
                       _TerminalExtraKeyButton(
                         key: const ValueKey<String>(
                           'terminal_extra_key_control',
@@ -81,25 +97,25 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
                         visibleLabel: 'Ctrl',
                         semanticLabel: context.l10n.terminalExtraKeyControl,
                         tooltip: context.l10n.terminalExtraKeyControl,
+                        dimension: dimension,
                         toggled: controller.controlEnabled,
                         onTap: () {
                           controller.toggleControl();
                           requestTerminalFocus();
                         },
                       ),
-                      const SizedBox(width: 4),
                       _TerminalExtraKeyButton(
                         key: const ValueKey<String>('terminal_extra_key_alt'),
                         visibleLabel: 'Alt',
                         semanticLabel: context.l10n.terminalExtraKeyAlt,
                         tooltip: context.l10n.terminalExtraKeyAlt,
+                        dimension: dimension,
                         toggled: controller.altEnabled,
                         onTap: () {
                           controller.toggleAlt();
                           requestTerminalFocus();
                         },
                       ),
-                      const SizedBox(width: 4),
                       _arrowButton(
                         key: const ValueKey<String>(
                           'terminal_extra_key_arrow_left',
@@ -107,8 +123,8 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
                         terminalKey: TerminalKey.arrowLeft,
                         icon: Symbols.arrow_left_alt_rounded,
                         semanticLabel: context.l10n.terminalExtraKeyArrowLeft,
+                        dimension: dimension,
                       ),
-                      const SizedBox(width: 4),
                       _arrowButton(
                         key: const ValueKey<String>(
                           'terminal_extra_key_arrow_up',
@@ -116,8 +132,8 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
                         terminalKey: TerminalKey.arrowUp,
                         icon: Symbols.arrow_upward_alt_rounded,
                         semanticLabel: context.l10n.terminalExtraKeyArrowUp,
+                        dimension: dimension,
                       ),
-                      const SizedBox(width: 4),
                       _arrowButton(
                         key: const ValueKey<String>(
                           'terminal_extra_key_arrow_down',
@@ -125,8 +141,8 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
                         terminalKey: TerminalKey.arrowDown,
                         icon: Symbols.arrow_downward_alt_rounded,
                         semanticLabel: context.l10n.terminalExtraKeyArrowDown,
+                        dimension: dimension,
                       ),
-                      const SizedBox(width: 4),
                       _arrowButton(
                         key: const ValueKey<String>(
                           'terminal_extra_key_arrow_right',
@@ -134,12 +150,27 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
                         terminalKey: TerminalKey.arrowRight,
                         icon: Symbols.arrow_right_alt_rounded,
                         semanticLabel: context.l10n.terminalExtraKeyArrowRight,
+                        dimension: dimension,
                       ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                    ];
+                    if (wraps) {
+                      return Wrap(
+                        key: const ValueKey<String>('terminal_extra_keys_wrap'),
+                        spacing: gap,
+                        runSpacing: gap,
+                        alignment: WrapAlignment.center,
+                        children: keys,
+                      );
+                    }
+                    return Row(
+                      key: const ValueKey<String>('terminal_extra_keys_row'),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: keys,
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -151,10 +182,12 @@ class CodewalkTerminalExtraKeys extends StatelessWidget {
     required TerminalKey terminalKey,
     required IconData icon,
     required String semanticLabel,
+    double? dimension,
   }) {
     return _TerminalExtraKeyButton(
       key: key,
       icon: icon,
+      dimension: dimension,
       semanticLabel: semanticLabel,
       onTap: () => _dispatchKey(terminalKey),
       onLongPress: () {
@@ -182,11 +215,15 @@ class _TerminalExtraKeyButton extends StatelessWidget {
     this.onLongPress,
     this.onPointerEnd,
     super.key,
+    this.dimension,
   }) : assert(visibleLabel != null || icon != null);
 
   final String semanticLabel;
   final String? visibleLabel;
   final IconData? icon;
+
+  /// Edge length of the key. Null keeps the standard interactive size.
+  final double? dimension;
   final String? tooltip;
   final bool? toggled;
   final VoidCallback onTap;
@@ -220,7 +257,7 @@ class _TerminalExtraKeyButton extends StatelessWidget {
         onTap: onTap,
         excludeSemantics: true,
         child: SizedBox.square(
-          dimension: kMinInteractiveDimension,
+          dimension: dimension ?? kMinInteractiveDimension,
           child: Material(
             color: isActive
                 ? colorScheme.primaryContainer

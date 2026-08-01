@@ -325,6 +325,13 @@ class _ChatPageState extends State<ChatPage>
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
+
+  /// True while the terminal is being opened.
+  ///
+  /// Opening persists a setting and then starts a shell, so it is not
+  /// instantaneous. Without this the button gave no sign it had been pressed
+  /// and repeated taps could start more than one shell (#125).
+  bool _isOpeningTerminal = false;
   Future<void>? _projectScopeTransitionTask;
   SessionTabIdentity? _activatingSessionTabIdentity;
   Future<bool>? _sessionTabActivationTask;
