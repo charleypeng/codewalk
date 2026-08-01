@@ -4906,6 +4906,13 @@ void main() {
       title: 'Session A',
       directory: projectA.path,
     );
+    final otherSessionA = ChatSession(
+      id: 'ses_a_other',
+      workspaceId: 'default',
+      time: now,
+      title: 'Other session A',
+      directory: projectA.path,
+    );
     final sessionB = ChatSession(
       id: 'ses_b',
       workspaceId: 'default',
@@ -4947,7 +4954,7 @@ void main() {
       serverId: 'srv_test',
     );
     final repository = FakeChatRepository(
-      sessions: <ChatSession>[sessionA, sessionB],
+      sessions: <ChatSession>[sessionA, otherSessionA, sessionB],
     );
     final provider = _buildChatProvider(
       localDataSource: localDataSource,
@@ -4963,7 +4970,9 @@ void main() {
     await tester.pumpAndSettle();
     await provider.loadSessions();
     await provider.selectSession(
-      provider.sessions.singleWhere((session) => session.id == sessionA.id),
+      provider.sessions.singleWhere(
+        (session) => session.id == otherSessionA.id,
+      ),
     );
     await tester.pumpAndSettle();
     await _ensureDesktopSessionTabsVisible(tester);
@@ -5002,6 +5011,62 @@ void main() {
       isTrue,
     );
     expect(repository.lastGetSessionsDirectory, projectB.path);
+    repository.getSessionsDelay = null;
+
+    final identityA = SessionTabIdentity(
+      serverId: 'srv_test',
+      directory: projectA.path,
+      sessionId: sessionA.id,
+    );
+    final interruptedSelection = Completer<void>();
+    var selectionWasBlocked = false;
+    repository.getMessagesHandler =
+        (projectId, sessionId, {directory, limit}) async {
+          if (sessionId == sessionA.id && !selectionWasBlocked) {
+            selectionWasBlocked = true;
+            await interruptedSelection.future;
+          }
+          return Right(
+            List<ChatMessage>.from(
+              repository.messagesBySession[sessionId] ?? const <ChatMessage>[],
+            ),
+          );
+        };
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_activate_${sessionTabIdentityKey(identityA)}',
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(selectionWasBlocked, isTrue);
+    unawaited(
+      Navigator.of(tester.element(find.byType(ChatPage))).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('Covering route')),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(
+      ModalRoute.of(tester.element(find.byType(ChatPage)))?.isCurrent,
+      isFalse,
+    );
+    interruptedSelection.complete();
+    for (var i = 0; i < 50; i += 1) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (provider.projectProvider.currentProject?.id == projectB.id &&
+          provider.currentSession?.id == sessionB.id) {
+        break;
+      }
+    }
+
+    expect(provider.projectProvider.currentProject?.id, projectB.id);
+    expect(provider.currentSession?.id, sessionB.id);
+
+    Navigator.of(tester.element(find.text('Covering route'))).pop();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('missing session tab target restores prior project and session', (

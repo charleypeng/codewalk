@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -16,6 +17,11 @@ import '../../domain/entities/experience_settings.dart';
 /// visible flash.
 class DesktopWindowChromeService {
   const DesktopWindowChromeService._();
+
+  static DesktopWindowChrome? _appliedChrome;
+
+  /// The style applied before Flutter builds its providers and routes.
+  static DesktopWindowChrome? get appliedChrome => _appliedChrome;
 
   /// Reads the persisted preference directly instead of waiting for
   /// [SettingsProvider], because the provider is only built after the first
@@ -54,7 +60,10 @@ class DesktopWindowChromeService {
         case DesktopWindowChrome.integratedTabs:
           await windowManager.setTitleBarStyle(
             TitleBarStyle.hidden,
-            windowButtonVisibility: false,
+            // macOS draws the traffic lights natively; Linux and Windows use
+            // the Flutter controls in DesktopWindowTitleBar instead.
+            windowButtonVisibility:
+                defaultTargetPlatform == TargetPlatform.macOS,
           );
         case DesktopWindowChrome.systemDecoration:
           await windowManager.setTitleBarStyle(
@@ -62,7 +71,9 @@ class DesktopWindowChromeService {
             windowButtonVisibility: true,
           );
       }
+      _appliedChrome = chrome;
     } catch (error, stackTrace) {
+      _appliedChrome = null;
       // A compositor may refuse the requested style; keeping the native
       // decoration is an acceptable degradation and must not block startup.
       AppLogger.warn(

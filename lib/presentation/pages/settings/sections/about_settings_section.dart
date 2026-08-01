@@ -216,7 +216,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     final appProvider = context.read<AppProvider>();
     final settingsProvider = context.read<SettingsProvider>();
     appProvider.resetToDefaults();
-    settingsProvider.resetToDefaults();
+    await settingsProvider.resetToDefaults();
     await appProvider.initialize();
     await settingsProvider.initialize();
 

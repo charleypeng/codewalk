@@ -3,13 +3,101 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/i18n/l10n_context.dart';
+import '../../domain/entities/experience_settings.dart';
+import '../providers/settings_provider.dart';
+import '../services/desktop_window_chrome_service.dart';
 
 /// Width reserved for the macOS traffic lights, which stay native and are drawn
 /// by the system over the leading edge of the Flutter view.
 const double _macOsTrafficLightsInset = 78;
+
+bool _isDesktopRuntime() {
+  if (kIsWeb) {
+    return false;
+  }
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.linux ||
+    TargetPlatform.macOS ||
+    TargetPlatform.windows => true,
+    _ => false,
+  };
+}
+
+class DesktopWindowChromeController extends ChangeNotifier {
+  Object? _owner;
+  WidgetBuilder? _titleBarBuilder;
+
+  void attach(Object owner, WidgetBuilder titleBarBuilder) {
+    if (identical(_owner, owner)) {
+      return;
+    }
+    _owner = owner;
+    _titleBarBuilder = titleBarBuilder;
+    notifyListeners();
+  }
+
+  void detach(Object owner) {
+    if (!identical(_owner, owner)) {
+      return;
+    }
+    _owner = null;
+    _titleBarBuilder = null;
+    notifyListeners();
+  }
+
+  Widget buildTitleBar(BuildContext context) {
+    return _titleBarBuilder?.call(context) ?? const SizedBox.shrink();
+  }
+}
+
+/// Keeps the custom title bar above every desktop route while integrated chrome
+/// is enabled. The chat page supplies the session tabs; other routes only need
+/// the drag region and window controls.
+class DesktopWindowChromeFrame extends StatelessWidget {
+  const DesktopWindowChromeFrame({
+    super.key,
+    required this.child,
+    this.titleBarChild,
+    this.height = 54,
+  });
+
+  final Widget child;
+  final Widget? titleBarChild;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isDesktopRuntime()) {
+      return child;
+    }
+    final settingsProvider = Provider.of<SettingsProvider?>(context);
+    if (settingsProvider == null) {
+      return child;
+    }
+    final chrome = settingsProvider.initialized
+        ? settingsProvider.desktopWindowChrome
+        : DesktopWindowChromeService.appliedChrome;
+    if (chrome != DesktopWindowChrome.integratedTabs) {
+      return child;
+    }
+    final controller = Provider.of<DesktopWindowChromeController?>(context);
+    final resolvedTitleBarChild =
+        titleBarChild ??
+        controller?.buildTitleBar(context) ??
+        const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DesktopWindowTitleBar(height: height, child: resolvedTitleBarChild),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
 
 /// Top band of the window in the integrated chrome mode.
 ///

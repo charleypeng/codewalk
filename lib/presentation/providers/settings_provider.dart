@@ -19,6 +19,7 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/cellular_data_saver_service.dart';
+import '../services/desktop_window_chrome_service.dart';
 import '../services/session_attention/session_attention_host_service.dart';
 import '../services/sound_service.dart';
 import '../services/tts/read_aloud_default_resolver.dart';

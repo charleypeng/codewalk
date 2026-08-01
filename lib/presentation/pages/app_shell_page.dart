@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
 import '../providers/app_provider.dart';
 import '../providers/settings_provider.dart';
@@ -13,7 +14,6 @@ import '../services/desktop_tray_service_types.dart';
 import '../services/update_check_service.dart';
 import 'chat_page.dart';
 import 'onboarding_wizard_page.dart';
-import '../../core/i18n/l10n_context.dart';
 
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});
@@ -255,7 +255,7 @@ class _AppShellPageState extends State<AppShellPage> {
         showCloseIcon: true,
         content: ListenableBuilder(
           listenable: settingsProvider,
-          builder: (_, __) => Column(
+          builder: (_, _) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

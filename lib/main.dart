@@ -27,6 +27,7 @@ import 'presentation/services/android_background_alert_worker.dart';
 import 'presentation/services/desktop_window_chrome_service.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/opencode_theme_presets.dart';
+import 'presentation/widgets/desktop_window_title_bar.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,6 +77,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => di.sl<ProjectIconProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<ChatProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<QuotaProvider>()),
+        ChangeNotifierProvider(create: (_) => DesktopWindowChromeController()),
         ChangeNotifierProvider(
           create: (_) {
             final provider = di.sl<SettingsProvider>();
@@ -197,10 +199,6 @@ class MyApp extends StatelessWidget {
                   L10nBridge.update(AppLocalizations.of(context));
                   final mediaQuery = MediaQuery.of(context);
                   final composedScaler = TextScaler.linear(systemFontScale);
-                  final scaledChild = MediaQuery(
-                    data: mediaQuery.copyWith(textScaler: composedScaler),
-                    child: child ?? const SizedBox.shrink(),
-                  );
                   return Theme(
                     data: AppTheme.withResponsiveSnackBars(
                       Theme.of(context),
@@ -208,7 +206,12 @@ class MyApp extends StatelessWidget {
                       textDirection:
                           Directionality.maybeOf(context) ?? TextDirection.ltr,
                     ),
-                    child: scaledChild,
+                    child: MediaQuery(
+                      data: mediaQuery.copyWith(textScaler: composedScaler),
+                      child: DesktopWindowChromeFrame(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                    ),
                   );
                 },
                 home: const AppShellPage(),

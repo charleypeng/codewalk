@@ -1,7 +1,17 @@
+import 'dart:convert';
+
+import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
+import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/widgets/desktop_window_title_bar.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
+import '../support/fakes.dart';
 import '../support/pump_localized_app.dart';
 
 void main() {
@@ -83,4 +93,74 @@ void main() {
     expect(dragRect.left, moreOrLessEquals(barLeft, epsilon: 0.5));
     expect(dragRect.right, moreOrLessEquals(minimizeRect.left, epsilon: 0.5));
   });
+
+  testWidgets('frame keeps chrome around route content in integrated mode', (
+    tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'checkUpdatesOnOpen': false,
+      });
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: _NoopDioClient(),
+      soundService: SoundService(),
+    );
+
+    try {
+      await tester.pumpWidget(
+        localizedMaterialApp(
+          home: ChangeNotifierProvider<SettingsProvider>.value(
+            value: settingsProvider,
+            child: const DesktopWindowChromeFrame(
+              child: ColoredBox(color: Colors.green),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(DesktopWindowTitleBar), findsNothing);
+
+      await settingsProvider.initialize();
+      await tester.pump();
+
+      expect(find.byType(DesktopWindowTitleBar), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('desktop_window_close')),
+        findsOneWidget,
+      );
+
+      await settingsProvider.setDesktopWindowChrome(
+        DesktopWindowChrome.systemDecoration,
+      );
+      await tester.pump();
+
+      expect(find.byType(DesktopWindowTitleBar), findsNothing);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      settingsProvider.dispose();
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+}
+
+class _NoopDioClient extends DioClient {
+  _NoopDioClient() : super(baseUrl: 'http://localhost');
+
+  @override
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return Response<T>(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 200,
+      data: <String, dynamic>{} as T,
+    );
+  }
 }

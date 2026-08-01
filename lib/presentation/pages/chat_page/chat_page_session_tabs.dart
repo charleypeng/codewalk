@@ -1,38 +1,20 @@
 part of '../chat_page.dart';
 
 extension _ChatPageSessionTabs on _ChatPageState {
+  Widget _buildIntegratedWindowTitleBar(BuildContext context) {
+    return _buildSessionTabStrip(
+      isCompact: false,
+      settingsProvider: context.read<SettingsProvider>(),
+      fillWidth: false,
+      transparentBackground: true,
+    );
+  }
+
   /// True when the tab strip lives in the window title bar instead of the body.
   bool _usesIntegratedWindowChrome(SettingsProvider settingsProvider) {
     return _isDesktopRuntime &&
         settingsProvider.desktopWindowChrome ==
             DesktopWindowChrome.integratedTabs;
-  }
-
-  /// Wraps the page in the custom window chrome when the integrated mode is
-  /// active. The title bar is always rendered in that mode, even with no tabs,
-  /// so the window keeps a drag region and its controls.
-  Widget _wrapWithIntegratedWindowChrome({
-    required Widget child,
-    required SettingsProvider settingsProvider,
-  }) {
-    if (!_usesIntegratedWindowChrome(settingsProvider)) {
-      return child;
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DesktopWindowTitleBar(
-          height: kSessionTabStripHeight,
-          child: _buildSessionTabStrip(
-            isCompact: false,
-            settingsProvider: settingsProvider,
-            fillWidth: false,
-            transparentBackground: true,
-          ),
-        ),
-        Expanded(child: child),
-      ],
-    );
   }
 
   Widget _buildSessionTabStrip({
@@ -65,13 +47,16 @@ extension _ChatPageSessionTabs on _ChatPageState {
   }
 
   Future<bool> _activateSessionTab(SessionTabRecord tab) async {
+    if (!_isChatScreenActive()) {
+      return false;
+    }
     final inFlight = _sessionTabActivationTask;
     if (inFlight != null) {
       if (_activatingSessionTabIdentity == tab.identity) {
         return inFlight;
       }
       await inFlight;
-      if (!mounted) {
+      if (!mounted || !_isChatScreenActive()) {
         return false;
       }
     }
@@ -103,7 +88,15 @@ extension _ChatPageSessionTabs on _ChatPageState {
       }
 
       await _switchToSessionTabContext(tab);
-      if (!mounted || !_isSessionTabContextActive(tab)) {
+      if (!mounted || !_isChatScreenActive()) {
+        await _restoreSessionTabNavigation(
+          project: priorProject,
+          session: priorSession,
+          wasNewChatDraft: priorWasNewChatDraft,
+        );
+        return false;
+      }
+      if (!_isSessionTabContextActive(tab)) {
         await _restoreSessionTabNavigation(
           project: priorProject,
           session: priorSession,
@@ -115,6 +108,14 @@ extension _ChatPageSessionTabs on _ChatPageState {
 
       final target = await _waitForSessionTabTarget(tab);
       if (target == null) {
+        if (!mounted || !_isChatScreenActive()) {
+          await _restoreSessionTabNavigation(
+            project: priorProject,
+            session: priorSession,
+            wasNewChatDraft: priorWasNewChatDraft,
+          );
+          return false;
+        }
         await _restoreSessionTabNavigation(
           project: priorProject,
           session: priorSession,
@@ -124,9 +125,18 @@ extension _ChatPageSessionTabs on _ChatPageState {
         return false;
       }
 
+      if (!_isChatScreenActive()) {
+        await _restoreSessionTabNavigation(
+          project: priorProject,
+          session: priorSession,
+          wasNewChatDraft: priorWasNewChatDraft,
+        );
+        return false;
+      }
       await _handleSessionSwitch(target);
       final activated =
           mounted &&
+          _isChatScreenActive() &&
           _isSessionTabContextActive(tab) &&
           context.read<ChatProvider>().currentSession?.id ==
               tab.identity.sessionId;
@@ -203,7 +213,8 @@ extension _ChatPageSessionTabs on _ChatPageState {
     final chatProvider = context.read<ChatProvider>();
     final deadline = DateTime.now().add(const Duration(seconds: 8));
     while (true) {
-      if (chatProvider.activeServerId != tab.identity.serverId ||
+      if (!_isChatScreenActive() ||
+          chatProvider.activeServerId != tab.identity.serverId ||
           !_isSessionTabContextActive(tab)) {
         return null;
       }
@@ -289,6 +300,9 @@ extension _ChatPageSessionTabs on _ChatPageState {
   }
 
   Future<void> _closeSessionTab(SessionTabRecord tab) async {
+    if (!_isChatScreenActive()) {
+      return;
+    }
     final chatProvider = context.read<ChatProvider>();
     final tabs = chatProvider.sessionTabs;
     final current = tabs

@@ -40,7 +40,7 @@ extension SettingsProviderUpdateInstall on SettingsProvider {
   }
 
   /// Resets in-memory state to defaults (used after clearAll during app reset).
-  void resetToDefaults() {
+  Future<void> resetToDefaults() async {
     _automaticUpdateCheckTimer?.cancel();
     _automaticUpdateCheckTimer = null;
     _settings = ExperienceSettings.defaults();
@@ -53,7 +53,15 @@ extension SettingsProviderUpdateInstall on SettingsProvider {
     _installProgress = 0.0;
     _initialized = false;
     _initFuture = null;
-    unawaited(_syncAndroidBackgroundAlertRuntime());
+    await _syncAndroidBackgroundAlertRuntime();
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.windows)) {
+      await DesktopWindowChromeService.apply(
+        ExperienceSettings.defaults().desktopWindowChrome,
+      );
+    }
     notifyListeners();
   }
 
