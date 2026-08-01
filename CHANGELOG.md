@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.190.0 - 2026-08-01
+
+- fix(android): revive overlay taps, hide it in foreground, make it sizeable
+
 ## v1.189.0 - 2026-08-01
 
 - feat(files): add undo, redo and autosave to the file editor
