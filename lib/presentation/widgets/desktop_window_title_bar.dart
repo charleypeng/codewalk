@@ -98,8 +98,21 @@ class _DesktopWindowTitleBarState extends State<DesktopWindowTitleBar>
           children: [
             if (_usesNativeWindowButtons)
               const SizedBox(width: _macOsTrafficLightsInset),
-            Flexible(child: widget.child),
-            Expanded(child: _buildDragRegion()),
+            // A single flexible child keeps the window buttons flush against
+            // the trailing edge. Splitting the free space between the strip
+            // and a separate drag region left the width the strip did not use
+            // stranded at the end of the row, pushing the buttons inward.
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildDragRegion()),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: widget.child,
+                  ),
+                ],
+              ),
+            ),
             if (!_usesNativeWindowButtons) _buildWindowButtons(context),
           ],
         ),
