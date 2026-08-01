@@ -510,6 +510,7 @@ void main() {
       );
       await tester.pump();
       expect(closeFinder, findsOneWidget);
+      expect(tester.getSize(closeFinder), const Size.square(40));
 
       await tester.pump(const Duration(seconds: 2));
       expect(closeFinder, findsOneWidget);

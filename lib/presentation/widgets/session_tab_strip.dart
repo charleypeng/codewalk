@@ -284,12 +284,12 @@ class _SessionTabStripState extends State<SessionTabStrip> {
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
     final hovered = _hoveredIdentity == tab.identity;
+    final touchRevealed = _touchRevealedIdentity == tab.identity;
     // Mouse hover, keyboard focus and touch/stylus input each reveal the close
     // action without making layout width stand in for the input device type.
     final showClose =
-        hovered ||
-        _focusedIdentity == tab.identity ||
-        _touchRevealedIdentity == tab.identity;
+        hovered || _focusedIdentity == tab.identity || touchRevealed;
+    final closeExtent = widget.isCompact || touchRevealed ? 40.0 : 26.0;
 
     return MouseRegion(
       onEnter: (_) => _setHovered(tab.identity),
@@ -459,8 +459,8 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                 // with its curved shoulders; the tap target stays
                                 // comfortable on touch, tighter with a pointer.
                                 constraints: BoxConstraints.tightFor(
-                                  width: widget.isCompact ? 40 : 26,
-                                  height: widget.isCompact ? 40 : 26,
+                                  width: closeExtent,
+                                  height: closeExtent,
                                 ),
                                 style: IconButton.styleFrom(
                                   tapTargetSize:
