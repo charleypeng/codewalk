@@ -7,51 +7,26 @@
 
 A native (really fast!!) cross-platform client for [OpenCode](https://github.com/anomalyco/opencode) server mode. Built with Flutter, it provides a conversational interface for session-based AI coding interactions over HTTP APIs and streaming events.
 
-## Unique Features
+## Features
 
-- 🌐 Fully translated into 14 languages: English, Português (Brasil), Español, Deutsch, Français, Italiano, Русский, 中文, 日本語, 한국어, हिन्दी, বাংলা, العربية, اردو
+- 🌐 Fully translated into 14 languages: English, Português (Brasil), Español, Deutsch, Français, Italiano, Русский, 中文, 日本語, 한국어, हिन्दी, বাংলা, العربية, اردو — with instant switching, system-default detection, and RTL layout for Arabic and Urdu
+- 💬 Realtime AI chat with streaming responses, older-history loading, and instant session reopen from cache
+- 🗂 Project-centric sidebar with conversations grouped by project, pinning, and support for Git repositories and plain folders
+- 🖧 Multi-server profiles with health checks, active-server switching, and OpenCode server install and launch from Settings
+- 🧠 Model and provider selection with variants, favorites, and reasoning controls
+- 🖥 Server-hosted PTY terminal — a real command line running on the OpenCode host, embedded in the app
 - 🎙 Speech-to-text on every platform, including Linux
-- 🔊 Text-to-speech read-aloud for assistant messages
-- 📊 Host quota monitoring through official/OpenChamber REST when available, plus shell fallback probes for Claude, OpenRouter, Codex/OpenAI, Gemini, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, z.ai, Cursor, and Ollama Cloud
-- 📈 Inline Mermaid diagram rendering from fenced markdown blocks
-- 💬 Canned answers for faster replies
-- ↩️ Easier undo and redo
-- 🧙 OpenCode setup wizard
-- 🔢 LaTeX math rendering — typeset inline and block equations via pure-Dart KaTeX port
-- 📤 Share messages as images — export any chat message as a themed PNG with native share
-- 🔐 Cloudflare Access OAuth — PKCE-based auth for servers behind Cloudflare Access
-- 📋 Session export as Markdown/JSON — full conversation export with paginated loading
-- 🖥 Server-hosted PTY terminal — embedded terminal running on the OpenCode host
-- ↩️ Inline revert to any prior turn — undo with draft restoration via official revert endpoint
-
-## Highlights
-
-- Realtime AI chat with streaming responses (SSE) and robust turn reconciliation
-- Queued `Send now` handoff without false abort error noise or duplicate chat bubbles
-- Instant session reopen with cached grouped history, direct bottom landing, and background delta-style revalidation
-- Load older message history by scrolling to the top of chat
-- Project-centric sidebar with conversations grouped by open projects
-- Context-scoped conversation pinning to keep priority sessions at top
-- Canned answers with global/project scope
-- Project context support for both Git repositories and non-Git folders
-- Per-project New Chat draft isolation with lazy session bootstrap
-- Multi-server profile management (health checks, default/active switching, auth)
-- Install and Run OpenCode Server directly from Settings
-- Model/provider selection with variants, favorites, and reasoning controls
-- In-app update flow with auto-check, startup notification, and direct install
-- Physical-keyboard productivity shortcuts, including Alt+Tab-style session cycling
-- Mobile external-keyboard send keeps composer focus for rapid follow-up input
-- Interactive server permission/question prompts with attention badges
-- Responsive Material 3 experience across Linux, Windows, macOS, Web, and Android
-- 14-language support with instant language switching, system-default detection, and RTL layout for Arabic and Urdu
-- Text-to-speech read-aloud for assistant responses with adjustable speed and pitch
-- Mermaid diagram rendering from fenced code blocks with copy-source fallback
-- Density-aware UI with 5 spacing tiers (compact → spacious) across chrome and composer
-- Smart session state restore — re-selects last agent/model/variant from message metadata
-- Reactive notification dismissal — auto-clears on SSE events, no stale alerts
-- Rich diff review surface with syntax highlighting, line gutters, and lazy hunk loading
-- Cloudflare Access OAuth with PKCE for secure enterprise reverse-proxy auth
-- Server-hosted PTY terminal streamed to client for in-app command-line access
+- 🔊 Text-to-speech read-aloud for assistant messages, with adjustable speed and pitch
+- 📊 Host quota monitoring for Claude, OpenRouter, Codex/OpenAI, Gemini, GitHub Copilot, OpenCode Go, NanoGPT, Wafer, Kimi, ZhipuAI, MiniMax, z.ai, Cursor, and Ollama Cloud
+- 📈 Mermaid diagrams and LaTeX math rendered inline, straight from the conversation
+- 📤 Share any message as a themed image, or export a whole session as Markdown or JSON
+- ↩️ Revert to any earlier turn, with your draft restored
+- 💬 Canned answers with global or per-project scope
+- ⌨️ Keyboard-first on desktop, including Alt+Tab-style session cycling
+- 🔐 Cloudflare Access OAuth with PKCE, for servers behind an enterprise reverse proxy
+- 🔔 Interactive permission and question prompts, with notifications that clear themselves when the answer arrives
+- 🔄 In-app updates with auto-check and direct install
+- 📱 Responsive Material 3 across Linux, Windows, macOS, Web, and Android, with five density tiers
 
 ## Install in One Command
 
