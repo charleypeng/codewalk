@@ -1699,6 +1699,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get filesAddChat => 'Adicionar ao chat';
 
   @override
+  String get filesAutosave => 'Salvamento automático';
+
+  @override
+  String get filesAutosaveOn => 'Salvamento automático ativado';
+
+  @override
+  String get filesAutosaveOff => 'Salvamento automático desativado';
+
+  @override
+  String get filesRedo => 'Refazer';
+
+  @override
+  String get filesUndo => 'Desfazer';
+
+  @override
   String get filesBinaryFilePreview =>
       'A visualização de arquivo binário não está disponível.';
 

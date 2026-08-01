@@ -1682,6 +1682,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filesAddChat => 'Add to chat';
 
   @override
+  String get filesAutosave => 'Autosave';
+
+  @override
+  String get filesAutosaveOn => 'Autosave on';
+
+  @override
+  String get filesAutosaveOff => 'Autosave off';
+
+  @override
+  String get filesRedo => 'Redo';
+
+  @override
+  String get filesUndo => 'Undo';
+
+  @override
   String get filesBinaryFilePreview => 'Binary file preview is not available.';
 
   @override

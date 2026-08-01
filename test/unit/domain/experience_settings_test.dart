@@ -594,6 +594,35 @@ void main() {
     });
   });
 
+  group('editor autosave serialization', () {
+    test('defaults to off so manual saving is unchanged', () {
+      expect(ExperienceSettings.defaults().editorAutosaveEnabled, isFalse);
+    });
+
+    test('round-trips both states', () {
+      for (final value in <bool>[true, false]) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          editorAutosaveEnabled: value,
+        );
+
+        expect(
+          ExperienceSettings.fromJson(settings.toJson()).editorAutosaveEnabled,
+          value,
+        );
+      }
+    });
+
+    test('existing installs without the key keep autosave off', () {
+      final legacy = ExperienceSettings.defaults().toJson()
+        ..remove('editorAutosaveEnabled');
+
+      expect(
+        ExperienceSettings.fromJson(legacy).editorAutosaveEnabled,
+        isFalse,
+      );
+    });
+  });
+
   group('desktop window chrome serialization', () {
     test('defaults to integrated tabs', () {
       expect(

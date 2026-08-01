@@ -1710,6 +1710,21 @@ class AppLocalizationsIt extends AppLocalizations {
   String get filesAddChat => 'Aggiungi alla chat';
 
   @override
+  String get filesAutosave => 'Salvataggio automatico';
+
+  @override
+  String get filesAutosaveOn => 'Salvataggio automatico attivo';
+
+  @override
+  String get filesAutosaveOff => 'Salvataggio automatico disattivato';
+
+  @override
+  String get filesRedo => 'Ripeti';
+
+  @override
+  String get filesUndo => 'Annulla';
+
+  @override
   String get filesBinaryFilePreview =>
       'L\'anteprima del file binario non è disponibile.';
 

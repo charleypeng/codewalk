@@ -759,6 +759,7 @@ class ExperienceSettings {
       composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       desktopWindowChrome: DesktopWindowChrome.integratedTabs,
+      editorAutosaveEnabled: false,
       dataSaverEnabled: true,
       dataSaverLevel: DataSaverLevel.standard,
       androidBackgroundAlertsEnabled: true,
@@ -829,6 +830,7 @@ class ExperienceSettings {
     required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
     this.desktopWindowChrome = DesktopWindowChrome.integratedTabs,
+    this.editorAutosaveEnabled = false,
     required this.dataSaverEnabled,
     required this.dataSaverLevel,
     required this.androidBackgroundAlertsEnabled,
@@ -899,6 +901,9 @@ class ExperienceSettings {
   final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
   final DesktopWindowChrome desktopWindowChrome;
+
+  /// Autosave in the file micro editor. Global: applies to every open tab.
+  final bool editorAutosaveEnabled;
   final bool dataSaverEnabled;
   final DataSaverLevel dataSaverLevel;
   final bool androidBackgroundAlertsEnabled;
@@ -971,6 +976,7 @@ class ExperienceSettings {
     bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
     DesktopWindowChrome? desktopWindowChrome,
+    bool? editorAutosaveEnabled,
     bool? dataSaverEnabled,
     DataSaverLevel? dataSaverLevel,
     bool? androidBackgroundAlertsEnabled,
@@ -1057,6 +1063,7 @@ class ExperienceSettings {
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
       desktopWindowChrome: desktopWindowChrome ?? this.desktopWindowChrome,
+      editorAutosaveEnabled: editorAutosaveEnabled ?? this.editorAutosaveEnabled,
       dataSaverEnabled: nextDataSaverLevel != DataSaverLevel.off,
       dataSaverLevel: nextDataSaverLevel,
       androidBackgroundAlertsEnabled:
@@ -1185,6 +1192,7 @@ class ExperienceSettings {
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
       'desktopWindowChrome': desktopWindowChromeKey(desktopWindowChrome),
+      'editorAutosaveEnabled': editorAutosaveEnabled,
       'dataSaverEnabled': dataSaverEnabled,
       'dataSaverLevel': dataSaverLevelKey(dataSaverLevel),
       'keepDesktopRunningInTray':
@@ -1276,6 +1284,7 @@ class ExperienceSettings {
         defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
     var desktopWindowChrome = defaults.desktopWindowChrome;
+    var editorAutosaveEnabled = defaults.editorAutosaveEnabled;
     var dataSaverEnabled = defaults.dataSaverEnabled;
     var dataSaverLevel = defaults.dataSaverLevel;
     var androidBackgroundAlertsEnabled =
@@ -1525,6 +1534,11 @@ class ExperienceSettings {
       desktopWindowChrome = desktopWindowChromeFromKey(
         desktopWindowChromeJson.trim().toLowerCase(),
       );
+    }
+
+    final editorAutosaveEnabledJson = json['editorAutosaveEnabled'];
+    if (editorAutosaveEnabledJson is bool) {
+      editorAutosaveEnabled = editorAutosaveEnabledJson;
     }
 
     final dataSaverEnabledJson = json['dataSaverEnabled'];
@@ -1803,6 +1817,7 @@ class ExperienceSettings {
       composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
       desktopWindowChrome: desktopWindowChrome,
+      editorAutosaveEnabled: editorAutosaveEnabled,
       dataSaverEnabled: dataSaverEnabled,
       dataSaverLevel: dataSaverLevel,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,

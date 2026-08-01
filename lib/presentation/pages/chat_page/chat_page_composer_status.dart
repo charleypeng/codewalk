@@ -57,7 +57,8 @@ extension _ChatPageComposerStatus on _ChatPageState {
           if (trimmed.isEmpty) {
             continue;
           }
-          final label = parseReasoningStatusLabel(part.text) ??
+          final label =
+              parseReasoningStatusLabel(part.text) ??
               context.l10n.chatStatusThinking;
           return _ComposerStatusPresentation.dynamicReasoning(label);
         }
@@ -139,10 +140,9 @@ extension _ChatPageComposerStatus on _ChatPageState {
             : _ComposerStatusPresentation.receiving(
                 label: context.l10n.chatReasoning,
               ),
-      _AssistantProgressStage.retrying =>
-        _ComposerStatusPresentation.retrying(
-          label: context.l10n.chatRetryingModelRequest,
-        ),
+      _AssistantProgressStage.retrying => _ComposerStatusPresentation.retrying(
+        label: context.l10n.chatRetryingModelRequest,
+      ),
     };
   }
 }

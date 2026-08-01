@@ -1680,6 +1680,21 @@ class AppLocalizationsUr extends AppLocalizations {
   String get filesAddChat => 'چیٹ میں شامل کریں۔';
 
   @override
+  String get filesAutosave => 'خودکار محفوظ';
+
+  @override
+  String get filesAutosaveOn => 'خودکار محفوظ فعال';
+
+  @override
+  String get filesAutosaveOff => 'خودکار محفوظ غیر فعال';
+
+  @override
+  String get filesRedo => 'دوبارہ کریں';
+
+  @override
+  String get filesUndo => 'واپس کریں';
+
+  @override
   String get filesBinaryFilePreview =>
       'بائنری فائل کا پیش نظارہ دستیاب نہیں ہے۔';
 

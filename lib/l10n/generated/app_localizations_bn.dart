@@ -1685,6 +1685,21 @@ class AppLocalizationsBn extends AppLocalizations {
   String get filesAddChat => 'চ্যাটে যোগ করুন';
 
   @override
+  String get filesAutosave => 'স্বয়ংক্রিয় সংরক্ষণ';
+
+  @override
+  String get filesAutosaveOn => 'স্বয়ংক্রিয় সংরক্ষণ চালু';
+
+  @override
+  String get filesAutosaveOff => 'স্বয়ংক্রিয় সংরক্ষণ বন্ধ';
+
+  @override
+  String get filesRedo => 'পুনরায় করুন';
+
+  @override
+  String get filesUndo => 'পূর্বাবস্থা';
+
+  @override
   String get filesBinaryFilePreview => 'বাইনারি ফাইল প্রিভিউ উপলব্ধ নয়।';
 
   @override

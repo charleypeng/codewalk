@@ -1703,6 +1703,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filesAddChat => 'Добавить в чат';
 
   @override
+  String get filesAutosave => 'Автосохранение';
+
+  @override
+  String get filesAutosaveOn => 'Автосохранение включено';
+
+  @override
+  String get filesAutosaveOff => 'Автосохранение выключено';
+
+  @override
+  String get filesRedo => 'Повторить';
+
+  @override
+  String get filesUndo => 'Отменить';
+
+  @override
   String get filesBinaryFilePreview =>
       'Предпросмотр бинарного файла недоступен.';
 

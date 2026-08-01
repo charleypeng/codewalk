@@ -466,13 +466,56 @@ extension _ChatPageFileRuntime on _ChatPageState {
     onUpdated?.call();
   }
 
+  /// Saves a dirty tab and only then closes it, used when autosave is on.
+  Future<void> _saveAndCloseFileTab({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String path,
+    VoidCallback? onUpdated,
+  }) async {
+    await _saveFileEditorDraft(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      path: path,
+      onUpdated: onUpdated,
+    );
+    if (!mounted) {
+      return;
+    }
+    final draft = fileState.editorDraftsByPath[_normalizeFilePath(path)];
+    if (draft != null && draft.isDirty) {
+      // The save failed; keep the tab open so the error stays visible.
+      onUpdated?.call();
+      return;
+    }
+    _closeFileTab(fileState: fileState, path: path, onUpdated: onUpdated);
+  }
+
   void _closeFileTab({
     required _FileExplorerContextState fileState,
     required String path,
+    ProjectProvider? projectProvider,
     VoidCallback? onUpdated,
   }) {
     final normalizedPath = _normalizeFilePath(path);
     final draft = fileState.editorDraftsByPath[normalizedPath];
+    if (draft != null &&
+        draft.isDirty &&
+        projectProvider != null &&
+        context.read<SettingsProvider>().editorAutosaveEnabled) {
+      // With autosave on, closing is an implicit save: blocking here would
+      // contradict the promise that work is never lost.
+      draft.cancelAutosave();
+      unawaited(
+        _saveAndCloseFileTab(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          path: normalizedPath,
+          onUpdated: onUpdated,
+        ),
+      );
+      return;
+    }
     if (draft != null && draft.isDirty) {
       _setState(() {
         draft.saveErrorMessage = _ChatPageFileViewer._dirtyCloseBlockedMessage;

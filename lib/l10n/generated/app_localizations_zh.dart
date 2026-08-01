@@ -1566,6 +1566,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filesAddChat => '添加到聊天';
 
   @override
+  String get filesAutosave => '自动保存';
+
+  @override
+  String get filesAutosaveOn => '自动保存已开启';
+
+  @override
+  String get filesAutosaveOff => '自动保存已关闭';
+
+  @override
+  String get filesRedo => '重做';
+
+  @override
+  String get filesUndo => '撤销';
+
+  @override
   String get filesBinaryFilePreview => '二进制文件预览不可用。';
 
   @override

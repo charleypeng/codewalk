@@ -1656,6 +1656,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get filesAddChat => 'إضافة إلى الدردشة';
 
   @override
+  String get filesAutosave => 'حفظ تلقائي';
+
+  @override
+  String get filesAutosaveOn => 'تم تفعيل الحفظ التلقائي';
+
+  @override
+  String get filesAutosaveOff => 'تم إيقاف الحفظ التلقائي';
+
+  @override
+  String get filesRedo => 'إعادة';
+
+  @override
+  String get filesUndo => 'تراجع';
+
+  @override
   String get filesBinaryFilePreview => 'معاينة الملف الثنائي غير متوفرة.';
 
   @override

@@ -221,6 +221,7 @@ class SettingsProvider extends ChangeNotifier {
   DesktopCloseBehavior get desktopCloseBehavior =>
       _settings.desktopCloseBehavior;
   DesktopWindowChrome get desktopWindowChrome => _settings.desktopWindowChrome;
+  bool get editorAutosaveEnabled => _settings.editorAutosaveEnabled;
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get dataSaverEnabled => _settings.dataSaverEnabled;
@@ -831,6 +832,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(desktopWindowChrome: chrome);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setEditorAutosaveEnabled(bool enabled) async {
+    if (_settings.editorAutosaveEnabled == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(editorAutosaveEnabled: enabled);
     notifyListeners();
     await _persist();
   }

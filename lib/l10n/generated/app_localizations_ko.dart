@@ -1596,6 +1596,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get filesAddChat => '채팅에 추가';
 
   @override
+  String get filesAutosave => '자동 저장';
+
+  @override
+  String get filesAutosaveOn => '자동 저장 켜짐';
+
+  @override
+  String get filesAutosaveOff => '자동 저장 꺼짐';
+
+  @override
+  String get filesRedo => '다시 실행';
+
+  @override
+  String get filesUndo => '실행 취소';
+
+  @override
   String get filesBinaryFilePreview => '바이너리 파일 미리보기는 지원되지 않습니다.';
 
   @override

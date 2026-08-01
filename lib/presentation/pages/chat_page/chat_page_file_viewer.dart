@@ -153,6 +153,7 @@ extension _ChatPageFileViewer on _ChatPageState {
                                       _closeFileTab(
                                         fileState: fileState,
                                         path: path,
+                                        projectProvider: projectProvider,
                                         onUpdated: onStateChanged,
                                       );
                                     },
@@ -443,18 +444,114 @@ extension _ChatPageFileViewer on _ChatPageState {
           draft: draft,
         );
     final isSaving = draft?.isSaving == true;
+    final autosaveEnabled = context
+        .watch<SettingsProvider>()
+        .editorAutosaveEnabled;
+    final controller = draft?.controller;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (controller != null) ...[
+          IconButton(
+            key: const ValueKey<String>('file_viewer_undo_button'),
+            tooltip: context.l10n.filesUndo,
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: controller.canUndo ? controller.undo : null,
+            icon: const Icon(Symbols.undo),
+          ),
+          IconButton(
+            key: const ValueKey<String>('file_viewer_redo_button'),
+            tooltip: context.l10n.filesRedo,
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: controller.canRedo ? controller.redo : null,
+            icon: const Icon(Symbols.redo),
+          ),
+        ],
+        // Autosave is global: flipping it here applies to every open tab and
+        // is persisted with the rest of the experience settings.
+        IconButton(
+          key: const ValueKey<String>('file_viewer_autosave_toggle'),
+          tooltip: autosaveEnabled
+              ? context.l10n.filesAutosaveOn
+              : context.l10n.filesAutosaveOff,
+          iconSize: 18,
+          visualDensity: VisualDensity.compact,
+          isSelected: autosaveEnabled,
+          onPressed: () => unawaited(
+            context.read<SettingsProvider>().setEditorAutosaveEnabled(
+              !autosaveEnabled,
+            ),
+          ),
+          icon: const Icon(Symbols.autorenew),
+          selectedIcon: const Icon(Symbols.autorenew, fill: 1),
+        ),
+        _buildFileViewerSaveButton(
+          canSave: canSave,
+          isSaving: isSaving,
+          onSave: () => unawaited(
+            _saveFileEditorDraft(
+              fileState: fileState,
+              projectProvider: projectProvider,
+              path: normalizedPath,
+              onUpdated: onStateChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Debounce before an idle autosave fires.
+  ///
+  /// Deliberately long: autosave here exists to avoid losing work, not to
+  /// mirror every keystroke to disk, so it waits for a real pause.
+  static const Duration _autosaveIdleDelay = Duration(seconds: 30);
+
+  /// Restarts the idle autosave countdown after an edit.
+  void _scheduleEditorAutosave({
+    required _FileEditorDraftState draft,
+    required VoidCallback onSave,
+  }) {
+    draft.cancelAutosave();
+    if (!context.read<SettingsProvider>().editorAutosaveEnabled) {
+      return;
+    }
+    draft.autosaveTimer = Timer(_autosaveIdleDelay, () {
+      draft.autosaveTimer = null;
+      if (mounted && draft.isDirty && !draft.isSaving) {
+        onSave();
+      }
+    });
+  }
+
+  /// Saves immediately instead of waiting for the countdown.
+  ///
+  /// Used when the editor loses focus and when a tab is closed, so pending
+  /// work is never discarded with a timer still pending.
+  void _flushEditorAutosave({
+    required _FileEditorDraftState draft,
+    required VoidCallback onSave,
+  }) {
+    draft.cancelAutosave();
+    if (!mounted || !draft.isDirty || draft.isSaving) {
+      return;
+    }
+    if (!context.read<SettingsProvider>().editorAutosaveEnabled) {
+      return;
+    }
+    onSave();
+  }
+
+  Widget _buildFileViewerSaveButton({
+    required bool canSave,
+    required bool isSaving,
+    required VoidCallback onSave,
+  }) {
     return TextButton.icon(
       key: const ValueKey<String>('file_viewer_save_button'),
-      onPressed: canSave
-          ? () => unawaited(
-              _saveFileEditorDraft(
-                fileState: fileState,
-                projectProvider: projectProvider,
-                path: normalizedPath,
-                onUpdated: onStateChanged,
-              ),
-            )
-          : null,
+      onPressed: canSave ? onSave : null,
       icon: isSaving
           ? const SizedBox(
               width: 16,
@@ -563,6 +660,7 @@ extension _ChatPageFileViewer on _ChatPageState {
         } else if (draft.saveErrorMessage != null) {
           draft.saveErrorMessage = null;
         }
+        _scheduleEditorAutosave(draft: draft, onSave: onSave);
         onChanged?.call();
       },
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
@@ -715,20 +813,30 @@ extension _ChatPageFileViewer on _ChatPageState {
           ),
       ],
     );
-    return CallbackShortcuts(
-      bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
-          if (canSave) {
-            onSave();
-          }
-        },
-        const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () {
-          if (canSave) {
-            onSave();
-          }
-        },
+    return Focus(
+      key: ValueKey<String>('file_editor_focus_$normalizedPath'),
+      onFocusChange: (hasFocus) {
+        // Leaving the editor is an explicit pause, so any pending autosave is
+        // written now instead of waiting out the countdown.
+        if (!hasFocus) {
+          _flushEditorAutosave(draft: draft, onSave: onSave);
+        }
       },
-      child: stack,
+      child: CallbackShortcuts(
+        bindings: <ShortcutActivator, VoidCallback>{
+          const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+            if (canSave) {
+              onSave();
+            }
+          },
+          const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () {
+            if (canSave) {
+              onSave();
+            }
+          },
+        },
+        child: stack,
+      ),
     );
   }
 

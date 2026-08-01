@@ -1687,6 +1687,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get filesAddChat => 'चैट में जोड़ें';
 
   @override
+  String get filesAutosave => 'ऑटोसेव';
+
+  @override
+  String get filesAutosaveOn => 'ऑटोसेव चालू';
+
+  @override
+  String get filesAutosaveOff => 'ऑटोसेव बंद';
+
+  @override
+  String get filesRedo => 'फिर से करें';
+
+  @override
+  String get filesUndo => 'पूर्ववत करें';
+
+  @override
   String get filesBinaryFilePreview =>
       'बाइनरी फ़ाइल पूर्वावलोकन उपलब्ध नहीं है।';
 

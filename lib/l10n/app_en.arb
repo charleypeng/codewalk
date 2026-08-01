@@ -2074,6 +2074,26 @@
   "@filesAddChat": {
     "description": "CodeWalk UI string — filesAddChat"
   },
+  "filesAutosave": "Autosave",
+  "@filesAutosave": {
+    "description": "CodeWalk UI string — filesAutosave"
+  },
+  "filesAutosaveOn": "Autosave on",
+  "@filesAutosaveOn": {
+    "description": "CodeWalk UI string — filesAutosaveOn"
+  },
+  "filesAutosaveOff": "Autosave off",
+  "@filesAutosaveOff": {
+    "description": "CodeWalk UI string — filesAutosaveOff"
+  },
+  "filesRedo": "Redo",
+  "@filesRedo": {
+    "description": "CodeWalk UI string — filesRedo"
+  },
+  "filesUndo": "Undo",
+  "@filesUndo": {
+    "description": "CodeWalk UI string — filesUndo"
+  },
   "filesBinaryFilePreview": "Binary file preview is not available.",
   "@filesBinaryFilePreview": {
     "description": "CodeWalk UI string — filesBinaryFilePreview"

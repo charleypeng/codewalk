@@ -103,6 +103,15 @@ class _FileEditorDraftState {
   bool isSaving = false;
   String? saveErrorMessage;
 
+  /// Pending autosave, debounced after the last edit so typing does not
+  /// produce a write per keystroke.
+  Timer? autosaveTimer;
+
+  void cancelAutosave() {
+    autosaveTimer?.cancel();
+    autosaveTimer = null;
+  }
+
   bool get isDirty => controller.text != savedContent;
 
   void markSavedContent(String content) {
@@ -117,6 +126,7 @@ class _FileEditorDraftState {
   }
 
   void dispose() {
+    cancelAutosave();
     controller.dispose();
     scrollController.verticalScroller.dispose();
     scrollController.horizontalScroller.dispose();

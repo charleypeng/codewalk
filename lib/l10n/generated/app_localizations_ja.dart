@@ -1593,6 +1593,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get filesAddChat => 'チャットに追加';
 
   @override
+  String get filesAutosave => '自動保存';
+
+  @override
+  String get filesAutosaveOn => '自動保存オン';
+
+  @override
+  String get filesAutosaveOff => '自動保存オフ';
+
+  @override
+  String get filesRedo => 'やり直す';
+
+  @override
+  String get filesUndo => '元に戻す';
+
+  @override
   String get filesBinaryFilePreview => 'バイナリファイルのプレビューは利用できません。';
 
   @override

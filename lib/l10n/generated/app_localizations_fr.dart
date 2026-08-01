@@ -1727,6 +1727,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get filesAddChat => 'Ajouter au chat';
 
   @override
+  String get filesAutosave => 'Enregistrement auto';
+
+  @override
+  String get filesAutosaveOn => 'Enregistrement auto activé';
+
+  @override
+  String get filesAutosaveOff => 'Enregistrement auto désactivé';
+
+  @override
+  String get filesRedo => 'Rétablir';
+
+  @override
+  String get filesUndo => 'Annuler';
+
+  @override
   String get filesBinaryFilePreview =>
       'L\'aperçu du fichier binaire n\'est pas disponible.';
 

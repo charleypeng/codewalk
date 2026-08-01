@@ -3029,6 +3029,36 @@ abstract class AppLocalizations {
   /// **'Add to chat'**
   String get filesAddChat;
 
+  /// CodeWalk UI string — filesAutosave
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave'**
+  String get filesAutosave;
+
+  /// CodeWalk UI string — filesAutosaveOn
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave on'**
+  String get filesAutosaveOn;
+
+  /// CodeWalk UI string — filesAutosaveOff
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave off'**
+  String get filesAutosaveOff;
+
+  /// CodeWalk UI string — filesRedo
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get filesRedo;
+
+  /// CodeWalk UI string — filesUndo
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get filesUndo;
+
   /// CodeWalk UI string — filesBinaryFilePreview
   ///
   /// In en, this message translates to:

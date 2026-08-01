@@ -1707,6 +1707,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get filesAddChat => 'Añadir al chat';
 
   @override
+  String get filesAutosave => 'Guardado automático';
+
+  @override
+  String get filesAutosaveOn => 'Guardado automático activado';
+
+  @override
+  String get filesAutosaveOff => 'Guardado automático desactivado';
+
+  @override
+  String get filesRedo => 'Rehacer';
+
+  @override
+  String get filesUndo => 'Deshacer';
+
+  @override
   String get filesBinaryFilePreview =>
       'La vista previa de archivos binarios no está disponible.';
 
