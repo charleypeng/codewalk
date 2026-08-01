@@ -14,6 +14,14 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - 🗂 Project-centric sidebar with conversations grouped by project, pinning, and support for Git repositories and plain folders
 - 🖧 Multi-server profiles with health checks, active-server switching, and OpenCode server install and launch from Settings
 - 🧠 Model and provider selection with variants, favorites, and reasoning controls
+- 🗃 Session tabs across the top of the window, browser-style, integrated into the title bar on desktop
+- 📁 Built-in file manager and editor — browse, open, rename, duplicate and edit project files, with autosave, undo and redo, and syntax highlighting for every language the highlighter ships with
+- 📎 Attach images and PDFs by dragging them in or pasting them, including screenshots straight from the clipboard
+- ↪️ Forward a message to one or more other sessions
+- 🧱 Block render mode — see each block as it finishes instead of watching text stream character by character
+- 📉 Context usage metrics, so you can see how much of the window a session is consuming
+- 🎨 Per-project icons discovered automatically from the repository
+- 📶 Data saver that scales back background sync on cellular
 - 🖥 Server-hosted PTY terminal — a real command line running on the OpenCode host, embedded in the app
 - 🎙 Speech-to-text on every platform, including Linux
 - 🔊 Text-to-speech read-aloud for assistant messages, with adjustable speed and pitch
