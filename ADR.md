@@ -3105,3 +3105,51 @@ The bounded final root-session fetch is solely the explicit ADR-003 event-scope 
 - `lib/presentation/services/attention/desktop/` and `pubspec.yaml` — planned app-owned desktop window abstraction and `desktop_multi_window` 0.3.0 compatibility gate.
 - `ios/Runner/` and in-app presentation widgets — in-app-only iOS capability path.
 - `test/unit/`, `test/widget/`, and Android/desktop integration coverage — identity isolation, post-idle fetch bounds, encryption, pause observability, permission/policy gates, process-death fallback, and rollback-to-Off behavior.
+
+---
+
+## ADR-050: Fork of `desktop_multi_window` for Non-Activating Window Presentation (2026-08-01)
+
+**Status**: Accepted
+
+**Related**: GitHub issue #129; ADR-049 (cross-platform attention surfaces).
+
+### Context
+
+The desktop attention Bubble delivered by ADR-049 is a `desktop_multi_window` sub-window. Issue #129 requires that showing or refreshing it never move keyboard focus away from the application the user is working in.
+
+Two mitigations were possible without touching the plugin and both were applied first: the child engine now marks itself frameless and skip-taskbar before `runApp`, and the host service only calls show on the hidden→visible transition, so snapshot refreshes no longer touch window state. Neither addresses the first presentation, which still activates.
+
+There is no API for a non-activating show. `window_manager` 0.5.1 exposes `setAsFrameless`, `setAlwaysOnTop`, `setSkipTaskbar`, `isFocused` and `isVisible`, but no `setFocusable`. `desktop_multi_window` 0.3.0 exposes only `show`, `hide`, `invokeMethod` and `setWindowMethodHandler`, and its native `window_show` actively takes focus on all three platforms: `ShowWindow(hwnd_, SW_SHOW)` on Windows, `gtk_widget_show` on Linux, and `makeKeyAndOrderFront` plus `NSApp.activate(ignoringOtherApps: true)` on macOS. The only `NOACTIVATE` in the package is in the Windows resize path, not in presentation.
+
+### Decision
+
+Fork `MixinNetwork/flutter-plugins` and add `WindowController.showWithoutActivating()` to `desktop_multi_window`, consumed as a Git dependency pinned to a branch.
+
+Per platform the new method maps to the conventional no-activate presentation:
+
+- **Linux (GTK):** `gtk_window_set_accept_focus(FALSE)` before mapping the window; `show()` restores accept-focus so both entry points remain usable.
+- **Windows:** add `WS_EX_NOACTIVATE` to the extended style, then `ShowWindow(SW_SHOWNOACTIVATE)`.
+- **macOS:** `orderFrontRegardless()` without making the window key and without activating the application.
+
+Pointer input continues to work in all three cases, so the Bubble stays interactive when the user clicks it deliberately, satisfying the acceptance criterion that explicit interaction must keep working.
+
+Rejected alternative: replacing `desktop_multi_window` with app-owned windows in our own runners. The plugin carries roughly 3,900 lines of native code across 24 files, and most of that is secondary Flutter engine plumbing rather than window management. Owning it would concentrate maintenance in the two platforms this project cannot validate locally — macOS is absent from CI and Windows has a single job — for a gain limited to focus policy.
+
+### Consequences
+
+- The project no longer tracks published releases of `desktop_multi_window` automatically. This is a small change in practice: the dependency was already pinned to an exact version rather than a caret range, and the package has published only six versions in its lifetime, the latest being 0.3.0 on 2025-10-28.
+- The fork tracks upstream `main`, which is version 0.3.1, so the project also picks up unreleased upstream changes.
+- The patch is deliberately small and confined to the presentation entry points, so rebasing onto a future upstream release is cheap.
+- Wayland remains a documented limitation: focus policy belongs to the compositor and a non-activating show may not be honoured everywhere. This is a limitation, not a defect.
+
+### Exit Criteria
+
+Submit the change upstream as a pull request. If it is accepted and released, drop the fork and return to the published package. If it is rejected, keep the fork and rebase it on each upstream release that matters to the project.
+
+### Key Files
+
+- `pubspec.yaml` — Git dependency pointing at the fork branch, with the reason recorded inline.
+- `lib/presentation/services/session_attention/session_attention_host_service_io.dart` — `_showDesktopWindow` calls `showWithoutActivating` and skips redundant presentations.
+- `lib/presentation/services/session_attention/session_overlay_entrypoint.dart` — frameless and skip-taskbar applied before `runApp`.
+- Fork: `insign/flutter-plugins`, branch `feat/show-without-activating`.

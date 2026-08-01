@@ -227,17 +227,19 @@ class _IoSessionAttentionHostService
     }
   }
 
-  /// Shows the bubble only when it is not already on screen.
+  /// Shows the bubble without taking keyboard focus, and only when it is not
+  /// already on screen.
   ///
-  /// `show()` activates the window on every desktop platform, so calling it on
-  /// each snapshot update was pulling keyboard focus away from whatever the
-  /// user was typing in. Snapshot content is delivered over the method channel
-  /// and does not need a new show.
+  /// `show()` activates the window on every desktop platform, so it is never
+  /// used here: `showWithoutActivating` comes from our fork of
+  /// `desktop_multi_window` (see ADR.md) and maps to a no-activate
+  /// presentation per platform. Skipping redundant calls also keeps snapshot
+  /// refreshes from touching window state at all.
   Future<void> _showDesktopWindow(WindowController? controller) async {
     if (controller == null || _desktopWindowVisible) {
       return;
     }
-    await controller.show();
+    await controller.showWithoutActivating();
     _desktopWindowVisible = true;
   }
 
