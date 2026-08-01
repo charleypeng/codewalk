@@ -1424,6 +1424,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get composerExtras => '추가 기능';
 
   @override
+  String get composerExtrasHide => '추가 기능 숨기기';
+
+  @override
   String get composerNewQuickReply => '새 빠른 답장';
 
   @override

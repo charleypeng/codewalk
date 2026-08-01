@@ -432,6 +432,7 @@
   "composerDeleteAction": "삭제",
   "composerEdit": "편집",
   "composerExtras": "추가 기능",
+  "composerExtrasHide": "추가 기능 숨기기",
   "composerNewQuickReply": "새 빠른 답장",
   "composerSelectImages": "이미지 선택",
   "composerSelectPdf": "PDF 선택",

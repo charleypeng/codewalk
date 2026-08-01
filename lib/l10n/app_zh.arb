@@ -432,6 +432,7 @@
   "composerDeleteAction": "删除",
   "composerEdit": "编辑",
   "composerExtras": "附加功能",
+  "composerExtrasHide": "隐藏更多",
   "composerNewQuickReply": "新建快速回复",
   "composerSelectImages": "选择图片",
   "composerSelectPdf": "选择 PDF",

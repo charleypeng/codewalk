@@ -1521,6 +1521,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get composerExtras => 'Дополнительно';
 
   @override
+  String get composerExtrasHide => 'Скрыть дополнительно';
+
+  @override
   String get composerNewQuickReply => 'Новый быстрый ответ';
 
   @override

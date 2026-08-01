@@ -432,6 +432,7 @@
   "composerDeleteAction": "Supprimer",
   "composerEdit": "Modifier",
   "composerExtras": "Extras",
+  "composerExtrasHide": "Masquer les extras",
   "composerNewQuickReply": "Nouvelle réponse rapide",
   "composerSelectImages": "Sélectionner des images",
   "composerSelectPdf": "Sélectionner un PDF",

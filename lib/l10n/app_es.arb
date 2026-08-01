@@ -432,6 +432,7 @@
   "composerDeleteAction": "Eliminar",
   "composerEdit": "Editar",
   "composerExtras": "Extras",
+  "composerExtrasHide": "Ocultar extras",
   "composerNewQuickReply": "Nueva respuesta rápida",
   "composerSelectImages": "Seleccionar Imágenes",
   "composerSelectPdf": "Seleccionar PDF",

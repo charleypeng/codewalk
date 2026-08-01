@@ -1403,6 +1403,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get composerExtras => '附加功能';
 
   @override
+  String get composerExtrasHide => '隐藏更多';
+
+  @override
   String get composerNewQuickReply => '新建快速回复';
 
   @override

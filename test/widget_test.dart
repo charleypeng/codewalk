@@ -104,6 +104,54 @@ class _NoopSessionAttentionHostService implements SessionAttentionHostService {
 }
 
 void main() {
+  testWidgets('extras button flips to an arrow while the popover is open', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(child: ChatInputWidget(onSendMessage: (_) {})),
+    );
+    await tester.pump();
+
+    final button = find.byKey(const ValueKey<String>('composer_extras_button'));
+
+    // Closed: plus icon and the "open" tooltip.
+    expect(button, findsOneWidget);
+    expect(
+      tester.widget<IconButton>(button).tooltip,
+      L10nBridge.current!.composerExtras,
+    );
+    expect(
+      ((tester.widget<IconButton>(button).icon) as Icon).icon,
+      Symbols.add_rounded,
+    );
+
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    // Open: arrow icon and the "hide" tooltip.
+    expect(
+      tester.widget<IconButton>(button).tooltip,
+      L10nBridge.current!.composerExtrasHide,
+    );
+    expect(
+      ((tester.widget<IconButton>(button).icon) as Icon).icon,
+      Symbols.keyboard_arrow_down_rounded,
+    );
+
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    // Closing restores both.
+    expect(
+      tester.widget<IconButton>(button).tooltip,
+      L10nBridge.current!.composerExtras,
+    );
+    expect(
+      ((tester.widget<IconButton>(button).icon) as Icon).icon,
+      Symbols.add_rounded,
+    );
+  });
+
   testWidgets('ChatInputWidget renders and sends message', (
     WidgetTester tester,
   ) async {
@@ -354,13 +402,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(focusNode.hasFocus, isTrue);
 
-    await tester.tap(find.byTooltip('Extras'));
+    // Found by key rather than tooltip: the tooltip now reflects the open
+    // state, which is the point of #117.
+    final extrasButton = find.byKey(
+      const ValueKey<String>('composer_extras_button'),
+    );
+
+    await tester.tap(extrasButton);
     await tester.pumpAndSettle();
 
     expect(focusNode.hasFocus, isTrue);
     expect(find.text('New quick reply'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Extras'));
+    await tester.tap(extrasButton);
     await tester.pumpAndSettle();
 
     expect(focusNode.hasFocus, isTrue);

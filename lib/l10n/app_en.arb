@@ -1857,6 +1857,10 @@
   "@composerExtras": {
     "description": "CodeWalk UI string — composerExtras"
   },
+  "composerExtrasHide": "Hide extras",
+  "@composerExtrasHide": {
+    "description": "CodeWalk UI string — composerExtrasHide"
+  },
   "composerNewQuickReply": "New quick reply",
   "@composerNewQuickReply": {
     "description": "CodeWalk UI string — composerNewQuickReply"

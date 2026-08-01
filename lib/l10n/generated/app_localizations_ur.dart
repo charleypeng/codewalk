@@ -1500,6 +1500,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get composerExtras => 'اضافی';
 
   @override
+  String get composerExtrasHide => 'اضافی چھپائیں';
+
+  @override
   String get composerNewQuickReply => 'نیا فوری جواب';
 
   @override

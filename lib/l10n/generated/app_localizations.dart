@@ -2717,6 +2717,12 @@ abstract class AppLocalizations {
   /// **'Extras'**
   String get composerExtras;
 
+  /// CodeWalk UI string — composerExtrasHide
+  ///
+  /// In en, this message translates to:
+  /// **'Hide extras'**
+  String get composerExtrasHide;
+
   /// CodeWalk UI string — composerNewQuickReply
   ///
   /// In en, this message translates to:

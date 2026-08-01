@@ -1505,6 +1505,9 @@ class AppLocalizationsBn extends AppLocalizations {
   String get composerExtras => 'অতিরিক্ত';
 
   @override
+  String get composerExtrasHide => 'অতিরিক্ত লুকান';
+
+  @override
   String get composerNewQuickReply => 'নতুন দ্রুত উত্তর';
 
   @override

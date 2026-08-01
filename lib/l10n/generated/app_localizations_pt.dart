@@ -1517,6 +1517,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get composerExtras => 'Extras';
 
   @override
+  String get composerExtrasHide => 'Ocultar extras';
+
+  @override
   String get composerNewQuickReply => 'Nova resposta rápida';
 
   @override

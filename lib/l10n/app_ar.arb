@@ -432,6 +432,7 @@
   "composerDeleteAction": "حذف",
   "composerEdit": "تعديل",
   "composerExtras": "إضافات",
+  "composerExtrasHide": "إخفاء الإضافات",
   "composerNewQuickReply": "رد سريع جديد",
   "composerSelectImages": "تحديد صور",
   "composerSelectPdf": "تحديد PDF",

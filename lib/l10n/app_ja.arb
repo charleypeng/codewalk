@@ -432,6 +432,7 @@
   "composerDeleteAction": "削除",
   "composerEdit": "編集",
   "composerExtras": "その他",
+  "composerExtrasHide": "その他を隠す",
   "composerNewQuickReply": "新規クイック返信",
   "composerSelectImages": "画像を選択",
   "composerSelectPdf": "Select PDF",

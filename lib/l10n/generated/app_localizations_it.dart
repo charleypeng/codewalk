@@ -1529,6 +1529,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get composerExtras => 'Extra';
 
   @override
+  String get composerExtrasHide => 'Nascondi extra';
+
+  @override
   String get composerNewQuickReply => 'Nuova risposta rapida';
 
   @override

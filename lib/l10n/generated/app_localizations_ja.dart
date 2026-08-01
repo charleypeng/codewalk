@@ -1424,6 +1424,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get composerExtras => 'その他';
 
   @override
+  String get composerExtrasHide => 'その他を隠す';
+
+  @override
   String get composerNewQuickReply => '新規クイック返信';
 
   @override

@@ -1262,32 +1262,50 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.only(left: 2),
-                                    child: IconButton(
-                                      onPressed: widget.enabled
-                                          ? _toggleExtrasPopover
-                                          : null,
-                                      tooltip: context.l10n.composerExtras,
-                                      style: IconButton.styleFrom(
-                                        minimumSize: const Size(40, 40),
-                                        maximumSize: const Size(40, 40),
-                                        padding: EdgeInsets.zero,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        visualDensity: Theme.of(
-                                          context,
-                                        ).visualDensity,
-                                        backgroundColor:
+                                    child: Builder(
+                                      builder: (context) {
+                                        // Single source of truth: the popover
+                                        // state drives icon, tooltip and
+                                        // semantics together, so no path can
+                                        // close the popover and leave the
+                                        // arrow behind (#117).
+                                        final extrasOpen =
                                             _popoverType ==
-                                                ChatComposerPopoverType.canned
-                                            ? colorScheme.secondaryContainer
-                                            : Colors.transparent,
-                                        foregroundColor:
-                                            colorScheme.onSecondaryContainer,
-                                      ),
-                                      icon: const Icon(
-                                        Symbols.add_rounded,
-                                        size: 20,
-                                      ),
+                                            ChatComposerPopoverType.canned;
+                                        return IconButton(
+                                          key: const ValueKey<String>(
+                                            'composer_extras_button',
+                                          ),
+                                          onPressed: widget.enabled
+                                              ? _toggleExtrasPopover
+                                              : null,
+                                          tooltip: extrasOpen
+                                              ? context.l10n.composerExtrasHide
+                                              : context.l10n.composerExtras,
+                                          style: IconButton.styleFrom(
+                                            minimumSize: const Size(40, 40),
+                                            maximumSize: const Size(40, 40),
+                                            padding: EdgeInsets.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                            visualDensity: Theme.of(
+                                              context,
+                                            ).visualDensity,
+                                            backgroundColor: extrasOpen
+                                                ? colorScheme.secondaryContainer
+                                                : Colors.transparent,
+                                            foregroundColor: colorScheme
+                                                .onSecondaryContainer,
+                                          ),
+                                          icon: Icon(
+                                            extrasOpen
+                                                ? Symbols
+                                                      .keyboard_arrow_down_rounded
+                                                : Symbols.add_rounded,
+                                            size: 20,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                   Expanded(

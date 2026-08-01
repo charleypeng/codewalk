@@ -1545,6 +1545,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get composerExtras => 'Extras';
 
   @override
+  String get composerExtrasHide => 'Masquer les extras';
+
+  @override
   String get composerNewQuickReply => 'Nouvelle réponse rapide';
 
   @override

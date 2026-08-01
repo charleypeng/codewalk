@@ -1508,6 +1508,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get composerExtras => 'अतिरिक्त सुविधाएं';
 
   @override
+  String get composerExtrasHide => 'अतिरिक्त छिपाएँ';
+
+  @override
   String get composerNewQuickReply => 'नया त्वरित उत्तर';
 
   @override

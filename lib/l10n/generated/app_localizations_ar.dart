@@ -1478,6 +1478,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get composerExtras => 'إضافات';
 
   @override
+  String get composerExtrasHide => 'إخفاء الإضافات';
+
+  @override
   String get composerNewQuickReply => 'رد سريع جديد';
 
   @override

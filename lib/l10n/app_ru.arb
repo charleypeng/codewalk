@@ -432,6 +432,7 @@
   "composerDeleteAction": "Удалить",
   "composerEdit": "Редактировать",
   "composerExtras": "Дополнительно",
+  "composerExtrasHide": "Скрыть дополнительно",
   "composerNewQuickReply": "Новый быстрый ответ",
   "composerSelectImages": "Выбрать изображения",
   "composerSelectPdf": "Выбрать PDF",
