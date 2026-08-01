@@ -69,6 +69,7 @@ import '../utils/app_page_route.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_server_error_formatter.dart';
 import '../utils/duplicate_file_name.dart';
+import '../utils/file_highlight_language.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/session_title_formatter.dart';

@@ -861,9 +861,7 @@ extension _ChatPageFileViewer on _ChatPageState {
   /// switch, so every language it ships with is available (#107). Unknown
   /// names fall back to plaintext, which stays readable instead of erroring.
   Mode _resolveEditorLanguageMode(String language) {
-    return builtinAllLanguages[language] ??
-        builtinAllLanguages['plaintext'] ??
-        builtinAllLanguages.values.first;
+    return builtinAllLanguages[language] ?? builtinAllLanguages['plaintext']!;
   }
 
   int? _lineNumberForEditorGutterTap({
@@ -1126,13 +1124,9 @@ extension _ChatPageFileViewer on _ChatPageState {
         return 'vue';
     }
 
-    // Anything the package ships with is reachable by extension: `.lua`,
-    // `.zig`, `.r` and friends need no hand-written case (#107). The curated
-    // switch above stays for extensions whose name differs from the language.
-    if (builtinAllLanguages.containsKey(extension)) {
-      return extension;
-    }
-    return 'plaintext';
+    // Canonical names and package-declared aliases stay available without a
+    // hand-maintained case for every shipped language.
+    return resolveBuiltinFileHighlightLanguage(extension) ?? 'plaintext';
   }
 }
 

@@ -475,6 +475,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required String path,
+    bool revalidateCached = true,
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
@@ -502,16 +503,18 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       // by the agent or another client — appear when the file is reopened.
       // Silent, so the editor is never covered by a spinner, and background,
       // so a dirty draft is left alone without reporting an error.
-      unawaited(
-        _reloadFileTab(
-          fileState: fileState,
-          projectProvider: projectProvider,
-          path: normalizedPath,
-          silent: true,
-          background: true,
-          onUpdated: onUpdated,
-        ),
-      );
+      if (revalidateCached) {
+        unawaited(
+          _reloadFileTab(
+            fileState: fileState,
+            projectProvider: projectProvider,
+            path: normalizedPath,
+            silent: true,
+            background: true,
+            onUpdated: onUpdated,
+          ),
+        );
+      }
       return;
     }
 

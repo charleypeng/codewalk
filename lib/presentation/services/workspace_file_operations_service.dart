@@ -92,6 +92,14 @@ abstract class WorkspaceFileOperationsService {
     required String newName,
   });
 
+  Future<WorkspaceFileOperationResult> duplicateFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  });
+
   Future<WorkspaceFileOperationResult> delete({
     required String serverScopeKey,
     required String rootDirectory,
@@ -275,6 +283,47 @@ class WorkspaceFileOperationsServiceImpl
         parentDirectory: parent,
         oldName: preparedOld.name,
         newName: preparedNew.name,
+        decoder: decoder,
+      ),
+      path: source,
+      newPath: destination,
+    );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> duplicateFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  }) async {
+    final preparedSource = _normalizeLeafName(sourceName);
+    if (preparedSource.result != null) {
+      return preparedSource.result!;
+    }
+    final preparedDestination = _normalizeLeafName(destinationName);
+    if (preparedDestination.result != null) {
+      return preparedDestination.result!;
+    }
+
+    final root = normalizeFilePath(rootDirectory);
+    final parent = normalizeFilePath(parentDirectory);
+    final rootCheck = _validateRootParent(rootDirectory: root, parent: parent);
+    if (rootCheck != null) {
+      return rootCheck;
+    }
+
+    final source = _joinPath(parent, preparedSource.name);
+    final destination = _joinPath(parent, preparedDestination.name);
+    return _runMutation(
+      serverScopeKey: serverScopeKey,
+      rootDirectory: root,
+      commandBuilder: (decoder) => _buildDuplicateFileCommand(
+        rootDirectory: root,
+        parentDirectory: parent,
+        sourceName: preparedSource.name,
+        destinationName: preparedDestination.name,
         decoder: decoder,
       ),
       path: source,
@@ -938,6 +987,22 @@ class WorkspaceFileOperationsServiceImpl
   }
 
   @visibleForTesting
+  String buildDuplicateFileCommandForTest({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  }) {
+    return _buildDuplicateFileCommand(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      sourceName: sourceName,
+      destinationName: destinationName,
+      decoder: _shellDecoders.first,
+    );
+  }
+
+  @visibleForTesting
   String buildWriteFileCommandForTest({
     required String rootDirectory,
     required String parentDirectory,
@@ -1023,6 +1088,47 @@ if ! [ -e "$source" ] && ! [ -L "$source" ]; then cw_fail missing; fi
 if [ -e "$destination" ] || [ -L "$destination" ]; then cw_fail alreadyExists; fi
 if ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
 if mv -- "$source" "$destination" 2>/dev/null; then cw_ok; fi
+cw_fail failed
+''',
+    );
+  }
+
+  String _buildDuplicateFileCommand({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+    required String decoder,
+  }) {
+    return _buildScript(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: sourceName,
+      newName: destinationName,
+      decoder: decoder,
+      body: r'''
+cw_validate_name "$CW_NAME"
+cw_validate_name "$CW_NEW_NAME"
+cw_prepare_parent
+source="$parent/$CW_NAME"
+destination="$parent/$CW_NEW_NAME"
+if [ "$source" = "$root" ]; then cw_fail rootDeleteBlocked; fi
+if ! [ -e "$source" ] && ! [ -L "$source" ]; then cw_fail missing; fi
+if [ -d "$source" ] || [ -L "$source" ]; then cw_fail failed; fi
+if [ -e "$destination" ] || [ -L "$destination" ]; then cw_fail alreadyExists; fi
+if ! [ -r "$source" ] || ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
+tmpdir=$(mktemp -d "$parent/.cw-copy.XXXXXX" 2>/dev/null) || cw_fail failed
+tmp="$tmpdir/content"
+if cp -p -- "$source" "$tmp" 2>/dev/null; then
+  if ln -- "$tmp" "$destination" 2>/dev/null; then
+    rm -f -- "$tmp" 2>/dev/null || true
+    rmdir -- "$tmpdir" 2>/dev/null || true
+    cw_ok
+  fi
+fi
+rm -f -- "$tmp" 2>/dev/null || true
+rmdir -- "$tmpdir" 2>/dev/null || true
+if [ -e "$destination" ] || [ -L "$destination" ]; then cw_fail alreadyExists; fi
 cw_fail failed
 ''',
     );

@@ -186,6 +186,44 @@ void main() {
       skip: Platform.isWindows ? 'requires a POSIX shell' : false,
     );
 
+    test(
+      'duplicate command preserves binary bytes and refuses overwrite',
+      () async {
+        final root = Directory.systemTemp.createTempSync('codewalk-copy-op-');
+        addTearDown(() {
+          if (root.existsSync()) {
+            root.deleteSync(recursive: true);
+          }
+        });
+        final source = File('${root.path}/source.bin')
+          ..writeAsBytesSync(<int>[0, 1, 2, 127, 128, 255]);
+        final destination = File('${root.path}/source copy.bin');
+        final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
+        final command = service.buildDuplicateFileCommandForTest(
+          rootDirectory: root.path,
+          parentDirectory: root.path,
+          sourceName: 'source.bin',
+          destinationName: 'source copy.bin',
+        );
+
+        expect(command, isNot(contains('\n')));
+        final first = await Process.run('/bin/sh', <String>['-c', command]);
+        expect(first.exitCode, 0, reason: '${first.stderr}');
+        expect(_parsedShellStdout(first.stdout).ok, isTrue);
+        expect(destination.readAsBytesSync(), source.readAsBytesSync());
+
+        destination.writeAsBytesSync(<int>[9, 9, 9]);
+        final second = await Process.run('/bin/sh', <String>['-c', command]);
+        expect(second.exitCode, 0, reason: '${second.stderr}');
+        expect(
+          _parsedShellStdout(second.stdout).code,
+          WorkspaceFileOperationCode.alreadyExists,
+        );
+        expect(destination.readAsBytesSync(), <int>[9, 9, 9]);
+      },
+      skip: Platform.isWindows ? 'requires a POSIX shell' : false,
+    );
+
     test('chunks large editor content below environment entry limits', () {
       final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
       final content = List<String>.filled(200 * 1024, 'x').join();

@@ -2218,6 +2218,12 @@ class FakeProjectRepository implements ProjectRepository {
   Failure? worktreeFailure;
   Failure? directoryFailure;
   Failure? fileContentFailure;
+  Future<Either<Failure, FileContent>> Function({
+    String? directory,
+    required String path,
+  })?
+  readFileContentHandler;
+  int readFileContentCallCount = 0;
   Future<void> Function(String path)? listFilesDelay;
   Future<void> Function(String query)? findFilesDelay;
   String? lastCreatedWorktreeName;
@@ -2475,6 +2481,11 @@ class FakeProjectRepository implements ProjectRepository {
     String? directory,
     required String path,
   }) async {
+    readFileContentCallCount += 1;
+    final handler = readFileContentHandler;
+    if (handler != null) {
+      return handler(directory: directory, path: path);
+    }
     if (fileContentFailure != null) {
       return Left(fileContentFailure!);
     }
@@ -2503,6 +2514,7 @@ class FakeWorkspaceFileOperationsService
   WorkspaceFileOperationResult? createFileResult;
   WorkspaceFileOperationResult? createFolderResult;
   WorkspaceFileOperationResult? renameResult;
+  WorkspaceFileOperationResult? duplicateFileResult;
   WorkspaceFileOperationResult? deleteResult;
   WorkspaceFileOperationResult? writeFileResult;
   Future<void> Function({
@@ -2527,6 +2539,13 @@ class FakeWorkspaceFileOperationsService
   Future<void> Function({
     required String rootDirectory,
     required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  })?
+  onDuplicateFile;
+  Future<void> Function({
+    required String rootDirectory,
+    required String parentDirectory,
     required String name,
   })?
   onDelete;
@@ -2541,6 +2560,7 @@ class FakeWorkspaceFileOperationsService
   int createFileCallCount = 0;
   int createFolderCallCount = 0;
   int renameCallCount = 0;
+  int duplicateFileCallCount = 0;
   int deleteCallCount = 0;
   int writeFileCallCount = 0;
   String? lastParentDirectory;
@@ -2637,6 +2657,34 @@ class FakeWorkspaceFileOperationsService
           message: 'ok',
           path: _joinPath(parentDirectory, oldName),
           newPath: _joinPath(parentDirectory, newName),
+        );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> duplicateFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  }) async {
+    duplicateFileCallCount += 1;
+    lastParentDirectory = parentDirectory;
+    lastName = sourceName;
+    lastNewName = destinationName;
+    await onDuplicateFile?.call(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      sourceName: sourceName,
+      destinationName: destinationName,
+    );
+    return duplicateFileResult ??
+        WorkspaceFileOperationResult(
+          ok: true,
+          code: WorkspaceFileOperationCode.ok,
+          message: 'ok',
+          path: _joinPath(parentDirectory, sourceName),
+          newPath: _joinPath(parentDirectory, destinationName),
         );
   }
 

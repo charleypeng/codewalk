@@ -391,10 +391,17 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required bool dialogFullscreen,
     VoidCallback? onUpdated,
   }) async {
+    final normalizedPath = _normalizeFilePath(path);
+    final cached = fileState.tabsByPath[normalizedPath];
+    final revalidateInDialog =
+        cached != null &&
+        cached.status != _FileTabLoadStatus.error &&
+        cached.status != _FileTabLoadStatus.loading;
     await _openFileInTab(
       fileState: fileState,
       projectProvider: projectProvider,
-      path: path,
+      path: normalizedPath,
+      revalidateCached: !revalidateInDialog,
       onUpdated: onUpdated,
     );
     if (!mounted) {
@@ -404,6 +411,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       fileState: fileState,
       projectProvider: projectProvider,
       fullscreen: dialogFullscreen,
+      revalidatePath: revalidateInDialog ? normalizedPath : null,
     );
   }
 
@@ -525,6 +533,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     _setState(() {
+      fileState.fileReloadGenerations[normalizedPath] =
+          ++fileState.nextFileReloadGeneration;
       fileState.tabSelection = closeFileTab(fileState.tabSelection, path);
       // Clean up line selection state for the closed tab.
       fileState.selectedLinesByPath.remove(normalizedPath);
@@ -561,6 +571,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
       }
       return;
     }
+    final requestGeneration = ++fileState.nextFileReloadGeneration;
+    fileState.fileReloadGenerations[normalizedPath] = requestGeneration;
     if (!silent && mounted) {
       _setState(() {
         fileState.tabsByPath[normalizedPath] = const _FileTabViewState(
@@ -575,7 +587,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
       projectProvider: projectProvider,
       path: normalizedPath,
     );
-    if (!mounted) {
+    if (!mounted ||
+        fileState.fileReloadGenerations[normalizedPath] != requestGeneration) {
+      return;
+    }
+    final latestDraft = fileState.editorDraftsByPath[normalizedPath];
+    if (latestDraft != null && latestDraft.isDirty) {
+      return;
+    }
+    if (content == null && background) {
       return;
     }
     _setState(() {
@@ -611,6 +631,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required bool fullscreen,
+    String? revalidatePath,
   }) async {
     if (!fileState.tabSelection.hasOpenTabs || !mounted) {
       return;
@@ -619,6 +640,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final dialogWidth = (mediaQuery.size.width * 0.7).clamp(560.0, 1200.0);
     final dialogHeight = (mediaQuery.size.height * 0.7).clamp(420.0, 900.0);
     var capabilityRefreshAttached = false;
+    var revalidationScheduled = false;
 
     await showDialog<void>(
       context: context,
@@ -626,6 +648,28 @@ extension _ChatPageFileRuntime on _ChatPageState {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
+            if (!revalidationScheduled && revalidatePath != null) {
+              revalidationScheduled = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted || !dialogContext.mounted) {
+                  return;
+                }
+                unawaited(
+                  _reloadFileTab(
+                    fileState: fileState,
+                    projectProvider: projectProvider,
+                    path: revalidatePath,
+                    silent: true,
+                    background: true,
+                    onUpdated: () {
+                      if (dialogContext.mounted) {
+                        setDialogState(() {});
+                      }
+                    },
+                  ),
+                );
+              });
+            }
             if (!capabilityRefreshAttached &&
                 fileState.fileOperationCapabilitiesLoading) {
               capabilityRefreshAttached = true;
@@ -1084,29 +1128,16 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final nodePath = _absoluteFileTreePath(fileState, node.path);
     final parentDirectory = _parentDirectoryForFilePath(nodePath);
 
-    final source = await _readFileContentWithFallback(
-      projectProvider: projectProvider,
-      path: nodePath,
-    );
-    if (!mounted) {
-      return;
-    }
-    if (source == null) {
-      _showFileOperationSnackBar(
-        _fileOperationErrorLabel(WorkspaceFileOperationCode.failed),
-      );
-      return;
-    }
-
     final siblings = fileState.directoryChildren[parentCacheKey] ?? const [];
     final existingNames = siblings.map((child) => child.name).toSet();
     final copyName = duplicateFileName(node.name, existingNames);
 
-    final result = await di.sl<WorkspaceFileOperationsService>().writeFile(
+    final result = await di.sl<WorkspaceFileOperationsService>().duplicateFile(
       serverScopeKey: projectProvider.contextKey,
       rootDirectory: fileState.rootDirectory,
-      path: _joinFilePath(parentDirectory, copyName),
-      content: source.content,
+      parentDirectory: parentDirectory,
+      sourceName: node.name,
+      destinationName: copyName,
     );
     if (!mounted) {
       return;
@@ -1386,6 +1417,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
 
     final previousTab = fileState.tabsByPath[normalizedPath];
     _setState(() {
+      fileState.fileReloadGenerations[normalizedPath] =
+          ++fileState.nextFileReloadGeneration;
       draft.isSaving = false;
       draft.markSavedContent(contentToSave);
       fileState.tabsByPath[normalizedPath] = _FileTabViewState(
@@ -1514,6 +1547,13 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required String newPath,
   }) {
     _setState(() {
+      for (final path in fileState.fileReloadGenerations.keys.toList()) {
+        if (_pathEqualsOrIsChild(path, oldPath) ||
+            _pathEqualsOrIsChild(path, newPath)) {
+          fileState.fileReloadGenerations[path] =
+              ++fileState.nextFileReloadGeneration;
+        }
+      }
       final renamedTabs = <String, _FileTabViewState>{};
       for (final entry in fileState.tabsByPath.entries) {
         renamedTabs[_replacePathPrefix(entry.key, oldPath, newPath)] =
@@ -1558,6 +1598,12 @@ extension _ChatPageFileRuntime on _ChatPageState {
   }) {
     final normalized = _normalizeFilePath(path);
     _setState(() {
+      for (final path in fileState.fileReloadGenerations.keys.toList()) {
+        if (_pathEqualsOrIsChild(path, normalized)) {
+          fileState.fileReloadGenerations[path] =
+              ++fileState.nextFileReloadGeneration;
+        }
+      }
       for (final cacheKey in fileState.directoryChildren.keys.toList()) {
         final children = fileState.directoryChildren[cacheKey]!;
         final remaining = children

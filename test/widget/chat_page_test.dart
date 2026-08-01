@@ -7909,6 +7909,100 @@ void main() {
     );
   });
 
+  testWidgets('file tree duplicate uses byte-preserving copy operation', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_files_duplicate',
+        name: 'Project Files Duplicate',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_files_duplicate',
+          name: 'Project Files Duplicate',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/logo.png',
+        name: 'logo.png',
+        type: FileNodeType.file,
+      ),
+    ];
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onDuplicateFile =
+              ({
+                required rootDirectory,
+                required parentDirectory,
+                required sourceName,
+                required destinationName,
+              }) async {
+                projectRepository.filesByPath['.'] = <FileNode>[
+                  const FileNode(
+                    path: '/repo/a/logo.png',
+                    name: 'logo.png',
+                    type: FileNodeType.file,
+                  ),
+                  FileNode(
+                    path: '$parentDirectory/$destinationName',
+                    name: destinationName,
+                    type: FileNodeType.file,
+                  ),
+                ];
+              };
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, fileOperationsService: fileOperations),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_item_/repo/a/logo.png')),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_menu_duplicate')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(fileOperations.duplicateFileCallCount, 1);
+    expect(fileOperations.writeFileCallCount, 0);
+    expect(fileOperations.lastParentDirectory, '/repo/a');
+    expect(fileOperations.lastName, 'logo.png');
+    expect(fileOperations.lastNewName, 'logo copy.png');
+    expect(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/logo copy.png'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('File duplicated'), findsOneWidget);
+  });
+
   testWidgets('file tree rename resolves relative node paths against root', (
     WidgetTester tester,
   ) async {
@@ -8444,6 +8538,208 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('File is empty.'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'cached file reopen keeps newest content across races and failures',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1300, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final projectRepository = FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_file_revalidate',
+          name: 'Project File Revalidate',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_file_revalidate',
+            name: 'Project File Revalidate',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+        ],
+      );
+      projectRepository.filesByPath['.'] = const <FileNode>[
+        FileNode(
+          path: '/repo/a/lib/revalidate.dart',
+          name: 'revalidate.dart',
+          type: FileNodeType.file,
+        ),
+      ];
+      final olderRead = Completer<Either<Failure, FileContent>>();
+      final newerRead = Completer<Either<Failure, FileContent>>();
+      final saveRead = Completer<Either<Failure, FileContent>>();
+      final dirtyRead = Completer<Either<Failure, FileContent>>();
+      var readCount = 0;
+      projectRepository.readFileContentHandler = ({directory, required path}) {
+        if (path != '/repo/a/lib/revalidate.dart') {
+          return Future<Either<Failure, FileContent>>.value(
+            const Left<Failure, FileContent>(
+              ServerFailure('transient read failure'),
+            ),
+          );
+        }
+        readCount += 1;
+        switch (readCount) {
+          case 1:
+            return Future<Either<Failure, FileContent>>.value(
+              const Right<Failure, FileContent>(
+                FileContent(
+                  path: '/repo/a/lib/revalidate.dart',
+                  content: 'cached content',
+                  isBinary: false,
+                ),
+              ),
+            );
+          case 2:
+            return olderRead.future;
+          case 3:
+            return newerRead.future;
+          case 5:
+            return saveRead.future;
+          case 6:
+            return dirtyRead.future;
+          default:
+            return Future<Either<Failure, FileContent>>.value(
+              const Left<Failure, FileContent>(
+                ServerFailure('transient read failure'),
+              ),
+            );
+        }
+      };
+      final fileOperations = FakeWorkspaceFileOperationsService(
+        capabilities: const WorkspaceFileOperationsCapabilities(
+          shellFileOpsSupported: true,
+          message: 'ok',
+        ),
+      );
+
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        projectRepository: projectRepository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, fileOperationsService: fileOperations),
+      );
+      await tester.pumpAndSettle();
+
+      final fileItem = find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/revalidate.dart'),
+      );
+      final dialog = find.byKey(
+        const ValueKey<String>('open_files_dialog_centered'),
+      );
+      Future<void> closeDialog() async {
+        await tester.tap(
+          find.descendant(of: dialog, matching: find.byTooltip('Close')).first,
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(fileItem);
+      await tester.pumpAndSettle();
+      expect(find.text('cached content', findRichText: true), findsOneWidget);
+      await closeDialog();
+
+      await tester.tap(fileItem);
+      await tester.pump();
+      await closeDialog();
+      await tester.tap(fileItem);
+      await tester.pump();
+
+      newerRead.complete(
+        const Right<Failure, FileContent>(
+          FileContent(
+            path: '/repo/a/lib/revalidate.dart',
+            content: 'newest content',
+            isBinary: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('newest content', findRichText: true), findsOneWidget);
+
+      olderRead.complete(
+        const Right<Failure, FileContent>(
+          FileContent(
+            path: '/repo/a/lib/revalidate.dart',
+            content: 'stale content',
+            isBinary: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('newest content', findRichText: true), findsOneWidget);
+      expect(find.text('stale content', findRichText: true), findsNothing);
+      await closeDialog();
+
+      await tester.tap(fileItem);
+      await tester.pumpAndSettle();
+      expect(find.text('newest content', findRichText: true), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('file_viewer_retry_button')),
+        findsNothing,
+      );
+
+      await closeDialog();
+      await tester.tap(fileItem);
+      await tester.pump();
+      final editor = find.byKey(
+        const ValueKey<String>('file_editor_/repo/a/lib/revalidate.dart'),
+      );
+      tester.widget<CodeEditor>(editor).controller!.text = 'saved edit';
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('file_viewer_save_button')),
+      );
+      await tester.pumpAndSettle();
+      expect(fileOperations.writeFileCallCount, 1);
+      expect(fileOperations.lastContent, 'saved edit');
+
+      saveRead.complete(
+        const Right<Failure, FileContent>(
+          FileContent(
+            path: '/repo/a/lib/revalidate.dart',
+            content: 'content from before save',
+            isBinary: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<CodeEditor>(editor).controller!.text, 'saved edit');
+
+      await closeDialog();
+      await tester.tap(fileItem);
+      await tester.pump();
+      tester.widget<CodeEditor>(editor).controller!.text = 'unsaved edit';
+      await tester.pump();
+      dirtyRead.complete(
+        const Left<Failure, FileContent>(
+          ServerFailure('read failed after editing'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<CodeEditor>(editor).controller!.text,
+        'unsaved edit',
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'file_viewer_tab_dirty_/repo/a/lib/revalidate.dart',
+          ),
+        ),
+        findsOneWidget,
+      );
     },
   );
 

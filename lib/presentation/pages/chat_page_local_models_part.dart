@@ -12,6 +12,8 @@ class _FileExplorerContextState {
   final Map<String, String> directoryErrors = <String, String>{};
   final Map<String, _FileTabViewState> tabsByPath =
       <String, _FileTabViewState>{};
+  final Map<String, int> fileReloadGenerations = <String, int>{};
+  int nextFileReloadGeneration = 0;
   final Map<String, _FileEditorDraftState> editorDraftsByPath =
       <String, _FileEditorDraftState>{};
   final Set<String> pendingMutationPaths = <String>{};
@@ -38,6 +40,8 @@ class _FileExplorerContextState {
     loadingDirectories.clear();
     directoryErrors.clear();
     tabsByPath.clear();
+    nextFileReloadGeneration += 1;
+    fileReloadGenerations.clear();
     _disposeEditorDrafts();
     pendingMutationPaths.clear();
     fileOperationCapabilities = null;
