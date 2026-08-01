@@ -59,7 +59,14 @@ extension ChatProviderHistoryOps on ChatProvider {
     );
     final messagesChanged = nextMessages.length != _messages.length;
     if (messagesChanged) {
-      _messages = nextMessages;
+      // Reverting a branch legitimately drops messages, so it is authoritative.
+      _applyMessages(
+        nextMessages,
+        origin: MessageUpdateOrigin.localMutation,
+        kind: MessageUpdateKind.authoritativeRemoval,
+        sessionId: sessionId,
+        reason: 'pending-replacement-branch',
+      );
       _cacheSessionMessages(sessionId, _messages);
       _prunePendingLocalUserMessageIdsToVisibleUsers();
     }

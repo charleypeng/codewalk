@@ -478,7 +478,14 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       _currentSession = selectedSession;
       _dismissNotificationsForSession(selectedSession.id);
       _threadPermissionsVersion++;
-      _messages = List<ChatMessage>.from(cachedMessages);
+      // The current session just changed, so replacing wholesale is intended.
+      _applyMessages(
+        cachedMessages,
+        origin: MessageUpdateOrigin.cacheHydration,
+        kind: MessageUpdateKind.reset,
+        sessionId: selectedSession.id,
+        reason: 'cache-hydration-on-session-switch',
+      );
       _cacheSessionMessages(selectedSession.id, cachedMessages);
       _messagesVersion++;
       _hasMoreOldMessages =

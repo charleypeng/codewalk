@@ -70,6 +70,8 @@ import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
 import 'settings_provider.dart';
 
+import 'chat_provider/message_reconciliation.dart';
+
 part 'chat_provider_draft_part.dart';
 part 'chat_provider_types_part.dart';
 part 'chat_provider/chat_provider_error_policy.dart';
@@ -82,6 +84,7 @@ part 'chat_provider/chat_provider_event_reducer_session_ops.dart';
 part 'chat_provider/chat_provider_event_reducer_global_ops.dart';
 part 'chat_provider/chat_provider_auto_title_ops.dart';
 part 'chat_provider/chat_provider_message_merge_ops.dart';
+part 'chat_provider/chat_provider_reconciliation_guard.dart';
 part 'chat_provider/chat_provider_session_ops.dart';
 part 'chat_provider/chat_provider_core.dart';
 part 'chat_provider/chat_provider_abort_policy_ops.dart';
@@ -833,12 +836,27 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
+  /// True when [sessionId] belongs to a subagent, i.e. it has a parent.
+  bool _isChildSessionId(String? sessionId) {
+    final normalized = sessionId?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return false;
+    }
+    final parentId = _sessionById(normalized)?.parentId?.trim();
+    return parentId != null && parentId.isNotEmpty;
+  }
+
   bool _shouldSchedulePassiveAutoScrollForSession(
     String sessionId, {
     ChatMessage? latestMessage,
   }) {
     final normalizedSessionId = sessionId.trim();
     if (normalizedSessionId.isEmpty || _isCompactingContext) {
+      return false;
+    }
+    // Subagent traffic must never take ownership of the main timeline's
+    // scroll: only the session actually on screen may move the anchor.
+    if (normalizedSessionId != _currentSession?.id.trim()) {
       return false;
     }
     final status = _sessionStatusById[normalizedSessionId]?.type;
@@ -3832,7 +3850,13 @@ class ChatProvider extends ChangeNotifier {
               return;
             }
 
-            _messages = List<ChatMessage>.from(mergedMessages);
+            _applyMessages(
+              mergedMessages,
+              origin: MessageUpdateOrigin.sessionRefresh,
+              kind: MessageUpdateKind.fullSnapshot,
+              sessionId: sessionId,
+              reason: 'session-refresh-merge',
+            );
             _cacheSessionMessages(sessionId, _messages);
             if (messagesChanged) {
               _messagesVersion++;
@@ -3928,9 +3952,15 @@ class ChatProvider extends ChangeNotifier {
             messages,
             sessionId: sessionId,
           );
-          _messages = _mergeServerMessagesWithActiveLocalTail(
-            filteredMessages,
+          _applyMessages(
+            _mergeServerMessagesWithActiveLocalTail(
+              filteredMessages,
+              sessionId: sessionId,
+            ),
+            origin: MessageUpdateOrigin.httpFallback,
+            kind: MessageUpdateKind.fullSnapshot,
             sessionId: sessionId,
+            reason: 'server-messages-merge',
           );
           _cacheSessionMessages(sessionId, _messages);
           _messagesVersion++;

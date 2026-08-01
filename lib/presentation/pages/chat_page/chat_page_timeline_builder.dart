@@ -1284,7 +1284,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return sortedCandidates.first;
     }
 
-    var taskIndex = 0;
+    // Positional matching pairs the Nth task part with the Nth child session by
+    // start time. That only holds when both sequences describe the same set:
+    // with concurrent subagents the orders diverge and the wrong sibling opens,
+    // which is issue #112. Count the anchors first and only trust the index
+    // when the two sequences line up exactly.
+    var anchorCount = 0;
     int? selectedTaskIndex;
     for (final message in chatProvider.messages) {
       for (final messagePart in message.parts) {
@@ -1292,23 +1297,22 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           continue;
         }
         if (messagePart.id == targetPartId) {
-          selectedTaskIndex = taskIndex;
-          break;
+          selectedTaskIndex = anchorCount;
         }
-        taskIndex += 1;
-      }
-      if (selectedTaskIndex != null) {
-        break;
+        anchorCount += 1;
       }
     }
 
     if (selectedTaskIndex != null &&
+        anchorCount == sortedCandidates.length &&
         selectedTaskIndex >= 0 &&
         selectedTaskIndex < sortedCandidates.length) {
       return sortedCandidates[selectedTaskIndex];
     }
 
-    return sortedCandidates.last;
+    // Ambiguous: guessing here is what opened somebody else's subagent. Report
+    // nothing found so the caller surfaces a notice instead of lying.
+    return null;
   }
 
   String _normalizeToolNameForSubConversation(String rawToolName) {

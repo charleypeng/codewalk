@@ -2100,6 +2100,59 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 ---
 
+## Message Reconciliation
+
+The visible message collection is monotonic during normal updates. Roughly
+twenty code paths can replace it — the realtime reducer, HTTP fallbacks,
+session refreshes, cache hydration and local mutations — so every one of them
+goes through a single rule instead of guarding itself.
+
+An update carries its provenance (origin) and what it claims to be (kind). The
+rule is: an update may never remove a message that is newer than everything the
+update itself carries. When it would, the newer tail is preserved and merged
+back in timeline order, and a warning is logged naming the origin, the kind and
+the preserved identifiers.
+
+Two kinds bypass the rule because dropping messages is their purpose: an
+authoritative removal from the server, and a reset such as a session switch or
+cache eviction. Everything else — full snapshots and partial deltas alike — is
+judged.
+
+Updates that produce no effective change do not write to the collection at all,
+because rebuilding with identical content still moves the reading anchor on
+some layouts.
+
+Reconciliation decisions are logged permanently at debug level, and at warning
+level when a regression is actually blocked. Only identifiers and counts are
+recorded, never message content.
+
+## Subagent Event Scope
+
+Subagents finish silently from the point of view of the session being read.
+
+A child session reaching idle, or failing, never marks unread on its parent,
+never raises an attention surface there, and never moves the parent's scroll.
+Only the session actually on screen may own the reading anchor: passive
+auto-scroll is refused for any session id that is not the current one.
+
+The subagent's own screen keeps receiving and rendering its events normally.
+A message genuinely added to the main timeline still triggers unread as before.
+
+## Subagent Navigation
+
+Opening a subagent from a task part prefers the child session id carried by the
+part itself. When the part does not carry one and there is exactly one child
+candidate, that candidate is used.
+
+Otherwise the Nth task part is paired with the Nth child session by start time,
+but only when the number of task parts equals the number of candidates. With
+concurrent subagents those two sequences diverge, and pairing them anyway is
+what opened the wrong sibling.
+
+When the association is ambiguous, nothing is opened and the user is told no
+sub-conversation was found. Opening some other subagent is worse than opening
+none.
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.
