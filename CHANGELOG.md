@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.186.0 - 2026-08-01
+
+- fix(ui): refine tab silhouette, background and close affordance
+
 ## v1.185.0 - 2026-08-01
 
 - fix(desktop): drop native registrations for the removed multi-window plugin
