@@ -2,6 +2,21 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.193.0 - 2026-08-02
+
+- fix(chat): harden block mode transitions
+- fix(composer): harden external file attachments
+- fix(android): harden session attention overlay
+- fix(files): make autosave context-safe
+- fix(files): harden duplicate and cached reloads
+- fix(chat): harden subagent navigation and reconciliation
+- fix(tabs): enlarge touch close targets
+- fix(tabs): keep close actions accessible
+- fix(desktop): preserve integrated chrome across routes
+- docs(readme): add the capabilities shipped over the last two months
+- docs(readme): merge the two feature lists into one written for users
+- feat(chat): draft automatically when a project has no sessions
+
 ## v1.192.0 - 2026-08-01
 
 - fix(chat): publish finished blocks while a Block-mode turn continues
