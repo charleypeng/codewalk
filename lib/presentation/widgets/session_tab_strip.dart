@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/i18n/l10n_context.dart';
@@ -299,6 +301,12 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     final hovered = _hoveredIdentity == tab.identity;
     final trailing = widget.trailingBuilder(context, tab);
 
+    void openContextMenu({required bool haptic}) {
+      unawaited(
+        widget.onContextMenu(tab, _contextMenuPosition(tab), haptic: haptic),
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) => _setHovered(tab.identity),
       onExit: (_) => _setHovered(null),
@@ -329,108 +337,122 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Semantics(
-                            button: true,
-                            selected: selected,
-                            label: _semanticLabel(context, tab, title),
-                            onTap: () => widget.onActivate(tab),
-                            onDismiss: () => _handleClose(tab),
-                            child: Tooltip(
-                              message: title,
-                              excludeFromSemantics: true,
-                              child: ExcludeSemantics(
-                                child: InkWell(
-                                  key: ValueKey<String>(
-                                    'session_tab_activate_$key',
-                                  ),
-                                  focusNode: _tabFocusNodes.putIfAbsent(
-                                    tab.identity,
-                                    () => FocusNode(
-                                      debugLabel: 'Session tab $key',
+                          child: CallbackShortcuts(
+                            bindings: <ShortcutActivator, VoidCallback>{
+                              const SingleActivator(
+                                LogicalKeyboardKey.contextMenu,
+                              ): () =>
+                                  openContextMenu(haptic: false),
+                              const SingleActivator(
+                                LogicalKeyboardKey.f10,
+                                shift: true,
+                              ): () =>
+                                  openContextMenu(haptic: false),
+                            },
+                            child: Semantics(
+                              button: true,
+                              selected: selected,
+                              label: _semanticLabel(context, tab, title),
+                              onTap: () => widget.onActivate(tab),
+                              onDismiss: () => _handleClose(tab),
+                              onLongPress: () => openContextMenu(haptic: true),
+                              customSemanticsActions:
+                                  <CustomSemanticsAction, VoidCallback>{
+                                    CustomSemanticsAction(
+                                      label: context.l10n.chatSessionActions,
+                                    ): () =>
+                                        openContextMenu(haptic: false),
+                                  },
+                              child: Tooltip(
+                                message: title,
+                                excludeFromSemantics: true,
+                                child: ExcludeSemantics(
+                                  child: InkWell(
+                                    key: ValueKey<String>(
+                                      'session_tab_activate_$key',
                                     ),
-                                  ),
-                                  borderRadius: radius,
-                                  overlayColor:
-                                      WidgetStateProperty.resolveWith<Color?>((
-                                        states,
-                                      ) {
-                                        if (states.contains(
-                                          WidgetState.pressed,
-                                        )) {
-                                          return colorScheme.primary.withValues(
-                                            alpha: 0.18,
-                                          );
-                                        }
-                                        if (states.contains(
-                                          WidgetState.focused,
-                                        )) {
-                                          return colorScheme.primary.withValues(
-                                            alpha: 0.14,
-                                          );
-                                        }
-                                        if (states.contains(
-                                          WidgetState.hovered,
-                                        )) {
-                                          return colorScheme.primary.withValues(
-                                            alpha: 0.09,
-                                          );
-                                        }
-                                        return null;
-                                      }),
-                                  onTap: () => widget.onActivate(tab),
-                                  onDoubleTap: () => _handleClose(tab),
-                                  onSecondaryTapUp: (details) => unawaited(
-                                    widget.onContextMenu(
-                                      tab,
-                                      details.globalPosition,
-                                      haptic: false,
-                                    ),
-                                  ),
-                                  onLongPress: () => unawaited(
-                                    widget.onContextMenu(
-                                      tab,
-                                      _contextMenuPosition(tab),
-                                      haptic: true,
-                                    ),
-                                  ),
-                                  child: ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      minHeight: 48,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsetsDirectional.only(
-                                        start: _kTabShoulder,
+                                    focusNode: _tabFocusNodes.putIfAbsent(
+                                      tab.identity,
+                                      () => FocusNode(
+                                        debugLabel: 'Session tab $key',
                                       ),
-                                      child: Row(
-                                        children: [
-                                          _buildLeading(
-                                            context,
-                                            tab,
-                                            project,
-                                            title,
-                                          ),
-                                          const SizedBox(width: 7),
-                                          Expanded(
-                                            child: Text(
-                                              title,
-                                              key: ValueKey<String>(
-                                                'session_tab_title_$key',
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelLarge
-                                                  ?.copyWith(
-                                                    color: foreground,
-                                                    fontWeight: selected
-                                                        ? FontWeight.w700
-                                                        : FontWeight.w600,
-                                                  ),
+                                    ),
+                                    borderRadius: radius,
+                                    overlayColor:
+                                        WidgetStateProperty.resolveWith<Color?>(
+                                          (states) {
+                                            if (states.contains(
+                                              WidgetState.pressed,
+                                            )) {
+                                              return colorScheme.primary
+                                                  .withValues(alpha: 0.18);
+                                            }
+                                            if (states.contains(
+                                              WidgetState.focused,
+                                            )) {
+                                              return colorScheme.primary
+                                                  .withValues(alpha: 0.14);
+                                            }
+                                            if (states.contains(
+                                              WidgetState.hovered,
+                                            )) {
+                                              return colorScheme.primary
+                                                  .withValues(alpha: 0.09);
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                    onTap: () => widget.onActivate(tab),
+                                    onDoubleTap: () => _handleClose(tab),
+                                    onSecondaryTapUp: (details) => unawaited(
+                                      widget.onContextMenu(
+                                        tab,
+                                        details.globalPosition,
+                                        haptic: false,
+                                      ),
+                                    ),
+                                    onLongPress: () =>
+                                        openContextMenu(haptic: true),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minHeight: 48,
+                                      ),
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsetsDirectional.only(
+                                              start: _kTabShoulder,
                                             ),
-                                          ),
-                                          const SizedBox(width: 2),
-                                        ],
+                                        child: Row(
+                                          children: [
+                                            _buildLeading(
+                                              context,
+                                              tab,
+                                              project,
+                                              title,
+                                            ),
+                                            const SizedBox(width: 7),
+                                            Expanded(
+                                              child: Text(
+                                                title,
+                                                key: ValueKey<String>(
+                                                  'session_tab_title_$key',
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelLarge
+                                                    ?.copyWith(
+                                                      color: foreground,
+                                                      fontWeight: selected
+                                                          ? FontWeight.w700
+                                                          : FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 2),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),

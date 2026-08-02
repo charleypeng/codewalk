@@ -49,15 +49,21 @@ void main() {
       isTrue,
     );
     expect(find.byIcon(Symbols.folder_open), findsOneWidget);
-    expect(
+    final tabSemantics = tester.widget<Semantics>(
       find.byWidgetPredicate(
         (widget) =>
             widget is Semantics &&
             widget.properties.selected == true &&
             widget.properties.label == 'Chat session: Alpha session' &&
-            widget.properties.onTap != null,
+            widget.properties.onTap != null &&
+            widget.properties.onLongPress != null,
       ),
-      findsOneWidget,
+    );
+    expect(
+      tabSemantics.properties.customSemanticsActions?.keys.map(
+        (action) => action.label,
+      ),
+      contains('Session actions'),
     );
 
     final activation = tester.widget<InkWell>(activateFinder);
@@ -575,9 +581,33 @@ void main() {
     await tester.longPress(finder);
     await tester.pump();
 
+    tester.widget<InkWell>(finder).focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.pump();
+
+    final semantics = tester.widget<Semantics>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.customSemanticsActions?.keys.any(
+                  (action) => action.label == 'Session actions',
+                ) ==
+                true,
+      ),
+    );
+    semantics.properties.customSemanticsActions!.entries
+        .singleWhere((entry) => entry.key.label == 'Session actions')
+        .value();
+    await tester.pump();
+
     expect(requests, <({SessionTabIdentity identity, bool haptic})>[
       (identity: tab.identity, haptic: false),
       (identity: tab.identity, haptic: true),
+      (identity: tab.identity, haptic: false),
+      (identity: tab.identity, haptic: false),
     ]);
   });
 
