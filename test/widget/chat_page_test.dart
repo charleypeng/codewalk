@@ -5247,7 +5247,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(settingsProvider.sessionTabsGestureHintDismissed, isFalse);
 
+    unawaited(
+      Navigator.of(tester.element(find.byType(ChatPage))).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('Covering route')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
     repository.sessions.add(session('three'));
+    await provider.loadSessions();
+    await tester.pumpAndSettle();
+    expect(dialog, findsNothing);
+
+    Navigator.of(tester.element(find.text('Covering route'))).pop();
+    await tester.pumpAndSettle();
     await provider.loadSessions();
     await tester.pumpAndSettle();
     expect(dialog, findsOneWidget);

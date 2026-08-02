@@ -335,8 +335,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final showTerminalPanel =
         terminalPanelVisible && !settingsProvider.terminalPanelMaximized;
     final hideComposerForTerminal = isCompactLayout && terminalPanelVisible;
-    final sessionTabsActive =
-        settingsProvider.showSessionTabs && chatProvider.sessionTabs.isNotEmpty;
+    final currentSessionId = chatProvider.currentSession?.id;
+    final sessionTabsRepresentCurrentSession =
+        settingsProvider.showSessionTabs &&
+        currentSessionId != null &&
+        chatProvider.sessionTabs.any(
+          (tab) => tab.isSelected && tab.identity.sessionId == currentSessionId,
+        );
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
@@ -356,7 +361,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     children: [
                       // Active session header
                       if (chatProvider.currentSession != null &&
-                          !sessionTabsActive)
+                          !sessionTabsRepresentCurrentSession)
                         Builder(
                           builder: (context) {
                             final currentSession = chatProvider.currentSession!;

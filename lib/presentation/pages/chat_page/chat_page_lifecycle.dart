@@ -562,6 +562,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     _lastReturnToChatAt = now;
     _lastReturnToChatSignature = signature;
     _flushPendingPostOnboardingTourAutoStart();
+    _scheduleSessionTabsGestureHint();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
     if (_scrollFollowMode != _ScrollFollowMode.following ||

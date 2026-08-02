@@ -74,11 +74,14 @@ void main() {
 
     expect(activated, <SessionTabIdentity>[tab.identity]);
 
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    await tester.pump();
+
     final closeFinder = find.byKey(
       ValueKey<String>('session_tab_close_$identityKey'),
     );
     expect(closeFinder, findsNothing);
-    expect(closed, isEmpty);
+    expect(closed, <SessionTabIdentity>[tab.identity]);
   });
 
   testWidgets('exposes close as a permanent semantics action', (tester) async {

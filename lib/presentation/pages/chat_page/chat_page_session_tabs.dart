@@ -85,8 +85,10 @@ extension _ChatPageSessionTabs on _ChatPageState {
 
     final added = currentIdentities.difference(_knownSessionTabIdentities);
     _knownSessionTabIdentities = currentIdentities;
-    if (_sessionTabHintShowing || added.isEmpty) return;
     _pendingSessionTabHintIdentities.addAll(added);
+    if (_sessionTabHintShowing || _pendingSessionTabHintIdentities.isEmpty) {
+      return;
+    }
     _scheduleSessionTabsGestureHint();
   }
 

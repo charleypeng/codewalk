@@ -348,6 +348,10 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                 shift: true,
                               ): () =>
                                   openContextMenu(haptic: false),
+                              const SingleActivator(
+                                LogicalKeyboardKey.delete,
+                              ): () =>
+                                  _handleClose(tab),
                             },
                             child: Semantics(
                               button: true,
