@@ -141,6 +141,7 @@ Future<void> init() async {
   var sessionAttentionHostRevision = 0;
   var sessionAttentionPublishTail = Future<void>.value();
   SessionAttentionAggregate? liveAttention;
+  var sessionAttentionAppInForeground = true;
 
   Future<void> publishSessionAttention() async {
     final revision = ++sessionAttentionHostRevision;
@@ -158,7 +159,8 @@ Future<void> init() async {
           (await sl<SessionAttentionSnapshotStore>().read()).payload;
       var presentation =
           sl<SettingsProvider>().settings.sessionAttentionPresentation;
-      var bubbleSize = sl<SettingsProvider>().settings.sessionAttentionBubbleSize;
+      var bubbleSize =
+          sl<SettingsProvider>().settings.sessionAttentionBubbleSize;
       final persistedSettings = await sl<AppLocalDataSource>()
           .getExperienceSettingsJson();
       if (persistedSettings != null && persistedSettings.isNotEmpty) {
@@ -259,9 +261,7 @@ Future<void> init() async {
           revision: revision,
           presentation: presentation,
           bubbleScale: sessionAttentionBubbleScale(bubbleSize),
-          appInForeground: sl.isRegistered<ChatProvider>()
-              ? sl<ChatProvider>().isForegroundActive
-              : false,
+          appInForeground: sessionAttentionAppInForeground,
           activeServerId: activeServerId ?? '',
           items: items,
           fullResynchronization: revision == 1,
@@ -447,6 +447,10 @@ Future<void> init() async {
       sessionAttentionCompletionResolver: sl(),
       sessionAttentionAggregatePublisher: (aggregate) async {
         liveAttention = aggregate;
+        await publishSessionAttention();
+      },
+      sessionAttentionAppForegroundPublisher: (isForeground) async {
+        sessionAttentionAppInForeground = isForeground;
         await publishSessionAttention();
       },
       eventFeedbackDispatcher: sl(),

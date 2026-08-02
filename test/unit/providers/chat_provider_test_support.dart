@@ -217,6 +217,8 @@ ChatProvider buildChatProvider({
   EventFeedbackDispatcher? eventFeedbackDispatcher,
   Future<void> Function(SessionAttentionAggregate aggregate)?
   sessionAttentionAggregatePublisher,
+  Future<void> Function(bool isForeground)?
+  sessionAttentionAppForegroundPublisher,
 }) {
   return ChatProvider(
     sendChatMessage: SendChatMessage(chatRepository),
@@ -255,6 +257,8 @@ ChatProvider buildChatProvider({
     cellularDataSaverService: cellularDataSaverService,
     eventFeedbackDispatcher: eventFeedbackDispatcher,
     sessionAttentionAggregatePublisher: sessionAttentionAggregatePublisher,
+    sessionAttentionAppForegroundPublisher:
+        sessionAttentionAppForegroundPublisher,
     syncSignalStaleThreshold: syncSignalStaleThreshold,
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,

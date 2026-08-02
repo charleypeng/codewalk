@@ -171,6 +171,8 @@ class ChatProvider extends ChangeNotifier {
     SessionAttentionCompletionResolver? sessionAttentionCompletionResolver,
     Future<void> Function(SessionAttentionAggregate aggregate)?
     sessionAttentionAggregatePublisher,
+    Future<void> Function(bool isForeground)?
+    sessionAttentionAppForegroundPublisher,
     this.eventFeedbackDispatcher,
     this.titleGenerator,
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
@@ -197,6 +199,8 @@ class ChatProvider extends ChangeNotifier {
         );
     _sessionAttentionCompletionResolver = sessionAttentionCompletionResolver;
     _sessionAttentionAggregatePublisher = sessionAttentionAggregatePublisher;
+    _sessionAttentionAppForegroundPublisher =
+        sessionAttentionAppForegroundPublisher;
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
@@ -288,6 +292,8 @@ class ChatProvider extends ChangeNotifier {
   _sessionAttentionCompletionResolver;
   late final Future<void> Function(SessionAttentionAggregate aggregate)?
   _sessionAttentionAggregatePublisher;
+  late final Future<void> Function(bool isForeground)?
+  _sessionAttentionAppForegroundPublisher;
   late final bool _ownsSessionAttentionCoordinator;
   final EventFeedbackDispatcher? eventFeedbackDispatcher;
   final ChatTitleGenerator? titleGenerator;
@@ -369,6 +375,7 @@ class ChatProvider extends ChangeNotifier {
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
   bool _isAppInForeground = true;
+  bool _isSessionAttentionAppInForeground = true;
   bool _isChatRouteActive = true;
   String? _abortSuppressionSessionId;
   DateTime? _abortSuppressionStartedAt;
@@ -470,11 +477,6 @@ class ChatProvider extends ChangeNotifier {
   ChatSyncState _syncState = ChatSyncState.reconnecting;
   bool _isForegroundActive = true;
 
-  /// Whether CodeWalk is currently in the foreground on any screen.
-  ///
-  /// The Android attention overlay uses this to stay out of the way while the
-  /// app itself is visible (#128).
-  bool get isForegroundActive => _isForegroundActive;
   bool _degradedMode = false;
   bool _isInResumeGrace = false;
   bool _isForegroundResumeSyncing = false;

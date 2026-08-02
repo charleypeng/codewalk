@@ -35,6 +35,8 @@ void main() {
       generation: 'generation-a',
       revision: 2,
       presentation: SessionAttentionPresentation.panel,
+      bubbleScale: 1.0,
+      appInForeground: true,
       activeServerId: 'server-a',
       items: <SessionAttentionItem>[_item()],
       fullResynchronization: true,
@@ -47,6 +49,8 @@ void main() {
     expect(decoded.items.single.identity, _item().identity);
     expect((json['items'] as List).single['snapshotId'], _item().snapshotId);
     expect(decoded.presentation, SessionAttentionPresentation.panel);
+    expect(decoded.bubbleScale, 1.0);
+    expect(decoded.appInForeground, isTrue);
     expect(decoded.producer, 'restore');
   });
 

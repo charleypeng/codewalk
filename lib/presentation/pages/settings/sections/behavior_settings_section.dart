@@ -216,8 +216,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection>
                     )
                   : null,
             ),
-            if (settingsProvider.sessionAttentionPresentation !=
-                SessionAttentionPresentation.off) ...[
+            if (capability.kind == SessionAttentionHostKind.androidExternal &&
+                settingsProvider.sessionAttentionPresentation !=
+                    SessionAttentionPresentation.off) ...[
               const SizedBox(height: 16),
               Text(
                 context.l10n.settingsSessionAttentionSize,

@@ -60,6 +60,7 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
   int _androidFallbackEpoch = 0;
   bool _androidFallbackInFlight = false;
   bool _androidFallbackReconcilePending = false;
+  Future<void> _androidCommandTail = Future<void>.value();
   CellularDataSaverService? _androidDataSaverService;
   final Map<String, String> _androidPreviousStatus = <String, String>{};
   final Map<String, DateTime> _androidBusyStarted = <String, DateTime>{};
@@ -128,21 +129,32 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
       final read = await store.read();
       final activeServerId =
           preferences.getString(AppConstants.activeServerIdKey) ?? '';
-      final snapshot = SessionAttentionHostSnapshot(
-        generation: 'service-${DateTime.now().microsecondsSinceEpoch}',
-        revision: read.payload.revision,
-        presentation: settings.sessionAttentionPresentation,
-        activeServerId: activeServerId,
-        items: read.payload.items
-            .where((item) => item.identity.serverId == activeServerId)
-            .toList(growable: false),
-        fullResynchronization: true,
-        producer: 'restore',
-      );
-      await _androidServiceChannel.invokeMethod<void>(
-        'restoreSnapshot',
-        snapshot.toJson(),
-      );
+      final mainProducerAlive =
+          await _androidServiceChannel.invokeMethod<bool>(
+            'isMainProducerAlive',
+          ) ??
+          false;
+      if (!mainProducerAlive) {
+        final snapshot = SessionAttentionHostSnapshot(
+          generation: 'service-${DateTime.now().microsecondsSinceEpoch}',
+          revision: read.payload.revision,
+          presentation: settings.sessionAttentionPresentation,
+          bubbleScale: sessionAttentionBubbleScale(
+            settings.sessionAttentionBubbleSize,
+          ),
+          appInForeground: false,
+          activeServerId: activeServerId,
+          items: read.payload.items
+              .where((item) => item.identity.serverId == activeServerId)
+              .toList(growable: false),
+          fullResynchronization: true,
+          producer: 'restore',
+        );
+        await _androidServiceChannel.invokeMethod<void>(
+          'restoreSnapshot',
+          snapshot.toJson(),
+        );
+      }
       _androidFallbackTimer = Timer.periodic(
         const Duration(seconds: 30),
         (_) => unawaited(_runAndroidFallbackTick()),
@@ -174,6 +186,10 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
       generation: current.generation,
       revision: current.revision,
       presentation: presentation ?? current.presentation,
+      bubbleScale: current.bubbleScale,
+      appInForeground: expectedFallbackEpoch == null
+          ? current.appInForeground
+          : false,
       activeServerId: current.activeServerId,
       items: items ?? current.items,
       fullResynchronization: current.fullResynchronization,
@@ -187,15 +203,29 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
             next.toJson(),
           ) ??
           false;
-      if (!applied || _androidFallbackEpoch != expectedFallbackEpoch) return;
+      final latest = _snapshot;
+      if (!applied ||
+          _androidFallbackEpoch != expectedFallbackEpoch ||
+          latest?.generation != current.generation ||
+          latest?.revision != current.revision) {
+        return;
+      }
       if (mounted) setState(() => _snapshot = next);
       return;
     }
-    if (mounted) setState(() => _snapshot = next);
-    await _androidServiceChannel.invokeMethod<void>(
-      'applyLocalState',
-      next.toJson(),
-    );
+    final applied =
+        await _androidServiceChannel.invokeMethod<bool>(
+          'applyLocalState',
+          next.toJson(),
+        ) ??
+        false;
+    final latest = _snapshot;
+    if (applied &&
+        mounted &&
+        latest?.generation == current.generation &&
+        latest?.revision == current.revision) {
+      setState(() => _snapshot = next);
+    }
   }
 
   Future<void> _persistAndroidPresentation(
@@ -807,21 +837,32 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
     return true;
   }
 
+  Future<void> _queueAndroidStateMutation(Future<void> Function() mutation) {
+    final operation = _androidCommandTail.then((_) => mutation());
+    _androidCommandTail = operation.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return operation;
+  }
+
   Future<void> _command(String action, [SessionAttentionItem? item]) async {
     if (item != null) {
       final controller = _androidController;
       if (controller != null && action == 'read') {
         await _reloadAndroidSettings();
         await controller.readOrStop(item);
-        await _applyAndroidLocalState();
+        await _queueAndroidStateMutation(_applyAndroidLocalState);
         return;
       }
       if (controller != null && action == 'dismiss') {
-        final remaining = (_snapshot?.items ?? const <SessionAttentionItem>[])
-            .where((candidate) => candidate.snapshotId != item.snapshotId)
-            .toList(growable: false);
-        await controller.dismiss(item);
-        await _applyAndroidLocalState(items: remaining);
+        await _queueAndroidStateMutation(() async {
+          await controller.dismiss(item);
+          final remaining = (_snapshot?.items ?? const <SessionAttentionItem>[])
+              .where((candidate) => candidate.snapshotId != item.snapshotId)
+              .toList(growable: false);
+          await _applyAndroidLocalState(items: remaining);
+        });
         return;
       }
     }
@@ -829,8 +870,10 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
       final presentation = action == 'expand'
           ? SessionAttentionPresentation.panel
           : SessionAttentionPresentation.bubble;
-      await _persistAndroidPresentation(presentation);
-      await _applyAndroidLocalState(presentation: presentation);
+      await _queueAndroidStateMutation(() async {
+        await _persistAndroidPresentation(presentation);
+        await _applyAndroidLocalState(presentation: presentation);
+      });
       return;
     }
     if (action == 'stop') {
@@ -876,24 +919,30 @@ class _SessionAttentionHostAppState extends State<SessionAttentionHostApp> {
         backgroundColor: Colors.transparent,
         body: Align(
           alignment: Alignment.topCenter,
-          child: SessionAttentionOverlay(
-            items: items,
-            expanded: expanded,
-            semanticLabel: '${items.length} sessions need attention',
-            stateLabelBuilder: (kind) => kind.name,
-            openLabel: 'Open',
-            expandLabel: 'Expand',
-            collapseLabel: 'Collapse',
-            readLabel: 'Read',
-            stopReadingLabel: 'Stop reading',
-            dismissLabel: 'Dismiss',
-            stopOverlayLabel: 'Stop overlay',
-            activeSpeechSnapshotId: activeSpeechSnapshotId,
-            onOpen: (item) => _command('open', item),
-            onRead: (item) => _command('read', item),
-            onDismiss: (item) => _command('dismiss', item),
-            onToggleExpanded: () => _command(expanded ? 'collapse' : 'expand'),
-            onStopOverlay: () => _command('stop'),
+          child: Padding(
+            padding: expanded
+                ? EdgeInsets.zero
+                : const EdgeInsetsDirectional.only(end: 8, bottom: 8),
+            child: SessionAttentionOverlay(
+              items: items,
+              expanded: expanded,
+              semanticLabel: '${items.length} sessions need attention',
+              stateLabelBuilder: (kind) => kind.name,
+              openLabel: 'Open',
+              expandLabel: 'Expand',
+              collapseLabel: 'Collapse',
+              readLabel: 'Read',
+              stopReadingLabel: 'Stop reading',
+              dismissLabel: 'Dismiss',
+              stopOverlayLabel: 'Stop overlay',
+              activeSpeechSnapshotId: activeSpeechSnapshotId,
+              onOpen: (item) => _command('open', item),
+              onRead: (item) => _command('read', item),
+              onDismiss: (item) => _command('dismiss', item),
+              onToggleExpanded: () =>
+                  _command(expanded ? 'collapse' : 'expand'),
+              onStopOverlay: () => _command('stop'),
+            ),
           ),
         ),
       ),

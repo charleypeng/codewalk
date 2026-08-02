@@ -1786,7 +1786,7 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Given** Bubble or Panel is visible over another Android app
 - **Then** the Flutter surface and host window are transparent outside the rounded Material content instead of drawing an opaque rectangular background
 - **Then** the protected overlay keeps `FLAG_SECURE`; screenshots, screen recording, and device mirroring may therefore show the protected area as black even though normal on-device composition is transparent
-- **Then** Bubble uses a `96 x 96dp` host and Panel uses a `360 x 240dp` host, both constrained to usable display bounds with a `16dp` edge margin
+- **Then** Bubble uses a `96 x 96dp` base host with user scale applied, while the native host floors each dimension at `56dp` so the `48dp` Bubble and its reserved expand-control area stay inside bounds; Panel remains `360 x 240dp`, and both are constrained to usable display bounds with a `16dp` edge margin
 - **Then** Android content is top-centered, dragging persists normalized position, and rotation or display changes re-clamp the overlay without bypassing permission or lock-screen gates
 - **Given** the Android overlay does not reach a non-zero layout within 5 seconds, or reaches that layout but does not render its first Flutter frame within the following 5 seconds
 - **Then** only the overlay window is removed; the foreground service remains available for a later valid snapshot or lifecycle transition
@@ -2184,11 +2184,12 @@ none.
 ## Android Attention Overlay
 
 The external overlay exists to follow work while the user is away from
-CodeWalk, so it steps aside whenever the app itself is on screen. Any CodeWalk
-screen counts, not just the conversation: with the app in the foreground the
-overlay detaches, and it comes back when the app is backgrounded and there are
-still eligible items. A foreground change republishes the attention snapshot
-immediately rather than waiting for the next unrelated update.
+CodeWalk. Actual app visibility drives hiding: resumed and transient
+inactive-but-still-visible states keep the overlay detached, while
+background/hidden states allow it when there are still eligible items. Realtime
+transport holds do not drive overlay visibility. A visibility change republishes
+the attention snapshot immediately rather than waiting for the next unrelated
+update.
 
 The overlay also stays hidden when there are no items and while the device is
 locked.

@@ -5,12 +5,6 @@ extension ChatProviderLifecycleOps on ChatProvider {
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
-    if (isActive != wasActive) {
-      // The external overlay hides while CodeWalk is on screen, so a
-      // foreground change has to reach the host right away instead of waiting
-      // for the next unrelated attention update (#128).
-      _scheduleSessionAttentionPublish();
-    }
     if (isActive && !wasActive) {
       _markCurrentSessionTabViewed();
     }
@@ -72,9 +66,35 @@ extension ChatProviderLifecycleOps on ChatProvider {
   }
 
   // Foreground state setter.
-  void setAppInForeground(bool isForeground) {
+  void setAppInForeground(
+    bool isForeground, {
+    bool? isVisibleForSessionAttention,
+  }) {
     _isAppInForeground = isForeground;
     _cellularDataSaverService.setAppForeground(isForeground);
+    final attentionForeground = isVisibleForSessionAttention;
+    if (attentionForeground == null) {
+      return;
+    }
+    if (_isSessionAttentionAppInForeground == attentionForeground) {
+      return;
+    }
+    _isSessionAttentionAppInForeground = attentionForeground;
+    final publisher = _sessionAttentionAppForegroundPublisher;
+    if (publisher != null) {
+      unawaited(
+        publisher(attentionForeground).catchError((
+          Object error,
+          StackTrace stackTrace,
+        ) {
+          AppLogger.warn(
+            'Failed to publish app foreground state for session attention',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }),
+      );
+    }
   }
 
   // Chat route state setter.

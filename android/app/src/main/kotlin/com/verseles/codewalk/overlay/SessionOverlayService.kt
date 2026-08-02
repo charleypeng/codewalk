@@ -53,7 +53,7 @@ class SessionOverlayService : Service() {
         private const val ACTION_OPEN = "com.verseles.codewalk.overlay.OPEN"
         // Floor for the scaled Bubble so the touch target never becomes
         // unusable at the smallest setting.
-        private const val MIN_BUBBLE_DP = 40
+        private const val MIN_BUBBLE_DP = 56
         private const val BUBBLE_WIDTH_DP = 96
         private const val BUBBLE_HEIGHT_DP = 96
         private const val PANEL_WIDTH_DP = 360
@@ -115,6 +115,8 @@ class SessionOverlayService : Service() {
 
         fun applyFallbackSnapshotForTest(snapshot: Map<String, Any?>): Boolean =
             instance?.applyFallbackSnapshot(snapshot) ?: false
+        fun applyLocalSnapshotForTest(snapshot: Map<String, Any?>): Boolean =
+            instance?.applyLocalSnapshot(snapshot) ?: false
 
         fun noteMainHeartbeat() {
             lastMainHeartbeatEpochMs = System.currentTimeMillis()
@@ -308,9 +310,7 @@ class SessionOverlayService : Service() {
                     if (snapshot == null) {
                         result.success(false)
                     } else {
-                        currentSnapshot = snapshot
-                        renderSnapshot(snapshot)
-                        result.success(true)
+                        result.success(applyLocalSnapshot(snapshot))
                     }
                 }
                 "applyFallbackState" -> {
@@ -365,6 +365,15 @@ class SessionOverlayService : Service() {
 
     private fun applyFallbackSnapshot(snapshot: Map<String, Any?>): Boolean {
         if (isMainProducerAlive()) return false
+        currentSnapshot = snapshot
+        renderSnapshot(snapshot)
+        return true
+    }
+
+    private fun applyLocalSnapshot(snapshot: Map<String, Any?>): Boolean {
+        val generation = snapshot["generation"] as? String ?: return false
+        val revision = (snapshot["revision"] as? Number)?.toLong() ?: return false
+        if (generation != currentGeneration || revision != currentRevision) return false
         currentSnapshot = snapshot
         renderSnapshot(snapshot)
         return true

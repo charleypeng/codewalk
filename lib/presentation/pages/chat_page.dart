@@ -864,7 +864,12 @@ class _ChatPageState extends State<ChatPage>
     }
     final provider = _chatProvider;
     if (provider != null) {
-      provider.setAppInForeground(_isAppInForeground);
+      provider.setAppInForeground(
+        _isAppInForeground,
+        isVisibleForSessionAttention:
+            state == AppLifecycleState.resumed ||
+            state == AppLifecycleState.inactive,
+      );
       _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
         _startForegroundWarningGrace();
