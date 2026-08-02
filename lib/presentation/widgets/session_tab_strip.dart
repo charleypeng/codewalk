@@ -387,17 +387,11 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                       ),
                                       child: Row(
                                         children: [
-                                          SizedBox(
-                                            width: 28,
-                                            height: 28,
-                                            child: Center(
-                                              child: _buildLeading(
-                                                context,
-                                                tab,
-                                                project,
-                                                title,
-                                              ),
-                                            ),
+                                          _buildLeading(
+                                            context,
+                                            tab,
+                                            project,
+                                            title,
                                           ),
                                           const SizedBox(width: 7),
                                           Expanded(
@@ -419,21 +413,6 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                                   ),
                                             ),
                                           ),
-                                          if (tab.isBusy) ...[
-                                            const SizedBox(width: 6),
-                                            Icon(
-                                              Symbols.sync_rounded,
-                                              key: ValueKey<String>(
-                                                'session_tab_busy_${tab.status.name}_$key',
-                                              ),
-                                              size: 17,
-                                              color:
-                                                  tab.status ==
-                                                      SessionStatusType.retry
-                                                  ? colorScheme.tertiary
-                                                  : colorScheme.primary,
-                                            ),
-                                          ],
                                           const SizedBox(width: 2),
                                         ],
                                       ),
@@ -501,46 +480,82 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final key = sessionTabIdentityKey(tab.identity);
+    late final Widget leading;
     if (tab.hasUnseenError) {
-      return _attentionIcon(
+      leading = _attentionIcon(
         key: ValueKey<String>('session_tab_leading_error_$key'),
         icon: Symbols.error,
         background: colorScheme.errorContainer,
         foreground: colorScheme.onErrorContainer,
       );
-    }
-    if (tab.hasUnseenQuestion) {
-      return _attentionIcon(
+    } else if (tab.hasUnseenQuestion) {
+      leading = _attentionIcon(
         key: ValueKey<String>('session_tab_leading_question_$key'),
         icon: Symbols.help,
         background: colorScheme.tertiaryContainer,
         foreground: colorScheme.onTertiaryContainer,
       );
-    }
-    if (tab.hasUnseenCompletion) {
-      return _attentionIcon(
+    } else if (tab.hasUnseenCompletion) {
+      leading = _attentionIcon(
         key: ValueKey<String>('session_tab_leading_completion_$key'),
         icon: Symbols.notifications_active,
         background: colorScheme.primaryContainer,
         foreground: colorScheme.onPrimaryContainer,
       );
+    } else {
+      final resolvedProject = project ?? _fallbackProject(tab);
+      final projectLabel = resolvedProject.name.trim().isEmpty
+          ? fileBasename(tab.identity.directory)
+          : resolvedProject.name.trim();
+      leading = Tooltip(
+        message: projectLabel,
+        child: ProjectIcon(
+          key: ValueKey<String>('session_tab_project_icon_$key'),
+          project: resolvedProject,
+          size: 20,
+          color: tab.isSelected
+              ? colorScheme.primary
+              : colorScheme.onSurfaceVariant,
+          autoDiscover:
+              project != null && widget.openProjectIds.contains(project.id),
+        ),
+      );
     }
 
-    final resolvedProject = project ?? _fallbackProject(tab);
-    final projectLabel = resolvedProject.name.trim().isEmpty
-        ? fileBasename(tab.identity.directory)
-        : resolvedProject.name.trim();
-    return Tooltip(
-      message: projectLabel,
-      child: ProjectIcon(
-        key: ValueKey<String>('session_tab_project_icon_$key'),
-        project: resolvedProject,
-        size: 20,
-        color: tab.isSelected
-            ? colorScheme.primary
-            : colorScheme.onSurfaceVariant,
-        autoDiscover:
-            project != null && widget.openProjectIds.contains(project.id),
+    return SizedBox(
+      key: ValueKey<String>('session_tab_leading_$key'),
+      width: 28,
+      height: 28,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          leading,
+          if (tab.isBusy)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                key: ValueKey<String>(
+                  'session_tab_busy_${tab.status.name}_$key',
+                ),
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: tab.status == SessionStatusType.retry
+                      ? colorScheme.tertiary
+                      : colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Symbols.sync_rounded,
+                  size: 9,
+                  color: tab.status == SessionStatusType.retry
+                      ? colorScheme.onTertiary
+                      : colorScheme.onPrimary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

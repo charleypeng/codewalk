@@ -202,6 +202,15 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.descendant(
+        of: find.byKey(ValueKey<String>('session_tab_leading_$identityKey')),
+        matching: find.byKey(
+          ValueKey<String>('session_tab_busy_retry_$identityKey'),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
       find.byWidgetPredicate(
         (widget) =>
             widget is Semantics &&
@@ -210,6 +219,64 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('overlays busy status on the project icon lower right', (
+    tester,
+  ) async {
+    final idle = _tab('working', title: 'Working session');
+    final identityKey = sessionTabIdentityKey(idle.identity);
+    final titleFinder = find.byKey(
+      ValueKey<String>('session_tab_title_$identityKey'),
+    );
+    final projectIconFinder = find.byKey(
+      ValueKey<String>('session_tab_project_icon_$identityKey'),
+    );
+    final badgeFinder = find.byKey(
+      ValueKey<String>('session_tab_busy_busy_$identityKey'),
+    );
+    final leadingFinder = find.byKey(
+      ValueKey<String>('session_tab_leading_$identityKey'),
+    );
+
+    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[idle]));
+    await tester.pump();
+
+    final idleTitleWidth = tester.getSize(titleFinder).width;
+    expect(badgeFinder, findsNothing);
+
+    await tester.pumpWidget(
+      _app(
+        tabs: <SessionTabRecord>[
+          _tab(
+            'working',
+            title: 'Working session',
+            status: SessionStatusType.busy,
+          ),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.descendant(of: leadingFinder, matching: projectIconFinder),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: leadingFinder, matching: badgeFinder),
+      findsOneWidget,
+    );
+    expect(tester.getSize(titleFinder).width, idleTitleWidth);
+
+    final iconRect = tester.getRect(projectIconFinder);
+    final badgeRect = tester.getRect(badgeFinder);
+    final leadingRect = tester.getRect(leadingFinder);
+    expect(badgeRect.size, const Size.square(12));
+    expect(iconRect.overlaps(badgeRect), isTrue);
+    expect(badgeRect.center.dx, greaterThan(iconRect.center.dx));
+    expect(badgeRect.center.dy, greaterThan(iconRect.center.dy));
+    expect(badgeRect.right, leadingRect.right);
+    expect(badgeRect.bottom, leadingRect.bottom);
   });
 
   testWidgets('discovers icons only for open projects', (tester) async {
