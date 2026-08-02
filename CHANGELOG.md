@@ -2,6 +2,13 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.195.0 - 2026-08-02
+
+- docs(tabs): describe refined tab behavior
+- fix(tabs): restore unloaded session tabs
+- fix(tabs): keep selected tab visible
+- feat(tabs): refine navigation and recovery
+
 ## v1.194.0 - 2026-08-02
 
 - docs(tabs): document gesture controls
