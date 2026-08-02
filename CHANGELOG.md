@@ -2,6 +2,16 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.194.0 - 2026-08-02
+
+- docs(tabs): document gesture controls
+- fix(tabs): preserve deferred and keyboard controls
+- fix(tabs): expose session actions to keyboard
+- feat(tabs): move session controls into tabs
+- fix(tabs): limit newly opened project sessions
+- fix(tabs): overlay session activity on project icons
+- fix(tabs): straighten tab sides
+
 ## v1.193.0 - 2026-08-02
 
 - fix(chat): harden block mode transitions
