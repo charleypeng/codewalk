@@ -27,6 +27,7 @@ SessionTabCandidate _candidate(
   String sessionId, {
   int updatedAtMs = 0,
   String serverId = 'server-a',
+  String directory = '/work/project',
   SessionStatusType status = SessionStatusType.idle,
   bool isSelected = false,
   bool isArchived = false,
@@ -36,7 +37,7 @@ SessionTabCandidate _candidate(
   String? errorToken,
 }) {
   return SessionTabCandidate(
-    identity: _identity(sessionId, serverId: serverId),
+    identity: _identity(sessionId, serverId: serverId, directory: directory),
     title: 'Title $sessionId',
     serverUpdatedAtMs: updatedAtMs,
     status: status,
@@ -53,13 +54,14 @@ PersistedSessionTab _persisted(
   String sessionId, {
   int lastOpenedAtMs = 0,
   int serverUpdatedAtMs = 0,
+  String directory = '/work/project',
   String? title,
   List<String> seenQuestionIds = const <String>[],
   String? seenCompletionToken,
   String? seenErrorToken,
 }) {
   return PersistedSessionTab(
-    directory: '/work/project',
+    directory: directory,
     sessionId: sessionId,
     title: title ?? 'Persisted $sessionId',
     lastOpenedAtMs: lastOpenedAtMs,
@@ -95,6 +97,99 @@ void main() {
         'busy',
         'selected',
         'at-cutoff',
+      ]);
+    });
+
+    test(
+      'bootstraps only the newest old session for a newly opened project',
+      () {
+        const nowMs = 10 * _hourMs;
+        const reopenedDirectory = '/work/reopened';
+        final result = SessionTabReconciler.reconcile(
+          serverId: 'server-a',
+          persistedState: PersistedSessionTabsState(
+            open: <PersistedSessionTab>[
+              _persisted(
+                'existing',
+                directory: '/work/existing',
+                lastOpenedAtMs: nowMs,
+              ),
+              _persisted(
+                'locally-newest',
+                directory: reopenedDirectory,
+                lastOpenedAtMs: 4 * _hourMs,
+                serverUpdatedAtMs: 2 * _hourMs,
+              ),
+            ],
+            closed: const <PersistedClosedSessionTab>[
+              PersistedClosedSessionTab(
+                directory: reopenedDirectory,
+                sessionId: 'suppressed-newest',
+                closedAtMs: 9 * _hourMs,
+                observedServerUpdatedAtMs: 6 * _hourMs,
+              ),
+            ],
+          ),
+          candidates: <SessionTabCandidate>[
+            _candidate(
+              'server-older',
+              directory: reopenedDirectory,
+              updatedAtMs: 3 * _hourMs,
+            ),
+            _candidate(
+              'locally-newest',
+              directory: reopenedDirectory,
+              updatedAtMs: 2 * _hourMs,
+            ),
+            _candidate(
+              'suppressed-newest',
+              directory: reopenedDirectory,
+              updatedAtMs: 6 * _hourMs,
+            ),
+          ],
+          nowMs: nowMs,
+          bootstrapDirectory: reopenedDirectory,
+        );
+
+        expect(result.tabs.map((tab) => tab.identity.sessionId), <String>[
+          'existing',
+          'locally-newest',
+        ]);
+        expect(result.persistedState.closed, hasLength(1));
+      },
+    );
+
+    test('bootstraps all recent sessions without adding an old fallback', () {
+      const nowMs = 10 * _hourMs;
+      const reopenedDirectory = '/work/reopened';
+      const cutoffMs = nowMs - 3 * _hourMs;
+      final result = SessionTabReconciler.reconcile(
+        serverId: 'server-a',
+        persistedState: const PersistedSessionTabsState(),
+        candidates: <SessionTabCandidate>[
+          _candidate(
+            'old-latest',
+            directory: reopenedDirectory,
+            updatedAtMs: cutoffMs - 1,
+          ),
+          _candidate(
+            'recent-a',
+            directory: reopenedDirectory,
+            updatedAtMs: cutoffMs,
+          ),
+          _candidate(
+            'recent-b',
+            directory: reopenedDirectory,
+            updatedAtMs: nowMs,
+          ),
+        ],
+        nowMs: nowMs,
+        bootstrapDirectory: reopenedDirectory,
+      );
+
+      expect(result.tabs.map((tab) => tab.identity.sessionId), <String>[
+        'recent-a',
+        'recent-b',
       ]);
     });
 

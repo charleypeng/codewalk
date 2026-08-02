@@ -60,11 +60,15 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     }
     final chatProvider = context.read<ChatProvider>();
     await _runProjectScopeTransition(() async {
+      final wasOpen = projectProvider.openProjectIds.contains(projectId);
       final changed = await projectProvider.switchProject(projectId);
       if (!changed) {
         return;
       }
-      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+      await chatProvider.onProjectScopeChanged(
+        waitForRevalidation: false,
+        newlyOpenedDirectory: wasOpen ? null : projectProvider.currentDirectory,
+      );
     });
   }
 
@@ -86,13 +90,23 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     final chatProvider = context.read<ChatProvider>();
     try {
       await _runProjectScopeTransition(() async {
+        final wasOpen = projectProvider.projects.any(
+          (project) =>
+              projectProvider.openProjectIds.contains(project.id) &&
+              areEquivalentFilePaths(project.path, normalized),
+        );
         final switched = await projectProvider.switchToDirectoryContext(
           normalized,
         );
         if (!switched) {
           return;
         }
-        await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+        await chatProvider.onProjectScopeChanged(
+          waitForRevalidation: false,
+          newlyOpenedDirectory: wasOpen
+              ? null
+              : projectProvider.currentDirectory,
+        );
       });
       task.end();
     } catch (error, stackTrace) {
@@ -118,6 +132,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     final projectProvider = context.read<ProjectProvider>();
     final chatProvider = context.read<ChatProvider>();
     await _runProjectScopeTransition(() async {
+      final wasOpen = projectProvider.openProjectIds.contains(projectId);
       final changed = await projectProvider.reopenProject(
         projectId,
         makeActive: true,
@@ -125,7 +140,10 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed) {
         return;
       }
-      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+      await chatProvider.onProjectScopeChanged(
+        waitForRevalidation: false,
+        newlyOpenedDirectory: wasOpen ? null : projectProvider.currentDirectory,
+      );
     });
   }
 

@@ -533,8 +533,10 @@
 
 - **Given** the active server has session candidates across its known project contexts
 - **When** recent session tabs are reconciled
-- **Then** the strip contains only recent non-archived root sessions from that server, keyed by normalized project directory and session ID; child sessions and sessions from other servers are excluded
-- **Then** eligibility uses the later of the server/session time and successful local open time within a rolling 3-hour window, while selected and busy/retry sessions remain eligible
+- **Then** the strip normally contains recent non-archived root sessions from that server, keyed by normalized project directory and session ID; child sessions and sessions from other servers are excluded
+- **Then** normal eligibility uses the later of the official session update and successful local open time within a rolling 3-hour window, while selected and busy/retry sessions remain eligible
+- **Then** when opening a project that was not open, if no session from that project survives the normal eligibility rules, the strip adds only the most recent non-archived, non-suppressed root session from that project as a fallback
+- **Then** other tabs and project contexts remain unchanged, and local suppression continues to apply
 - **Then** persisted tab order remains stable through selection, title, status, and attention changes; newly eligible or explicitly reopened tabs append to the end
 - **Then** explicitly closing a tab only writes local suppression, never archives, deletes, or mutates the OpenCode session, and ordinary refresh/replay does not resurrect it; a successful explicit reopen or strictly newer authoritative interaction can append it again
 

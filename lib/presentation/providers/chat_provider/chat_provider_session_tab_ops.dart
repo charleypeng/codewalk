@@ -11,8 +11,12 @@ class SessionTabReconciler {
     required Iterable<SessionTabCandidate> candidates,
     required int nowMs,
     SessionTabIdentity? explicitlyOpened,
+    String? bootstrapDirectory,
   }) {
     final normalizedServerId = serverId.trim();
+    final normalizedBootstrapDirectory = normalizeOptionalFilePath(
+      bootstrapDirectory,
+    );
     final cutoffMs = nowMs - recentWindow.inMilliseconds;
     final candidateByIdentity = <SessionTabIdentity, SessionTabCandidate>{};
     final candidateOrder = <SessionTabIdentity>[];
@@ -189,6 +193,25 @@ class SessionTabReconciler {
       );
     }
 
+    if (normalizedBootstrapDirectory != null &&
+        !tabs.any(
+          (tab) => tab.identity.directory == normalizedBootstrapDirectory,
+        )) {
+      final fallback = _mostRecentBootstrapTab(
+        directory: normalizedBootstrapDirectory,
+        openOrder: openOrder,
+        openByIdentity: openByIdentity,
+        candidateOrder: candidateOrder,
+        candidateByIdentity: candidateByIdentity,
+        closedByIdentity: closedByIdentity,
+        explicitlyOpened: explicitlyOpened,
+        nowMs: nowMs,
+      );
+      if (fallback != null) {
+        tabs.add(fallback);
+      }
+    }
+
     final retainedClosed = <PersistedClosedSessionTab>[];
     for (final identity in closedOrder) {
       final closed = closedByIdentity[identity];
@@ -273,6 +296,73 @@ class SessionTabReconciler {
       return false;
     }
     return true;
+  }
+
+  static SessionTabRecord? _mostRecentBootstrapTab({
+    required String directory,
+    required List<SessionTabIdentity> openOrder,
+    required Map<SessionTabIdentity, PersistedSessionTab> openByIdentity,
+    required List<SessionTabIdentity> candidateOrder,
+    required Map<SessionTabIdentity, SessionTabCandidate> candidateByIdentity,
+    required Map<SessionTabIdentity, PersistedClosedSessionTab>
+    closedByIdentity,
+    required SessionTabIdentity? explicitlyOpened,
+    required int nowMs,
+  }) {
+    final identities = <SessionTabIdentity>[
+      ...openOrder,
+      ...candidateOrder.where(
+        (identity) => !openByIdentity.containsKey(identity),
+      ),
+    ];
+    SessionTabRecord? latest;
+    var latestAtMs = -1;
+    for (final identity in identities) {
+      if (identity.directory != directory) continue;
+      final persisted = openByIdentity[identity];
+      final candidate = candidateByIdentity[identity];
+      if (candidate != null && (!candidate.isRoot || candidate.isArchived)) {
+        continue;
+      }
+      if (_isSuppressedByClosedTab(
+        identity: identity,
+        candidate: candidate,
+        closedByIdentity: closedByIdentity,
+        explicitlyOpened: explicitlyOpened,
+      )) {
+        continue;
+      }
+      final serverUpdatedAtMs = math.max(
+        persisted?.serverUpdatedAtMs ?? 0,
+        candidate?.serverUpdatedAtMs ?? 0,
+      );
+      final lastOpenedAtMs = explicitlyOpened == identity
+          ? nowMs
+          : persisted?.lastOpenedAtMs ?? 0;
+      final recentAtMs = math.max(lastOpenedAtMs, serverUpdatedAtMs);
+      if (latest != null && recentAtMs <= latestAtMs) continue;
+      latestAtMs = recentAtMs;
+      latest = SessionTabRecord(
+        identity: identity,
+        projectId: candidate?.projectId ?? persisted?.projectId,
+        title: _tabTitle(
+          candidate?.title,
+          persisted?.title ?? '',
+          identity.sessionId,
+        ),
+        lastOpenedAtMs: lastOpenedAtMs,
+        serverUpdatedAtMs: serverUpdatedAtMs,
+        status: candidate?.status ?? SessionStatusType.idle,
+        pendingQuestionIds: candidate?.pendingQuestionIds ?? const <String>[],
+        seenQuestionIds: persisted?.seenQuestionIds ?? const <String>[],
+        completionToken: candidate?.completionToken,
+        seenCompletionToken: persisted?.seenCompletionToken,
+        errorToken: candidate?.errorToken,
+        seenErrorToken: persisted?.seenErrorToken,
+        isSelected: candidate?.isSelected ?? false,
+      );
+    }
+    return latest;
   }
 
   static SessionTabCandidate _mergeCandidates(
@@ -452,6 +542,7 @@ extension _ChatProviderSessionTabOps on ChatProvider {
       candidates: _collectSessionTabCandidates(serverId),
       nowMs: _sessionTabsNow().millisecondsSinceEpoch,
       explicitlyOpened: explicitlyOpened,
+      bootstrapDirectory: _sessionTabBootstrapDirectory,
     );
     var nextTabs = result.tabs;
     var nextPersistedState = result.persistedState;
@@ -472,6 +563,29 @@ extension _ChatProviderSessionTabOps on ChatProvider {
       _scheduleSessionTabsPersistence();
     }
     if (runtimeChanged) _notifyListeners();
+  }
+
+  void _markAuthoritativeSessionTabBootstrapOpened(String? directory) {
+    final normalizedDirectory = normalizeOptionalFilePath(directory);
+    if (normalizedDirectory == null ||
+        _sessionTabBootstrapDirectory != normalizedDirectory) {
+      return;
+    }
+    final targetTabs = _sessionTabs
+        .where((tab) => tab.identity.directory == normalizedDirectory)
+        .toList(growable: false);
+    if (targetTabs.length != 1) return;
+    final tab = targetTabs.single;
+    final cutoffMs =
+        _sessionTabsNow().millisecondsSinceEpoch -
+        SessionTabReconciler.recentWindow.inMilliseconds;
+    if (math.max(tab.lastOpenedAtMs, tab.serverUpdatedAtMs) >= cutoffMs) {
+      return;
+    }
+    _reconcileSessionTabs(
+      explicitlyOpened: tab.identity,
+      markCurrentViewed: _isSessionTabRouteVisible,
+    );
   }
 
   ({List<SessionTabRecord> tabs, bool changed}) _markCurrentSessionTabViewedIn(
@@ -1031,6 +1145,10 @@ extension _ChatProviderSessionTabOps on ChatProvider {
     );
     if (nextState.encode() == _sessionTabsPersistedState.encode()) return;
     _sessionTabsPersistedState = nextState;
+    if (_sessionTabBootstrapDirectory == identity.directory) {
+      _sessionTabBootstrapDirectory = null;
+      _sessionTabBootstrapGeneration += 1;
+    }
     _reconcileSessionTabs(forcePersistence: true);
   }
 

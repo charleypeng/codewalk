@@ -4,6 +4,7 @@ extension _ChatProviderSessionOps on ChatProvider {
   Future<void> _switchContext({
     required String reason,
     bool waitForRevalidation = true,
+    String? newlyOpenedDirectory,
   }) async {
     final useFastProjectTransition =
         reason == 'project' && !waitForRevalidation;
@@ -74,6 +75,10 @@ extension _ChatProviderSessionOps on ChatProvider {
     final serverChanged = previousServerId != serverId;
     final nextScope = _resolveContextScopeId();
     final nextContextKey = _composeContextKey(serverId, nextScope);
+    _sessionTabBootstrapDirectory = reason == 'project'
+        ? normalizeOptionalFilePath(newlyOpenedDirectory)
+        : null;
+    _sessionTabBootstrapGeneration += 1;
     _lazySessionBootstrapTask = null;
     _activeContextKey = nextContextKey;
     _currentProjectId = projectProvider.currentProjectId;

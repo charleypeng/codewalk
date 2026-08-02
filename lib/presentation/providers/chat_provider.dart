@@ -407,6 +407,8 @@ class ChatProvider extends ChangeNotifier {
       <SessionTabIdentity, String>{};
   final Map<SessionTabIdentity, String> _sessionTabCompletionTokens =
       <SessionTabIdentity, String>{};
+  String? _sessionTabBootstrapDirectory;
+  int _sessionTabBootstrapGeneration = 0;
   String? _sessionTabsLoadedServerId;
   int _sessionTabsGeneration = 0;
   bool _sessionTabsDisposed = false;
@@ -2695,10 +2697,14 @@ class ChatProvider extends ChangeNotifier {
     _selectionPersistenceTask = null;
   }
 
-  Future<void> onProjectScopeChanged({bool waitForRevalidation = true}) async {
+  Future<void> onProjectScopeChanged({
+    bool waitForRevalidation = true,
+    String? newlyOpenedDirectory,
+  }) async {
     await _switchContext(
       reason: 'project',
       waitForRevalidation: waitForRevalidation,
+      newlyOpenedDirectory: newlyOpenedDirectory,
     );
   }
 
@@ -3084,6 +3090,8 @@ class ChatProvider extends ChangeNotifier {
 
         final serverId = await _resolveServerScopeId();
         final scopeId = _resolveContextScopeId();
+        final bootstrapDirectory = _sessionTabBootstrapDirectory;
+        final bootstrapGeneration = _sessionTabBootstrapGeneration;
         await _ensureSessionTabsLoaded(serverId: serverId);
         unawaited(
           Future<void>(() async {
@@ -3162,6 +3170,7 @@ class ChatProvider extends ChangeNotifier {
             _sortSessionsInPlace();
             _pruneSessionAttentionStateToKnownSessions();
             _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
+            _markAuthoritativeSessionTabBootstrapOpened(bootstrapDirectory);
             _setState(ChatState.loaded);
 
             // #134: a project with no sessions has exactly one useful next
@@ -3202,6 +3211,16 @@ class ChatProvider extends ChangeNotifier {
             }
             if (refreshSessionStatus) {
               await refreshSessionStatusSnapshot();
+            }
+            if (bootstrapDirectory != null &&
+                _sessionTabBootstrapGeneration == bootstrapGeneration &&
+                _sessionTabBootstrapDirectory == bootstrapDirectory &&
+                areEquivalentFilePaths(
+                  projectProvider.currentDirectory,
+                  bootstrapDirectory,
+                )) {
+              _sessionTabBootstrapDirectory = null;
+              _sessionTabBootstrapGeneration += 1;
             }
           }
 

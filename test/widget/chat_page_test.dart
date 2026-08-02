@@ -5362,6 +5362,21 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    final now = DateTime.now();
+    final olderWorkspaceSession = ChatSession(
+      id: 'ses_ws_older',
+      workspaceId: 'proj_ws',
+      time: now.subtract(const Duration(hours: 6)),
+      title: 'Older workspace session',
+      directory: '/repo/main/feature-a',
+    );
+    final latestWorkspaceSession = ChatSession(
+      id: 'ses_ws_latest',
+      workspaceId: 'proj_ws',
+      time: now.subtract(const Duration(hours: 4)),
+      title: 'Latest workspace session',
+      directory: '/repo/main/feature-a',
+    );
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
     final projectRepository = FakeProjectRepository(
@@ -5388,6 +5403,9 @@ void main() {
     );
     final provider = _buildChatProvider(
       localDataSource: localDataSource,
+      chatRepository: FakeChatRepository(
+        sessions: <ChatSession>[olderWorkspaceSession, latestWorkspaceSession],
+      ),
       projectRepository: projectRepository,
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
@@ -5415,6 +5433,20 @@ void main() {
     expect(provider.projectProvider.currentProject?.id, 'proj_ws');
     expect(provider.projectProvider.currentDirectory, '/repo/main/feature-a');
     expect(provider.projectProvider.openProjectIds, contains('proj_ws'));
+    expect(
+      provider.sessionTabs
+          .where((tab) => tab.identity.directory == '/repo/main/feature-a')
+          .map((tab) => tab.identity.sessionId),
+      <String>[latestWorkspaceSession.id],
+    );
+    expect(
+      provider.sessionTabs
+          .singleWhere(
+            (tab) => tab.identity.sessionId == latestWorkspaceSession.id,
+          )
+          .lastOpenedAtMs,
+      greaterThanOrEqualTo(now.millisecondsSinceEpoch),
+    );
   });
 
   testWidgets('tapping open project switches context and closes selector', (
