@@ -20,7 +20,7 @@ const double kSessionTabStripHeightCompact = 58;
 const double _kTabShoulder = 14;
 
 /// Radius of the tab's top corners.
-const double _kTabTopRadius = 10;
+const double _kTabTopRadius = 5;
 
 /// How long a tapped tab keeps its close button visible on touch devices.
 const Duration _kTouchCloseReveal = Duration(seconds: 3);
@@ -41,19 +41,18 @@ class _ChromeTabBorder extends ShapeBorder {
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
     const shoulder = _kTabShoulder;
     const r = _kTabTopRadius;
-    // The shoulder curve stops short of the top edge so a proper rounded
-    // corner can take over; going straight to the top made the corners read
-    // as sharp next to the soft flare below them.
+    final lowerCurveTop = rect.bottom - shoulder;
     return Path()
       ..moveTo(rect.left, rect.bottom)
       ..cubicTo(
         rect.left + shoulder * 0.55,
         rect.bottom,
-        rect.left + shoulder * 0.42,
-        rect.top + r,
         rect.left + shoulder,
-        rect.top + r,
+        rect.bottom - shoulder * 0.45,
+        rect.left + shoulder,
+        lowerCurveTop,
       )
+      ..lineTo(rect.left + shoulder, rect.top + r)
       ..arcToPoint(
         Offset(rect.left + shoulder + r, rect.top),
         radius: const Radius.circular(r),
@@ -63,9 +62,10 @@ class _ChromeTabBorder extends ShapeBorder {
         Offset(rect.right - shoulder, rect.top + r),
         radius: const Radius.circular(r),
       )
+      ..lineTo(rect.right - shoulder, lowerCurveTop)
       ..cubicTo(
-        rect.right - shoulder * 0.42,
-        rect.top + r,
+        rect.right - shoulder,
+        rect.bottom - shoulder * 0.45,
         rect.right - shoulder * 0.55,
         rect.bottom,
         rect.right,
@@ -279,7 +279,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     final key = sessionTabIdentityKey(tab.identity);
     final selected = tab.isSelected;
     final project = _projectForTab(tab);
-    const radius = BorderRadius.vertical(top: Radius.circular(10));
+    const radius = BorderRadius.vertical(top: Radius.circular(_kTabTopRadius));
     final foreground = selected
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
@@ -383,7 +383,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                     ),
                                     child: Padding(
                                       padding: const EdgeInsetsDirectional.only(
-                                        start: 10,
+                                        start: _kTabShoulder,
                                       ),
                                       child: Row(
                                         children: [
@@ -447,30 +447,37 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                         if (!showClose)
                           const SizedBox(width: _kTabShoulder)
                         else
-                          Semantics(
-                            button: true,
-                            label: context.l10n.chatClose,
-                            onTap: () => _handleClose(tab),
-                            child: ExcludeSemantics(
-                              child: IconButton(
-                                key: ValueKey<String>('session_tab_close_$key'),
-                                tooltip: context.l10n.chatClose,
-                                // A full 48px splash swamped the tab and clashed
-                                // with its curved shoulders; the tap target stays
-                                // comfortable on touch, tighter with a pointer.
-                                constraints: BoxConstraints.tightFor(
-                                  width: closeExtent,
-                                  height: closeExtent,
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(
+                              end: _kTabShoulder,
+                            ),
+                            child: Semantics(
+                              button: true,
+                              label: context.l10n.chatClose,
+                              onTap: () => _handleClose(tab),
+                              child: ExcludeSemantics(
+                                child: IconButton(
+                                  key: ValueKey<String>(
+                                    'session_tab_close_$key',
+                                  ),
+                                  tooltip: context.l10n.chatClose,
+                                  // A full 48px splash swamped the tab and clashed
+                                  // with its curved shoulders; the tap target stays
+                                  // comfortable on touch, tighter with a pointer.
+                                  constraints: BoxConstraints.tightFor(
+                                    width: closeExtent,
+                                    height: closeExtent,
+                                  ),
+                                  style: IconButton.styleFrom(
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  iconSize: 16,
+                                  color: foreground,
+                                  icon: const Icon(Symbols.close_rounded),
+                                  onPressed: () => _handleClose(tab),
                                 ),
-                                style: IconButton.styleFrom(
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                padding: EdgeInsets.zero,
-                                iconSize: 16,
-                                color: foreground,
-                                icon: const Icon(Symbols.close_rounded),
-                                onPressed: () => _handleClose(tab),
                               ),
                             ),
                           ),

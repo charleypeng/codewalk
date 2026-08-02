@@ -460,7 +460,7 @@ void main() {
     expect(_tabMaterial(tester, inactive).color, Colors.transparent);
   });
 
-  testWidgets('tabs use a browser tab silhouette with flared shoulders', (
+  testWidgets('tabs use lower flares, straight sides, and soft top corners', (
     tester,
   ) async {
     final selected = _tab('alpha', isSelected: true);
@@ -469,17 +469,28 @@ void main() {
     await tester.pump();
 
     final shape = _tabMaterial(tester, selected).shape!;
-    const rect = Rect.fromLTWH(0, 0, 244, 54);
-    final path = shape.getOuterPath(rect);
 
-    // Browser silhouette: the tab is full width at the bottom and narrows at
-    // the top, so its shoulders flare outwards instead of forming a plain
-    // rounded rectangle.
-    expect(path.contains(const Offset(10, 52)), isTrue);
-    expect(path.contains(const Offset(234, 52)), isTrue);
-    expect(path.contains(const Offset(2, 2)), isFalse);
-    expect(path.contains(const Offset(242, 2)), isFalse);
-    expect(path.contains(const Offset(122, 2)), isTrue);
+    for (final size in const <Size>[Size(244, 54), Size(214, 58)]) {
+      final path = shape.getOuterPath(Offset.zero & size);
+      final rightShoulder = size.width - 14;
+
+      // The lower shoulders retain their outward flare.
+      expect(path.contains(Offset(10, size.height - 2)), isTrue);
+      expect(path.contains(Offset(size.width - 10, size.height - 2)), isTrue);
+
+      // Above the flare, each side stays vertical at the 14px shoulder.
+      expect(path.contains(const Offset(13, 20)), isFalse);
+      expect(path.contains(const Offset(15, 20)), isTrue);
+      expect(path.contains(Offset(rightShoulder - 1, 20)), isTrue);
+      expect(path.contains(Offset(rightShoulder + 1, 20)), isFalse);
+
+      // A 5px top radius admits points that the previous 10px arc excluded.
+      expect(path.contains(const Offset(16, 2)), isTrue);
+      expect(path.contains(Offset(size.width - 16, 2)), isTrue);
+      expect(path.contains(const Offset(2, 2)), isFalse);
+      expect(path.contains(Offset(size.width - 2, 2)), isFalse);
+      expect(path.contains(Offset(size.width / 2, 2)), isTrue);
+    }
   });
 
   testWidgets('touch reveals close in compact and wide layouts for 3s', (
