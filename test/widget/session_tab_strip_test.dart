@@ -254,7 +254,8 @@ void main() {
     final iconRect = tester.getRect(projectIconFinder);
     final badgeRect = tester.getRect(badgeFinder);
     final leadingRect = tester.getRect(leadingFinder);
-    expect(badgeRect.size, const Size.square(12));
+    expect(badgeRect.width, moreOrLessEquals(12, epsilon: 0.01));
+    expect(badgeRect.height, moreOrLessEquals(12, epsilon: 0.01));
     expect(iconRect.overlaps(badgeRect), isTrue);
     expect(badgeRect.center.dx, greaterThan(iconRect.center.dx));
     expect(badgeRect.center.dy, greaterThan(iconRect.center.dy));
@@ -320,6 +321,7 @@ void main() {
       matching: find.byType(Scrollable),
     );
     final position = tester.state<ScrollableState>(scrollableFinder).position;
+    expect(find.byType(Scrollbar), findsNothing);
     expect(position.maxScrollExtent, greaterThan(0));
     expect(position.pixels, greaterThan(0));
 
@@ -495,33 +497,60 @@ void main() {
     tester,
   ) async {
     final selected = _tab('alpha', isSelected: true);
+    final inactive = _tab('beta');
 
-    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[selected]));
+    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[selected, inactive]));
     await tester.pump();
 
-    final shape = _tabMaterial(tester, selected).shape!;
+    final selectedShape = _tabMaterial(tester, selected).shape!;
+    final inactiveShape = _tabMaterial(tester, inactive).shape!;
 
-    for (final size in const <Size>[Size(317.2, 54), Size(278.2, 58)]) {
-      final path = shape.getOuterPath(Offset.zero & size);
-      final rightShoulder = size.width - 14;
+    for (final size in const <Size>[Size(317.2, 43.2), Size(278.2, 46.4)]) {
+      final selectedPath = selectedShape.getOuterPath(Offset.zero & size);
+      final inactivePath = inactiveShape.getOuterPath(Offset.zero & size);
+      final rightShoulder = size.width - 10;
 
       // The lower shoulders retain their outward flare.
-      expect(path.contains(Offset(10, size.height - 2)), isTrue);
-      expect(path.contains(Offset(size.width - 10, size.height - 2)), isTrue);
+      expect(selectedPath.contains(Offset(6, size.height - 2)), isTrue);
+      expect(
+        selectedPath.contains(Offset(size.width - 6, size.height - 2)),
+        isTrue,
+      );
 
-      // Above the flare, each side stays vertical at the 14px shoulder.
-      expect(path.contains(const Offset(13, 20)), isFalse);
-      expect(path.contains(const Offset(15, 20)), isTrue);
-      expect(path.contains(Offset(rightShoulder - 1, 20)), isTrue);
-      expect(path.contains(Offset(rightShoulder + 1, 20)), isFalse);
+      // The narrower shoulders reduce the visual gap between adjacent tabs.
+      expect(selectedPath.contains(const Offset(9, 20)), isFalse);
+      expect(selectedPath.contains(const Offset(11, 20)), isTrue);
+      expect(selectedPath.contains(Offset(rightShoulder - 1, 20)), isTrue);
+      expect(selectedPath.contains(Offset(rightShoulder + 1, 20)), isFalse);
 
-      // A 5px top radius admits points that the previous 10px arc excluded.
-      expect(path.contains(const Offset(16, 2)), isTrue);
-      expect(path.contains(Offset(size.width - 16, 2)), isTrue);
-      expect(path.contains(const Offset(2, 2)), isFalse);
-      expect(path.contains(Offset(size.width - 2, 2)), isFalse);
-      expect(path.contains(Offset(size.width / 2, 2)), isTrue);
+      // Only the active tab uses the softer 8px top radius.
+      expect(selectedPath.contains(const Offset(11, 2)), isFalse);
+      expect(inactivePath.contains(const Offset(11, 2)), isTrue);
+      expect(selectedPath.contains(const Offset(14, 2)), isTrue);
+      expect(selectedPath.contains(Offset(size.width / 2, 2)), isTrue);
     }
+  });
+
+  testWidgets('reduces desktop and compact tab strip heights by 20 percent', (
+    tester,
+  ) async {
+    final tab = _tab('alpha', isSelected: true);
+
+    await tester.pumpWidget(_app(tabs: <SessionTabRecord>[tab]));
+    var size = tester.getSize(
+      find.byKey(const ValueKey<String>('session_tab_strip')),
+    );
+    expect(size.width, 800);
+    expect(size.height, moreOrLessEquals(43.2, epsilon: 0.01));
+
+    await tester.pumpWidget(
+      _app(tabs: <SessionTabRecord>[tab], isCompact: true),
+    );
+    size = tester.getSize(
+      find.byKey(const ValueKey<String>('session_tab_strip')),
+    );
+    expect(size.width, 800);
+    expect(size.height, moreOrLessEquals(46.4, epsilon: 0.01));
   });
 
   testWidgets('double touch closes without rendering a close button', (

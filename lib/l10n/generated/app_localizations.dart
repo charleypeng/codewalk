@@ -8672,11 +8672,29 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get sessionTabsGestureHintAcknowledge;
 
+  /// Button that disables session tabs from the gesture dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Disable tabs'**
+  String get sessionTabsGestureHintDisableTabs;
+
   /// Rename action in the active session tab menu
   ///
   /// In en, this message translates to:
   /// **'Rename session'**
   String get sessionTabRenameAction;
+
+  /// Snackbar shown after closing a session tab
+  ///
+  /// In en, this message translates to:
+  /// **'Tab \"{title}\" closed'**
+  String sessionTabClosedMessage(String title);
+
+  /// Snackbar action that restores a closed session tab
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get sessionTabUndo;
 }
 
 class _AppLocalizationsDelegate

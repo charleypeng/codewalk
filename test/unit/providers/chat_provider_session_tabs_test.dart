@@ -444,6 +444,28 @@ void main() {
     });
 
     test(
+      'restoring a closed tab removes its tombstone and keeps order',
+      () async {
+        await provider.loadSessions();
+        final tab = provider.sessionTabs.single;
+
+        provider.closeSessionTab(tab.identity);
+        final restored = provider.restoreClosedSessionTab(tab, index: 0);
+        await provider.debugWaitForSessionTabPersistence();
+
+        expect(restored, isTrue);
+        expect(provider.sessionTabs.single.identity, tab.identity);
+        final persisted = PersistedSessionTabsState.decode(
+          await fixtures.localDataSource.getSessionTabsStateJson(
+            serverId: 'srv_test',
+          ),
+        );
+        expect(persisted.open.single.sessionId, tab.identity.sessionId);
+        expect(persisted.closed, isEmpty);
+      },
+    );
+
+    test(
       'question attention persists as seen after selecting its tab',
       () async {
         fixtures.chatRepository.sessions.add(

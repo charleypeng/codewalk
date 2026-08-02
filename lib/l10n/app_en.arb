@@ -6004,6 +6004,12 @@
   "@sessionTabsGestureHintBody": {"description": "Instructions for closing tabs, opening their menu, and disabling tabs"},
   "sessionTabsGestureHintAcknowledge": "Got it",
   "@sessionTabsGestureHintAcknowledge": {"description": "Acknowledgement button for the session tab gesture dialog"},
+  "sessionTabsGestureHintDisableTabs": "Disable tabs",
+  "@sessionTabsGestureHintDisableTabs": {"description": "Button that disables session tabs from the gesture dialog"},
   "sessionTabRenameAction": "Rename session",
-  "@sessionTabRenameAction": {"description": "Rename action in the active session tab menu"}
+  "@sessionTabRenameAction": {"description": "Rename action in the active session tab menu"},
+  "sessionTabClosedMessage": "Tab \"{title}\" closed",
+  "@sessionTabClosedMessage": {"description": "Snackbar shown after closing a session tab", "placeholders": {"title": {"type": "String"}}},
+  "sessionTabUndo": "Undo",
+  "@sessionTabUndo": {"description": "Snackbar action that restores a closed session tab"}
 }

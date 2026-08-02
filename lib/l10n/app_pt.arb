@@ -1398,5 +1398,8 @@
   "sessionTabsGestureHintTitle": "As abas de sessão têm novos controles",
   "sessionTabsGestureHintBody": "Clique duas vezes ou toque duas vezes em uma aba para fechá-la. Clique com o botão direito ou toque e segure para abrir as ações da sessão. Você pode desativar as abas em Display Toggles.",
   "sessionTabsGestureHintAcknowledge": "Entendi",
-  "sessionTabRenameAction": "Renomear sessão"
+  "sessionTabsGestureHintDisableTabs": "Desativar abas",
+  "sessionTabRenameAction": "Renomear sessão",
+  "sessionTabClosedMessage": "Aba \"{title}\" fechada",
+  "sessionTabUndo": "Desfazer"
 }

@@ -987,6 +987,10 @@ class ChatProvider extends ChangeNotifier {
     _closeSessionTab(identity);
   }
 
+  bool restoreClosedSessionTab(SessionTabRecord tab, {required int index}) {
+    return _restoreClosedSessionTab(tab, index: index);
+  }
+
   Future<void> removeSessionTabsForProjectHistory(
     String directory, {
     String? serverId,

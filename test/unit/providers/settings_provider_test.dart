@@ -787,7 +787,7 @@ void main() {
       expect(second.showRecentSessions, isTrue);
     });
 
-    test('resolves session tabs defaults by platform and web viewport', () {
+    test('enables session tabs by default on every platform', () {
       expect(
         SettingsProvider.defaultSessionTabsVisibility(
           isWeb: false,
@@ -802,7 +802,7 @@ void main() {
           platform: TargetPlatform.android,
           initialWebDefault: true,
         ),
-        isFalse,
+        isTrue,
       );
       expect(
         SettingsProvider.defaultSessionTabsVisibility(
@@ -818,7 +818,7 @@ void main() {
           platform: TargetPlatform.linux,
           initialWebDefault: false,
         ),
-        isFalse,
+        isTrue,
       );
     });
 

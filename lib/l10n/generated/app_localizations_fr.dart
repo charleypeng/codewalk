@@ -4997,5 +4997,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sessionTabsGestureHintAcknowledge => 'Got it';
 
   @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
   String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
 }

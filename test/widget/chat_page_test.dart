@@ -5239,9 +5239,13 @@ void main() {
     final acknowledge = find.byKey(
       const ValueKey<String>('session_tabs_gesture_hint_acknowledge'),
     );
+    final disableTabs = find.byKey(
+      const ValueKey<String>('session_tabs_gesture_hint_disable_tabs'),
+    );
     expect(dialog, findsOneWidget);
     expect(find.textContaining('Display Toggles'), findsOneWidget);
     expect(tester.widget<CheckboxListTile>(checkbox).value, isFalse);
+    expect(disableTabs, findsOneWidget);
 
     await tester.tap(acknowledge);
     await tester.pumpAndSettle();
@@ -5266,12 +5270,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(dialog, findsOneWidget);
 
+    await tester.tap(disableTabs);
+    await tester.pumpAndSettle();
+    expect(settingsProvider.showSessionTabs, isFalse);
+    expect(settingsProvider.sessionTabsGestureHintDismissed, isFalse);
+    expect(dialog, findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('session_tab_strip')),
+      findsNothing,
+    );
+
+    await settingsProvider.setShowSessionTabsOverride(true);
+    repository.sessions.add(session('four'));
+    await provider.loadSessions();
+    await tester.pumpAndSettle();
+    expect(dialog, findsOneWidget);
+
     await tester.tap(checkbox);
     await tester.tap(acknowledge);
     await tester.pumpAndSettle();
     expect(settingsProvider.sessionTabsGestureHintDismissed, isTrue);
 
-    repository.sessions.add(session('four'));
+    repository.sessions.add(session('five'));
     await provider.loadSessions();
     await tester.pumpAndSettle();
     expect(dialog, findsNothing);
@@ -5346,7 +5366,9 @@ void main() {
     await tester.tap(tabA, kind: PointerDeviceKind.mouse);
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(tabA, kind: PointerDeviceKind.mouse);
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 20; i += 1) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
 
     expect(provider.currentSession?.id, sessionB.id);
     expect(
@@ -5356,6 +5378,27 @@ void main() {
     expect(
       repository.sessions.map((session) => session.id),
       contains(sessionA.id),
+    );
+    final closedSnackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(closedSnackBar.duration, const Duration(seconds: 3));
+    expect(find.text('Tab "Session A" closed'), findsOneWidget);
+    expect(closedSnackBar.action?.label, 'Undo');
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(provider.currentSession?.id, sessionB.id);
+    expect(
+      provider.sessionTabs.map((tab) => tab.identity),
+      <SessionTabIdentity>[identityA, identityB],
+    );
+
+    await tester.tap(tabA, kind: PointerDeviceKind.mouse);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(tabA, kind: PointerDeviceKind.mouse);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      provider.sessionTabs.map((tab) => tab.identity),
+      <SessionTabIdentity>[identityB],
     );
 
     final tabB = find.byKey(
@@ -20100,7 +20143,10 @@ void main() {
     ];
 
     final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'showSessionTabsOverride': false,
+      });
     final provider = _buildChatProvider(
       chatRepository: repository,
       localDataSource: localDataSource,
@@ -21150,7 +21196,10 @@ void main() {
       ];
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'showSessionTabsOverride': false,
+        });
       final provider = _buildChatProvider(
         chatRepository: repository,
         localDataSource: localDataSource,
@@ -21247,7 +21296,10 @@ void main() {
       ];
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'showSessionTabsOverride': false,
+        });
       final provider = _buildChatProvider(
         chatRepository: repository,
         localDataSource: localDataSource,

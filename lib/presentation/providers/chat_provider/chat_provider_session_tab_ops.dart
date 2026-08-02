@@ -1152,6 +1152,48 @@ extension _ChatProviderSessionTabOps on ChatProvider {
     _reconcileSessionTabs(forcePersistence: true);
   }
 
+  bool _restoreClosedSessionTab(SessionTabRecord tab, {required int index}) {
+    final identity = tab.identity;
+    final serverId = _activeServerId.trim();
+    if (!identity.isValid ||
+        identity.serverId != serverId ||
+        _sessionTabsLoadedServerId != serverId ||
+        _sessionTabs.any((candidate) => candidate.identity == identity) ||
+        !_sessionTabsPersistedState.closed.any(
+          (closed) => SessionTabReconciler._matchesClosed(closed, identity),
+        )) {
+      return false;
+    }
+    final candidateAvailable = _collectSessionTabCandidates(serverId).any(
+      (candidate) =>
+          candidate.identity == identity &&
+          candidate.isRoot &&
+          !candidate.isArchived,
+    );
+    if (!candidateAvailable) {
+      return false;
+    }
+
+    final open = _sessionTabsPersistedState.open
+        .where(
+          (persisted) =>
+              !SessionTabReconciler._matchesPersisted(persisted, identity),
+        )
+        .toList(growable: true);
+    final insertionIndex = math.min(math.max(index, 0), open.length);
+    open.insert(insertionIndex, tab.toPersisted());
+    _sessionTabsPersistedState = PersistedSessionTabsState(
+      open: open,
+      closed: _sessionTabsPersistedState.closed
+          .where(
+            (closed) => !SessionTabReconciler._matchesClosed(closed, identity),
+          )
+          .toList(growable: false),
+    );
+    _reconcileSessionTabs(explicitlyOpened: identity, forcePersistence: true);
+    return _sessionTabs.any((candidate) => candidate.identity == identity);
+  }
+
   Future<void> _removeSessionTabsForProjectHistory({
     required String serverId,
     required String directory,

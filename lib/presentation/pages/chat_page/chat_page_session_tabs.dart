@@ -119,6 +119,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
     _sessionTabHintShowing = true;
     _pendingSessionTabHintIdentities.clear();
     var dontShowAgain = false;
+    var disableTabs = false;
     try {
       await showDialog<void>(
         context: context,
@@ -149,6 +150,16 @@ extension _ChatPageSessionTabs on _ChatPageState {
                   ],
                 ),
                 actions: [
+                  TextButton(
+                    key: const ValueKey<String>(
+                      'session_tabs_gesture_hint_disable_tabs',
+                    ),
+                    onPressed: () {
+                      disableTabs = true;
+                      Navigator.of(dialogContext).pop();
+                    },
+                    child: Text(context.l10n.sessionTabsGestureHintDisableTabs),
+                  ),
                   FilledButton(
                     key: const ValueKey<String>(
                       'session_tabs_gesture_hint_acknowledge',
@@ -162,7 +173,9 @@ extension _ChatPageSessionTabs on _ChatPageState {
           },
         ),
       );
-      if (dontShowAgain && mounted) {
+      if (disableTabs && mounted) {
+        await settingsProvider.setShowSessionTabsOverride(false);
+      } else if (dontShowAgain && mounted) {
         await settingsProvider.setSessionTabsGestureHintDismissed(true);
       }
     } finally {
@@ -436,6 +449,9 @@ extension _ChatPageSessionTabs on _ChatPageState {
     if (current == null) {
       return;
     }
+    final closedIndex = tabs.indexWhere(
+      (candidate) => candidate.identity == current.identity,
+    );
     final wasActive =
         current.isSelected ||
         (chatProvider.currentSession?.id == current.identity.sessionId &&
@@ -445,6 +461,9 @@ extension _ChatPageSessionTabs on _ChatPageState {
         : null;
 
     chatProvider.closeSessionTab(current.identity);
+    if (mounted) {
+      _showClosedSessionTabSnackBar(current, index: closedIndex);
+    }
     if (!wasActive) {
       return;
     }
@@ -453,5 +472,37 @@ extension _ChatPageSessionTabs on _ChatPageState {
       return;
     }
     await _createNewSession();
+  }
+
+  void _showClosedSessionTabSnackBar(
+    SessionTabRecord tab, {
+    required int index,
+  }) {
+    final title = tab.title.trim().isEmpty
+        ? context.l10n.sessionExportUntitled
+        : tab.title.trim();
+    ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
+    _showChatPageMessageSnackBar(
+      context.l10n.sessionTabClosedMessage(title),
+      hideCurrent: false,
+      duration: const Duration(seconds: 3),
+      action: SnackBarAction(
+        label: context.l10n.sessionTabUndo,
+        onPressed: () => unawaited(_undoClosedSessionTab(tab, index: index)),
+      ),
+    );
+  }
+
+  Future<void> _undoClosedSessionTab(
+    SessionTabRecord tab, {
+    required int index,
+  }) async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final restored = context.read<ChatProvider>().restoreClosedSessionTab(
+      tab,
+      index: index,
+    );
+    if (!restored) _showSessionTabNavigationError();
   }
 }

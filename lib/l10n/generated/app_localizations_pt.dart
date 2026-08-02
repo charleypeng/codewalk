@@ -4926,5 +4926,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sessionTabsGestureHintAcknowledge => 'Entendi';
 
   @override
+  String get sessionTabsGestureHintDisableTabs => 'Desativar abas';
+
+  @override
   String get sessionTabRenameAction => 'Renomear sessão';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Aba \"$title\" fechada';
+  }
+
+  @override
+  String get sessionTabUndo => 'Desfazer';
 }

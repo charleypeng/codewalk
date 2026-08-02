@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -16,14 +16,16 @@ import 'project_icon.dart';
 
 /// Height of the tab strip, also used by the integrated window chrome so the
 /// title bar band and the strip stay aligned.
-const double kSessionTabStripHeight = 54;
-const double kSessionTabStripHeightCompact = 58;
+const double kSessionTabStripHeight = 54 * 0.8;
+const double kSessionTabStripHeightCompact = 58 * 0.8;
 
 /// Horizontal room each tab gives to its curved shoulders.
-const double _kTabShoulder = 14;
+const double _kTabShoulder = 10;
 
-/// Radius of the tab's top corners.
-const double _kTabTopRadius = 5;
+const double _kInactiveTabTopRadius = 5;
+const double _kActiveTabTopRadius = 8;
+const double _kTabMinHeight = 48 * 0.8;
+const double _kStripTopPadding = 4 * 0.8;
 
 const double _kSessionTabWidth = 244 * 1.3;
 const double _kCompactSessionTabWidth = 214 * 1.3;
@@ -40,7 +42,9 @@ typedef SessionTabTrailingBuilder =
 /// Browser-style tab silhouette: the sides flare outwards at the bottom so the
 /// tab reads as a tab instead of a rounded rectangle, and neighbours interlock.
 class _ChromeTabBorder extends ShapeBorder {
-  const _ChromeTabBorder();
+  const _ChromeTabBorder({required this.topRadius});
+
+  final double topRadius;
 
   @override
   EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
@@ -52,7 +56,7 @@ class _ChromeTabBorder extends ShapeBorder {
   @override
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
     const shoulder = _kTabShoulder;
-    const r = _kTabTopRadius;
+    final r = topRadius;
     final lowerCurveTop = rect.bottom - shoulder;
     return Path()
       ..moveTo(rect.left, rect.bottom)
@@ -67,12 +71,12 @@ class _ChromeTabBorder extends ShapeBorder {
       ..lineTo(rect.left + shoulder, rect.top + r)
       ..arcToPoint(
         Offset(rect.left + shoulder + r, rect.top),
-        radius: const Radius.circular(r),
+        radius: Radius.circular(r),
       )
       ..lineTo(rect.right - shoulder - r, rect.top)
       ..arcToPoint(
         Offset(rect.right - shoulder, rect.top + r),
-        radius: const Radius.circular(r),
+        radius: Radius.circular(r),
       )
       ..lineTo(rect.right - shoulder, lowerCurveTop)
       ..cubicTo(
@@ -90,7 +94,7 @@ class _ChromeTabBorder extends ShapeBorder {
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
 
   @override
-  ShapeBorder scale(double t) => this;
+  ShapeBorder scale(double t) => _ChromeTabBorder(topRadius: topRadius * t);
 }
 
 String sessionTabIdentityKey(SessionTabIdentity identity) {
@@ -145,6 +149,10 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   Offset? _lastPointerGlobalPosition;
   SessionTabIdentity? _lastSelectedIdentity;
   double? _lastViewportWidth;
+  double? _lastTabWidth;
+  bool? _lastIsCompact;
+  bool? _lastFillWidth;
+  SessionTabIdentity? _pendingEnsureVisibleIdentity;
   bool _ensureVisibleScheduled = false;
 
   @override
@@ -199,9 +207,15 @@ class _SessionTabStripState extends State<SessionTabStrip> {
         );
         final selectedIdentity = _selectedIdentity();
         if (selectedIdentity != _lastSelectedIdentity ||
-            constraints.maxWidth != _lastViewportWidth) {
+            constraints.maxWidth != _lastViewportWidth ||
+            tabWidth != _lastTabWidth ||
+            widget.isCompact != _lastIsCompact ||
+            widget.fillWidth != _lastFillWidth) {
           _lastSelectedIdentity = selectedIdentity;
           _lastViewportWidth = constraints.maxWidth;
+          _lastTabWidth = tabWidth;
+          _lastIsCompact = widget.isCompact;
+          _lastFillWidth = widget.fillWidth;
           _scheduleEnsureSelectedVisible(selectedIdentity);
         }
 
@@ -220,32 +234,21 @@ class _SessionTabStripState extends State<SessionTabStrip> {
           ),
           child: Listener(
             onPointerSignal: _handlePointerSignal,
-            child: Scrollbar(
+            child: SingleChildScrollView(
+              key: const ValueKey<String>('session_tab_strip_scroll_view'),
               controller: _scrollController,
-              thumbVisibility: !widget.isCompact,
-              interactive: !widget.isCompact,
-              child: SingleChildScrollView(
-                key: const ValueKey<String>('session_tab_strip_scroll_view'),
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  horizontalPadding,
-                  4,
-                  horizontalPadding,
-                  0,
-                ),
-                child: Row(
-                  children: [
-                    for (
-                      var index = 0;
-                      index < widget.tabs.length;
-                      index++
-                    ) ...[
-                      if (index > 0) const SizedBox(width: 2),
-                      _buildTab(context, widget.tabs[index], tabWidth),
-                    ],
-                  ],
-                ),
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsetsDirectional.fromSTEB(
+                horizontalPadding,
+                _kStripTopPadding,
+                horizontalPadding,
+                0,
+              ),
+              child: Row(
+                children: [
+                  for (final tab in widget.tabs)
+                    _buildTab(context, tab, tabWidth),
+                ],
               ),
             ),
           ),
@@ -294,7 +297,8 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     final key = sessionTabIdentityKey(tab.identity);
     final selected = tab.isSelected;
     final project = _projectForTab(tab);
-    const radius = BorderRadius.vertical(top: Radius.circular(_kTabTopRadius));
+    final topRadius = selected ? _kActiveTabTopRadius : _kInactiveTabTopRadius;
+    final radius = BorderRadius.vertical(top: Radius.circular(topRadius));
     final foreground = selected
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
@@ -308,6 +312,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     }
 
     return MouseRegion(
+      key: ValueKey<String>('session_tab_item_$key'),
       onEnter: (_) => _setHovered(tab.identity),
       onExit: (_) => _setHovered(null),
       child: Listener(
@@ -329,7 +334,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                   : hovered
                   ? colorScheme.surface.withValues(alpha: 0.45)
                   : Colors.transparent,
-              shape: const _ChromeTabBorder(),
+              shape: _ChromeTabBorder(topRadius: topRadius),
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 children: [
@@ -357,7 +362,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                               button: true,
                               selected: selected,
                               label: _semanticLabel(context, tab, title),
-                              onTap: () => widget.onActivate(tab),
+                              onTap: () => _handleActivate(tab),
                               onDismiss: () => _handleClose(tab),
                               onLongPress: () => openContextMenu(haptic: true),
                               customSemanticsActions:
@@ -406,7 +411,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                             return null;
                                           },
                                         ),
-                                    onTap: () => widget.onActivate(tab),
+                                    onTap: () => _handleActivate(tab),
                                     onDoubleTap: () => _handleClose(tab),
                                     onSecondaryTapUp: (details) => unawaited(
                                       widget.onContextMenu(
@@ -419,7 +424,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                         openContextMenu(haptic: true),
                                     child: ConstrainedBox(
                                       constraints: const BoxConstraints(
-                                        minHeight: 48,
+                                        minHeight: _kTabMinHeight,
                                       ),
                                       child: Padding(
                                         padding:
@@ -666,7 +671,13 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     });
   }
 
+  void _handleActivate(SessionTabRecord tab) {
+    widget.onActivate(tab);
+    _scheduleEnsureSelectedVisible(tab.identity);
+  }
+
   void _scheduleEnsureSelectedVisible(SessionTabIdentity? identity) {
+    _pendingEnsureVisibleIdentity = identity;
     if (identity == null || _ensureVisibleScheduled) {
       return;
     }
@@ -676,16 +687,38 @@ class _SessionTabStripState extends State<SessionTabStrip> {
       if (!mounted) {
         return;
       }
-      final tabContext = _tabKeys[identity]?.currentContext;
-      if (tabContext == null) {
+      final pendingIdentity = _pendingEnsureVisibleIdentity;
+      _pendingEnsureVisibleIdentity = null;
+      if (pendingIdentity == null || _selectedIdentity() != pendingIdentity) {
         return;
       }
-      Scrollable.ensureVisible(
-        tabContext,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        alignment: 0.5,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+      final tabContext = _tabKeys[pendingIdentity]?.currentContext;
+      if (!_scrollController.hasClients || tabContext == null) {
+        _scheduleEnsureSelectedVisible(pendingIdentity);
+        return;
+      }
+      final tabRenderObject = tabContext.findRenderObject();
+      if (tabRenderObject == null) {
+        _scheduleEnsureSelectedVisible(pendingIdentity);
+        return;
+      }
+      final viewport = RenderAbstractViewport.maybeOf(tabRenderObject);
+      if (viewport == null) {
+        _scheduleEnsureSelectedVisible(pendingIdentity);
+        return;
+      }
+      final position = _scrollController.position;
+      final target = viewport
+          .getOffsetToReveal(tabRenderObject, 0.5)
+          .offset
+          .clamp(position.minScrollExtent, position.maxScrollExtent)
+          .toDouble();
+      unawaited(
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+        ),
       );
     });
   }

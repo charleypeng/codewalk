@@ -286,17 +286,7 @@ class SettingsProvider extends ChangeNotifier {
     required TargetPlatform platform,
     required bool initialWebDefault,
   }) {
-    if (isWeb) {
-      return initialWebDefault;
-    }
-    return switch (platform) {
-      TargetPlatform.linux ||
-      TargetPlatform.macOS ||
-      TargetPlatform.windows => true,
-      TargetPlatform.android ||
-      TargetPlatform.fuchsia ||
-      TargetPlatform.iOS => false,
-    };
+    return true;
   }
 
   void captureInitialWebSessionTabsDefault(bool value) {

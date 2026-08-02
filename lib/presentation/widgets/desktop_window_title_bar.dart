@@ -10,6 +10,7 @@ import '../../core/i18n/l10n_context.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../providers/settings_provider.dart';
 import '../services/desktop_window_chrome_service.dart';
+import 'session_tab_strip.dart';
 
 /// Width reserved for the macOS traffic lights, which stay native and are drawn
 /// by the system over the leading edge of the Flutter view.
@@ -62,7 +63,7 @@ class DesktopWindowChromeFrame extends StatelessWidget {
     super.key,
     required this.child,
     this.titleBarChild,
-    this.height = 54,
+    this.height = kSessionTabStripHeight,
   });
 
   final Widget child;
