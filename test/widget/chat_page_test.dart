@@ -17785,6 +17785,12 @@ void main() {
           sessionId: sessionId,
           time: DateTime.fromMillisecondsSinceEpoch(1250),
           parts: <MessagePart>[
+            const TextPart(
+              id: 'part_block_tool_partial_text',
+              messageId: 'msg_block_tool_2',
+              sessionId: sessionId,
+              text: 'still streaming hidden text',
+            ),
             ToolPart(
               id: 'part_block_tool_2',
               messageId: 'msg_block_tool_2',
@@ -17794,10 +17800,39 @@ void main() {
               state: ToolStateCompleted(
                 input: const <String, dynamic>{'filePath': 'README.md'},
                 output: 'hidden tool output',
+                title: 'Completed read',
                 time: ToolTime(
                   start: DateTime.fromMillisecondsSinceEpoch(1250),
                   end: DateTime.fromMillisecondsSinceEpoch(1255),
                 ),
+              ),
+            ),
+            ToolPart(
+              id: 'part_block_tool_error',
+              messageId: 'msg_block_tool_2',
+              sessionId: sessionId,
+              callId: 'call_block_tool_error',
+              tool: 'grep',
+              state: ToolStateError(
+                input: const <String, dynamic>{'pattern': 'TODO'},
+                error: 'No matches',
+                title: 'Failed grep',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1260),
+                  end: DateTime.fromMillisecondsSinceEpoch(1265),
+                ),
+              ),
+            ),
+            ToolPart(
+              id: 'part_block_tool_running',
+              messageId: 'msg_block_tool_2',
+              sessionId: sessionId,
+              callId: 'call_block_tool_running',
+              tool: 'bash',
+              state: ToolStateRunning(
+                input: const <String, dynamic>{'command': 'sleep 10'},
+                title: 'Running bash',
+                time: DateTime.fromMillisecondsSinceEpoch(1270),
               ),
             ),
           ],
@@ -17815,8 +17850,81 @@ void main() {
       // #116: Block mode withholds only the block still being written. Tools
       // that already reached a terminal state are published immediately, with
       // the placeholder still trailing them while the turn continues.
+      final visibleToolChains = find.byWidgetPredicate((widget) {
+        final key = widget.key;
+        return key is ValueKey<String> &&
+            key.value.startsWith('tool_chain_container_');
+      });
       expect(find.text('Generating response'), findsOneWidget);
-      expect(find.text('Details'), findsOneWidget);
+      expect(find.text('Details'), findsNWidgets(2));
+      expect(visibleToolChains, findsOneWidget);
+      expect(find.text('1 needs attention'), findsOneWidget);
+      expect(find.text('1 running • 1 needs attention'), findsNothing);
+      expect(find.text('still streaming hidden text'), findsNothing);
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ...repository.messagesBySession[sessionId]!,
+        UserMessage(
+          id: 'msg_block_tool_follow_up',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1400),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_block_tool_follow_up',
+              messageId: 'msg_block_tool_follow_up',
+              sessionId: sessionId,
+              text: 'follow up while tools continue',
+            ),
+          ],
+        ),
+      ];
+
+      await provider.refreshActiveSessionView(
+        reason: 'widget-block-render-tool-follow-up',
+        includeStatus: true,
+        preferDelta: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      expect(find.text('follow up while tools continue'), findsOneWidget);
+      expect(find.text('Generating response'), findsOneWidget);
+      expect(visibleToolChains, findsOneWidget);
+      expect(find.text('1 needs attention'), findsOneWidget);
+      expect(find.text('1 running • 1 needs attention'), findsNothing);
+      expect(find.text('still streaming hidden text'), findsNothing);
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ...repository.messagesBySession[sessionId]!,
+        AssistantMessage(
+          id: 'msg_block_tool_retry_error',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1450),
+          error: const MessageError(
+            name: 'UnknownError',
+            message: 'temporary block failure',
+          ),
+        ),
+      ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        sessionId: SessionStatusInfo(
+          type: SessionStatusType.retry,
+          attempt: 1,
+          message: 'Retrying',
+          nextEpochMs: 2000,
+        ),
+      };
+
+      await provider.refreshActiveSessionView(
+        reason: 'widget-block-render-tool-retry-error',
+        includeStatus: true,
+        preferDelta: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      expect(find.text('Generating response'), findsOneWidget);
+      expect(find.textContaining('temporary block failure'), findsWidgets);
 
       repository.messagesBySession[sessionId] = <ChatMessage>[
         ...repository.messagesBySession[sessionId]!,

@@ -340,13 +340,20 @@ extension _ChatPageTimelineEntries on _ChatPageState {
               isSessionActivelyResponding: isSessionActivelyResponding,
               chatRenderMode: chatRenderMode,
             )) {
-          entries.add(
-            _TimelinePendingAssistantEntry(anchorMessageId: current.id),
+          final publishedUntil = _appendBlockedAssistantRun(
+            entries: entries,
+            messages: messages,
+            startIndex: index,
+            endExclusive: assistantRunEnd,
+            anchorMessageId: current.id,
+            includePlaceholder: assistantRunEnd == messages.length,
+            isSessionActivelyResponding: isSessionActivelyResponding,
           );
           _traceFinalUi(
             'timeline-block-render-active-orphan-assistant-run',
             details:
-                'anchorMessageId=${current.id} assistantRunStart=$index assistantRunEnd=$assistantRunEnd',
+                'anchorMessageId=${current.id} assistantRunStart=$index '
+                'publishedUntil=$publishedUntil assistantRunEnd=$assistantRunEnd',
           );
           index = assistantRunEnd;
           continue;
@@ -410,30 +417,20 @@ extension _ChatPageTimelineEntries on _ChatPageState {
             chatRenderMode: chatRenderMode,
           );
       if (shouldBlockActiveAssistantRun) {
-        // Publish whatever already finished and hold back only the tail that
-        // is still being written (#116).
-        final publishableEnd = _publishableAssistantPrefixEnd(
+        final publishedUntil = _appendBlockedAssistantRun(
+          entries: entries,
           messages: messages,
           startIndex: assistantRunStart,
           endExclusive: assistantRunEnd,
-        );
-        if (publishableEnd > assistantRunStart) {
-          _appendRangeWithAssistantToolMerging(
-            entries: entries,
-            messages: messages,
-            startIndex: assistantRunStart,
-            endExclusive: publishableEnd,
-            isActivelyResponding: isSessionActivelyResponding,
-          );
-        }
-        entries.add(
-          _TimelinePendingAssistantEntry(anchorMessageId: current.id),
+          anchorMessageId: current.id,
+          includePlaceholder: assistantRunEnd == messages.length,
+          isSessionActivelyResponding: isSessionActivelyResponding,
         );
         _traceFinalUi(
           'timeline-block-render-active-assistant-run',
           details:
               'userMessageId=${current.id} assistantRunStart=$assistantRunStart '
-              'publishedUntil=$publishableEnd assistantRunEnd=$assistantRunEnd',
+              'publishedUntil=$publishedUntil assistantRunEnd=$assistantRunEnd',
         );
         index = assistantRunEnd;
         continue;
@@ -556,6 +553,74 @@ extension _ChatPageTimelineEntries on _ChatPageState {
     return end;
   }
 
+  int _appendBlockedAssistantRun({
+    required List<_TimelineEntry> entries,
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+    required String anchorMessageId,
+    required bool includePlaceholder,
+    required bool isSessionActivelyResponding,
+  }) {
+    final publishableEnd = _publishableAssistantPrefixEnd(
+      messages: messages,
+      startIndex: startIndex,
+      endExclusive: endExclusive,
+    );
+    if (publishableEnd > startIndex) {
+      _appendRangeWithAssistantToolMerging(
+        entries: entries,
+        messages: messages,
+        startIndex: startIndex,
+        endExclusive: publishableEnd,
+        isActivelyResponding: isSessionActivelyResponding,
+      );
+    }
+    if (publishableEnd < endExclusive) {
+      final message = messages[publishableEnd];
+      if (message is AssistantMessage) {
+        final terminalTools = _terminalToolSnapshot(message);
+        if (terminalTools != null) {
+          entries.add(_TimelineMessageEntry(terminalTools));
+        }
+      }
+    }
+    if (includePlaceholder) {
+      entries.add(
+        _TimelinePendingAssistantEntry(anchorMessageId: anchorMessageId),
+      );
+    }
+    return publishableEnd;
+  }
+
+  AssistantMessage? _terminalToolSnapshot(AssistantMessage message) {
+    final terminalParts = message.parts
+        .where((part) {
+          return part is ToolPart &&
+              (part.state.status == ToolStatus.completed ||
+                  part.state.status == ToolStatus.error);
+        })
+        .toList(growable: false);
+    if (terminalParts.isEmpty) {
+      return null;
+    }
+    return AssistantMessage(
+      id: message.id,
+      sessionId: message.sessionId,
+      time: message.time,
+      parts: terminalParts,
+      completedTime: message.completedTime,
+      providerId: message.providerId,
+      modelId: message.modelId,
+      variant: message.variant,
+      cost: message.cost,
+      tokens: message.tokens,
+      error: message.error,
+      mode: message.mode,
+      summary: message.summary,
+    );
+  }
+
   bool _shouldBlockAssistantRunForBlockRenderMode({
     required List<ChatMessage> messages,
     required int startIndex,
@@ -564,16 +629,18 @@ extension _ChatPageTimelineEntries on _ChatPageState {
     required ChatRenderMode chatRenderMode,
   }) {
     if (chatRenderMode != ChatRenderMode.block ||
-        !isSessionActivelyResponding ||
-        endExclusive != messages.length) {
+        !isSessionActivelyResponding) {
       return false;
     }
     if (startIndex == endExclusive) {
-      return true;
+      return endExclusive == messages.length;
     }
     final finalMessage = messages[endExclusive - 1];
-    if (finalMessage is! AssistantMessage || finalMessage.error != null) {
+    if (finalMessage is! AssistantMessage) {
       return false;
+    }
+    if (endExclusive != messages.length) {
+      return !finalMessage.isCompleted && finalMessage.error == null;
     }
     return !_isSuccessfulFinalAssistantMessage(finalMessage);
   }
