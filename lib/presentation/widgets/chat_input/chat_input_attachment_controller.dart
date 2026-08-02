@@ -193,11 +193,10 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
       return 'data:$mime;base64,${base64Encode(bytes)}';
     }
 
-    final path = file.path;
-    if (path == null || path.isEmpty) {
-      return null;
-    }
-    return Uri.file(path).toString();
+    // Client-local paths are meaningless (and potentially unsafe) on a
+    // remote OpenCode server. Server-side paths enter as FileInputPart values
+    // elsewhere; composer picks, drops and pastes must always carry bytes.
+    return null;
   }
 
   String? _resolveAttachmentMime(

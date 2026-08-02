@@ -1,10 +1,12 @@
 package com.verseles.codewalk
 
+import android.content.ContentResolver
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
+import android.provider.OpenableColumns
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -15,6 +17,7 @@ class MainActivity : FlutterActivity() {
     companion object {
         private const val SYSTEM_SOUNDS_CHANNEL = "codewalk/system_sounds"
         private const val SYSTEM_CHANNEL = "codewalk/system"
+        private const val COMPOSER_CLIPBOARD_CHANNEL = "codewalk/composer_clipboard"
         private const val SESSION_OVERLAY_CHANNEL = "codewalk/session_overlay_host"
         private const val SESSION_OVERLAY_ACTIVATION_CHANNEL = "codewalk/session_overlay_activation"
     }
@@ -30,6 +33,32 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "listNotificationSounds" -> result.success(listNotificationSounds())
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            COMPOSER_CLIPBOARD_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "readContentUri" -> {
+                    val rawUri = call.argument<String>("uri")
+                    if (rawUri.isNullOrBlank()) {
+                        result.success(null)
+                    } else {
+                        Thread {
+                            val payload = try {
+                                readClipboardContentUri(rawUri)
+                            } catch (_: OutOfMemoryError) {
+                                null
+                            } catch (_: Exception) {
+                                null
+                            }
+                            runOnUiThread { result.success(payload) }
+                        }.start()
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
@@ -107,6 +136,55 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         dispatchSessionOverlayActivation(intent)
+    }
+
+    private fun readClipboardContentUri(rawUri: String): Map<String, Any?>? {
+        val uri = Uri.parse(rawUri)
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+
+        var displayName: String? = null
+        contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIndex >= 0 && !cursor.isNull(nameIndex)) {
+                    displayName = cursor.getString(nameIndex)
+                }
+            }
+        }
+        val mimeType = contentResolver.getType(uri)?.lowercase()
+        val extension = displayName
+            ?.substringAfterLast('.', missingDelimiterValue = "")
+            ?.lowercase()
+        // Keep these gates aligned with chat_input_external_files.dart. They
+        // intentionally run natively so unsupported clipboard data is never read.
+        val supportedByName = extension in setOf(
+            "jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "pdf",
+        )
+        val supportedByMime = mimeType in setOf(
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "image/bmp",
+            "image/heic",
+            "image/heif",
+            "application/pdf",
+        )
+        if (!supportedByName && !supportedByMime) return null
+
+        val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: return null
+        return mapOf(
+            "name" to displayName,
+            "mimeType" to mimeType,
+            "bytes" to bytes,
+        )
     }
 
     private fun dispatchSessionOverlayActivation(intent: Intent?) {

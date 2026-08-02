@@ -6,6 +6,8 @@ import 'package:file_picker/file_picker.dart';
 ///
 /// Kept here so dropped (#118) and pasted (#119) files are judged by exactly
 /// the same rule as picked ones, instead of each entry point inventing its own.
+// Keep this and composerAttachmentExtensionForMime aligned with the native
+// Android clipboard pre-gate in MainActivity.
 const Set<String> kComposerAttachmentExtensions = <String>{
   'jpg',
   'jpeg',
@@ -34,26 +36,52 @@ String composerFileName(String path, {required String fallback}) {
   return name.isEmpty ? fallback : name;
 }
 
-/// Builds a [PlatformFile] for a file the user dropped or pasted.
+/// Builds a client-local attachment from bytes and a platform-supplied name.
 ///
-/// Returns null when the extension is not one the composer accepts, so callers
-/// can count it as skipped without inspecting arbitrary content.
-PlatformFile? composerFileFromPath(
-  String path, {
+/// A MIME hint is used only when the platform did not provide a usable file
+/// extension, such as Android clipboard content URIs.
+PlatformFile? composerFileFromBytes(
+  Uint8List bytes, {
+  required String name,
   required String fallbackName,
+  String? mimeType,
 }) {
-  final trimmed = path.trim();
-  if (trimmed.isEmpty) {
+  if (bytes.isEmpty) {
     return null;
   }
-  if (!kComposerAttachmentExtensions.contains(composerFileExtension(trimmed))) {
-    return null;
+  var normalizedName = name.trim();
+  if (normalizedName.isEmpty) {
+    normalizedName = fallbackName;
   }
-  return PlatformFile(
-    path: trimmed,
-    name: composerFileName(trimmed, fallback: fallbackName),
-    size: 0,
-  );
+  var extension = composerFileExtension(normalizedName);
+  if (!kComposerAttachmentExtensions.contains(extension)) {
+    final inferredExtension = composerAttachmentExtensionForMime(mimeType);
+    if (inferredExtension == null) {
+      return null;
+    }
+    extension = inferredExtension;
+    normalizedName = '$normalizedName.$extension';
+  }
+  return PlatformFile(name: normalizedName, size: bytes.length, bytes: bytes);
+}
+
+String? composerAttachmentExtensionForMime(String? mimeType) {
+  return switch (mimeType?.trim().toLowerCase()) {
+    'image/jpeg' => 'jpg',
+    'image/png' => 'png',
+    'image/gif' => 'gif',
+    'image/webp' => 'webp',
+    'image/bmp' => 'bmp',
+    'image/heic' => 'heic',
+    'image/heif' => 'heif',
+    'application/pdf' => 'pdf',
+    _ => null,
+  };
+}
+
+bool composerAttachmentNameOrMimeSupported(String name, String? mimeType) {
+  return kComposerAttachmentExtensions.contains(composerFileExtension(name)) ||
+      composerAttachmentExtensionForMime(mimeType) != null;
 }
 
 /// Builds a [PlatformFile] for raw image bytes, such as a pasted screenshot.
@@ -68,10 +96,11 @@ PlatformFile? composerFileFromImageBytes(
     return null;
   }
   final extension = composerImageExtensionFromBytes(bytes);
-  return PlatformFile(
+  return composerFileFromBytes(
+    bytes,
     name: '$baseName.$extension',
-    size: bytes.length,
-    bytes: bytes,
+    fallbackName: baseName,
+    mimeType: 'image/$extension',
   );
 }
 
@@ -113,21 +142,4 @@ String composerImageExtensionFromBytes(Uint8List bytes) {
     return 'heic';
   }
   return 'png';
-}
-
-/// Drops duplicates while preserving the order the platform reported.
-///
-/// The clipboard can expose the same file through more than one
-/// representation, and a drop can repeat a path; both would otherwise reach
-/// the attachment list twice.
-List<PlatformFile> composerDedupeFiles(List<PlatformFile> files) {
-  final seen = <String>{};
-  final result = <PlatformFile>[];
-  for (final file in files) {
-    final key = file.path ?? '${file.name}:${file.size}';
-    if (seen.add(key)) {
-      result.add(file);
-    }
-  }
-  return result;
 }

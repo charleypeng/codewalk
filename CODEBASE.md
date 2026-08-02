@@ -64,7 +64,7 @@ codewalk/
 │       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_message/            # ChatMessageWidget decomposed part renderers (consume visualStyleTokens — issue #86)
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
-│       │   ├── chat_input/             # ChatInput decomposed clusters (8 modules; consume visualStyleTokens — issue #86)
+│       │   ├── chat_input/             # ChatInput decomposed clusters (11 modules; consume visualStyleTokens — issue #86)
 │       │   ├── math_expression_widget.dart # LaTeX math renderer with parse-failure styled fallback
 │       │   ├── codewalk_terminal_extra_keys.dart # Native Android/iOS terminal extra-key widget and controller
 │       │   ├── session_attention_overlay/ # Shared bubble/panel overlay widget and controller
@@ -86,7 +86,7 @@ codewalk/
 ├── .opencode/agents/                  # Repo-local OpenCode agents
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
 │   ├── android/app/src/main/kotlin/com/verseles/codewalk/
-│       ├── MainActivity.kt              # Android session-overlay host channel, permission/service controls, and activation forwarding
+│       ├── MainActivity.kt              # Android composer clipboard content-URI resolver MethodChannel, session-overlay host channel, permission/service controls, and activation forwarding
 │       └── overlay/SessionOverlayService.kt # Android foreground overlay host and service-owned Flutter engine
 │   └── windows/runner/                   # Windows runner sources (incl. `windows_microphone_plugin.{h,cpp}` runner-owned WASAPI bridge for on-device STT — see ADR-038)
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
@@ -107,7 +107,7 @@ lib/presentation/pages/settings_page.dart     # Settings landing and responsive 
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; mounts the in-app session-attention overlay on iOS; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard; exposes buildComposerReceivingTips() for the localized composer status-tip catalog
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 lib/presentation/services/session_attention/session_overlay_entrypoint.dart # Desktop child-window and Android service-engine Flutter entrypoints
-android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android overlay host channel and activation handoff entrypoint
+android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android composer clipboard content-URI resolver MethodChannel and session-overlay host/activation handoff entrypoint
 android/app/src/main/kotlin/com/verseles/codewalk/overlay/SessionOverlayService.kt # Android foreground-service overlay entrypoint
 lib/presentation/pages/logs_page.dart           # In-app App Logs surface; gated by `SettingsProvider.loggingEnabled` (disabled by default) — renders `_LogsDisabledState` empty-state with enable action when off, otherwise filters by time range/level/search/performance, supports **tag filter chips** (common task/network/cache presets plus **custom tag** input dialog), copies filtered entries, surfaces `Slowest performance logs` modal or, when a `task:*` tag is selected, `Slowest tasks` modal; AppLogger/measurePerformance toggle persisted via SettingsProvider
 .github/workflows/ci.yml                      # CI workflow entry
@@ -350,7 +350,7 @@ chat_provider_abort_policy_ops.dart / chat_provider_session_attention_ops.dart
 chat_provider_session_tab_ops.dart              # ChatProvider-owned generation-safe load/write, recency/order/tombstone/attention reconciliation, lifecycle hooks, and project-history cleanup
 ```
 
-### `lib/presentation/widgets/chat_input/` clusters (current)
+### `lib/presentation/widgets/chat_input/` clusters (current, 11 modules)
 
 ```text
 chat_input_state_machine.dart
@@ -358,7 +358,9 @@ chat_input_history_controller.dart             # Local command/prompt history an
 chat_input_mentions_controller.dart
 chat_input_commands_controller.dart
 chat_input_suggestion_popover.dart             # Mention/slash/canned popover; renders file, workspace-symbol, and agent badges/icons; consumes `theme.visualStyleTokens` (issue #86) for refined surface tokens
-chat_input_attachment_controller.dart          # Composer attachment picker/append flow; uses multi-select file_picker calls for supported image/PDF files, keeps image/PDF-specific fallbacks, dedupes chips, and reports partial invalid selections without discarding valid attachments
+chat_input_attachment_controller.dart          # Composer attachment picker/append flow; uses multi-select file_picker calls for supported image/PDF files, converts client-local bytes to data URLs, keeps image/PDF-specific fallbacks, dedupes chips, and preserves separate direct FileInputPart handling for server-side file:// paths
+chat_input_external_drop_controller.dart       # External drop/paste flow via desktop_drop, pasteboard, and the Android composer clipboard content-URI MethodChannel; reads client-local bytes, gates shell/non-current routes, and routes accepted files through the shared data-URL attachment path
+chat_input_external_files.dart                 # Shared external-attachment byte, name, MIME, and image-signature helpers
 chat_input_send_controller.dart
 chat_input_speech_controller.dart
 ```
@@ -506,7 +508,9 @@ test/unit/services/                     # Platform and runtime service unit test
   edge_experimental_tts_backend_test.dart #   Edge experimental voice parsing, direct websocket synthesis to generated MP3 audio bytes, error mapping, and stop/close behavior
   windows_microphone_service_test.dart   #   Windows microphone access probe and preflight status tests
 test/unit/presentation/                 # Presentation-level service tests; includes `workspace_file_operations_service_test.dart` (issues #89 and #90) covering official tool-state parsing, malformed responses, shell quoting, capability probes, create/rename/delete session teardown, server-bound abort semantics, write-path validation, 48 KiB content chunking, and negotiated GNU/BSD/Python decoding; `app_theme_test.dart` (issue #86) covers `AppVisualStyleTokens.classic`/`refined` factories, theme-extension wiring through `AppTheme.lightFrom`/`darkFrom`, `withResponsiveSnackBars` shape switching, and the `ThemeData.visualStyleTokens` fallback getter
+test/unit/presentation/chat_input_external_files_test.dart # Pure composer external-attachment byte, name/MIME, and image-signature helper coverage
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*, explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, desktop/mobile spacing for ChatSessionList, toolbar undo/redo, slash-command parity, terminal mobile backspace simulation, Windows printable hardware key forwarding, Windows AltGr printable forwarding, AppShell update toast coverage in `app_shell_page_test.dart` with explicit teardown of ChatProvider/AppProvider/SettingsProvider in `finally` for clean run isolation, issue #86 Visual style coverage in `settings_page_test.dart` for the Appearance `SegmentedButton<VisualStyle>` (`settings_visual_style_segmented`) calling `setVisualStyle` and persisting `visualStyle: 'refined'`; `chat_message_widget_test.dart` and `chat_page_test.dart` were additionally run as regression suites to confirm no refined-surface regression on the chat surfaces, issue #89 file-tree coverage in `chat_page_test.dart` covering file-tree refresh, root New menu, new-file/new-folder dialogs, rename, delete confirmation + reconciliation, Quick Open lookup, and absolute/relative path resolution, and issue #90 editor coverage in `chat_page_test.dart` covering debounced autosave ownership/timing, per-path draft isolation, active-save coordination, lifecycle/close guards, CRLF save round-trip, current-draft Add-to-chat via gutter selection, dirty-state preservation on save failure, dirty relative-path rename blocker, and a `file editor opens empty text files as editable drafts` widget test that taps a known empty non-binary file and confirms the editor renders with the editable `CodeEditor`)
+test/widget_test.dart                    # Focused composer attachment widget coverage for picker/drop data URLs, shell/non-current route gating, and Android content-URI clipboard bridging
   session_attention_overlay_test.dart  # Shared bubble/panel ordering and action wiring, including disabled read-aloud
   session_tab_strip_test.dart           # Session-tab strip activation, attention/busy visuals, overflow visibility, close fallback focus, and semantics coverage
   chat_message_widget_test.dart         #   Read-aloud button loading indicator and long-press Settings > Speech routing

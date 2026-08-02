@@ -1,57 +1,59 @@
 import 'dart:typed_data';
 
 import 'package:codewalk/presentation/widgets/chat_input/chat_input_external_files.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Uint8List _bytes(List<int> values) => Uint8List.fromList(values);
 
 void main() {
-  group('composerFileFromPath', () {
-    test('accepts the same extensions the picker accepts', () {
-      for (final extension in kComposerAttachmentExtensions) {
-        final file = composerFileFromPath(
-          '/tmp/photo.$extension',
-          fallbackName: 'fallback',
-        );
-
-        expect(file, isNotNull, reason: '.$extension should be accepted');
-        expect(file!.name, 'photo.$extension');
-        expect(file.path, '/tmp/photo.$extension');
-      }
-    });
-
-    test('rejects anything else instead of guessing', () {
-      for (final path in <String>[
-        '/tmp/notes.txt',
-        '/tmp/archive.zip',
-        '/tmp/script.sh',
-        '/tmp/noextension',
-        '   ',
-      ]) {
-        expect(
-          composerFileFromPath(path, fallbackName: 'fallback'),
-          isNull,
-          reason: '$path should not be attachable',
-        );
-      }
-    });
-
-    test('is case insensitive about the extension', () {
-      expect(
-        composerFileFromPath('/tmp/SCAN.PDF', fallbackName: 'f'),
-        isNotNull,
-      );
-    });
-
-    test('handles Windows separators', () {
-      final file = composerFileFromPath(
-        r'C:\Users\me\shot.png',
-        fallbackName: 'f',
+  group('composerFileFromBytes', () {
+    test('preserves supported names and client bytes', () {
+      final file = composerFileFromBytes(
+        _bytes(<int>[1, 2, 3]),
+        name: 'photo.PNG',
+        fallbackName: 'fallback',
       );
 
       expect(file, isNotNull);
-      expect(file!.name, 'shot.png');
+      expect(file!.name, 'photo.PNG');
+      expect(file.size, 3);
+      expect(file.bytes, _bytes(<int>[1, 2, 3]));
+      expect(file.path, isNull);
+    });
+
+    test('uses MIME when a content URI has no usable name', () {
+      final file = composerFileFromBytes(
+        _bytes(<int>[1, 2]),
+        name: '42',
+        fallbackName: 'Pasted file',
+        mimeType: 'application/pdf',
+      );
+
+      expect(file?.name, '42.pdf');
+      expect(file?.bytes, _bytes(<int>[1, 2]));
+    });
+
+    test('rejects unsupported names and MIME types', () {
+      expect(
+        composerFileFromBytes(
+          _bytes(<int>[1]),
+          name: 'notes.txt',
+          fallbackName: 'fallback',
+          mimeType: 'text/plain',
+        ),
+        isNull,
+      );
+    });
+
+    test('pre-gates unsupported names before reading bytes', () {
+      expect(
+        composerAttachmentNameOrMimeSupported('movie.mp4', 'video/mp4'),
+        isFalse,
+      );
+      expect(
+        composerAttachmentNameOrMimeSupported('opaque', 'application/pdf'),
+        isTrue,
+      );
     });
   });
 
@@ -108,30 +110,6 @@ void main() {
         composerFileFromImageBytes(_bytes(<int>[]), baseName: 'x'),
         isNull,
       );
-    });
-  });
-
-  group('composerDedupeFiles', () {
-    test('drops repeats while preserving order', () {
-      final files = <PlatformFile>[
-        PlatformFile(path: '/a.png', name: 'a.png', size: 1),
-        PlatformFile(path: '/b.png', name: 'b.png', size: 1),
-        PlatformFile(path: '/a.png', name: 'a.png', size: 1),
-      ];
-
-      final result = composerDedupeFiles(files);
-
-      expect(result.map((file) => file.name), <String>['a.png', 'b.png']);
-    });
-
-    test('separates pathless payloads by name and size', () {
-      final files = <PlatformFile>[
-        PlatformFile(name: 'shot.png', size: 10, bytes: _bytes([1])),
-        PlatformFile(name: 'shot.png', size: 10, bytes: _bytes([1])),
-        PlatformFile(name: 'shot.png', size: 20, bytes: _bytes([2])),
-      ];
-
-      expect(composerDedupeFiles(files).length, 2);
     });
   });
 }

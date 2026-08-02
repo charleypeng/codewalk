@@ -13,6 +13,7 @@ import 'package:codewalk/presentation/services/session_attention/session_attenti
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/services/speech_input_service_stt.dart';
 import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1054,6 +1055,182 @@ void main() {
       sentSubmission?.attachments.map((attachment) => attachment.mime),
       <String>['image/png', 'application/pdf'],
     );
+  });
+
+  testWidgets('drop keeps target state and sends client bytes as data URL', (
+    WidgetTester tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      ChatInputSubmission? sentSubmission;
+      await tester.pumpWidget(
+        _buildChatInputHarness(
+          child: ChatInputWidget(
+            onSendMessage: (submission) => sentSubmission = submission,
+            showAttachmentButton: true,
+          ),
+        ),
+      );
+
+      final dropFinder = find.byKey(
+        const ValueKey<String>('composer_drop_target'),
+      );
+      final initialState = tester.state(dropFinder);
+      tester
+          .widget<DropTarget>(dropFinder)
+          .onDragEntered
+          ?.call(
+            DropEventDetails(
+              localPosition: Offset.zero,
+              globalPosition: Offset.zero,
+            ),
+          );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_drop_highlight')),
+        findsOneWidget,
+      );
+      expect(tester.state(dropFinder), same(initialState));
+
+      tester
+          .widget<DropTarget>(dropFinder)
+          .onDragDone
+          ?.call(
+            DropDoneDetails(
+              files: <DropItem>[
+                DropItemFile.fromData(
+                  Uint8List.fromList(<int>[1, 2, 3]),
+                  path: '/tmp/a/screen.png',
+                  name: 'screen.png',
+                  mimeType: 'image/png',
+                ),
+                DropItemFile.fromData(
+                  Uint8List.fromList(<int>[3, 2, 1]),
+                  path: '/tmp/b/screen.png',
+                  name: 'screen.png',
+                  mimeType: 'image/png',
+                ),
+              ],
+              localPosition: Offset.zero,
+              globalPosition: Offset.zero,
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      expect(find.text('screen.png'), findsNWidgets(2));
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pumpAndSettle();
+      expect(sentSubmission?.attachments, hasLength(2));
+      expect(sentSubmission?.attachments.map((item) => item.url), <String>[
+        'data:image/png;base64,AQID',
+        'data:image/png;base64,AwIB',
+      ]);
+    } finally {
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+
+  testWidgets('drop target disables in shell mode and below another route', (
+    WidgetTester tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      await tester.pumpWidget(
+        _buildChatInputHarness(
+          child: ChatInputWidget(
+            onSendMessage: (_) {},
+            showAttachmentButton: true,
+          ),
+        ),
+      );
+      final dropFinder = find.byKey(
+        const ValueKey<String>('composer_drop_target'),
+      );
+      expect(tester.widget<DropTarget>(dropFinder).enable, isTrue);
+
+      await tester.enterText(find.byType(TextField), '!pwd');
+      await tester.pumpAndSettle();
+      expect(tester.widget<DropTarget>(dropFinder).enable, isFalse);
+
+      await tester.enterText(find.byType(TextField), 'normal');
+      await tester.pumpAndSettle();
+      final inputContext = tester.element(find.byType(ChatInputWidget));
+      unawaited(
+        Navigator.of(
+          inputContext,
+        ).push<void>(MaterialPageRoute<void>(builder: (_) => const Scaffold())),
+      );
+      await tester.pumpAndSettle();
+
+      final coveredDropFinder = find.byKey(
+        const ValueKey<String>('composer_drop_target'),
+        skipOffstage: false,
+      );
+      expect(tester.widget<DropTarget>(coveredDropFinder).enable, isFalse);
+    } finally {
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+
+  testWidgets('Android content URI paste attaches resolver bytes', (
+    WidgetTester tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    const pasteboardChannel = MethodChannel('pasteboard');
+    const clipboardChannel = MethodChannel('codewalk/composer_clipboard');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(pasteboardChannel, (call) async {
+      if (call.method == 'files') {
+        return <String>['content://provider/document/42'];
+      }
+      if (call.method == 'image') {
+        return null;
+      }
+      return null;
+    });
+    messenger.setMockMethodCallHandler(clipboardChannel, (call) async {
+      expect(call.method, 'readContentUri');
+      final arguments = call.arguments as Map<Object?, Object?>;
+      expect(arguments['uri'], 'content://provider/document/42');
+      return <String, Object?>{
+        'name': 'brief',
+        'mimeType': 'application/pdf',
+        'bytes': Uint8List.fromList(<int>[4, 5, 6]),
+      };
+    });
+    try {
+      ChatInputSubmission? sentSubmission;
+      await tester.pumpWidget(
+        _buildChatInputHarness(
+          child: ChatInputWidget(
+            onSendMessage: (submission) => sentSubmission = submission,
+            showAttachmentButton: true,
+          ),
+        ),
+      );
+      await tester.showKeyboard(find.byType(TextField));
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(find.text('brief.pdf'), findsOneWidget);
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pumpAndSettle();
+      expect(
+        sentSubmission?.attachments.single.url,
+        'data:application/pdf;base64,BAUG',
+      );
+    } finally {
+      messenger.setMockMethodCallHandler(pasteboardChannel, null);
+      messenger.setMockMethodCallHandler(clipboardChannel, null);
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
   });
 
   testWidgets('prefilled shell draft restores shell mode with ! prefix', (
