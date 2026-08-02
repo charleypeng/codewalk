@@ -550,13 +550,36 @@
 
 - **Given** the session-tab display toggle is enabled and tabs are nonempty
 - **When** the chat surface is rendered
-- **Then** the strip spans the content width below the app bar on compact and expanded layouts
+- **Then** on desktop with integrated window chrome configured, the strip is rendered in the integrated desktop chrome; otherwise it appears below the app bar on compact and expanded layouts
 - **Then** native desktop defaults to enabled, Android/iOS defaults to disabled, and web captures the initial compact/non-compact layout default; an explicit `Display` toggle choice persists
+
+- **Given** a selected tab represents the current session
+- **When** the chat surface is rendered
+- **Then** the selected tab shows the session title and context-usage control, and the duplicate compact session header is hidden
+- **Then** the compact session header remains visible when tabs are disabled or no selected tab represents the current session
 
 - **Given** a session tab has attention or activity state
 - **When** its leading indicator is rendered
 - **Then** visual priority is error, question, then completion, while busy/retry remains an independent status indicator; closed projects use their cached/default icon without discovery
-- **Then** the strip supports horizontal overflow, ensures the selected tab is visible, exposes the full title in a tooltip and semantics, reports selected and busy/retry status semantics, and supports mouse, keyboard, and touch activation/close behavior
+- **Then** the strip supports horizontal overflow, ensures the selected tab is visible, exposes the full title in a tooltip and semantics, reports selected and busy/retry status semantics, and keeps tab widths larger while remaining responsive to available space
+
+- **Given** a session tab is visible
+- **When** the user double-clicks/double-taps or middle-clicks it
+- **Then** only that local tab closes; the OpenCode session is not archived, deleted, or otherwise mutated
+- **When** the user right-clicks or touch-and-holds it
+- **Then** the current session actions menu opens, including `Rename session`; an inactive tab is activated first
+- **When** the user invokes the semantic session-actions action, `Context Menu`, or `Shift+F10`
+- **Then** the same current session actions menu opens
+- **When** the user presses `Delete` or invokes the semantic dismiss action
+- **Then** only that local tab closes
+- **Then** there is no visible close button on a tab
+
+- **Given** new session tabs become eligible while the tab gesture hint is enabled
+- **When** the chat is active
+- **Then** one dialog per batch aggregates and deduplicates the new tabs, explains the close and session-action gestures and `Display Toggles`, and offers `Don't show again`
+- **Then** selecting `Don't show again` persists the dismissal
+- **When** a hint request is pending while the chat is inactive
+- **Then** the request is shown when the chat becomes active again
 
 ### Sidebar session actions are available from row gestures
 
