@@ -4820,4 +4820,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => 'اقتراحات';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
 }

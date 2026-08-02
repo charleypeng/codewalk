@@ -50,6 +50,28 @@ void main() {
         isNull,
       );
     });
+
+    test('round-trips the session tabs gesture hint opt-out', () {
+      final defaults = ExperienceSettings.defaults();
+      expect(defaults.sessionTabsGestureHintDismissed, isFalse);
+
+      final dismissed = defaults.copyWith(
+        sessionTabsGestureHintDismissed: true,
+      );
+      expect(dismissed.toJson()['sessionTabsGestureHintDismissed'], isTrue);
+      expect(
+        ExperienceSettings.fromJson(
+          dismissed.toJson(),
+        ).sessionTabsGestureHintDismissed,
+        isTrue,
+      );
+      expect(
+        ExperienceSettings.fromJson(const <String, dynamic>{
+          'sessionTabsGestureHintDismissed': 'yes',
+        }).sessionTabsGestureHintDismissed,
+        isFalse,
+      );
+    });
   });
 
   group('session attention presentation serialization', () {

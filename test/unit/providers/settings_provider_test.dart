@@ -848,6 +848,33 @@ void main() {
       );
     });
 
+    test('persists the session tabs gesture hint opt-out', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.sessionTabsGestureHintDismissed, isFalse);
+      await first.setSessionTabsGestureHintDismissed(true);
+
+      expect(
+        jsonDecode(
+          local.experienceSettingsJson!,
+        )['sessionTabsGestureHintDismissed'],
+        isTrue,
+      );
+      final restored = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await restored.initialize();
+      expect(restored.sessionTabsGestureHintDismissed, isTrue);
+    });
+
     test('persists background behavior preferences', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

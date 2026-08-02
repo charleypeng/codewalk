@@ -14,6 +14,52 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     );
   }
 
+  Widget _buildSessionContextUsageButton(
+    BuildContext context,
+    ChatProvider chatProvider, {
+    double? targetSize,
+  }) {
+    final usage = _resolveSessionContextUsage(chatProvider);
+    final canCompact =
+        !chatProvider.isCompactingContext &&
+        !chatProvider.canAbortActiveResponse;
+    final knob = _buildContextUsageControl(
+      context,
+      usage: usage,
+      isCompacting: chatProvider.isCompactingContext,
+      enabled: true,
+    );
+
+    return PopupMenuButton<void>(
+      key: const ValueKey<String>('appbar_context_usage_button'),
+      tooltip: context.l10n.chatCompactContext,
+      padding: EdgeInsets.zero,
+      itemBuilder: (popupContext) {
+        final serverId = context.read<AppProvider>().activeServer?.id;
+        context.read<QuotaProvider>().ensureLoaded(serverId: serverId);
+        return [
+          PopupMenuItem<void>(
+            enabled: false,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: _buildContextUsagePopover(
+              context,
+              usage: usage,
+              isCompacting: chatProvider.isCompactingContext,
+              canCompact: canCompact,
+              onCompactNow: () => _compactCurrentSession(chatProvider),
+            ),
+          ),
+        ];
+      },
+      child: targetSize == null
+          ? knob
+          : SizedBox.square(
+              dimension: targetSize,
+              child: Center(child: knob),
+            ),
+    );
+  }
+
   _SessionContextUsageSnapshot _resolveSessionContextUsage(
     ChatProvider chatProvider,
   ) {

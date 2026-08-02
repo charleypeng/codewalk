@@ -71,14 +71,8 @@ void main() {
     final closeFinder = find.byKey(
       ValueKey<String>('session_tab_close_$identityKey'),
     );
-    expect(closeFinder, findsOneWidget);
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    await tester.pump();
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-
-    expect(closed, <SessionTabIdentity>[tab.identity]);
+    expect(closeFinder, findsNothing);
+    expect(closed, isEmpty);
   });
 
   testWidgets('exposes close as a permanent semantics action', (tester) async {
@@ -110,15 +104,13 @@ void main() {
     expect(closed, <SessionTabIdentity>[tab.identity]);
   });
 
-  testWidgets('keyboard traversal keeps close visible on the focused tab', (
-    tester,
-  ) async {
+  testWidgets('keyboard traversal moves directly between tabs', (tester) async {
     final first = _tab('first', isSelected: true);
     final second = _tab('second');
-    final closed = <SessionTabIdentity>[];
+    final activated = <SessionTabIdentity>[];
 
     await tester.pumpWidget(
-      _app(tabs: <SessionTabRecord>[first, second], onClose: closed.add),
+      _app(tabs: <SessionTabRecord>[first, second], onActivate: activated.add),
     );
     await tester.pump();
 
@@ -132,13 +124,6 @@ void main() {
         .requestFocus();
     await tester.pump();
 
-    expect(
-      find.byKey(ValueKey<String>('session_tab_close_$firstKey')),
-      findsOneWidget,
-    );
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
 
@@ -151,21 +136,10 @@ void main() {
           ?.hasFocus,
       isTrue,
     );
-    expect(
-      find.byKey(ValueKey<String>('session_tab_close_$firstKey')),
-      findsNothing,
-    );
-    expect(
-      find.byKey(ValueKey<String>('session_tab_close_$secondKey')),
-      findsOneWidget,
-    );
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
 
-    expect(closed, <SessionTabIdentity>[second.identity]);
+    expect(activated, <SessionTabIdentity>[second.identity]);
   });
 
   testWidgets('prioritizes error attention without replacing retry status', (
@@ -405,6 +379,8 @@ void main() {
                         .toList(growable: false);
                   });
                 },
+                onContextMenu: (tab, position, {required haptic}) async {},
+                trailingBuilder: (context, tab) => null,
               );
             },
           ),
@@ -412,30 +388,15 @@ void main() {
       ),
     );
 
-    // With a pointer the close affordance only materialises on hover, so the
-    // mouse has to be over `second` before it can be tapped.
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.addPointer(location: Offset.zero);
-    addTearDown(gesture.removePointer);
-    await gesture.moveTo(
-      tester.getCenter(
-        find.byKey(
-          ValueKey<String>(
-            'session_tab_${sessionTabIdentityKey(second.identity)}',
-          ),
-        ),
+    final secondFinder = find.byKey(
+      ValueKey<String>(
+        'session_tab_activate_${sessionTabIdentityKey(second.identity)}',
       ),
     );
-    await tester.pump();
-
-    await tester.tap(
-      find.byKey(
-        ValueKey<String>(
-          'session_tab_close_${sessionTabIdentityKey(second.identity)}',
-        ),
-      ),
-    );
-    await tester.pump();
+    await tester.tap(secondFinder);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(secondFinder);
+    await tester.pumpAndSettle();
 
     expect(closed, <SessionTabIdentity>[second.identity]);
     expect(activated, isEmpty);
@@ -453,24 +414,18 @@ void main() {
       isTrue,
     );
 
-    await gesture.moveTo(
-      tester.getCenter(
-        find.byKey(
-          ValueKey<String>(
-            'session_tab_${sessionTabIdentityKey(first.identity)}',
-          ),
-        ),
+    final firstFinder = find.byKey(
+      ValueKey<String>(
+        'session_tab_activate_${sessionTabIdentityKey(first.identity)}',
       ),
     );
-    await tester.pump();
-
-    await tester.tap(
-      find.byKey(
-        ValueKey<String>(
-          'session_tab_close_${sessionTabIdentityKey(first.identity)}',
-        ),
-      ),
+    final middleClick = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+      buttons: kMiddleMouseButton,
     );
+    await middleClick.addPointer(location: tester.getCenter(firstFinder));
+    await middleClick.down(tester.getCenter(firstFinder));
+    await middleClick.up();
     await tester.pump();
 
     expect(closed, <SessionTabIdentity>[second.identity, first.identity]);
@@ -537,7 +492,7 @@ void main() {
 
     final shape = _tabMaterial(tester, selected).shape!;
 
-    for (final size in const <Size>[Size(244, 54), Size(214, 58)]) {
+    for (final size in const <Size>[Size(317.2, 54), Size(278.2, 58)]) {
       final path = shape.getOuterPath(Offset.zero & size);
       final rightShoulder = size.width - 14;
 
@@ -560,10 +515,11 @@ void main() {
     }
   });
 
-  testWidgets('touch reveals close in compact and wide layouts for 3s', (
+  testWidgets('double touch closes without rendering a close button', (
     tester,
   ) async {
     final tab = _tab('alpha', isSelected: true);
+    final closed = <SessionTabIdentity>[];
     final closeFinder = find.byKey(
       ValueKey<String>(
         'session_tab_close_${sessionTabIdentityKey(tab.identity)}',
@@ -572,30 +528,57 @@ void main() {
 
     for (final isCompact in <bool>[true, false]) {
       await tester.pumpWidget(
-        _app(tabs: <SessionTabRecord>[tab], isCompact: isCompact),
-      );
-      await tester.pump();
-
-      // Touch has no hover regardless of how wide the layout is.
-      expect(closeFinder, findsNothing);
-
-      await tester.tap(
-        find.byKey(
-          ValueKey<String>(
-            'session_tab_activate_${sessionTabIdentityKey(tab.identity)}',
-          ),
+        _app(
+          tabs: <SessionTabRecord>[tab],
+          isCompact: isCompact,
+          onClose: closed.add,
         ),
       );
       await tester.pump();
-      expect(closeFinder, findsOneWidget);
-      expect(tester.getSize(closeFinder), const Size.square(40));
 
-      await tester.pump(const Duration(seconds: 2));
-      expect(closeFinder, findsOneWidget);
-
-      await tester.pump(const Duration(seconds: 1, milliseconds: 100));
       expect(closeFinder, findsNothing);
+      final tabFinder = find.byKey(
+        ValueKey<String>(
+          'session_tab_activate_${sessionTabIdentityKey(tab.identity)}',
+        ),
+      );
+      await tester.tap(tabFinder, kind: PointerDeviceKind.touch);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(tabFinder, kind: PointerDeviceKind.touch);
+      await tester.pump();
+      expect(closed.last, tab.identity);
+      await tester.pump(const Duration(seconds: 1));
     }
+  });
+
+  testWidgets('right click and long press open the tab context menu', (
+    tester,
+  ) async {
+    final tab = _tab('alpha', isSelected: true);
+    final requests = <({SessionTabIdentity identity, bool haptic})>[];
+    await tester.pumpWidget(
+      _app(
+        tabs: <SessionTabRecord>[tab],
+        onContextMenu: (tab, position, {required haptic}) async {
+          requests.add((identity: tab.identity, haptic: haptic));
+        },
+      ),
+    );
+    final finder = find.byKey(
+      ValueKey<String>(
+        'session_tab_activate_${sessionTabIdentityKey(tab.identity)}',
+      ),
+    );
+
+    await tester.tap(finder, buttons: kSecondaryMouseButton);
+    await tester.pump();
+    await tester.longPress(finder);
+    await tester.pump();
+
+    expect(requests, <({SessionTabIdentity identity, bool haptic})>[
+      (identity: tab.identity, haptic: false),
+      (identity: tab.identity, haptic: true),
+    ]);
   });
 
   testWidgets('selection is conveyed by more than colour', (tester) async {
@@ -636,6 +619,8 @@ Widget _app({
   Set<String> openProjectIds = const <String>{},
   ValueChanged<SessionTabIdentity>? onActivate,
   ValueChanged<SessionTabIdentity>? onClose,
+  SessionTabContextMenuCallback? onContextMenu,
+  SessionTabTrailingBuilder? trailingBuilder,
   double width = 800,
   bool isCompact = false,
 }) {
@@ -652,6 +637,9 @@ Widget _app({
             isCompact: isCompact,
             onActivate: (tab) => onActivate?.call(tab.identity),
             onClose: (tab) => onClose?.call(tab.identity),
+            onContextMenu:
+                onContextMenu ?? (tab, position, {required haptic}) async {},
+            trailingBuilder: trailingBuilder ?? (context, tab) => null,
           ),
         ),
       ),

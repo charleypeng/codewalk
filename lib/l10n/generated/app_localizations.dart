@@ -8653,6 +8653,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggestions'**
   String get workspaceSuggestions;
+
+  /// Title for the session tab gesture onboarding dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Session tabs have new controls'**
+  String get sessionTabsGestureHintTitle;
+
+  /// Instructions for closing tabs, opening their menu, and disabling tabs
+  ///
+  /// In en, this message translates to:
+  /// **'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.'**
+  String get sessionTabsGestureHintBody;
+
+  /// Acknowledgement button for the session tab gesture dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get sessionTabsGestureHintAcknowledge;
+
+  /// Rename action in the active session tab menu
+  ///
+  /// In en, this message translates to:
+  /// **'Rename session'**
+  String get sessionTabRenameAction;
 }
 
 class _AppLocalizationsDelegate

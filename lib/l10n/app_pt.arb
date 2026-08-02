@@ -1394,5 +1394,9 @@
   "settingsSessionAttentionUnavailable": "A atenção de sessões não está disponível nesta plataforma.",
   "settingsSessionAttentionOpenSettings": "Abrir configurações de exibição",
   "settingsSessionAttentionStop": "Parar atenção de sessões",
-  "settingsSessionAttentionThirdPartyTtsWarning": "Ao tocar em Ler, o texto da resposta pode ser enviado ao provedor de TTS de terceiros configurado."
+  "settingsSessionAttentionThirdPartyTtsWarning": "Ao tocar em Ler, o texto da resposta pode ser enviado ao provedor de TTS de terceiros configurado.",
+  "sessionTabsGestureHintTitle": "As abas de sessão têm novos controles",
+  "sessionTabsGestureHintBody": "Clique duas vezes ou toque duas vezes em uma aba para fechá-la. Clique com o botão direito ou toque e segure para abrir as ações da sessão. Você pode desativar as abas em Display Toggles.",
+  "sessionTabsGestureHintAcknowledge": "Entendi",
+  "sessionTabRenameAction": "Renomear sessão"
 }

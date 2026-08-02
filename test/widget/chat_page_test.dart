@@ -5039,7 +5039,7 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 1));
     expect(selectionWasBlocked, isTrue);
     unawaited(
       Navigator.of(tester.element(find.byType(ChatPage))).push(
@@ -5176,6 +5176,93 @@ void main() {
     );
   });
 
+  testWidgets('session tab gesture hint batches and persists opt-out', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    final project = Project(
+      id: 'proj_hint',
+      name: 'Hint project',
+      path: '/repo/hint',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+    ChatSession session(String id) => ChatSession(
+      id: id,
+      workspaceId: project.id,
+      time: now,
+      title: 'Session $id',
+      directory: project.path,
+    );
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[session('one'), session('two')],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'showSessionTabsOverride': true,
+        'sessionTabsGestureHintDismissed': false,
+        'checkUpdatesOnOpen': false,
+      });
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      chatRepository: repository,
+      projectRepository: FakeProjectRepository(
+        currentProject: project,
+        projects: <Project>[project],
+      ),
+    );
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      _testApp(
+        provider,
+        _buildAppProvider(localDataSource: localDataSource),
+        settingsProvider: settingsProvider,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final dialog = find.byKey(
+      const ValueKey<String>('session_tabs_gesture_hint_dialog'),
+    );
+    final checkbox = find.byKey(
+      const ValueKey<String>('session_tabs_gesture_hint_dont_show'),
+    );
+    final acknowledge = find.byKey(
+      const ValueKey<String>('session_tabs_gesture_hint_acknowledge'),
+    );
+    expect(dialog, findsOneWidget);
+    expect(find.textContaining('Display Toggles'), findsOneWidget);
+    expect(tester.widget<CheckboxListTile>(checkbox).value, isFalse);
+
+    await tester.tap(acknowledge);
+    await tester.pumpAndSettle();
+    expect(settingsProvider.sessionTabsGestureHintDismissed, isFalse);
+
+    repository.sessions.add(session('three'));
+    await provider.loadSessions();
+    await tester.pumpAndSettle();
+    expect(dialog, findsOneWidget);
+
+    await tester.tap(checkbox);
+    await tester.tap(acknowledge);
+    await tester.pumpAndSettle();
+    expect(settingsProvider.sessionTabsGestureHintDismissed, isTrue);
+
+    repository.sessions.add(session('four'));
+    await provider.loadSessions();
+    await tester.pumpAndSettle();
+    expect(dialog, findsNothing);
+  });
+
   testWidgets('active tab close selects right then enters local New Chat', (
     WidgetTester tester,
   ) async {
@@ -5237,28 +5324,14 @@ void main() {
       directory: project.path,
       sessionId: sessionB.id,
     );
-    // The close button is revealed by hover on pointer devices.
-    final closeHover = await tester.createGesture(
-      kind: PointerDeviceKind.mouse,
-    );
-    await closeHover.addPointer(location: Offset.zero);
-    addTearDown(closeHover.removePointer);
-    await closeHover.moveTo(
-      tester.getCenter(
-        find.byKey(
-          ValueKey<String>('session_tab_${sessionTabIdentityKey(identityA)}'),
-        ),
+    final tabA = find.byKey(
+      ValueKey<String>(
+        'session_tab_activate_${sessionTabIdentityKey(identityA)}',
       ),
     );
-    await tester.pump();
-
-    await tester.tap(
-      find.byKey(
-        ValueKey<String>(
-          'session_tab_close_${sessionTabIdentityKey(identityA)}',
-        ),
-      ),
-    );
+    await tester.tap(tabA, kind: PointerDeviceKind.mouse);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(tabA, kind: PointerDeviceKind.mouse);
     await tester.pumpAndSettle();
 
     expect(provider.currentSession?.id, sessionB.id);
@@ -5271,26 +5344,14 @@ void main() {
       contains(sessionA.id),
     );
 
-    // Leave the strip first so the pointer produces a fresh enter on the tab
-    // that took the closed one's place.
-    await closeHover.moveTo(Offset.zero);
-    await tester.pump();
-    await closeHover.moveTo(
-      tester.getCenter(
-        find.byKey(
-          ValueKey<String>('session_tab_${sessionTabIdentityKey(identityB)}'),
-        ),
+    final tabB = find.byKey(
+      ValueKey<String>(
+        'session_tab_activate_${sessionTabIdentityKey(identityB)}',
       ),
     );
-    await tester.pump();
-
-    await tester.tap(
-      find.byKey(
-        ValueKey<String>(
-          'session_tab_close_${sessionTabIdentityKey(identityB)}',
-        ),
-      ),
-    );
+    await tester.tap(tabB, kind: PointerDeviceKind.mouse);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(tabB, kind: PointerDeviceKind.mouse);
     await tester.pumpAndSettle();
 
     expect(provider.currentSession, isNull);
@@ -20139,19 +20200,36 @@ void main() {
     await provider.loadSessions();
     await provider.selectSession(provider.sessions.first);
     await tester.pumpAndSettle();
+    await _ensureDesktopSessionTabsVisible(tester);
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('current_session_actions_button')),
+    expect(
+      find.byKey(const ValueKey<String>('chat_compact_session_header')),
+      findsNothing,
     );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.byKey(const ValueKey<String>('current_session_actions_button')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('appbar_context_usage_button')),
+      findsOneWidget,
+    );
+    await _openActiveSessionTabMenu(tester, provider);
 
+    expect(find.text('Rename session'), findsOneWidget);
     expect(find.text('Share session'), findsOneWidget);
     expect(find.text('View tasks'), findsOneWidget);
     expect(find.text('Review changes'), findsOneWidget);
     expect(find.text('Undo last turn'), findsOneWidget);
     expect(find.text('Redo last undone turn'), findsOneWidget);
     expect(find.text('Compact context'), findsOneWidget);
+
+    await tester.tap(find.text('Rename session'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Renamed from tab');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(provider.currentSession?.title, 'Renamed from tab');
   });
 
   testWidgets('session actions can open the current session details dialog', (
@@ -20219,12 +20297,9 @@ void main() {
     await provider.selectSession(provider.sessions.first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    await _ensureDesktopSessionTabsVisible(tester);
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('current_session_actions_button')),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await _openActiveSessionTabMenu(tester, provider);
     await tester.tap(find.text('View tasks'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
@@ -20813,7 +20888,10 @@ void main() {
       ],
     );
     final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'showSessionTabsOverride': false,
+      });
     final provider = _buildChatProvider(
       chatRepository: repository,
       localDataSource: localDataSource,
@@ -20848,7 +20926,10 @@ void main() {
       ],
     );
     final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'showSessionTabsOverride': false,
+      });
     final provider = _buildChatProvider(
       chatRepository: repository,
       localDataSource: localDataSource,
@@ -20888,7 +20969,10 @@ void main() {
       ],
     );
     final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'showSessionTabsOverride': false,
+      });
     final provider = _buildChatProvider(
       chatRepository: repository,
       localDataSource: localDataSource,
@@ -21313,11 +21397,11 @@ Future<void> _ensureDesktopSessionTabsVisible(WidgetTester tester) async {
   await tester.tap(
     find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
   );
-  await tester.pumpAndSettle();
+  await _pumpUiFrames(tester);
   await tester.tap(
     find.byKey(const ValueKey<String>('display_toggle_item_session_tabs')),
   );
-  await tester.pumpAndSettle();
+  await _pumpUiFrames(tester);
 }
 
 Future<void> _pumpSessionTabNavigation(WidgetTester tester) async {
@@ -21325,6 +21409,24 @@ Future<void> _pumpSessionTabNavigation(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 100));
   }
   await tester.pumpAndSettle();
+}
+
+Future<void> _openActiveSessionTabMenu(
+  WidgetTester tester,
+  ChatProvider provider,
+) async {
+  final activeTab = provider.sessionTabs.singleWhere((tab) => tab.isSelected);
+  await tester.tap(
+    find.byKey(
+      ValueKey<String>(
+        'session_tab_activate_${sessionTabIdentityKey(activeTab.identity)}',
+      ),
+    ),
+    kind: PointerDeviceKind.mouse,
+    buttons: kSecondaryMouseButton,
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
 }
 
 Future<void> _pumpPostOnboardingTourStart(WidgetTester tester) async {
@@ -21418,6 +21520,7 @@ void _disableAutomaticUpdateChecksForTest(
       ? <String, dynamic>{}
       : (jsonDecode(raw) as Map).cast<String, dynamic>();
   settingsJson['checkUpdatesOnOpen'] = false;
+  settingsJson['sessionTabsGestureHintDismissed'] = true;
   localDataSource.experienceSettingsJson = jsonEncode(settingsJson);
 }
 

@@ -337,6 +337,12 @@ class _ChatPageState extends State<ChatPage>
   Future<void>? _projectScopeTransitionTask;
   SessionTabIdentity? _activatingSessionTabIdentity;
   Future<bool>? _sessionTabActivationTask;
+  Set<SessionTabIdentity> _knownSessionTabIdentities = <SessionTabIdentity>{};
+  final Set<SessionTabIdentity> _pendingSessionTabHintIdentities =
+      <SessionTabIdentity>{};
+  bool _sessionTabHintScheduled = false;
+  bool _sessionTabHintShowing = false;
+  int _sessionTabHintGeneration = 0;
   bool _isProjectSelectorActionInFlight = false;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
   // Stores the last expanded history group ID for each session ID.
@@ -751,6 +757,10 @@ class _ChatPageState extends State<ChatPage>
         if (!mounted) {
           return;
         }
+        final chatProvider = _chatProvider;
+        if (chatProvider != null) {
+          _syncSessionTabsGestureHint(chatProvider);
+        }
         _flushPendingPostOnboardingTourAutoStart();
       });
     }
@@ -815,6 +825,7 @@ class _ChatPageState extends State<ChatPage>
     _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
+    _sessionTabHintGeneration += 1;
     _desktopWindowChromeController?.detach(this);
     _sessionAttentionOverlayController
       ?..removeListener(_handleSessionAttentionOverlayChanged)

@@ -41,9 +41,132 @@ extension _ChatPageSessionTabs on _ChatPageState {
           transparentBackground: transparentBackground,
           onActivate: (tab) => unawaited(_activateSessionTab(tab)),
           onClose: (tab) => unawaited(_closeSessionTab(tab)),
+          onContextMenu: _openSessionTabContextMenu,
+          trailingBuilder: (context, tab) {
+            if (!tab.isSelected) return null;
+            return _buildSessionContextUsageButton(
+              context,
+              chatProvider,
+              targetSize: isCompact ? 40 : 32,
+            );
+          },
         );
       },
     );
+  }
+
+  Future<void> _openSessionTabContextMenu(
+    SessionTabRecord tab,
+    Offset globalPosition, {
+    required bool haptic,
+  }) async {
+    if (!tab.isSelected && !await _activateSessionTab(tab)) {
+      return;
+    }
+    if (!mounted || !_isChatScreenActive()) return;
+    await _showCurrentSessionActionsMenu(
+      globalPosition: globalPosition,
+      haptic: haptic,
+    );
+  }
+
+  void _syncSessionTabsGestureHint(ChatProvider chatProvider) {
+    final currentIdentities = chatProvider.sessionTabs
+        .map((tab) => tab.identity)
+        .toSet();
+    final settingsProvider = _settingsProvider;
+    if (settingsProvider == null || !settingsProvider.initialized) return;
+    if (!settingsProvider.showSessionTabs ||
+        settingsProvider.sessionTabsGestureHintDismissed) {
+      _knownSessionTabIdentities = currentIdentities;
+      _pendingSessionTabHintIdentities.clear();
+      return;
+    }
+
+    final added = currentIdentities.difference(_knownSessionTabIdentities);
+    _knownSessionTabIdentities = currentIdentities;
+    if (_sessionTabHintShowing || added.isEmpty) return;
+    _pendingSessionTabHintIdentities.addAll(added);
+    _scheduleSessionTabsGestureHint();
+  }
+
+  void _scheduleSessionTabsGestureHint() {
+    if (_sessionTabHintScheduled || _sessionTabHintShowing) return;
+    _sessionTabHintScheduled = true;
+    final generation = _sessionTabHintGeneration;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sessionTabHintScheduled = false;
+      if (!mounted || generation != _sessionTabHintGeneration) return;
+      final settingsProvider = _settingsProvider;
+      if (settingsProvider == null ||
+          !settingsProvider.initialized ||
+          !settingsProvider.showSessionTabs ||
+          settingsProvider.sessionTabsGestureHintDismissed ||
+          _pendingSessionTabHintIdentities.isEmpty ||
+          !_isChatScreenActive()) {
+        return;
+      }
+      unawaited(_showSessionTabsGestureHint(settingsProvider));
+    });
+  }
+
+  Future<void> _showSessionTabsGestureHint(
+    SettingsProvider settingsProvider,
+  ) async {
+    if (_sessionTabHintShowing || !mounted) return;
+    _sessionTabHintShowing = true;
+    _pendingSessionTabHintIdentities.clear();
+    var dontShowAgain = false;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            return ModalPrimaryActionShortcuts(
+              onPrimaryAction: () => Navigator.of(dialogContext).pop(),
+              child: AlertDialog(
+                key: const ValueKey<String>('session_tabs_gesture_hint_dialog'),
+                title: Text(context.l10n.sessionTabsGestureHintTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(context.l10n.sessionTabsGestureHintBody),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      key: const ValueKey<String>(
+                        'session_tabs_gesture_hint_dont_show',
+                      ),
+                      value: dontShowAgain,
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(context.l10n.onboardingDonShowAgain),
+                      onChanged: (value) =>
+                          setDialogState(() => dontShowAgain = value ?? false),
+                    ),
+                  ],
+                ),
+                actions: [
+                  FilledButton(
+                    key: const ValueKey<String>(
+                      'session_tabs_gesture_hint_acknowledge',
+                    ),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(context.l10n.sessionTabsGestureHintAcknowledge),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+      if (dontShowAgain && mounted) {
+        await settingsProvider.setSessionTabsGestureHintDismissed(true);
+      }
+    } finally {
+      _sessionTabHintShowing = false;
+      _pendingSessionTabHintIdentities.clear();
+    }
   }
 
   Future<bool> _activateSessionTab(SessionTabRecord tab) async {

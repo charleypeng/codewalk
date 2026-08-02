@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -22,8 +23,17 @@ const double _kTabShoulder = 14;
 /// Radius of the tab's top corners.
 const double _kTabTopRadius = 5;
 
-/// How long a tapped tab keeps its close button visible on touch devices.
-const Duration _kTouchCloseReveal = Duration(seconds: 3);
+const double _kSessionTabWidth = 244 * 1.3;
+const double _kCompactSessionTabWidth = 214 * 1.3;
+
+typedef SessionTabContextMenuCallback =
+    Future<void> Function(
+      SessionTabRecord tab,
+      Offset globalPosition, {
+      required bool haptic,
+    });
+typedef SessionTabTrailingBuilder =
+    Widget? Function(BuildContext context, SessionTabRecord tab);
 
 /// Browser-style tab silhouette: the sides flare outwards at the bottom so the
 /// tab reads as a tab instead of a rounded rectangle, and neighbours interlock.
@@ -94,6 +104,8 @@ class SessionTabStrip extends StatefulWidget {
     required this.isCompact,
     required this.onActivate,
     required this.onClose,
+    required this.onContextMenu,
+    required this.trailingBuilder,
     this.fillWidth = true,
     this.transparentBackground = false,
   });
@@ -113,6 +125,8 @@ class SessionTabStrip extends StatefulWidget {
   final bool transparentBackground;
   final ValueChanged<SessionTabRecord> onActivate;
   final ValueChanged<SessionTabRecord> onClose;
+  final SessionTabContextMenuCallback onContextMenu;
+  final SessionTabTrailingBuilder trailingBuilder;
 
   @override
   State<SessionTabStrip> createState() => _SessionTabStripState();
@@ -125,9 +139,8 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   final Map<SessionTabIdentity, FocusNode> _tabFocusNodes =
       <SessionTabIdentity, FocusNode>{};
   SessionTabIdentity? _hoveredIdentity;
-  SessionTabIdentity? _focusedIdentity;
-  SessionTabIdentity? _touchRevealedIdentity;
-  Timer? _touchRevealTimer;
+  SessionTabIdentity? _lastPointerIdentity;
+  Offset? _lastPointerGlobalPosition;
   SessionTabIdentity? _lastSelectedIdentity;
   double? _lastViewportWidth;
   bool _ensureVisibleScheduled = false;
@@ -141,13 +154,10 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     if (_hoveredIdentity != null && !identities.contains(_hoveredIdentity)) {
       _hoveredIdentity = null;
     }
-    if (_focusedIdentity != null && !identities.contains(_focusedIdentity)) {
-      _focusedIdentity = null;
-    }
-    if (_touchRevealedIdentity != null &&
-        !identities.contains(_touchRevealedIdentity)) {
-      _touchRevealTimer?.cancel();
-      _touchRevealedIdentity = null;
+    if (_lastPointerIdentity != null &&
+        !identities.contains(_lastPointerIdentity)) {
+      _lastPointerIdentity = null;
+      _lastPointerGlobalPosition = null;
     }
     _tabKeys.removeWhere((identity, _) => !identities.contains(identity));
     final removedFocusNodes = _tabFocusNodes.entries
@@ -161,7 +171,6 @@ class _SessionTabStripState extends State<SessionTabStrip> {
 
   @override
   void dispose() {
-    _touchRevealTimer?.cancel();
     _scrollController.dispose();
     for (final focusNode in _tabFocusNodes.values) {
       focusNode.dispose();
@@ -178,6 +187,14 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     final colorScheme = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
+        final horizontalPadding = widget.isCompact ? 6.0 : 8.0;
+        final maxTabWidth = widget.isCompact
+            ? _kCompactSessionTabWidth
+            : _kSessionTabWidth;
+        final tabWidth = math.min(
+          maxTabWidth,
+          math.max(0.0, constraints.maxWidth - horizontalPadding * 2),
+        );
         final selectedIdentity = _selectedIdentity();
         if (selectedIdentity != _lastSelectedIdentity ||
             constraints.maxWidth != _lastViewportWidth) {
@@ -210,9 +227,9 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                 controller: _scrollController,
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsetsDirectional.fromSTEB(
-                  widget.isCompact ? 6 : 8,
+                  horizontalPadding,
                   4,
-                  widget.isCompact ? 6 : 8,
+                  horizontalPadding,
                   0,
                 ),
                 child: Row(
@@ -223,7 +240,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                       index++
                     ) ...[
                       if (index > 0) const SizedBox(width: 2),
-                      _buildTab(context, widget.tabs[index]),
+                      _buildTab(context, widget.tabs[index], tabWidth),
                     ],
                   ],
                 ),
@@ -242,36 +259,32 @@ class _SessionTabStripState extends State<SessionTabStrip> {
     setState(() => _hoveredIdentity = identity);
   }
 
-  void _setFocused(SessionTabIdentity? identity) {
-    if (!mounted || _focusedIdentity == identity) {
-      return;
-    }
-    setState(() => _focusedIdentity = identity);
-  }
-
-  /// Touch devices have no hover, so tapping a tab reveals its close button
-  /// for a short while instead of showing it permanently.
-  void _revealCloseForTouch(SessionTabIdentity identity) {
-    _touchRevealTimer?.cancel();
-    if (mounted) {
-      setState(() => _touchRevealedIdentity = identity);
-    }
-    _touchRevealTimer = Timer(_kTouchCloseReveal, () {
-      if (mounted) {
-        setState(() => _touchRevealedIdentity = null);
-      }
-    });
-  }
-
-  void _handlePointerDown(SessionTabIdentity identity, PointerDownEvent event) {
-    if (event.kind == PointerDeviceKind.touch ||
-        event.kind == PointerDeviceKind.stylus ||
-        event.kind == PointerDeviceKind.invertedStylus) {
-      _revealCloseForTouch(identity);
+  void _handlePointerDown(SessionTabRecord tab, PointerDownEvent event) {
+    _lastPointerIdentity = tab.identity;
+    _lastPointerGlobalPosition = event.position;
+    if (event.buttons & kMiddleMouseButton != 0) {
+      _handleClose(tab);
     }
   }
 
-  Widget _buildTab(BuildContext context, SessionTabRecord tab) {
+  Offset _contextMenuPosition(SessionTabRecord tab) {
+    if (_lastPointerIdentity == tab.identity &&
+        _lastPointerGlobalPosition != null) {
+      return _lastPointerGlobalPosition!;
+    }
+    final renderObject = _tabKeys[tab.identity]?.currentContext
+        ?.findRenderObject();
+    if (renderObject is RenderBox) {
+      return renderObject.localToGlobal(renderObject.size.center(Offset.zero));
+    }
+    return Offset.zero;
+  }
+
+  Widget _buildTab(
+    BuildContext context,
+    SessionTabRecord tab,
+    double tabWidth,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final title = tab.title.trim().isEmpty
         ? context.l10n.sessionExportUntitled
@@ -284,31 +297,19 @@ class _SessionTabStripState extends State<SessionTabStrip> {
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
     final hovered = _hoveredIdentity == tab.identity;
-    final touchRevealed = _touchRevealedIdentity == tab.identity;
-    // Mouse hover, keyboard focus and touch/stylus input each reveal the close
-    // action without making layout width stand in for the input device type.
-    final showClose =
-        hovered || _focusedIdentity == tab.identity || touchRevealed;
-    final closeExtent = widget.isCompact || touchRevealed ? 40.0 : 26.0;
+    final trailing = widget.trailingBuilder(context, tab);
 
     return MouseRegion(
       onEnter: (_) => _setHovered(tab.identity),
       onExit: (_) => _setHovered(null),
       child: Listener(
-        onPointerDown: (event) => _handlePointerDown(tab.identity, event),
+        onPointerDown: (event) => _handlePointerDown(tab, event),
         child: Focus(
           canRequestFocus: false,
           skipTraversal: true,
-          onFocusChange: (hasFocus) {
-            if (hasFocus) {
-              _setFocused(tab.identity);
-            } else if (_focusedIdentity == tab.identity) {
-              _setFocused(null);
-            }
-          },
           child: SizedBox(
             key: _tabKeys.putIfAbsent(tab.identity, GlobalKey.new),
-            width: widget.isCompact ? 214 : 244,
+            width: tabWidth,
             child: Material(
               key: ValueKey<String>('session_tab_$key'),
               // The selected tab shares the content surface colour, which is what
@@ -377,6 +378,21 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                                         return null;
                                       }),
                                   onTap: () => widget.onActivate(tab),
+                                  onDoubleTap: () => _handleClose(tab),
+                                  onSecondaryTapUp: (details) => unawaited(
+                                    widget.onContextMenu(
+                                      tab,
+                                      details.globalPosition,
+                                      haptic: false,
+                                    ),
+                                  ),
+                                  onLongPress: () => unawaited(
+                                    widget.onContextMenu(
+                                      tab,
+                                      _contextMenuPosition(tab),
+                                      haptic: true,
+                                    ),
+                                  ),
                                   child: ConstrainedBox(
                                     constraints: const BoxConstraints(
                                       minHeight: 48,
@@ -423,42 +439,14 @@ class _SessionTabStripState extends State<SessionTabStrip> {
                             ),
                           ),
                         ),
-                        if (!showClose)
+                        if (trailing == null)
                           const SizedBox(width: _kTabShoulder)
                         else
                           Padding(
                             padding: const EdgeInsetsDirectional.only(
                               end: _kTabShoulder,
                             ),
-                            child: Semantics(
-                              button: true,
-                              label: context.l10n.chatClose,
-                              onTap: () => _handleClose(tab),
-                              child: ExcludeSemantics(
-                                child: IconButton(
-                                  key: ValueKey<String>(
-                                    'session_tab_close_$key',
-                                  ),
-                                  tooltip: context.l10n.chatClose,
-                                  // A full 48px splash swamped the tab and clashed
-                                  // with its curved shoulders; the tap target stays
-                                  // comfortable on touch, tighter with a pointer.
-                                  constraints: BoxConstraints.tightFor(
-                                    width: closeExtent,
-                                    height: closeExtent,
-                                  ),
-                                  style: IconButton.styleFrom(
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  iconSize: 16,
-                                  color: foreground,
-                                  icon: const Icon(Symbols.close_rounded),
-                                  onPressed: () => _handleClose(tab),
-                                ),
-                              ),
-                            ),
+                            child: trailing,
                           ),
                       ],
                     ),

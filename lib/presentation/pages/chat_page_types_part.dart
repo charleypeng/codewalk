@@ -596,6 +596,7 @@ enum _SessionHeaderMenuAction {
 enum _HistoryToolbarAction { undo, redo }
 
 enum _CurrentSessionAction {
+  rename,
   shareToggle,
   copyLink,
   exportMarkdown,

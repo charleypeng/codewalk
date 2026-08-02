@@ -43,6 +43,9 @@ extension _ChatPageLifecycle on _ChatPageState {
       _syncBackgroundPermissionAutoApproveContext(reason: 'settings-changed'),
     );
     _flushPendingPostOnboardingTourAutoStart();
+    if (chatProvider != null) {
+      _syncSessionTabsGestureHint(chatProvider);
+    }
   }
 
   void _handleChatProviderChanged() {
@@ -66,6 +69,7 @@ extension _ChatPageLifecycle on _ChatPageState {
   void _handleChatProviderChangedBody() {
     final provider = _chatProvider;
     if (provider != null) {
+      _syncSessionTabsGestureHint(provider);
       _syncSessionScrollState(provider);
       _syncPassiveProviderMessageIndicator(provider);
       _syncResponseViewportPolicy(provider);

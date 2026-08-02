@@ -4913,4 +4913,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => 'Sugestões';
+
+  @override
+  String get sessionTabsGestureHintTitle =>
+      'As abas de sessão têm novos controles';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Clique duas vezes ou toque duas vezes em uma aba para fechá-la. Clique com o botão direito ou toque e segure para abrir as ações da sessão. Você pode desativar as abas em Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Entendi';
+
+  @override
+  String get sessionTabRenameAction => 'Renomear sessão';
 }

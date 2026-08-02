@@ -6,6 +6,7 @@ extension _ChatPageChrome on _ChatPageState {
     required bool isShared,
   }) {
     return switch (action) {
+      _CurrentSessionAction.rename => context.l10n.sessionTabRenameAction,
       _CurrentSessionAction.shareToggle =>
         isShared ? context.l10n.sessionUnshare : context.l10n.sessionShare,
       _CurrentSessionAction.copyLink => context.l10n.sessionCopyLink,
@@ -26,6 +27,7 @@ extension _ChatPageChrome on _ChatPageState {
     required bool isShared,
   }) {
     return switch (action) {
+      _CurrentSessionAction.rename => Symbols.edit,
       _CurrentSessionAction.shareToggle =>
         isShared ? Symbols.link_off : Symbols.link,
       _CurrentSessionAction.copyLink => Symbols.content_copy,
@@ -39,6 +41,88 @@ extension _ChatPageChrome on _ChatPageState {
     };
   }
 
+  List<PopupMenuEntry<_CurrentSessionAction>> _buildCurrentSessionActionItems(
+    ChatProvider chatProvider,
+    ChatSession session,
+  ) {
+    final shareUrl = session.shareUrl?.trim();
+    final hasShareUrl = shareUrl != null && shareUrl.isNotEmpty;
+    final canCompact =
+        !chatProvider.isCompactingContext &&
+        !chatProvider.canAbortActiveResponse;
+
+    PopupMenuItem<_CurrentSessionAction> buildItem(
+      _CurrentSessionAction action, {
+      bool enabled = true,
+    }) {
+      return PopupMenuItem<_CurrentSessionAction>(
+        value: action,
+        enabled: enabled,
+        child: Row(
+          children: [
+            Icon(
+              _sessionActionIcon(action, isShared: session.shared),
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                _sessionActionLabel(action, isShared: session.shared),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return [
+      buildItem(_CurrentSessionAction.rename),
+      const PopupMenuDivider(),
+      buildItem(_CurrentSessionAction.shareToggle),
+      if (hasShareUrl) buildItem(_CurrentSessionAction.copyLink),
+      buildItem(_CurrentSessionAction.exportMarkdown),
+      buildItem(_CurrentSessionAction.exportJson),
+      const PopupMenuDivider(),
+      buildItem(_CurrentSessionAction.viewTasks),
+      buildItem(_CurrentSessionAction.reviewChanges),
+      const PopupMenuDivider(),
+      buildItem(
+        _CurrentSessionAction.undo,
+        enabled: chatProvider.canUndoCurrentSession,
+      ),
+      buildItem(
+        _CurrentSessionAction.redo,
+        enabled: chatProvider.canRedoCurrentSession,
+      ),
+      buildItem(_CurrentSessionAction.compactContext, enabled: canCompact),
+    ];
+  }
+
+  Future<void> _showCurrentSessionActionsMenu({
+    required Offset globalPosition,
+    required bool haptic,
+  }) async {
+    final chatProvider = context.read<ChatProvider>();
+    final session = chatProvider.currentSession;
+    if (session == null) return;
+    if (haptic) {
+      unawaited(HapticFeedback.mediumImpact());
+    }
+    final overlay = Overlay.of(context).context.findRenderObject();
+    if (overlay is! RenderBox) return;
+    final selected = await showMenu<_CurrentSessionAction>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: _buildCurrentSessionActionItems(chatProvider, session),
+    );
+    if (!mounted || selected == null) return;
+    await _handleCurrentSessionAction(chatProvider, action: selected);
+  }
+
   Future<void> _handleCurrentSessionAction(
     ChatProvider chatProvider, {
     required _CurrentSessionAction action,
@@ -49,6 +133,15 @@ extension _ChatPageChrome on _ChatPageState {
     }
 
     switch (action) {
+      case _CurrentSessionAction.rename:
+        showSessionRenameDialog(
+          context,
+          session,
+          SessionContextMenuActions(
+            onSessionRenamed: chatProvider.renameSession,
+          ),
+        );
+        return;
       case _CurrentSessionAction.shareToggle:
         final wasShared = session.shared;
         final ok = await chatProvider.toggleSessionShare(session);

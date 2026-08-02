@@ -335,6 +335,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final showTerminalPanel =
         terminalPanelVisible && !settingsProvider.terminalPanelMaximized;
     final hideComposerForTerminal = isCompactLayout && terminalPanelVisible;
+    final sessionTabsActive =
+        settingsProvider.showSessionTabs && chatProvider.sessionTabs.isNotEmpty;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
@@ -353,7 +355,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   child: Column(
                     children: [
                       // Active session header
-                      if (chatProvider.currentSession != null)
+                      if (chatProvider.currentSession != null &&
+                          !sessionTabsActive)
                         Builder(
                           builder: (context) {
                             final currentSession = chatProvider.currentSession!;
@@ -398,59 +401,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                               title,
                                             ),
                                       );
-                                      final sessionActionsButton = Builder(
-                                        builder: (context) {
-                                          final currentShareUrl = chatProvider
-                                              .currentSession
-                                              ?.shareUrl
-                                              ?.trim();
-                                          final hasShareUrl =
-                                              currentShareUrl != null &&
-                                              currentShareUrl.isNotEmpty;
-                                          final canCompact =
-                                              !chatProvider
-                                                  .isCompactingContext &&
-                                              !chatProvider
-                                                  .canAbortActiveResponse;
-
-                                          PopupMenuItem<_CurrentSessionAction>
-                                          buildActionItem(
-                                            _CurrentSessionAction action, {
-                                            bool enabled = true,
-                                          }) {
-                                            return PopupMenuItem<
-                                              _CurrentSessionAction
-                                            >(
-                                              value: action,
-                                              enabled: enabled,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    _sessionActionIcon(
-                                                      action,
-                                                      isShared:
-                                                          currentSession.shared,
-                                                    ),
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Flexible(
-                                                    child: Text(
-                                                      _sessionActionLabel(
-                                                        action,
-                                                        isShared: currentSession
-                                                            .shared,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }
-
-                                          return PopupMenuButton<
+                                      final sessionActionsButton =
+                                          PopupMenuButton<
                                             _CurrentSessionAction
                                           >(
                                             key: const ValueKey<String>(
@@ -464,120 +416,21 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                                 action: action,
                                               ),
                                             ),
-                                            itemBuilder: (context) {
-                                              return [
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .shareToggle,
+                                            itemBuilder: (context) =>
+                                                _buildCurrentSessionActionItems(
+                                                  chatProvider,
+                                                  currentSession,
                                                 ),
-                                                if (hasShareUrl)
-                                                  buildActionItem(
-                                                    _CurrentSessionAction
-                                                        .copyLink,
-                                                  ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .exportMarkdown,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .exportJson,
-                                                ),
-                                                const PopupMenuDivider(),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .viewTasks,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .reviewChanges,
-                                                ),
-                                                const PopupMenuDivider(),
-                                                buildActionItem(
-                                                  _CurrentSessionAction.undo,
-                                                  enabled: chatProvider
-                                                      .canUndoCurrentSession,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction.redo,
-                                                  enabled: chatProvider
-                                                      .canRedoCurrentSession,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .compactContext,
-                                                  enabled: canCompact,
-                                                ),
-                                              ];
-                                            },
                                             child: const Padding(
                                               padding: EdgeInsets.all(4),
                                               child: Icon(Symbols.more_horiz),
                                             ),
                                           );
-                                        },
-                                      );
-                                      final contextUsageButton = Builder(
-                                        builder: (context) {
-                                          final usage =
-                                              _resolveSessionContextUsage(
-                                                chatProvider,
-                                              );
-                                          final canCompact =
-                                              !chatProvider
-                                                  .isCompactingContext &&
-                                              !chatProvider
-                                                  .canAbortActiveResponse;
-
-                                          return PopupMenuButton<void>(
-                                            key: const ValueKey<String>(
-                                              'appbar_context_usage_button',
-                                            ),
-                                            tooltip:
-                                                context.l10n.chatCompactContext,
-                                            padding: EdgeInsets.zero,
-                                            itemBuilder: (popupContext) {
-                                              final serverId = context
-                                                  .read<AppProvider>()
-                                                  .activeServer
-                                                  ?.id;
-                                              context
-                                                  .read<QuotaProvider>()
-                                                  .ensureLoaded(
-                                                    serverId: serverId,
-                                                  );
-                                              return [
-                                                PopupMenuItem<void>(
-                                                  enabled: false,
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 8,
-                                                      ),
-                                                  child: _buildContextUsagePopover(
-                                                    context,
-                                                    usage: usage,
-                                                    isCompacting: chatProvider
-                                                        .isCompactingContext,
-                                                    canCompact: canCompact,
-                                                    onCompactNow: () =>
-                                                        _compactCurrentSession(
-                                                          chatProvider,
-                                                        ),
-                                                  ),
-                                                ),
-                                              ];
-                                            },
-                                            child: _buildContextUsageControl(
-                                              context,
-                                              usage: usage,
-                                              isCompacting: chatProvider
-                                                  .isCompactingContext,
-                                              enabled: true,
-                                            ),
+                                      final contextUsageButton =
+                                          _buildSessionContextUsageButton(
+                                            context,
+                                            chatProvider,
                                           );
-                                        },
-                                      );
                                       final actionsRow = Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [

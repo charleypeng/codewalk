@@ -31,7 +31,13 @@ enum DataSaverLevel { off, standard, aggressive }
 enum SessionAttentionPresentation { off, bubble, panel }
 
 /// Size of the Android attention Bubble. Panel keeps a fixed size.
-enum SessionAttentionBubbleSize { extraSmall, small, standard, large, extraLarge }
+enum SessionAttentionBubbleSize {
+  extraSmall,
+  small,
+  standard,
+  large,
+  extraLarge,
+}
 
 /// Linear factor applied to the Bubble's base dimensions.
 ///
@@ -46,7 +52,8 @@ double sessionAttentionBubbleScale(SessionAttentionBubbleSize size) {
   };
 }
 
-String sessionAttentionBubbleSizeKey(SessionAttentionBubbleSize size) => size.name;
+String sessionAttentionBubbleSizeKey(SessionAttentionBubbleSize size) =>
+    size.name;
 
 SessionAttentionBubbleSize sessionAttentionBubbleSizeFromKey(String value) {
   for (final size in SessionAttentionBubbleSize.values) {
@@ -779,6 +786,7 @@ class ExperienceSettings {
       showReviewChanges: true,
       showRecentSessions: true,
       showSessionTabsOverride: null,
+      sessionTabsGestureHintDismissed: false,
       taskListCollapsed: false,
       showComposerTips: true,
       showMathRendering: true,
@@ -851,6 +859,7 @@ class ExperienceSettings {
     required this.showReviewChanges,
     required this.showRecentSessions,
     this.showSessionTabsOverride,
+    this.sessionTabsGestureHintDismissed = false,
     required this.taskListCollapsed,
     required this.showComposerTips,
     required this.showMathRendering,
@@ -923,6 +932,7 @@ class ExperienceSettings {
   final bool showReviewChanges;
   final bool showRecentSessions;
   final bool? showSessionTabsOverride;
+  final bool sessionTabsGestureHintDismissed;
   final bool taskListCollapsed;
   final bool showComposerTips;
   final bool showMathRendering;
@@ -999,6 +1009,7 @@ class ExperienceSettings {
     bool? showReviewChanges,
     bool? showRecentSessions,
     bool? Function()? showSessionTabsOverride,
+    bool? sessionTabsGestureHintDismissed,
     bool? taskListCollapsed,
     bool? showComposerTips,
     bool? showMathRendering,
@@ -1085,6 +1096,9 @@ class ExperienceSettings {
       showSessionTabsOverride: showSessionTabsOverride != null
           ? showSessionTabsOverride()
           : this.showSessionTabsOverride,
+      sessionTabsGestureHintDismissed:
+          sessionTabsGestureHintDismissed ??
+          this.sessionTabsGestureHintDismissed,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
       showMathRendering: showMathRendering ?? this.showMathRendering,
@@ -1094,7 +1108,8 @@ class ExperienceSettings {
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
       desktopWindowChrome: desktopWindowChrome ?? this.desktopWindowChrome,
-      editorAutosaveEnabled: editorAutosaveEnabled ?? this.editorAutosaveEnabled,
+      editorAutosaveEnabled:
+          editorAutosaveEnabled ?? this.editorAutosaveEnabled,
       sessionAttentionBubbleSize:
           sessionAttentionBubbleSize ?? this.sessionAttentionBubbleSize,
       dataSaverEnabled: nextDataSaverLevel != DataSaverLevel.off,
@@ -1218,6 +1233,7 @@ class ExperienceSettings {
       'showRecentSessions': showRecentSessions,
       if (showSessionTabsOverride != null)
         'showSessionTabsOverride': showSessionTabsOverride,
+      'sessionTabsGestureHintDismissed': sessionTabsGestureHintDismissed,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
       'showMathRendering': showMathRendering,
@@ -1312,6 +1328,8 @@ class ExperienceSettings {
     var showReviewChanges = defaults.showReviewChanges;
     var showRecentSessions = defaults.showRecentSessions;
     var showSessionTabsOverride = defaults.showSessionTabsOverride;
+    var sessionTabsGestureHintDismissed =
+        defaults.sessionTabsGestureHintDismissed;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
     var showMathRendering = defaults.showMathRendering;
@@ -1520,6 +1538,12 @@ class ExperienceSettings {
     final showSessionTabsOverrideJson = json['showSessionTabsOverride'];
     if (showSessionTabsOverrideJson is bool) {
       showSessionTabsOverride = showSessionTabsOverrideJson;
+    }
+
+    final sessionTabsGestureHintDismissedJson =
+        json['sessionTabsGestureHintDismissed'];
+    if (sessionTabsGestureHintDismissedJson is bool) {
+      sessionTabsGestureHintDismissed = sessionTabsGestureHintDismissedJson;
     }
 
     final taskListCollapsedJson = json['taskListCollapsed'];
@@ -1854,6 +1878,7 @@ class ExperienceSettings {
       showReviewChanges: showReviewChanges,
       showRecentSessions: showRecentSessions,
       showSessionTabsOverride: showSessionTabsOverride,
+      sessionTabsGestureHintDismissed: sessionTabsGestureHintDismissed,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
       showMathRendering: showMathRendering,

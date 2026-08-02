@@ -210,6 +210,8 @@ class SettingsProvider extends ChangeNotifier {
         platform: defaultTargetPlatform,
         initialWebDefault: _initialWebSessionTabsDefault ?? false,
       );
+  bool get sessionTabsGestureHintDismissed =>
+      _settings.sessionTabsGestureHintDismissed;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
   bool get showMathRendering => _settings.showMathRendering;
@@ -772,6 +774,13 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showSessionTabsOverride: () => value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSessionTabsGestureHintDismissed(bool dismissed) async {
+    if (_settings.sessionTabsGestureHintDismissed == dismissed) return;
+    _settings = _settings.copyWith(sessionTabsGestureHintDismissed: dismissed);
     notifyListeners();
     await _persist();
   }
