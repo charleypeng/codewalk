@@ -359,6 +359,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('reveals the selected tab when tabs are inserted before it', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final selected = _tab('selected', isSelected: true);
+
+    await tester.pumpWidget(
+      _app(tabs: <SessionTabRecord>[selected], width: 300),
+    );
+    await tester.pumpAndSettle();
+
+    final preceding = List<SessionTabRecord>.generate(
+      5,
+      (index) => _tab('before_$index'),
+    );
+    await tester.pumpWidget(
+      _app(tabs: <SessionTabRecord>[...preceding, selected], width: 300),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
+
+    final viewportRect = tester.getRect(
+      find.byKey(const ValueKey<String>('session_tab_strip_scroll_view')),
+    );
+    final selectedRect = tester.getRect(
+      find.byKey(
+        ValueKey<String>(
+          'session_tab_${sessionTabIdentityKey(selected.identity)}',
+        ),
+      ),
+    );
+    expect(selectedRect.left, greaterThanOrEqualTo(viewportRect.left - 0.5));
+    expect(selectedRect.right, lessThanOrEqualTo(viewportRect.right + 0.5));
+  });
+
   testWidgets('close never activates a tab and focuses its neighbor', (
     tester,
   ) async {

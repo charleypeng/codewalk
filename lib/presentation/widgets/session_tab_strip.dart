@@ -148,6 +148,7 @@ class _SessionTabStripState extends State<SessionTabStrip> {
   SessionTabIdentity? _lastPointerIdentity;
   Offset? _lastPointerGlobalPosition;
   SessionTabIdentity? _lastSelectedIdentity;
+  int? _lastSelectedIndex;
   double? _lastViewportWidth;
   double? _lastTabWidth;
   bool? _lastIsCompact;
@@ -206,12 +207,15 @@ class _SessionTabStripState extends State<SessionTabStrip> {
           math.max(0.0, constraints.maxWidth - horizontalPadding * 2),
         );
         final selectedIdentity = _selectedIdentity();
+        final selectedIndex = widget.tabs.indexWhere((tab) => tab.isSelected);
         if (selectedIdentity != _lastSelectedIdentity ||
+            selectedIndex != _lastSelectedIndex ||
             constraints.maxWidth != _lastViewportWidth ||
             tabWidth != _lastTabWidth ||
             widget.isCompact != _lastIsCompact ||
             widget.fillWidth != _lastFillWidth) {
           _lastSelectedIdentity = selectedIdentity;
+          _lastSelectedIndex = selectedIndex;
           _lastViewportWidth = constraints.maxWidth;
           _lastTabWidth = tabWidth;
           _lastIsCompact = widget.isCompact;
@@ -234,21 +238,26 @@ class _SessionTabStripState extends State<SessionTabStrip> {
           ),
           child: Listener(
             onPointerSignal: _handlePointerSignal,
-            child: SingleChildScrollView(
-              key: const ValueKey<String>('session_tab_strip_scroll_view'),
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsetsDirectional.fromSTEB(
-                horizontalPadding,
-                _kStripTopPadding,
-                horizontalPadding,
-                0,
-              ),
-              child: Row(
-                children: [
-                  for (final tab in widget.tabs)
-                    _buildTab(context, tab, tabWidth),
-                ],
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(scrollbars: false),
+              child: SingleChildScrollView(
+                key: const ValueKey<String>('session_tab_strip_scroll_view'),
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  horizontalPadding,
+                  _kStripTopPadding,
+                  horizontalPadding,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    for (final tab in widget.tabs)
+                      _buildTab(context, tab, tabWidth),
+                  ],
+                ),
               ),
             ),
           ),
