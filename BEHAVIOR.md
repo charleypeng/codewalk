@@ -543,6 +543,11 @@
 - **Given** the user closes a session tab
 - **When** the closed tab is active or inactive
 - **Then** closing the active tab selects the tab to its right, then the tab to its left; closing the sole active tab enters a local `New Chat` draft, while closing an inactive tab does not navigate
+- **Then** CodeWalk shows a localized 3-second `Snackbar` with `Undo`
+
+- **Given** the user presses `Undo` on the closed-tab `Snackbar`
+- **When** the closed tab can be restored
+- **Then** only that local tab is restored at its original position, without navigating back or mutating the OpenCode session
 
 - **Given** the user activates a tab for another project context
 - **When** that context is closed or not current
@@ -551,12 +556,21 @@
 - **Given** the session-tab display toggle is enabled and tabs are nonempty
 - **When** the chat surface is rendered
 - **Then** on desktop with integrated window chrome configured, the strip is rendered in the integrated desktop chrome; otherwise it appears below the app bar on compact and expanded layouts
-- **Then** native desktop defaults to enabled, Android/iOS defaults to disabled, and web captures the initial compact/non-compact layout default; an explicit `Display` toggle choice persists
+- **Then** tabs default to enabled on every platform when there is no override, and an explicit `Display Toggles` choice, including `false`, persists
+- **Then** the strip height is 20% smaller, with smaller gaps and shoulders; active tabs have an 8px top radius and inactive tabs have a 5px top radius
 
 - **Given** a selected tab represents the current session
 - **When** the chat surface is rendered
 - **Then** the selected tab shows the session title and context-usage control, and the duplicate compact session header is hidden
 - **Then** the compact session header remains visible when tabs are disabled or no selected tab represents the current session
+
+- **Given** the tab strip is rendered
+- **When** the user swipes, uses the wheel or trackpad, or the app scrolls programmatically
+- **Then** horizontal scrolling remains available while the scrollbar is completely hidden visually
+
+- **Given** a tab is selected at startup or after selection, insertion, or reorder changes its horizontal position
+- **When** the tab strip updates
+- **Then** the selected tab is brought into the viewport
 
 - **Given** a session tab has attention or activity state
 - **When** its leading indicator is rendered
@@ -577,7 +591,8 @@
 - **Given** new session tabs become eligible while the tab gesture hint is enabled
 - **When** the chat is active
 - **Then** one dialog per batch aggregates and deduplicates the new tabs, explains the close and session-action gestures and `Display Toggles`, and offers `Don't show again`
-- **Then** selecting `Don't show again` persists the dismissal
+- **Then** the dialog offers `Disable tabs` beside `Got it`, and `Disable tabs` uses the same `Display Toggles` override
+- **Then** selecting `Don't show again` persists its dismissal independently of `Disable tabs`
 - **When** a hint request is pending while the chat is inactive
 - **Then** the request is shown when the chat becomes active again
 
