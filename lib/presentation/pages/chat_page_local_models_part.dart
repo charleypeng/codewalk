@@ -1,8 +1,14 @@
 part of 'chat_page.dart';
 
 class _FileExplorerContextState {
-  _FileExplorerContextState({required this.rootDirectory});
+  _FileExplorerContextState({
+    required this.contextKey,
+    required this.serverId,
+    required this.rootDirectory,
+  });
 
+  final String contextKey;
+  final String serverId;
   String rootDirectory;
   DateTime? lastLoadedAt;
   final Map<String, List<FileNode>> directoryChildren =
@@ -31,6 +37,10 @@ class _FileExplorerContextState {
   int? pendingScrollToLine;
   bool rootLoadScheduled = false;
   String? treeError;
+
+  bool get hasUnsavedDrafts => editorDraftsByPath.values.any(
+    (draft) => draft.isDirty || draft.activeSave != null,
+  );
 
   void resetForRoot(String nextRootDirectory) {
     rootDirectory = nextRootDirectory;
@@ -106,6 +116,9 @@ class _FileEditorDraftState {
   String savedContent;
   bool isSaving = false;
   String? saveErrorMessage;
+  Future<void>? activeSave;
+  String? pendingLifecycleFlushContent;
+  bool pendingLifecycleFlushAllowsInactiveContext = false;
 
   /// Pending autosave, debounced after the last edit so typing does not
   /// produce a write per keystroke.

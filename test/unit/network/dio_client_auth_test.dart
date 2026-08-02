@@ -47,23 +47,24 @@ class _StickySessionAdapter implements HttpClientAdapter {
 
 void main() {
   group('DioClient auth ownership', () {
-    test('clearing OAuth restores Basic Auth instead of removing it', () {
+    test('clearing OAuth restores origin-bound Basic Auth', () async {
       final client = DioClient(baseUrl: 'https://code.example.com');
+      final adapter = _StickySessionAdapter();
+      client.dio.httpClientAdapter = adapter;
 
-      client.setBasicAuth('opencode', 'password');
-      final basicHeader =
-          client.dio.options.headers[ApiConstants.authorization];
+      client.setBasicAuth(
+        'opencode',
+        'password',
+        origin: 'https://code.example.com',
+      );
 
       client.setOAuthToken('oauth-token', origin: 'https://code.example.com');
       client.clearOAuthToken();
+      await client.dio.get<void>('/auth');
 
       expect(
-        client.dio.options.headers[ApiConstants.authorization],
-        basicHeader,
-      );
-      expect(
-        client.sseDio.options.headers[ApiConstants.authorization],
-        basicHeader,
+        adapter.requests.single.headers[ApiConstants.authorization],
+        startsWith('Basic '),
       );
     });
 
@@ -71,10 +72,34 @@ void main() {
       final client = DioClient(baseUrl: 'https://code.example.com');
 
       client.setOAuthToken('oauth-token', origin: 'https://code.example.com');
-      client.setBasicAuth('opencode', 'password');
+      client.setBasicAuth(
+        'opencode',
+        'password',
+        origin: 'https://code.example.com',
+      );
       client.clearBasicAuth();
 
       expect(client.hasOAuthToken, isTrue);
+    });
+
+    test('does not send Basic Auth to another origin', () async {
+      final client = DioClient(baseUrl: 'https://code.example.com');
+      final adapter = _StickySessionAdapter();
+      client.dio.httpClientAdapter = adapter;
+      client.setBasicAuth(
+        'opencode',
+        'password',
+        origin: 'https://code.example.com',
+      );
+
+      await client.dio.get<void>('/same-origin');
+      await client.dio.get<void>('https://other.example.com/cross-origin');
+
+      expect(
+        adapter.requests.first.headers[ApiConstants.authorization],
+        startsWith('Basic '),
+      );
+      expect(adapter.requests.last.headers[ApiConstants.authorization], isNull);
     });
   });
 

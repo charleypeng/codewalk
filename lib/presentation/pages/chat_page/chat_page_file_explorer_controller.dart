@@ -61,9 +61,16 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     );
     final state = _fileContextStates.putIfAbsent(
       contextKey,
-      () => _FileExplorerContextState(rootDirectory: rootDirectory),
+      () => _FileExplorerContextState(
+        contextKey: contextKey,
+        serverId: projectProvider.activeServerId,
+        rootDirectory: rootDirectory,
+      ),
     );
     if (state.rootDirectory != rootDirectory) {
+      if (state.hasUnsavedDrafts) {
+        return state;
+      }
       state.resetForRoot(rootDirectory);
     }
     _ensureFileRootLoaded(state: state, projectProvider: projectProvider);

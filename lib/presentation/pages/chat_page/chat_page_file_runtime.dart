@@ -490,7 +490,22 @@ extension _ChatPageFileRuntime on _ChatPageState {
     if (!mounted) {
       return;
     }
-    final draft = fileState.editorDraftsByPath[_normalizeFilePath(path)];
+    var draft = fileState.editorDraftsByPath[_normalizeFilePath(path)];
+    if (draft != null &&
+        draft.isDirty &&
+        draft.activeSave == null &&
+        draft.saveErrorMessage == null) {
+      await _saveFileEditorDraft(
+        fileState: fileState,
+        projectProvider: projectProvider,
+        path: path,
+        onUpdated: onUpdated,
+      );
+      if (!mounted) {
+        return;
+      }
+      draft = fileState.editorDraftsByPath[_normalizeFilePath(path)];
+    }
     if (draft != null && draft.isDirty) {
       // The save failed; keep the tab open so the error stays visible.
       onUpdated?.call();
@@ -1345,13 +1360,101 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required String path,
+    bool allowInactiveContext = false,
+    bool silent = false,
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
     final draft = fileState.editorDraftsByPath[normalizedPath];
-    if (draft == null || !draft.isDirty || draft.isSaving) {
+    if (draft == null) {
       return;
     }
+    final activeSave = draft.activeSave;
+    if (activeSave != null) {
+      await activeSave;
+      return;
+    }
+    if (!draft.isDirty ||
+        _appProvider?.activeServerId != fileState.serverId ||
+        (!allowInactiveContext &&
+            projectProvider.contextKey != fileState.contextKey)) {
+      return;
+    }
+    late final Future<void> save;
+    save = _performFileEditorDraftSave(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      path: normalizedPath,
+      draft: draft,
+      allowInactiveContext: allowInactiveContext,
+      silent: silent,
+      onUpdated: onUpdated,
+    );
+    draft.activeSave = save;
+    try {
+      await save;
+    } finally {
+      if (identical(draft.activeSave, save)) {
+        draft.activeSave = null;
+      }
+      final pendingFlushContent = draft.pendingLifecycleFlushContent;
+      final pendingFlushAllowsInactiveContext =
+          draft.pendingLifecycleFlushAllowsInactiveContext;
+      draft.pendingLifecycleFlushContent = null;
+      draft.pendingLifecycleFlushAllowsInactiveContext = false;
+      if (pendingFlushContent != null &&
+          pendingFlushContent != draft.savedContent &&
+          _settingsProvider?.editorAutosaveEnabled == true &&
+          _appProvider?.activeServerId == fileState.serverId) {
+        if (mounted && fileState.editorDraftsByPath[normalizedPath] == draft) {
+          unawaited(
+            _saveFileEditorDraft(
+              fileState: fileState,
+              projectProvider: projectProvider,
+              path: normalizedPath,
+              allowInactiveContext: pendingFlushAllowsInactiveContext,
+              silent: true,
+            ),
+          );
+        } else {
+          unawaited(
+            _writeFileEditorSnapshot(
+              fileState: fileState,
+              path: normalizedPath,
+              content: pendingFlushContent,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _writeFileEditorSnapshot({
+    required _FileExplorerContextState fileState,
+    required String path,
+    required String content,
+  }) async {
+    if (!di.sl.isRegistered<WorkspaceFileOperationsService>()) {
+      return;
+    }
+    await di.sl<WorkspaceFileOperationsService>().writeFile(
+      serverScopeKey: fileState.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      path: path,
+      content: content,
+    );
+  }
+
+  Future<void> _performFileEditorDraftSave({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String path,
+    required _FileEditorDraftState draft,
+    required bool allowInactiveContext,
+    required bool silent,
+    VoidCallback? onUpdated,
+  }) async {
+    final normalizedPath = _normalizeFilePath(path);
     if (_hasPendingFileTreeMutation(
       fileState,
       _fileTreePathAliases(fileState, normalizedPath),
@@ -1361,7 +1464,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = message;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(message);
+      if (!silent) {
+        _showFileOperationSnackBar(message);
+      }
       return;
     }
     if (!di.sl.isRegistered<WorkspaceFileOperationsService>() ||
@@ -1371,7 +1476,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = message;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(message);
+      if (!silent) {
+        _showFileOperationSnackBar(message);
+      }
       return;
     }
 
@@ -1382,9 +1489,14 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = _ChatPageFileViewer._draftTooLargeSaveMessage;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(_ChatPageFileViewer._draftTooLargeSaveMessage);
+      if (!silent) {
+        _showFileOperationSnackBar(
+          _ChatPageFileViewer._draftTooLargeSaveMessage,
+        );
+      }
       return;
     }
+    draft.cancelAutosave();
     _setState(() {
       draft.isSaving = true;
       draft.saveErrorMessage = null;
@@ -1392,7 +1504,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     onUpdated?.call();
 
     final result = await di.sl<WorkspaceFileOperationsService>().writeFile(
-      serverScopeKey: projectProvider.contextKey,
+      serverScopeKey: fileState.contextKey,
       rootDirectory: fileState.rootDirectory,
       path: normalizedPath,
       content: contentToSave,
@@ -1411,7 +1523,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = message;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(message);
+      if (!silent && projectProvider.contextKey == fileState.contextKey) {
+        _showFileOperationSnackBar(message);
+      }
       return;
     }
 
@@ -1428,7 +1542,29 @@ extension _ChatPageFileRuntime on _ChatPageState {
       );
     });
     onUpdated?.call();
-    _showFileOperationSnackBar('File saved.');
+    if (draft.isDirty &&
+        context.read<SettingsProvider>().editorAutosaveEnabled &&
+        (allowInactiveContext ||
+            projectProvider.contextKey == fileState.contextKey)) {
+      _scheduleEditorAutosave(
+        draft: draft,
+        onSave: () => unawaited(
+          _saveFileEditorDraft(
+            fileState: fileState,
+            projectProvider: projectProvider,
+            path: normalizedPath,
+            allowInactiveContext: allowInactiveContext,
+            silent: silent,
+            onUpdated: onUpdated,
+          ),
+        ),
+      );
+    }
+    if (!silent &&
+        !allowInactiveContext &&
+        projectProvider.contextKey == fileState.contextKey) {
+      _showFileOperationSnackBar('File saved.');
+    }
   }
 
   String _directoryCacheKey(

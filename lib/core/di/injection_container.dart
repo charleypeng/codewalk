@@ -553,7 +553,11 @@ Future<void> _loadLocalConfig() async {
           final username = activeProfile['basicAuthUsername'] as String? ?? '';
           final password = activeProfile['basicAuthPassword'] as String? ?? '';
           if (basicEnabled && username.isNotEmpty && password.isNotEmpty) {
-            dioClient.setBasicAuth(username, password);
+            dioClient.setBasicAuth(
+              username,
+              password,
+              origin: dioClient.dio.options.baseUrl,
+            );
           } else {
             dioClient.clearAuth();
           }
@@ -579,7 +583,11 @@ Future<void> _loadLocalConfig() async {
       final password = await localDataSource.getBasicAuthPassword();
       if ((username != null && username.isNotEmpty) &&
           (password != null && password.isNotEmpty)) {
-        dioClient.setBasicAuth(username, password);
+        dioClient.setBasicAuth(
+          username,
+          password,
+          origin: dioClient.dio.options.baseUrl,
+        );
       }
     } else {
       dioClient.clearAuth();

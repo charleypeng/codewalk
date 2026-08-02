@@ -137,6 +137,18 @@ class WorkspaceFileOperationsServiceImpl
   Future<WorkspaceFileOperationsCapabilities> getCapabilities({
     required String serverScopeKey,
     required String directory,
+  }) {
+    return _getCapabilities(
+      serverScopeKey: serverScopeKey,
+      directory: directory,
+      baseUrl: _dio.options.baseUrl,
+    );
+  }
+
+  Future<WorkspaceFileOperationsCapabilities> _getCapabilities({
+    required String serverScopeKey,
+    required String directory,
+    required String baseUrl,
   }) async {
     if (_isUnsafeRoot(directory)) {
       return const WorkspaceFileOperationsCapabilities(
@@ -155,6 +167,7 @@ class WorkspaceFileOperationsServiceImpl
       result = await _runShellScript(
         directory: normalizeFilePath(directory),
         command: _buildProbeCommand(decoder),
+        baseUrl: baseUrl,
       );
       if (result.ok) {
         _shellDecoderCache[key] = decoder;
@@ -169,6 +182,9 @@ class WorkspaceFileOperationsServiceImpl
       shellFileOpsSupported: result.ok,
       message: result.message,
     );
+    if (!_isBoundBaseUrlActive(baseUrl)) {
+      return capabilities;
+    }
     _capabilityCache[key] = capabilities;
     return capabilities;
   }
@@ -190,11 +206,13 @@ class WorkspaceFileOperationsServiceImpl
     required String parentDirectory,
     required String name,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _prepareLeafOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -211,6 +229,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -221,11 +240,13 @@ class WorkspaceFileOperationsServiceImpl
     required String parentDirectory,
     required String name,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _prepareLeafOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -242,6 +263,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -253,6 +275,7 @@ class WorkspaceFileOperationsServiceImpl
     required String oldName,
     required String newName,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final preparedOld = _normalizeLeafName(oldName);
     if (preparedOld.result != null) {
       return preparedOld.result!;
@@ -287,6 +310,7 @@ class WorkspaceFileOperationsServiceImpl
       ),
       path: source,
       newPath: destination,
+      baseUrl: baseUrl,
     );
   }
 
@@ -298,6 +322,7 @@ class WorkspaceFileOperationsServiceImpl
     required String sourceName,
     required String destinationName,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final preparedSource = _normalizeLeafName(sourceName);
     if (preparedSource.result != null) {
       return preparedSource.result!;
@@ -328,6 +353,7 @@ class WorkspaceFileOperationsServiceImpl
       ),
       path: source,
       newPath: destination,
+      baseUrl: baseUrl,
     );
   }
 
@@ -338,12 +364,14 @@ class WorkspaceFileOperationsServiceImpl
     required String parentDirectory,
     required String name,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _prepareLeafOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
       checkCapabilities: false,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -355,9 +383,10 @@ class WorkspaceFileOperationsServiceImpl
       return _result(WorkspaceFileOperationCode.rootDeleteBlocked);
     }
 
-    final capabilities = await getCapabilities(
+    final capabilities = await _getCapabilities(
       serverScopeKey: serverScopeKey,
       directory: prepared.rootDirectory,
+      baseUrl: baseUrl,
     );
     if (!capabilities.shellFileOpsSupported) {
       return _result(
@@ -376,6 +405,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -386,10 +416,12 @@ class WorkspaceFileOperationsServiceImpl
     required String path,
     required String content,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _preparePathOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       path: path,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -407,6 +439,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -414,12 +447,14 @@ class WorkspaceFileOperationsServiceImpl
     required String serverScopeKey,
     required String rootDirectory,
     required String Function(String decoder) commandBuilder,
+    required String baseUrl,
     String? path,
     String? newPath,
   }) async {
-    final capabilities = await getCapabilities(
+    final capabilities = await _getCapabilities(
       serverScopeKey: serverScopeKey,
       directory: rootDirectory,
+      baseUrl: baseUrl,
     );
     if (!capabilities.shellFileOpsSupported) {
       return _result(
@@ -436,6 +471,7 @@ class WorkspaceFileOperationsServiceImpl
     final result = await _runShellScript(
       directory: rootDirectory,
       command: commandBuilder(decoder),
+      baseUrl: baseUrl,
     );
     if (!result.ok) {
       AppLogger.warn(
@@ -465,6 +501,7 @@ class WorkspaceFileOperationsServiceImpl
     required String rootDirectory,
     required String parentDirectory,
     required String name,
+    required String baseUrl,
     bool checkCapabilities = true,
   }) async {
     final preparedName = _normalizeLeafName(name);
@@ -480,9 +517,10 @@ class WorkspaceFileOperationsServiceImpl
     }
 
     if (checkCapabilities) {
-      final capabilities = await getCapabilities(
+      final capabilities = await _getCapabilities(
         serverScopeKey: serverScopeKey,
         directory: root,
+        baseUrl: baseUrl,
       );
       if (!capabilities.shellFileOpsSupported) {
         return _PreparedLeafOperation(
@@ -505,6 +543,7 @@ class WorkspaceFileOperationsServiceImpl
     required String serverScopeKey,
     required String rootDirectory,
     required String path,
+    required String baseUrl,
   }) async {
     final root = normalizeFilePath(rootDirectory);
     final normalizedPath = normalizeFilePath(path);
@@ -534,9 +573,10 @@ class WorkspaceFileOperationsServiceImpl
       return _PreparedLeafOperation(result: rootCheck);
     }
 
-    final capabilities = await getCapabilities(
+    final capabilities = await _getCapabilities(
       serverScopeKey: serverScopeKey,
       directory: root,
+      baseUrl: baseUrl,
     );
     if (!capabilities.shellFileOpsSupported) {
       return _PreparedLeafOperation(
@@ -628,16 +668,26 @@ class WorkspaceFileOperationsServiceImpl
   Future<WorkspaceFileOperationResult> _runShellScript({
     required String directory,
     required String command,
+    required String baseUrl,
   }) async {
+    if (!_isBoundBaseUrlActive(baseUrl)) {
+      return _result(WorkspaceFileOperationCode.unavailable);
+    }
     String? sessionId;
     try {
-      sessionId = await _createEphemeralSession(directory: directory);
+      sessionId = await _createEphemeralSession(
+        directory: directory,
+        baseUrl: baseUrl,
+      );
       if (sessionId == null) {
+        return _result(WorkspaceFileOperationCode.unavailable);
+      }
+      if (!_isBoundBaseUrlActive(baseUrl)) {
         return _result(WorkspaceFileOperationCode.unavailable);
       }
 
       final response = await _dio.post<dynamic>(
-        '/session/$sessionId/shell',
+        _boundRequestPath(baseUrl, '/session/$sessionId/shell'),
         data: <String, dynamic>{'agent': 'build', 'command': command},
         queryParameters: <String, String>{'directory': directory},
       );
@@ -661,10 +711,10 @@ class WorkspaceFileOperationsServiceImpl
     } catch (_) {
       return _result(WorkspaceFileOperationCode.failed);
     } finally {
-      if (sessionId != null) {
+      if (sessionId != null && _isBoundBaseUrlActive(baseUrl)) {
         try {
           await _dio.delete<dynamic>(
-            '/session/$sessionId',
+            _boundRequestPath(baseUrl, '/session/$sessionId'),
             queryParameters: <String, String>{'directory': directory},
           );
         } catch (_) {}
@@ -676,9 +726,12 @@ class WorkspaceFileOperationsServiceImpl
     }
   }
 
-  Future<String?> _createEphemeralSession({required String directory}) async {
+  Future<String?> _createEphemeralSession({
+    required String directory,
+    required String baseUrl,
+  }) async {
     final response = await _dio.post<dynamic>(
-      '/session',
+      _boundRequestPath(baseUrl, '/session'),
       data: <String, dynamic>{
         'title': ChatTitleGenerator.ephemeralSessionTitle,
       },
@@ -694,6 +747,18 @@ class WorkspaceFileOperationsServiceImpl
     }
     ChatTitleGenerator.ephemeralSessionIds.add(sessionId);
     return sessionId;
+  }
+
+  String _boundRequestPath(String baseUrl, String path) {
+    final normalizedBase = baseUrl.trim();
+    if (normalizedBase.isEmpty) {
+      return path;
+    }
+    return '${normalizedBase.replaceFirst(RegExp(r'/+$'), '')}$path';
+  }
+
+  bool _isBoundBaseUrlActive(String baseUrl) {
+    return _dio.options.baseUrl.trim() == baseUrl.trim();
   }
 
   String _capabilityKey(String serverScopeKey, String directory) {

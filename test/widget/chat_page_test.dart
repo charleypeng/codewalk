@@ -7498,6 +7498,279 @@ void main() {
     expect(editorFinder, findsNothing);
   });
 
+  testWidgets('file autosave follows its setting and owning project context', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final projectA = Project(
+      id: 'proj_autosave_a',
+      name: 'Project Autosave A',
+      path: '/repo/a',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+    final projectB = Project(
+      id: 'proj_autosave_b',
+      name: 'Project Autosave B',
+      path: '/repo/b',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'checkUpdatesOnOpen': false,
+        'editorAutosaveEnabled': true,
+      });
+    await localDataSource.saveOpenProjectIdsJson(
+      jsonEncode(<String>[projectA.id, projectB.id]),
+      serverId: 'srv_test',
+    );
+    final projectRepository = FakeProjectRepository(
+      currentProject: projectA,
+      projects: <Project>[projectA, projectB],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void before() {}',
+          isBinary: false,
+        );
+    final fileOperations = FakeWorkspaceFileOperationsService(
+      capabilities: const WorkspaceFileOperationsCapabilities(
+        shellFileOpsSupported: true,
+        message: 'ok',
+      ),
+    );
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      _testApp(
+        provider,
+        appProvider,
+        settingsProvider: settingsProvider,
+        fileOperationsService: fileOperations,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+    );
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void enabledLater() {}';
+    await tester.pump();
+
+    await settingsProvider.setEditorAutosaveEnabled(false);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 30));
+    expect(fileOperations.writeFileCallCount, 0);
+
+    await settingsProvider.setEditorAutosaveEnabled(true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pumpAndSettle();
+    expect(fileOperations.writeFileCallCount, 1);
+    expect(fileOperations.lastContent, 'void enabledLater() {}');
+
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void ownedByA() {}';
+    await tester.pump();
+    expect(await provider.projectProvider.switchProject(projectB.id), isTrue);
+    await tester.pumpAndSettle();
+    expect(fileOperations.writeFileCallCount, 2);
+    expect(fileOperations.lastServerScopeKey, 'srv_test::/repo/a');
+    expect(fileOperations.lastContent, 'void ownedByA() {}');
+    await tester.pump(const Duration(seconds: 30));
+    expect(fileOperations.writeFileCallCount, 2);
+
+    expect(await provider.projectProvider.switchProject(projectA.id), isTrue);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pumpAndSettle();
+    expect(fileOperations.writeFileCallCount, 2);
+  });
+
+  testWidgets('file autosave coordinates close and lifecycle flush', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'checkUpdatesOnOpen': false,
+        'editorAutosaveEnabled': true,
+      });
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_autosave_close',
+        name: 'Project Autosave Close',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_autosave_close',
+          name: 'Project Autosave Close',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.filesByPath['.'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/main.dart',
+        name: 'main.dart',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/lib/main.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/main.dart',
+          content: 'void before() {}',
+          isBinary: false,
+        );
+    final firstSave = Completer<void>();
+    final lifecycleSave = Completer<void>();
+    final fileOperations =
+        FakeWorkspaceFileOperationsService(
+            capabilities: const WorkspaceFileOperationsCapabilities(
+              shellFileOpsSupported: true,
+              message: 'ok',
+            ),
+          )
+          ..onWriteFile =
+              ({
+                required rootDirectory,
+                required path,
+                required content,
+              }) async {
+                if (content == 'void closeAfterSave() {}') {
+                  await firstSave.future;
+                }
+                if (content == 'void lifecycleSave() {}') {
+                  await lifecycleSave.future;
+                }
+              };
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      _testApp(
+        provider,
+        appProvider,
+        settingsProvider: settingsProvider,
+        fileOperationsService: fileOperations,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fileItem = find.byKey(
+      const ValueKey<String>('file_tree_item_/repo/a/lib/main.dart'),
+    );
+    final editorFinder = find.byKey(
+      const ValueKey<String>('file_editor_/repo/a/lib/main.dart'),
+    );
+    await tester.tap(fileItem);
+    await tester.pumpAndSettle();
+    await tester.tap(editorFinder);
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void closeAfterSave() {}';
+    await tester.pump();
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('file_viewer_tab_close_/repo/a/lib/main.dart'),
+      ),
+    );
+    await tester.pump();
+    expect(fileOperations.writeFileCallCount, 1);
+    expect(editorFinder, findsOneWidget);
+
+    firstSave.complete();
+    await tester.pumpAndSettle();
+    expect(editorFinder, findsNothing);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(fileItem);
+    await tester.pumpAndSettle();
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void lifecycleSave() {}';
+    await tester.pump();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(fileOperations.writeFileCallCount, 2);
+    tester.widget<CodeEditor>(editorFinder).controller!.text =
+        'void latestBeforeDispose() {}';
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+
+    await settingsProvider.setEditorAutosaveEnabled(false);
+    await tester.pump();
+    lifecycleSave.complete();
+    await tester.pumpAndSettle();
+    expect(fileOperations.writeFileCallCount, 2);
+
+    await settingsProvider.setEditorAutosaveEnabled(true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pumpAndSettle();
+    expect(fileOperations.writeFileCallCount, 3);
+    expect(fileOperations.lastContent, 'void latestBeforeDispose() {}');
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
+    await tester.pump();
+  });
+
   testWidgets('file tree right-click opens read-only context menu', (
     WidgetTester tester,
   ) async {

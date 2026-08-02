@@ -552,6 +552,8 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, GlobalKey> _messageRevealMeasurementKeysByMessageId =
       <String, GlobalKey>{};
   String? _lastForegroundPolicySettingsSignature;
+  bool? _lastEditorAutosaveEnabled;
+  String? _lastFileEditorAutosaveContextKey;
   String? _terminalSessionSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
@@ -715,6 +717,7 @@ class _ChatPageState extends State<ChatPage>
       _projectProvider?.removeListener(_handleProjectProviderChange);
       _projectProvider = nextProjectProvider;
       _projectProvider?.addListener(_handleProjectProviderChange);
+      _lastFileEditorAutosaveContextKey = nextProjectProvider.contextKey;
     }
     if (di.sl.isRegistered<NotificationService>()) {
       final nextNotificationService = di.sl<NotificationService>();
@@ -743,6 +746,7 @@ class _ChatPageState extends State<ChatPage>
       _applyForegroundPolicy(reason: 'settings-provider-attached');
       _lastForegroundPolicySettingsSignature =
           _foregroundPolicySettingsSignature(nextSettingsProvider.settings);
+      _lastEditorAutosaveEnabled = nextSettingsProvider.editorAutosaveEnabled;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
@@ -800,6 +804,7 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void dispose() {
+    _flushActiveFileEditorDrafts();
     // Clean up scroll callback using saved reference
     _chatProvider?.setScrollToBottomCallback(null);
     _chatProvider?.setChatRouteActive(false);
@@ -854,6 +859,9 @@ class _ChatPageState extends State<ChatPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _isAppInForeground = state == AppLifecycleState.resumed;
+    if (!_isAppInForeground) {
+      _flushActiveFileEditorDrafts();
+    }
     final provider = _chatProvider;
     if (provider != null) {
       provider.setAppInForeground(_isAppInForeground);
@@ -901,6 +909,7 @@ class _ChatPageState extends State<ChatPage>
   @override
   void onWindowMinimize() {
     _isAppInForeground = false;
+    _flushActiveFileEditorDrafts();
     _chatProvider?.setAppInForeground(false);
     _applyForegroundPolicy(reason: 'window-minimize');
   }
@@ -1033,6 +1042,7 @@ class _ChatPageState extends State<ChatPage>
     final serverChanged = currentServerId != _lastServerId;
 
     if (serverChanged) {
+      _syncEditorAutosaveForActiveContext(enabled: false);
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
       _lastActiveServerHealthStatus = currentHealth;
@@ -1091,6 +1101,21 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _handleProjectProviderChange() {
+    final contextKey = _projectProvider?.contextKey;
+    if (contextKey != null && contextKey != _lastFileEditorAutosaveContextKey) {
+      final previousContextKey = _lastFileEditorAutosaveContextKey;
+      if (previousContextKey != null &&
+          _settingsProvider?.editorAutosaveEnabled == true) {
+        _flushFileEditorContext(
+          contextKey: previousContextKey,
+          allowInactiveContext: true,
+        );
+      }
+      _lastFileEditorAutosaveContextKey = contextKey;
+      _syncEditorAutosaveForActiveContext(
+        enabled: _settingsProvider?.editorAutosaveEnabled == true,
+      );
+    }
     if (_settingsProvider?.terminalPanelVisible != true) {
       return;
     }

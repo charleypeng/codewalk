@@ -11,6 +11,12 @@ extension _ChatPageLifecycle on _ChatPageState {
     final settings =
         _settingsProvider?.settings ?? ExperienceSettings.defaults();
     final pendingPostOnboardingTour = settings.pendingPostOnboardingChatTour;
+    if (_lastEditorAutosaveEnabled != settings.editorAutosaveEnabled) {
+      _lastEditorAutosaveEnabled = settings.editorAutosaveEnabled;
+      _syncEditorAutosaveForActiveContext(
+        enabled: settings.editorAutosaveEnabled,
+      );
+    }
     if (pendingPostOnboardingTour != _lastPendingPostOnboardingChatTour) {
       _lastPendingPostOnboardingChatTour = pendingPostOnboardingTour;
       _queuedPendingPostOnboardingTourAutoStart = pendingPostOnboardingTour;

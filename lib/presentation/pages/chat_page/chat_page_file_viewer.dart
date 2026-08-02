@@ -520,10 +520,126 @@ extension _ChatPageFileViewer on _ChatPageState {
     }
     draft.autosaveTimer = Timer(_autosaveIdleDelay, () {
       draft.autosaveTimer = null;
-      if (mounted && draft.isDirty && !draft.isSaving) {
+      if (mounted &&
+          context.read<SettingsProvider>().editorAutosaveEnabled &&
+          draft.isDirty &&
+          draft.activeSave == null) {
         onSave();
       }
     });
+  }
+
+  void _syncEditorAutosaveForActiveContext({required bool enabled}) {
+    for (final fileState in _fileContextStates.values) {
+      for (final draft in fileState.editorDraftsByPath.values) {
+        draft.cancelAutosave();
+        if (!enabled) {
+          draft.pendingLifecycleFlushContent = null;
+          draft.pendingLifecycleFlushAllowsInactiveContext = false;
+        }
+      }
+    }
+    if (!enabled) {
+      return;
+    }
+    final projectProvider = _projectProvider;
+    if (projectProvider == null) {
+      return;
+    }
+    final fileState = _fileContextStates[projectProvider.contextKey];
+    if (fileState == null) {
+      return;
+    }
+    for (final entry in fileState.editorDraftsByPath.entries) {
+      final draft = entry.value;
+      if (!draft.isDirty || draft.activeSave != null) {
+        continue;
+      }
+      _scheduleEditorAutosave(
+        draft: draft,
+        onSave: () => unawaited(
+          _saveFileEditorDraft(
+            fileState: fileState,
+            projectProvider: projectProvider,
+            path: entry.key,
+            onUpdated: () {
+              if (mounted) {
+                _setState(() {});
+              }
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _flushActiveFileEditorDrafts() {
+    if (_settingsProvider?.editorAutosaveEnabled != true) {
+      return;
+    }
+    final projectProvider = _projectProvider;
+    final activeServerId = _appProvider?.activeServerId;
+    if (projectProvider == null || activeServerId == null) {
+      return;
+    }
+    for (final fileState in _fileContextStates.values) {
+      if (fileState.serverId != activeServerId) {
+        continue;
+      }
+      _flushFileEditorContextState(
+        fileState: fileState,
+        projectProvider: projectProvider,
+        allowInactiveContext: true,
+      );
+    }
+  }
+
+  void _flushFileEditorContext({
+    required String contextKey,
+    required bool allowInactiveContext,
+  }) {
+    final projectProvider = _projectProvider;
+    final activeServerId = _appProvider?.activeServerId;
+    final fileState = _fileContextStates[contextKey];
+    if (projectProvider == null ||
+        activeServerId == null ||
+        fileState == null ||
+        fileState.serverId != activeServerId) {
+      return;
+    }
+    _flushFileEditorContextState(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      allowInactiveContext: allowInactiveContext,
+    );
+  }
+
+  void _flushFileEditorContextState({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required bool allowInactiveContext,
+  }) {
+    for (final entry in fileState.editorDraftsByPath.entries) {
+      final draft = entry.value;
+      draft.cancelAutosave();
+      if (!draft.isDirty) {
+        continue;
+      }
+      if (draft.activeSave != null) {
+        draft.pendingLifecycleFlushContent = draft.controller.text;
+        draft.pendingLifecycleFlushAllowsInactiveContext = allowInactiveContext;
+        continue;
+      }
+      unawaited(
+        _saveFileEditorDraft(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          path: entry.key,
+          allowInactiveContext: allowInactiveContext,
+          silent: true,
+        ),
+      );
+    }
   }
 
   /// Saves immediately instead of waiting for the countdown.
@@ -535,7 +651,7 @@ extension _ChatPageFileViewer on _ChatPageState {
     required VoidCallback onSave,
   }) {
     draft.cancelAutosave();
-    if (!mounted || !draft.isDirty || draft.isSaving) {
+    if (!mounted || !draft.isDirty || draft.activeSave != null) {
       return;
     }
     if (!context.read<SettingsProvider>().editorAutosaveEnabled) {

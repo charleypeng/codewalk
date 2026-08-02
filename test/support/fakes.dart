@@ -2566,6 +2566,7 @@ class FakeWorkspaceFileOperationsService
   String? lastParentDirectory;
   String? lastName;
   String? lastNewName;
+  String? lastServerScopeKey;
   String? lastPath;
   String? lastContent;
 
@@ -2720,6 +2721,7 @@ class FakeWorkspaceFileOperationsService
     required String content,
   }) async {
     writeFileCallCount += 1;
+    lastServerScopeKey = serverScopeKey;
     lastPath = path;
     lastContent = content;
     await onWriteFile?.call(

@@ -455,6 +455,7 @@ class AppProvider extends ChangeNotifier {
       _dioClient.setBasicAuth(
         profile.basicAuthUsername.trim(),
         profile.basicAuthPassword.trim(),
+        origin: profile.url,
       );
     } else {
       _dioClient.clearAuth();

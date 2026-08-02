@@ -385,18 +385,44 @@
 - **Then** `Contents` searches file text through the OpenCode content search endpoint and shows path, line number, and matching line preview
 - **Then** selecting a content result opens the matched file path while preserving the visible line context in the result subtitle
 
-### File viewer edits and explicitly saves text files
+### File viewer edits and saves text files
 
 - **Given** a connected server, an active project context, and shell-gated file operations supported for the project root
 - **When** the user opens a non-binary text file from the file tree, Quick Open, or a tapped assistant file path
 - **Then** the open-files surface renders a focused code editor with line numbers, syntax highlighting, tabbed open files, and the same desktop/mobile dialog behavior as the file viewer
 - **Then** editing a file marks its tab dirty with `*` and enables the viewer `Save` action
 - **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service scoped to the active project directory, using one negotiated single-pipeline shell transport rather than a local client filesystem write
+- **Then** global autosave is off by default and can be toggled by the user
+- **Given** a dirty draft and autosave enabled
+- **When** the draft has not changed for 30 seconds
+- **Then** CodeWalk debounces and saves the draft automatically
+- **Given** autosave is enabled and a draft is dirty
+- **When** the editor loses focus, a dirty file is closed, or the app is controlled inactive, paused, minimized, or disposed
+- **Then** CodeWalk flushes the eligible draft
+- **Given** a dirty file has an in-flight save
+- **When** the user closes it
+- **Then** closing waits for that save to finish
+- **Given** autosave is disabled
+- **When** the setting changes
+- **Then** pending debounce timers and lifecycle follow-ups are canceled
+- **When** autosave is enabled again
+- **Then** eligible dirty drafts are rearmed for autosave
+- **Given** a draft is being saved
+- **When** the user leaves its context
+- **Then** the save remains bound to its owning server profile, project, root, and path
+- **Then** leaving to another context on the same server flushes safely, while leaving to another server never writes the draft there
+- **Given** the project root is reset while a draft is dirty or a save is in flight
+- **When** the reset is requested
+- **Then** the root reset is deferred until the draft is no longer dirty and the save has completed
+- **Given** a file mutation is in progress
+- **When** the server profile changes
+- **Then** the mutation aborts, and Basic Auth remains bound to its request origin so credentials cannot leak to another server
 - **Then** a successful save preserves the file's LF, CRLF, or CR line-ending style, clears the dirty marker, updates the open tab's saved content, shows a save confirmation, and remains visible after closing and reopening the file
 - **Then** save content is UTF-8 encoded, base64 chunked across the shell transport, and decoded with the cached supported shell decoder for the active project root before the server-side atomic replace completes
 - **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces an actionable bounded operation error inline and via snackbar
 - **Then** selecting editor gutter lines and choosing Add to chat sends the current draft text for the selected line ranges, including LF, CRLF, and CR files
-- **Then** if a dirty open tab would be closed, reloaded by manual retry, or reloaded by diff-aware refresh, the action is skipped so unsaved edits are not overwritten
+- **Then** when autosave is enabled, closing a dirty open tab flushes its draft, waits for any in-flight save, and closes it
+- **Then** when autosave is disabled, closing a dirty open tab is blocked; manual retry and diff-aware refresh of a dirty tab are also blocked so unsaved edits are not overwritten
 - **Then** a confirmed successful delete runs in the active project directory, removes the deleted file or folder row from the tree immediately, and does not let failed, stale, or racing relists restore that row
 - **Then** while a delete is pending, matching and descendant editors become read-only and overlapping create, rename, delete, and save actions for the same path subtree are blocked to prevent data loss
 - **Then** failed delete, create, rename, and save operations keep the current draft or tree state and surface actionable bounded errors instead of silently reverting or dropping state
