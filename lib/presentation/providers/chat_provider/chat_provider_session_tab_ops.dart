@@ -1157,20 +1157,21 @@ extension _ChatProviderSessionTabOps on ChatProvider {
     final serverId = _activeServerId.trim();
     if (!identity.isValid ||
         identity.serverId != serverId ||
-        _sessionTabsLoadedServerId != serverId ||
-        _sessionTabs.any((candidate) => candidate.identity == identity) ||
-        !_sessionTabsPersistedState.closed.any(
-          (closed) => SessionTabReconciler._matchesClosed(closed, identity),
-        )) {
+        _sessionTabsLoadedServerId != serverId) {
       return false;
     }
-    final candidateAvailable = _collectSessionTabCandidates(serverId).any(
-      (candidate) =>
-          candidate.identity == identity &&
-          candidate.isRoot &&
-          !candidate.isArchived,
-    );
-    if (!candidateAvailable) {
+    if (_sessionTabs.any((candidate) => candidate.identity == identity)) {
+      return true;
+    }
+    if (!_sessionTabsPersistedState.closed.any(
+      (closed) => SessionTabReconciler._matchesClosed(closed, identity),
+    )) {
+      return false;
+    }
+    final candidate = _collectSessionTabCandidates(
+      serverId,
+    ).where((candidate) => candidate.identity == identity).firstOrNull;
+    if (candidate != null && (!candidate.isRoot || candidate.isArchived)) {
       return false;
     }
 

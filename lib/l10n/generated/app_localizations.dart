@@ -8695,6 +8695,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undo'**
   String get sessionTabUndo;
+
+  /// Snackbar shown when undo cannot restore a closed session tab
+  ///
+  /// In en, this message translates to:
+  /// **'Tab could not be restored.'**
+  String get sessionTabRestoreFailed;
 }
 
 class _AppLocalizationsDelegate

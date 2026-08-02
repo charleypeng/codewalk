@@ -6011,5 +6011,7 @@
   "sessionTabClosedMessage": "Tab \"{title}\" closed",
   "@sessionTabClosedMessage": {"description": "Snackbar shown after closing a session tab", "placeholders": {"title": {"type": "String"}}},
   "sessionTabUndo": "Undo",
-  "@sessionTabUndo": {"description": "Snackbar action that restores a closed session tab"}
+  "@sessionTabUndo": {"description": "Snackbar action that restores a closed session tab"},
+  "sessionTabRestoreFailed": "Tab could not be restored.",
+  "@sessionTabRestoreFailed": {"description": "Snackbar shown when undo cannot restore a closed session tab"}
 }

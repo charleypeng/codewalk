@@ -4938,4 +4938,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sessionTabUndo => 'Desfazer';
+
+  @override
+  String get sessionTabRestoreFailed => 'Não foi possível restaurar a aba.';
 }

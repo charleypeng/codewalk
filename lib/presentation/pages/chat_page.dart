@@ -2126,7 +2126,6 @@ class _ChatPageState extends State<ChatPage>
             MediaQuery.viewInsetsOf(context).bottom > 0 ||
             View.of(context).viewInsets.bottom > 0;
         final settingsProvider = context.watch<SettingsProvider>();
-        settingsProvider.captureInitialWebSessionTabsDefault(!isMobile);
         final attentionController = _sessionAttentionOverlayController;
         final attentionPresentation =
             settingsProvider.settings.sessionAttentionPresentation;

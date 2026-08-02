@@ -462,6 +462,44 @@ void main() {
         );
         expect(persisted.open.single.sessionId, tab.identity.sessionId);
         expect(persisted.closed, isEmpty);
+        expect(provider.restoreClosedSessionTab(tab, index: 0), isTrue);
+      },
+    );
+
+    test(
+      'restores a persisted tab without a loaded context candidate',
+      () async {
+        await fixtures.localDataSource.saveSessionTabsStateJson(
+          PersistedSessionTabsState(
+            open: <PersistedSessionTab>[
+              PersistedSessionTab(
+                directory: '/work/unloaded',
+                projectId: 'project-unloaded',
+                sessionId: 'session-unloaded',
+                title: 'Unloaded session',
+                lastOpenedAtMs: now.millisecondsSinceEpoch,
+                serverUpdatedAtMs: now.millisecondsSinceEpoch,
+              ),
+            ],
+          ).encode(),
+          serverId: 'srv_test',
+        );
+        await provider.loadSessionTabs();
+        final tab = provider.sessionTabs.single;
+
+        provider.closeSessionTab(tab.identity);
+        final restored = provider.restoreClosedSessionTab(tab, index: 0);
+        await provider.debugWaitForSessionTabPersistence();
+
+        expect(restored, isTrue);
+        expect(provider.sessionTabs.single.identity, tab.identity);
+        final persisted = PersistedSessionTabsState.decode(
+          await fixtures.localDataSource.getSessionTabsStateJson(
+            serverId: 'srv_test',
+          ),
+        );
+        expect(persisted.open.single.sessionId, tab.identity.sessionId);
+        expect(persisted.closed, isEmpty);
       },
     );
 

@@ -162,7 +162,6 @@ class SettingsProvider extends ChangeNotifier {
   // Whether the platform actually provided a dynamic color scheme at runtime.
   // Set from main.dart's DynamicColorBuilder callback.
   bool _dynamicColorAvailable = false;
-  bool? _initialWebSessionTabsDefault;
 
   bool get initialized => _initialized;
   bool get dynamicColorAvailable => _dynamicColorAvailable;
@@ -204,12 +203,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get showReviewChanges => _settings.showReviewChanges;
   bool get showRecentSessions => _settings.showRecentSessions;
   bool get showSessionTabs =>
-      _settings.showSessionTabsOverride ??
-      defaultSessionTabsVisibility(
-        isWeb: kIsWeb,
-        platform: defaultTargetPlatform,
-        initialWebDefault: _initialWebSessionTabsDefault ?? false,
-      );
+      _settings.showSessionTabsOverride ?? defaultSessionTabsVisibility;
   bool get sessionTabsGestureHintDismissed =>
       _settings.sessionTabsGestureHintDismissed;
   bool get taskListCollapsed => _settings.taskListCollapsed;
@@ -281,20 +275,7 @@ class SettingsProvider extends ChangeNotifier {
       _serverBackedNotifications.values.any((value) => value);
 
   @visibleForTesting
-  static bool defaultSessionTabsVisibility({
-    required bool isWeb,
-    required TargetPlatform platform,
-    required bool initialWebDefault,
-  }) {
-    return true;
-  }
-
-  void captureInitialWebSessionTabsDefault(bool value) {
-    if (!kIsWeb || _initialWebSessionTabsDefault != null) {
-      return;
-    }
-    _initialWebSessionTabsDefault = value;
-  }
+  static const bool defaultSessionTabsVisibility = true;
 
   bool notifyOnlyWhenBackground(NotificationCategory category) {
     return _settings.notifyOnlyWhenBackground[category] ?? false;

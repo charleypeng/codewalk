@@ -1401,5 +1401,6 @@
   "sessionTabsGestureHintDisableTabs": "Desativar abas",
   "sessionTabRenameAction": "Renomear sessão",
   "sessionTabClosedMessage": "Aba \"{title}\" fechada",
-  "sessionTabUndo": "Desfazer"
+  "sessionTabUndo": "Desfazer",
+  "sessionTabRestoreFailed": "Não foi possível restaurar a aba."
 }

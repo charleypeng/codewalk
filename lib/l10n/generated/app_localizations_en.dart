@@ -4881,4 +4881,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }

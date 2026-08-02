@@ -788,38 +788,7 @@ void main() {
     });
 
     test('enables session tabs by default on every platform', () {
-      expect(
-        SettingsProvider.defaultSessionTabsVisibility(
-          isWeb: false,
-          platform: TargetPlatform.linux,
-          initialWebDefault: false,
-        ),
-        isTrue,
-      );
-      expect(
-        SettingsProvider.defaultSessionTabsVisibility(
-          isWeb: false,
-          platform: TargetPlatform.android,
-          initialWebDefault: true,
-        ),
-        isTrue,
-      );
-      expect(
-        SettingsProvider.defaultSessionTabsVisibility(
-          isWeb: true,
-          platform: TargetPlatform.android,
-          initialWebDefault: true,
-        ),
-        isTrue,
-      );
-      expect(
-        SettingsProvider.defaultSessionTabsVisibility(
-          isWeb: true,
-          platform: TargetPlatform.linux,
-          initialWebDefault: false,
-        ),
-        isTrue,
-      );
+      expect(SettingsProvider.defaultSessionTabsVisibility, isTrue);
     });
 
     test('persists and clears the session tabs visibility override', () async {

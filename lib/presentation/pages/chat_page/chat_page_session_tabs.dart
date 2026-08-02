@@ -173,10 +173,11 @@ extension _ChatPageSessionTabs on _ChatPageState {
           },
         ),
       );
+      if (dontShowAgain && mounted) {
+        await settingsProvider.setSessionTabsGestureHintDismissed(true);
+      }
       if (disableTabs && mounted) {
         await settingsProvider.setShowSessionTabsOverride(false);
-      } else if (dontShowAgain && mounted) {
-        await settingsProvider.setSessionTabsGestureHintDismissed(true);
       }
     } finally {
       _sessionTabHintShowing = false;
@@ -503,6 +504,8 @@ extension _ChatPageSessionTabs on _ChatPageState {
       tab,
       index: index,
     );
-    if (!restored) _showSessionTabNavigationError();
+    if (!restored) {
+      _showChatPageMessageSnackBar(context.l10n.sessionTabRestoreFailed);
+    }
   }
 }
