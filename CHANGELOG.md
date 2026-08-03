@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.195.1 - 2026-08-03
+
+- fix(tabs): expire close snackbar
+
 ## v1.195.0 - 2026-08-02
 
 - docs(tabs): describe refined tab behavior
