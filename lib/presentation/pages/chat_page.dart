@@ -343,6 +343,7 @@ class _ChatPageState extends State<ChatPage>
   bool _sessionTabHintScheduled = false;
   bool _sessionTabHintShowing = false;
   int _sessionTabHintGeneration = 0;
+  Timer? _sessionTabSnackBarExpirationTimer;
   bool _isProjectSelectorActionInFlight = false;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
   // Stores the last expanded history group ID for each session ID.
@@ -826,6 +827,7 @@ class _ChatPageState extends State<ChatPage>
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
     _sessionTabHintGeneration += 1;
+    _sessionTabSnackBarExpirationTimer?.cancel();
     _desktopWindowChromeController?.detach(this);
     _sessionAttentionOverlayController
       ?..removeListener(_handleSessionAttentionOverlayChanged)
@@ -1291,6 +1293,7 @@ class _ChatPageState extends State<ChatPage>
     Duration duration = const Duration(seconds: 4),
     SnackBarBehavior behavior = SnackBarBehavior.floating,
     bool? showCloseIcon,
+    bool? persist,
   }) {
     final dismissOnTap = action == null;
     return SnackBar(
@@ -1298,6 +1301,7 @@ class _ChatPageState extends State<ChatPage>
       duration: duration,
       action: action,
       showCloseIcon: showCloseIcon,
+      persist: persist,
       padding: dismissOnTap ? EdgeInsets.zero : null,
       content: dismissOnTap
           ? GestureDetector(
@@ -1316,31 +1320,34 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  void _showChatPageSnackBar({
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+  _showChatPageSnackBar({
     required Widget content,
     SnackBarAction? action,
     Duration duration = const Duration(seconds: 4),
     bool hideCurrent = true,
     SnackBarBehavior behavior = SnackBarBehavior.floating,
     bool? showCloseIcon,
+    bool? persist,
   }) {
     if (!mounted) {
-      return;
+      return null;
     }
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
-      return;
+      return null;
     }
     if (hideCurrent) {
       messenger.hideCurrentSnackBar();
     }
-    messenger.showSnackBar(
+    return messenger.showSnackBar(
       _buildChatPageSnackBar(
         content: content,
         action: action,
         duration: duration,
         behavior: behavior,
         showCloseIcon: showCloseIcon,
+        persist: persist,
       ),
     );
   }
@@ -1352,6 +1359,7 @@ class _ChatPageState extends State<ChatPage>
     bool hideCurrent = true,
     SnackBarBehavior behavior = SnackBarBehavior.floating,
     bool? showCloseIcon,
+    bool? persist,
   }) {
     _showChatPageSnackBar(
       content: Text(message),
@@ -1360,6 +1368,7 @@ class _ChatPageState extends State<ChatPage>
       hideCurrent: hideCurrent,
       behavior: behavior,
       showCloseIcon: showCloseIcon,
+      persist: persist,
     );
   }
 

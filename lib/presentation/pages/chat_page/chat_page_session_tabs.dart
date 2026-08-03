@@ -483,14 +483,33 @@ extension _ChatPageSessionTabs on _ChatPageState {
         ? context.l10n.sessionExportUntitled
         : tab.title.trim();
     ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
-    _showChatPageMessageSnackBar(
-      context.l10n.sessionTabClosedMessage(title),
+    final controller = _showChatPageSnackBar(
+      content: Text(
+        context.l10n.sessionTabClosedMessage(title),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       hideCurrent: false,
       duration: const Duration(seconds: 3),
+      persist: false,
       action: SnackBarAction(
         label: context.l10n.sessionTabUndo,
         onPressed: () => unawaited(_undoClosedSessionTab(tab, index: index)),
       ),
+    );
+    if (controller == null) return;
+    _sessionTabSnackBarExpirationTimer?.cancel();
+    // Flutter only starts its timeout when the owning route is current.
+    // Close through the controller as well so three seconds is deterministic.
+    final expirationTimer = Timer(const Duration(seconds: 3), controller.close);
+    _sessionTabSnackBarExpirationTimer = expirationTimer;
+    unawaited(
+      controller.closed.whenComplete(() {
+        expirationTimer.cancel();
+        if (identical(_sessionTabSnackBarExpirationTimer, expirationTimer)) {
+          _sessionTabSnackBarExpirationTimer = null;
+        }
+      }),
     );
   }
 

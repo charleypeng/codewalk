@@ -5310,11 +5310,13 @@ void main() {
       path: '/repo/a',
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
     );
+    const longSessionTitle =
+        'Session A with a deliberately long title that must stay on one line';
     final sessionA = ChatSession(
       id: 'ses_a',
       workspaceId: 'default',
       time: now,
-      title: 'Session A',
+      title: longSessionTitle,
       directory: project.path,
     );
     final sessionB = ChatSession(
@@ -5381,7 +5383,12 @@ void main() {
     );
     final closedSnackBar = tester.widget<SnackBar>(find.byType(SnackBar));
     expect(closedSnackBar.duration, const Duration(seconds: 3));
-    expect(find.text('Tab "Session A" closed'), findsOneWidget);
+    expect(closedSnackBar.persist, isFalse);
+    final closedMessage = find.text('Tab "$longSessionTitle" closed');
+    expect(closedMessage, findsOneWidget);
+    final closedMessageText = tester.widget<Text>(closedMessage);
+    expect(closedMessageText.maxLines, 1);
+    expect(closedMessageText.overflow, TextOverflow.ellipsis);
     expect(closedSnackBar.action?.label, 'Undo');
 
     await tester.tap(find.text('Undo'));
@@ -5396,10 +5403,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(tabA, kind: PointerDeviceKind.mouse);
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
       provider.sessionTabs.map((tab) => tab.identity),
       <SessionTabIdentity>[identityB],
     );
+    expect(closedMessage, findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(closedMessage, findsNothing);
+    expect(find.text('Undo'), findsNothing);
 
     final tabB = find.byKey(
       ValueKey<String>(
