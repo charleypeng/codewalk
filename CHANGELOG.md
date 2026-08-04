@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.196.0 - 2026-08-04
+
+- fix(scope): smooth cached project transitions
+
 ## v1.195.1 - 2026-08-03
 
 - fix(tabs): expire close snackbar
