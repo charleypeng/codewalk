@@ -14,16 +14,18 @@ extension _ChatProviderSessionOps on ChatProvider {
     _sessionsFetchId += 1;
     _messagesFetchId += 1;
     _eventStreamGeneration += 1;
-    await _cancelActiveMessageSubscription(
-      reason: 'context-switch',
-      invalidateGeneration: true,
-    );
-    final eventSubscription = _eventSubscription;
-    final globalEventSubscription = _globalEventSubscription;
-    _eventSubscription = null;
-    _globalEventSubscription = null;
+    Future<void>? fastRealtimeCancellation;
     if (useFastProjectTransition) {
-      await Future.wait<void>(<Future<void>>[
+      final eventSubscription = _eventSubscription;
+      final globalEventSubscription = _globalEventSubscription;
+      _eventSubscription = null;
+      _globalEventSubscription = null;
+      fastRealtimeCancellation = Future.wait<void>(<Future<void>>[
+        _cancelActiveMessageSubscription(
+          reason: 'context-switch',
+          invalidateGeneration: true,
+          timeout: const Duration(milliseconds: 100),
+        ),
         _cancelSubscriptionSafely(
           eventSubscription,
           label: 'realtime event',
@@ -36,6 +38,14 @@ extension _ChatProviderSessionOps on ChatProvider {
         ),
       ], eagerError: false);
     } else {
+      await _cancelActiveMessageSubscription(
+        reason: 'context-switch',
+        invalidateGeneration: true,
+      );
+      final eventSubscription = _eventSubscription;
+      final globalEventSubscription = _globalEventSubscription;
+      _eventSubscription = null;
+      _globalEventSubscription = null;
       await _cancelSubscriptionSafely(
         eventSubscription,
         label: 'realtime event',
@@ -125,6 +135,9 @@ extension _ChatProviderSessionOps on ChatProvider {
     }
     _state = _sessions.isEmpty ? ChatState.initial : ChatState.loaded;
     _notifyListeners();
+    if (fastRealtimeCancellation != null) {
+      await fastRealtimeCancellation;
+    }
 
     AppLogger.info(
       'Switching chat context reason=$reason context=$_activeContextKey',

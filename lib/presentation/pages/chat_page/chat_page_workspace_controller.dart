@@ -21,13 +21,32 @@ extension _ChatPageWorkspaceController on _ChatPageState {
 
     final completion = Completer<void>();
     _projectScopeTransitionTask = completion.future;
+    final transitionGeneration = ++_projectScopeTransitionGeneration;
+    _projectScopeLoadingOverlayTimer?.cancel();
 
     Object? pendingError;
     StackTrace? pendingStackTrace;
 
     _setState(() {
       _isProjectScopeTransitioning = true;
+      _showProjectScopeLoadingOverlay = false;
     });
+    final overlayTimer = Timer(
+      _ChatPageState._projectScopeLoadingOverlayDelay,
+      () {
+        if (!mounted ||
+            transitionGeneration != _projectScopeTransitionGeneration) {
+          return;
+        }
+        _setState(() {
+          if (_isProjectScopeTransitioning &&
+              transitionGeneration == _projectScopeTransitionGeneration) {
+            _showProjectScopeLoadingOverlay = true;
+          }
+        });
+      },
+    );
+    _projectScopeLoadingOverlayTimer = overlayTimer;
 
     try {
       await operation();
@@ -35,9 +54,17 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       pendingError = error;
       pendingStackTrace = stackTrace;
     } finally {
+      overlayTimer.cancel();
+      if (identical(_projectScopeLoadingOverlayTimer, overlayTimer)) {
+        _projectScopeLoadingOverlayTimer = null;
+      }
+      if (_projectScopeTransitionGeneration == transitionGeneration) {
+        _projectScopeTransitionGeneration += 1;
+      }
       if (mounted) {
         _setState(() {
           _isProjectScopeTransitioning = false;
+          _showProjectScopeLoadingOverlay = false;
         });
       }
       if (!completion.isCompleted) {

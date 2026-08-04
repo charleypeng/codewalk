@@ -146,6 +146,22 @@ class _ConfigurableDelayFakeChatRepository extends FakeChatRepository {
   }
 }
 
+class _GatedProjectStateLocalDataSource extends InMemoryAppLocalDataSource {
+  Completer<void>? saveOpenProjectIdsGate;
+
+  @override
+  Future<void> saveOpenProjectIdsJson(
+    String projectIdsJson, {
+    String? serverId,
+  }) async {
+    final gate = saveOpenProjectIdsGate;
+    if (gate != null) {
+      await gate.future;
+    }
+    await super.saveOpenProjectIdsJson(projectIdsJson, serverId: serverId);
+  }
+}
+
 class _SlashCommandFallbackDioClient extends DioClient {
   _SlashCommandFallbackDioClient({
     List<dynamic> remoteCommands = const <dynamic>[],
@@ -4809,13 +4825,13 @@ void main() {
     );
   });
 
-  testWidgets('project group tile switches project context', (
+  testWidgets('project group transition delays overlay and preserves content', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final localDataSource = InMemoryAppLocalDataSource()
+    final localDataSource = _GatedProjectStateLocalDataSource()
       ..activeServerId = 'srv_test';
     await localDataSource.saveOpenProjectIdsJson(
       jsonEncode(<String>['proj_a', 'proj_b']),
@@ -4868,14 +4884,73 @@ void main() {
       findsOneWidget,
     );
 
+    final quickTransitionGate = Completer<void>();
+    localDataSource.saveOpenProjectIdsGate = quickTransitionGate;
     await tester.tap(
       find.byKey(const ValueKey<String>('project_group_tile_proj_b')),
     );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_transition_blocker')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_loading_overlay')),
+      findsNothing,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_loading_overlay')),
+      findsNothing,
+    );
+    quickTransitionGate.complete();
     await tester.pumpAndSettle();
 
     expect(provider.projectProvider.currentProject?.id, 'proj_b');
     expect(expandIconFor('proj_a'), Symbols.expand_more);
     expect(expandIconFor('proj_b'), Symbols.expand_less);
+
+    final preservedProjectTile = tester.element(
+      find.byKey(const ValueKey<String>('project_group_tile_proj_b')),
+    );
+    final slowTransitionGate = Completer<void>();
+    localDataSource.saveOpenProjectIdsGate = slowTransitionGate;
+    await tester.tap(
+      find.byKey(const ValueKey<String>('project_group_tile_proj_a')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 149));
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_loading_overlay')),
+      findsNothing,
+    );
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_loading_overlay')),
+      findsOneWidget,
+    );
+    expect(
+      identical(
+        preservedProjectTile,
+        tester.element(
+          find.byKey(const ValueKey<String>('project_group_tile_proj_b')),
+        ),
+      ),
+      isTrue,
+    );
+    slowTransitionGate.complete();
+    await tester.pumpAndSettle();
+
+    expect(provider.projectProvider.currentProject?.id, 'proj_a');
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_transition_blocker')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('project_scope_loading_overlay')),
+      findsNothing,
+    );
   });
 
   testWidgets('session tab reopens its project and activates the target', (

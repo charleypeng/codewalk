@@ -228,6 +228,9 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _userScrollIntentHoldDuration = Duration(
     milliseconds: 900,
   );
+  static const Duration _projectScopeLoadingOverlayDelay = Duration(
+    milliseconds: 150,
+  );
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   List<String> get _receivingTips => buildComposerReceivingTips(context.l10n);
@@ -327,6 +330,9 @@ class _ChatPageState extends State<ChatPage>
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
+  bool _showProjectScopeLoadingOverlay = false;
+  int _projectScopeTransitionGeneration = 0;
+  Timer? _projectScopeLoadingOverlayTimer;
 
   /// True while the terminal is being opened.
   ///
@@ -826,6 +832,8 @@ class _ChatPageState extends State<ChatPage>
     _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
+    _projectScopeTransitionGeneration += 1;
+    _projectScopeLoadingOverlayTimer?.cancel();
     _sessionTabHintGeneration += 1;
     _sessionTabSnackBarExpirationTimer?.cancel();
     _desktopWindowChromeController?.detach(this);
@@ -2471,16 +2479,19 @@ class _ChatPageState extends State<ChatPage>
                                 ],
                               );
 
-                              if (!_isProjectScopeTransitioning) {
-                                return bodyContent;
-                              }
-
                               return Stack(
+                                fit: StackFit.expand,
                                 children: [
-                                  Positioned.fill(child: bodyContent),
-                                  Positioned.fill(
-                                    child: _buildProjectScopeLoadingOverlay(),
-                                  ),
+                                  bodyContent,
+                                  if (_isProjectScopeTransitioning)
+                                    const AbsorbPointer(
+                                      key: ValueKey<String>(
+                                        'project_scope_transition_blocker',
+                                      ),
+                                      child: SizedBox.expand(),
+                                    ),
+                                  if (_showProjectScopeLoadingOverlay)
+                                    _buildProjectScopeLoadingOverlay(),
                                 ],
                               );
                             },

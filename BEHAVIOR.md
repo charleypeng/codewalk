@@ -646,10 +646,15 @@
 
 - **Given** the user switches project/directory context and that context has cached sessions
 - **When** the switch is triggered from the project context picker (open/reopen/close/switch)
+- **Then** project-scope transitions are serialized, and pointer input in the chat area is blocked immediately while a transition is active
+- **Then** the chat area keeps one visual tree/root `Stack` during the transition, preserving its visual state while transition layers are applied
+- **Then** the `Loading project context...` overlay appears only if the transition remains active after 150 ms; fast or cache-complete transitions finish without a loading flash
 - **Then** the new context renders immediately from cached scope data without waiting for network revalidation
 - **Then** session list revalidation runs in background and refreshes to server state when the response arrives
 - **Then** if background revalidation fails, the cached visible state remains stable (no forced blank/loading fallback)
 - **Then** when returning to a recently visited project that was marked dirty by global events, the previously cached session list remains visible immediately and is revalidated in background
+- **Then** the fast project path detaches message, event, and global-event subscriptions with generation guards and cancels them in parallel with a 100 ms bound; the cached snapshot is restored and notified before that cancellation bound is awaited
+- **Then** slow/server-backed transitions keep the normal subscription teardown path
 - **Then** project-switch transition teardown uses bounded cancellation time, so the `Loading project context...` blocker is brief and does not wait for long stream cancellation timeouts
 
 ### Active session SWR prefers delta-like refresh
@@ -2342,7 +2347,7 @@ Switching project/directory context must complete from local scope snapshots whe
 
 ### Never cancel responses on session switch
 
-If the assistant is streaming a response and the user switches to a different session, the in-flight response must be preserved — not cancelled. The user can return to the original session and see the completed response.
+If the assistant is streaming a response and the user switches to a different session, cancelling the local message subscription does not abort the server-side `prompt_async` response. The in-flight response is preserved, and the user can return to the original session and see the completed response.
 
 ### Never collapse work groups during streaming
 
