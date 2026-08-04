@@ -7,6 +7,7 @@ import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/widgets/desktop_window_title_bar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -140,6 +141,55 @@ void main() {
       await tester.pump();
 
       expect(find.byType(DesktopWindowTitleBar), findsNothing);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      settingsProvider.dispose();
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+
+  testWidgets('frame above the navigator provides an overlay for controls', (
+    tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+
+    final settingsProvider = SettingsProvider(
+      localDataSource: InMemoryAppLocalDataSource(),
+      dioClient: _NoopDioClient(),
+      soundService: SoundService(),
+    );
+
+    try {
+      await settingsProvider.initialize();
+      await tester.pumpWidget(
+        localizedMaterialApp(
+          home: const Scaffold(body: ColoredBox(color: Colors.green)),
+          builder: (context, child) {
+            return ChangeNotifierProvider<SettingsProvider>.value(
+              value: settingsProvider,
+              child: DesktopWindowChromeFrame(child: child!),
+            );
+          },
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      final closeButton = find.byKey(
+        const ValueKey<String>('desktop_window_close'),
+      );
+      final closeContext = tester.element(closeButton);
+      expect(Overlay.maybeOf(closeContext), isNotNull);
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(closeButton));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Close'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     } finally {
       await tester.pumpWidget(const SizedBox.shrink());
       settingsProvider.dispose();

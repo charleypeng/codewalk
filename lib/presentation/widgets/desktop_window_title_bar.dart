@@ -90,12 +90,21 @@ class DesktopWindowChromeFrame extends StatelessWidget {
         titleBarChild ??
         controller?.buildTitleBar(context) ??
         const SizedBox.shrink();
-    return Column(
+    final frame = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DesktopWindowTitleBar(height: height, child: resolvedTitleBarChild),
         Expanded(child: child),
       ],
+    );
+    if (Overlay.maybeOf(context) != null) {
+      return frame;
+    }
+    // MaterialApp.builder sits above the Navigator's Overlay, but title-bar
+    // tooltips still need an Overlay ancestor.
+    return Overlay.wrap(
+      key: const ValueKey<String>('desktop_window_chrome_overlay'),
+      child: frame,
     );
   }
 }
