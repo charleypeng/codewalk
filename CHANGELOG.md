@@ -2,6 +2,10 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.196.2 - 2026-08-05
+
+- fix(desktop): route integrated context usage popover
+
 ## v1.196.1 - 2026-08-04
 
 - fix(desktop): restore integrated titlebar controls
