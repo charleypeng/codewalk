@@ -65,6 +65,7 @@ import 'package:codewalk/presentation/services/workspace_file_operations_service
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
+import 'package:codewalk/presentation/widgets/desktop_window_title_bar.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:codewalk/presentation/widgets/session_context_menu.dart';
 import 'package:codewalk/presentation/widgets/session_tab_strip.dart';
@@ -9629,6 +9630,122 @@ void main() {
       ),
       contains(moreOrLessEquals(popoverRect.width, epsilon: 0.1)),
     );
+  });
+
+  testWidgets('integrated desktop context usage knob opens popover', (
+    WidgetTester tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_integrated_context_usage',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Integrated Context Usage',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_integrated_context_usage'] =
+        <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_integrated_context_usage',
+            sessionId: 'ses_integrated_context_usage',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            providerId: 'provider_1',
+            modelId: 'model_1',
+            cost: 0,
+            tokens: const MessageTokens(
+              input: 200,
+              output: 50,
+              reasoning: 25,
+              cacheRead: 25,
+              cacheWrite: 0,
+            ),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_integrated_context_usage',
+                messageId: 'msg_integrated_context_usage',
+                sessionId: 'ses_integrated_context_usage',
+                text: 'Done',
+              ),
+            ],
+          ),
+        ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test'
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'checkUpdatesOnOpen': false,
+        'sessionTabsGestureHintDismissed': true,
+      });
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+
+    try {
+      await settingsProvider.initialize();
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          integratedWindowChrome: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DesktopWindowTitleBar), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_context_usage_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final popover = find.byKey(
+        const ValueKey<String>('context_usage_popover'),
+      );
+      expect(popover, findsOneWidget);
+      final popoverRect = tester.getRect(popover);
+      final titleBarRect = tester.getRect(find.byType(DesktopWindowTitleBar));
+      expect(popoverRect.top, greaterThanOrEqualTo(titleBarRect.bottom));
+      expect(popoverRect.left, greaterThanOrEqualTo(0));
+      expect(popoverRect.right, lessThanOrEqualTo(1000));
+      expect(popoverRect.bottom, lessThanOrEqualTo(900));
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_context_usage_button')),
+      );
+      await tester.pump();
+      expect(popover, findsOneWidget);
+
+      await tester.tap(
+        find.text(L10nBridge.current!.chatPageStatusCompactNow),
+      );
+      await tester.pumpAndSettle();
+      expect(popover, findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      settingsProvider.dispose();
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
   });
 
   testWidgets('context usage popover shows quota groups after compact action', (
@@ -21604,6 +21721,7 @@ Widget _testApp(
   CellularDataSaverService? cellularDataSaverService,
   WorkspaceFileOperationsService? fileOperationsService,
   MediaQueryData? mediaQueryData,
+  bool integratedWindowChrome = false,
 }) {
   if (di.sl.isRegistered<AppLocalDataSource>()) {
     di.sl.unregister<AppLocalDataSource>();
@@ -21637,6 +21755,12 @@ Widget _testApp(
       QuotaProvider(
         remoteDataSource: quotaRemoteDataSource ?? FakeQuotaRemoteDataSource(),
       );
+  final desktopWindowChromeController = integratedWindowChrome
+      ? DesktopWindowChromeController()
+      : null;
+  if (desktopWindowChromeController != null) {
+    addTearDown(desktopWindowChromeController.dispose);
+  }
 
   Widget home = const ChatPage();
   if (mediaQueryData != null) {
@@ -21656,11 +21780,18 @@ Widget _testApp(
       ChangeNotifierProvider<QuotaProvider>.value(
         value: effectiveQuotaProvider,
       ),
+      if (desktopWindowChromeController != null)
+        ChangeNotifierProvider<DesktopWindowChromeController>.value(
+          value: desktopWindowChromeController,
+        ),
     ],
     child: localizedMaterialApp(
       theme: AppTheme.lightFrom(
         ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
       ),
+      builder: integratedWindowChrome
+          ? (context, child) => DesktopWindowChromeFrame(child: child!)
+          : null,
       home: home,
     ),
   );

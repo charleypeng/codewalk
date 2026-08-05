@@ -18,6 +18,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     BuildContext context,
     ChatProvider chatProvider, {
     double? targetSize,
+    BuildContext? menuNavigatorContext,
   }) {
     final usage = _resolveSessionContextUsage(chatProvider);
     final canCompact =
@@ -30,33 +31,105 @@ extension _ChatPageStatusPresenter on _ChatPageState {
       enabled: true,
     );
 
-    return PopupMenuButton<void>(
-      key: const ValueKey<String>('appbar_context_usage_button'),
-      tooltip: context.l10n.chatCompactContext,
-      padding: EdgeInsets.zero,
-      itemBuilder: (popupContext) {
-        final serverId = context.read<AppProvider>().activeServer?.id;
-        context.read<QuotaProvider>().ensureLoaded(serverId: serverId);
-        return [
-          PopupMenuItem<void>(
-            enabled: false,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: _buildContextUsagePopover(
-              context,
-              usage: usage,
-              isCompacting: chatProvider.isCompactingContext,
-              canCompact: canCompact,
-              onCompactNow: () => _compactCurrentSession(chatProvider),
+    final child = targetSize == null
+        ? knob
+        : SizedBox.square(
+            dimension: targetSize,
+            child: Center(child: knob),
+          );
+    if (menuNavigatorContext == null) {
+      return PopupMenuButton<void>(
+        key: const ValueKey<String>('appbar_context_usage_button'),
+        tooltip: context.l10n.chatCompactContext,
+        padding: EdgeInsets.zero,
+        itemBuilder: (popupContext) => _buildContextUsageMenuItems(
+          popupContext,
+          usage: usage,
+          chatProvider: chatProvider,
+          canCompact: canCompact,
+        ),
+        child: child,
+      );
+    }
+
+    return Builder(
+      builder: (anchorContext) {
+        return Tooltip(
+          message: context.l10n.chatCompactContext,
+          child: InkWell(
+            key: const ValueKey<String>('appbar_context_usage_button'),
+            onTap: () => unawaited(
+              _showContextUsageMenu(
+                anchorContext: anchorContext,
+                navigatorContext: menuNavigatorContext,
+                usage: usage,
+                chatProvider: chatProvider,
+                canCompact: canCompact,
+              ),
             ),
+            child: child,
           ),
-        ];
+        );
       },
-      child: targetSize == null
-          ? knob
-          : SizedBox.square(
-              dimension: targetSize,
-              child: Center(child: knob),
-            ),
+    );
+  }
+
+  List<PopupMenuEntry<void>> _buildContextUsageMenuItems(
+    BuildContext context, {
+    required _SessionContextUsageSnapshot usage,
+    required ChatProvider chatProvider,
+    required bool canCompact,
+  }) {
+    final serverId = context.read<AppProvider>().activeServer?.id;
+    context.read<QuotaProvider>().ensureLoaded(serverId: serverId);
+    return [
+      PopupMenuItem<void>(
+        enabled: false,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: _buildContextUsagePopover(
+          context,
+          usage: usage,
+          isCompacting: chatProvider.isCompactingContext,
+          canCompact: canCompact,
+          onCompactNow: () => _compactCurrentSession(chatProvider),
+        ),
+      ),
+    ];
+  }
+
+  Future<void> _showContextUsageMenu({
+    required BuildContext anchorContext,
+    required BuildContext navigatorContext,
+    required _SessionContextUsageSnapshot usage,
+    required ChatProvider chatProvider,
+    required bool canCompact,
+  }) async {
+    if (!mounted ||
+        !navigatorContext.mounted ||
+        !_isChatScreenActive()) {
+      return;
+    }
+    final anchor = anchorContext.findRenderObject();
+    final navigator = Navigator.of(navigatorContext);
+    final overlay = navigator.overlay?.context.findRenderObject();
+    if (anchor is! RenderBox || overlay is! RenderBox) return;
+
+    final topLeft = overlay.globalToLocal(anchor.localToGlobal(Offset.zero));
+    final bottomRight = overlay.globalToLocal(
+      anchor.localToGlobal(anchor.size.bottomRight(Offset.zero)),
+    );
+    await showMenu<void>(
+      context: navigatorContext,
+      position: RelativeRect.fromRect(
+        Rect.fromPoints(topLeft, bottomRight),
+        Offset.zero & overlay.size,
+      ),
+      items: _buildContextUsageMenuItems(
+        navigatorContext,
+        usage: usage,
+        chatProvider: chatProvider,
+        canCompact: canCompact,
+      ),
     );
   }
 

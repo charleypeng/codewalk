@@ -7,6 +7,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
       settingsProvider: context.read<SettingsProvider>(),
       fillWidth: false,
       transparentBackground: true,
+      menuNavigatorContext: this.context,
     );
   }
 
@@ -22,6 +23,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
     required SettingsProvider settingsProvider,
     bool fillWidth = true,
     bool transparentBackground = false,
+    BuildContext? menuNavigatorContext,
   }) {
     if (!settingsProvider.showSessionTabs) {
       return const SizedBox.shrink();
@@ -48,6 +50,7 @@ extension _ChatPageSessionTabs on _ChatPageState {
               context,
               chatProvider,
               targetSize: isCompact ? 40 : 32,
+              menuNavigatorContext: menuNavigatorContext,
             );
           },
         );
