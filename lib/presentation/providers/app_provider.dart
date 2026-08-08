@@ -32,6 +32,15 @@ enum LocalServerRuntimeStatus { stopped, starting, running, stopping, failed }
 
 enum SetupDebugSeverity { info, error }
 
+typedef OAuthServiceFactory =
+    OAuthService Function({
+      required String profileId,
+      required String serverUrl,
+      Map<String, String>? challengeHeaders,
+      String? challengeBody,
+      bool Function()? shouldPersistCredential,
+    });
+
 class SetupDebugEntry {
   const SetupDebugEntry({
     required this.timestamp,
@@ -62,6 +71,7 @@ class AppProvider extends ChangeNotifier {
     Future<ServerHealthStatus> Function(String url)? localServerHealthProbe,
     Duration serverHealthRequestTimeout = const Duration(seconds: 3),
     bool enableHealthPolling = true,
+    OAuthServiceFactory? oauthServiceFactory,
   }) : _getAppInfo = getAppInfo,
        _checkConnection = checkConnection,
        _localDataSource = localDataSource,
@@ -79,7 +89,22 @@ class AppProvider extends ChangeNotifier {
        _serverHealthProbe = serverHealthProbe,
        _localServerHealthProbe = localServerHealthProbe,
        _serverHealthRequestTimeout = serverHealthRequestTimeout,
-       _enableHealthPolling = enableHealthPolling {
+       _enableHealthPolling = enableHealthPolling,
+       _oauthServiceFactory =
+           oauthServiceFactory ??
+           (({
+             required String profileId,
+             required String serverUrl,
+             Map<String, String>? challengeHeaders,
+             String? challengeBody,
+             bool Function()? shouldPersistCredential,
+           }) => OAuthService(
+             profileId: profileId,
+             serverUrl: serverUrl,
+             challengeHeaders: challengeHeaders,
+             challengeBody: challengeBody,
+             shouldPersistCredential: shouldPersistCredential,
+           )) {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
     _initL10nDefaults();
   }
@@ -99,6 +124,7 @@ class AppProvider extends ChangeNotifier {
   _localServerHealthProbe;
   final Duration _serverHealthRequestTimeout;
   final bool _enableHealthPolling;
+  final OAuthServiceFactory _oauthServiceFactory;
 
   AppStatus _status = AppStatus.initial;
   AppInfo? _appInfo;
@@ -146,6 +172,7 @@ class AppProvider extends ChangeNotifier {
       <String, Map<String, String>>{};
   final Map<String, String> _oauthChallengeBodies = <String, String>{};
   final Set<String> _authenticatedOAuthProfileIds = <String>{};
+  final Set<String> _invalidatedOAuthProfileIds = <String>{};
   final Map<String, Future<bool>> _oauthFlowByProfileId =
       <String, Future<bool>>{};
 
@@ -408,6 +435,14 @@ class AppProvider extends ChangeNotifier {
     return null;
   }
 
+  bool _isCurrentOAuthProfile(ServerProfile profile) {
+    final current = _findById(profile.id);
+    return profile.oauthEnabled &&
+        !_invalidatedOAuthProfileIds.contains(profile.id) &&
+        current?.oauthEnabled == true &&
+        current?.url == profile.url;
+  }
+
   Future<void> _persistServerProfiles() async {
     final encoded = jsonEncode(_serverProfiles.map((p) => p.toJson()).toList());
     await _localDataSource.saveServerProfilesJson(encoded);
@@ -431,11 +466,13 @@ class AppProvider extends ChangeNotifier {
     _dioClient.clearAuth();
     if (profile.oauthEnabled) {
       try {
-        final service = OAuthService(
+        final service = _oauthServiceFactory(
           profileId: profile.id,
           serverUrl: profile.url,
+          shouldPersistCredential: () => _isCurrentOAuthProfile(profile),
         );
         final cached = await service.getCachedCredential();
+        if (activeServer != profile) return;
         if (cached != null) {
           _dioClient.setOAuthToken(cached.accessToken, origin: profile.url);
           _authenticatedOAuthProfileIds.add(profile.id);
@@ -443,6 +480,7 @@ class AppProvider extends ChangeNotifier {
           _authenticatedOAuthProfileIds.remove(profile.id);
         }
       } catch (_) {
+        if (activeServer != profile) return;
         _authenticatedOAuthProfileIds.remove(profile.id);
         AppLogger.warn(
           'Failed to load cached OAuth credential for active profile',
@@ -461,6 +499,7 @@ class AppProvider extends ChangeNotifier {
     }
 
     await _applyTailscaleTransport(profile);
+    if (activeServer != profile) return;
 
     final uri = Uri.tryParse(profile.url);
     if (uri != null) {
@@ -645,57 +684,58 @@ class AppProvider extends ChangeNotifier {
       return _oauthFlowByProfileId[profile.id]!;
     }
 
-    final service = OAuthService(
+    final service = _oauthServiceFactory(
       profileId: profile.id,
       serverUrl: serverUrl,
       challengeHeaders: challengeHeaders,
       challengeBody: challengeBody,
+      shouldPersistCredential: () => _isCurrentOAuthProfile(profile),
     );
 
     final flow = () async {
-      final result = await service.authenticate();
-      if (result.ok && result.token != null) {
-        if (profile.id == _activeServerId) {
-          _dioClient.setOAuthToken(result.token!, origin: profile.url);
-        }
-        _authenticatedOAuthProfileIds.add(profile.id);
-        _oauthChallengeHeaders.remove(serverUrl);
-        _oauthChallengeBodies.remove(serverUrl);
+      try {
+        final result = await service.authenticate();
+        if (!_isCurrentOAuthProfile(profile)) return false;
+        if (result.ok && result.token != null) {
+          if (profile.id == _activeServerId) {
+            _dioClient.setOAuthToken(result.token!, origin: profile.url);
+          }
+          _authenticatedOAuthProfileIds.add(profile.id);
+          _oauthChallengeHeaders.remove(serverUrl);
+          _oauthChallengeBodies.remove(serverUrl);
 
-        if (profile.id == _activeServerId) {
-          // Verify the freshly persisted OAuth token against the active server.
-          await checkConnection();
+          if (profile.id == _activeServerId) {
+            // Verify the freshly persisted OAuth token against the active server.
+            await checkConnection();
+          }
+          if (!_isCurrentOAuthProfile(profile)) return false;
+          await refreshServerHealth(serverId: profile.id);
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            notifyListeners();
+          });
+          return true;
         }
-        await refreshServerHealth(serverId: profile.id);
+
+        // Surface the concrete OAuth failure (token exchange, secure storage,
+        // metadata discovery) instead of leaving callers with a generic error.
+        final detail = result.error?.trim();
+        if (detail != null && detail.isNotEmpty) {
+          _setError(detail);
+        }
         SchedulerBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
         });
-        return true;
+        return false;
+      } catch (_) {
+        // Every caller receives the same normalized failure future.
+        AppLogger.warn('OAuth flow failed for profile');
+        return false;
+      } finally {
+        unawaited(_oauthFlowByProfileId.remove(profile.id));
       }
-
-      // Surface the concrete OAuth failure (token exchange, secure storage,
-      // metadata discovery) instead of leaving callers with a generic error.
-      final detail = result.error?.trim();
-      if (detail != null && detail.isNotEmpty) {
-        _setError(detail);
-      }
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
-      return false;
     }();
     _oauthFlowByProfileId[profile.id] = flow;
-    try {
-      return await flow;
-    } catch (_) {
-      // Any failure inside the flow (token storage, post-auth connection
-      // verification) must resolve to a clean auth failure — never an
-      // exception, which would leave callers waiting/spinning forever.
-      AppLogger.warn('OAuth flow failed for profile');
-      return false;
-    } finally {
-      unawaited(_oauthFlowByProfileId.remove(profile.id));
-    }
+    return flow;
   }
 
   Future<void> clearOAuthCredential(String serverUrl) async {
@@ -711,7 +751,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> _clearOAuthCredentialForProfile(ServerProfile profile) async {
     try {
-      final service = OAuthService(
+      final service = _oauthServiceFactory(
         profileId: profile.id,
         serverUrl: profile.url,
       );
@@ -911,44 +951,49 @@ class AppProvider extends ChangeNotifier {
       return false;
     }
 
-    if (removed.oauthEnabled) {
-      await _clearOAuthCredentialForProfile(removed);
-    }
-    await _sessionAttentionCompletionResolver?.removeServer(id);
+    _invalidatedOAuthProfileIds.add(id);
+    try {
+      if (removed.oauthEnabled) {
+        await _clearOAuthCredentialForProfile(removed);
+      }
+      await _sessionAttentionCompletionResolver?.removeServer(id);
 
-    _serverProfiles = _serverProfiles.where((p) => p.id != id).toList();
-    _serverHealthById.remove(id);
+      _serverProfiles = _serverProfiles.where((p) => p.id != id).toList();
+      _serverHealthById.remove(id);
 
-    if (_serverProfiles.isEmpty) {
-      _activeServerId = null;
-      _defaultServerId = null;
-      _isConnected = false;
-      _appInfo = null;
-      await _applyActiveServerToClient();
+      if (_serverProfiles.isEmpty) {
+        _activeServerId = null;
+        _defaultServerId = null;
+        _isConnected = false;
+        _appInfo = null;
+        await _applyActiveServerToClient();
+        _syncHealthPollingLifecycle();
+        await _persistServerProfiles();
+        _errorMessage = '';
+        notifyListeners();
+        return true;
+      }
+
       _syncHealthPollingLifecycle();
+
+      if (_defaultServerId == id) {
+        _defaultServerId = _serverProfiles.first.id;
+      }
+
+      if (_activeServerId == id) {
+        _activeServerId =
+            (_findById(_defaultServerId)?.id ?? _serverProfiles.first.id);
+        await _applyActiveServerToClient();
+        await checkConnection();
+      }
+
       await _persistServerProfiles();
       _errorMessage = '';
       notifyListeners();
       return true;
+    } finally {
+      _invalidatedOAuthProfileIds.remove(id);
     }
-
-    _syncHealthPollingLifecycle();
-
-    if (_defaultServerId == id) {
-      _defaultServerId = _serverProfiles.first.id;
-    }
-
-    if (_activeServerId == id) {
-      _activeServerId =
-          (_findById(_defaultServerId)?.id ?? _serverProfiles.first.id);
-      await _applyActiveServerToClient();
-      await checkConnection();
-    }
-
-    await _persistServerProfiles();
-    _errorMessage = '';
-    notifyListeners();
-    return true;
   }
 
   Future<bool> setDefaultServer(String id) async {
@@ -1658,7 +1703,7 @@ class AppProvider extends ChangeNotifier {
       dio.options.headers[ApiConstants.authorization] = 'Basic $auth';
     } else if (profile.oauthEnabled) {
       try {
-        final credential = await OAuthService(
+        final credential = await _oauthServiceFactory(
           profileId: profile.id,
           serverUrl: profile.url,
         ).getCachedCredential();

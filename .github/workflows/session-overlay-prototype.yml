@@ -11,7 +11,7 @@ on:
       - "android/app/src/debug/kotlin/com/verseles/codewalk/overlay/**"
       - "android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt"
       - "android/app/src/main/kotlin/com/verseles/codewalk/overlay/**"
-      - "android/app/src/androidTest/kotlin/com/verseles/codewalk/overlay/**"
+      - "android/app/src/androidTest/kotlin/com/verseles/codewalk/**"
       - "lib/presentation/services/session_attention/**"
       - "lib/presentation/widgets/session_attention_overlay/**"
       - "test/widget/session_attention_overlay_test.dart"

@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:codewalk/core/auth/oauth_service_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +25,96 @@ OAuthCallbackValidation _validateCallback(
 }
 
 void main() {
+  test('one loopback redirect URI is reused by every OAuth request stage', () {
+    final redirectUri = OAuthService.loopbackRedirectUriForPort(43123);
+    final registration = OAuthService.clientRegistrationPayload(
+      redirectUri: redirectUri,
+      resource: 'https://code.example.com',
+    );
+    final authorization = OAuthService.authorizationParameters(
+      redirectUri: redirectUri,
+      challenge: 'challenge',
+      state: 'state',
+      resource: 'https://code.example.com',
+      clientId: 'client-id',
+    );
+    final exchange = OAuthService.authorizationCodeParameters(
+      code: 'code',
+      verifier: 'verifier',
+      redirectUri: redirectUri,
+      resource: 'https://code.example.com',
+      clientId: 'client-id',
+    );
+
+    expect(redirectUri, _expectedRedirectUri.toString());
+    expect(registration['redirect_uris'], <String>[redirectUri]);
+    expect(authorization['redirect_uri'], redirectUri);
+    expect(exchange['redirect_uri'], redirectUri);
+    expect(authorization['resource'], 'https://code.example.com');
+    expect(exchange['resource'], 'https://code.example.com');
+  });
+
+  group('OAuth response body limits', () {
+    test('reads a response within its byte limit', () async {
+      final body = await OAuthService.readBoundedBody(
+        Stream<List<int>>.value(utf8.encode('bounded')),
+        maxBytes: 7,
+      );
+
+      expect(body, 'bounded');
+    });
+
+    test('rejects a response that exceeds its byte limit', () async {
+      await expectLater(
+        OAuthService.readBoundedBody(
+          Stream<List<int>>.value(utf8.encode('too-large')),
+          maxBytes: 3,
+        ),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('enforces a total body-read deadline', () async {
+      final controller = StreamController<List<int>>();
+      addTearDown(controller.close);
+      controller.add(utf8.encode('partial'));
+
+      await expectLater(
+        OAuthService.readBoundedBody(
+          controller.stream,
+          timeout: const Duration(milliseconds: 50),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+  });
+
+  test('authorization code retry stops after a possible request send', () {
+    const error = SocketException('network unavailable');
+
+    expect(
+      OAuthService.canRetryAuthorizationCodeExchange(
+        error: error,
+        requestMayHaveBeenSent: false,
+      ),
+      isTrue,
+    );
+    expect(
+      OAuthService.canRetryAuthorizationCodeExchange(
+        error: error,
+        requestMayHaveBeenSent: true,
+      ),
+      isFalse,
+    );
+    expect(
+      OAuthService.canRetryAuthorizationCodeExchange(
+        error: const FormatException('bad response'),
+        requestMayHaveBeenSent: false,
+      ),
+      isFalse,
+    );
+  });
+
   group('OAuthService callback validation', () {
     test('accepts one code and matching state on the exact callback', () {
       final accepted = _validateCallback(

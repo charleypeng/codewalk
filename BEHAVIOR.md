@@ -260,11 +260,13 @@
 - **Then** the same exact redirect URI, including its ephemeral port and callback path, is reused for registration, authorization, callback validation, and token exchange
 - **Then** desktop opens authorization in the external system browser
 - **Then** Android opens authorization in a browser-owned AndroidX Custom Tab and falls back only to an external browser when Custom Tabs are unavailable
+- **Then** closing the Android Custom Tab before the callback promptly cancels that OAuth attempt, while the `ACTION_VIEW` external-browser fallback has no close signal and retains the existing callback timeout
 - **Then** OAuth uses authorization code + PKCE authentication
 - **Then** the callback accepts only an exact GET request for the expected origin, port, and raw path
 - **Then** the callback requires one non-empty matching state and exactly one non-empty authorization code or provider error
 - **Then** unrelated callback paths are non-terminal and callback completion is single-use
 - **Then** OAuth credentials are stored in platform secure storage scoped to that server profile and URL
+- **Then** if the OAuth-enabled profile is removed, disabled, or changes URL while authorization is in flight, the stale result is discarded and its credential is neither retained nor applied
 - **Then** Cloudflare OAuth and OpenCode Basic Auth are mutually exclusive profile modes in this release
 - **Then** logs and errors do not expose OAuth secrets or raw provider/token responses
 - **Then** iOS and web users do not get this OAuth flow and should use Basic Auth or another supported access path

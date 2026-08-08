@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:codewalk/core/auth/oauth_credential.dart';
+import 'package:codewalk/core/auth/oauth_service.dart';
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/core/tailscale/tailscale_service.dart';
@@ -44,6 +46,33 @@ class _FakeTailscaleService extends TailscaleService {
   @override
   Future<void> down() async {
     downCalled = true;
+  }
+}
+
+class _FakeOAuthService extends OAuthService {
+  _FakeOAuthService({
+    required super.profileId,
+    required super.serverUrl,
+    required this.authenticateHandler,
+    this.clearCredentialHandler,
+  });
+
+  final Future<OAuthFlowResult> Function() authenticateHandler;
+  final Future<void> Function()? clearCredentialHandler;
+
+  @override
+  Future<OAuthFlowResult> authenticate({bool skipCache = false}) {
+    return authenticateHandler();
+  }
+
+  @override
+  Future<OAuthCredential?> getCachedCredential() async {
+    return null;
+  }
+
+  @override
+  Future<void> clearCredential() async {
+    await clearCredentialHandler?.call();
   }
 }
 
@@ -223,6 +252,184 @@ void main() {
         expect(provider.activeServer?.basicAuthPassword, isEmpty);
       },
     );
+
+    test('OAuth result is discarded after its profile is disabled', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final started = Completer<void>();
+      final release = Completer<void>();
+      bool? persistAllowed;
+
+      provider = AppProvider(
+        getAppInfo: GetAppInfo(repository),
+        checkConnection: CheckConnection(repository),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: localServerRuntime,
+        serverHealthProbe: (_) async => ServerHealthStatus.unknown,
+        enableHealthPolling: false,
+        oauthServiceFactory:
+            ({
+              required profileId,
+              required serverUrl,
+              challengeHeaders,
+              challengeBody,
+              shouldPersistCredential,
+            }) => _FakeOAuthService(
+              profileId: profileId,
+              serverUrl: serverUrl,
+              authenticateHandler: () async {
+                if (!started.isCompleted) started.complete();
+                await release.future;
+                persistAllowed = shouldPersistCredential?.call();
+                return OAuthFlowResult(token: 'stale-token');
+              },
+            ),
+      );
+
+      await provider.initialize();
+      await provider.addServerProfile(
+        url: 'https://code.example.com',
+        oauthEnabled: true,
+      );
+      final profile = provider.activeServer!;
+      final auth = provider.handleOAuthChallenge(serverUrl: profile.url);
+      await started.future;
+
+      await provider.updateServerProfile(
+        id: profile.id,
+        url: profile.url,
+        label: profile.label,
+        basicAuthEnabled: false,
+        basicAuthUsername: '',
+        basicAuthPassword: '',
+        oauthEnabled: false,
+        tailscaleEnabled: profile.tailscaleEnabled,
+        aiGeneratedTitlesEnabled: profile.aiGeneratedTitlesEnabled,
+      );
+      release.complete();
+
+      expect(await auth, isFalse);
+      expect(persistAllowed, isFalse);
+      expect(provider.isOAuthAuthenticated(profile.url), isFalse);
+    });
+
+    test('OAuth result is discarded while its profile is removed', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final authStarted = Completer<void>();
+      final authRelease = Completer<void>();
+      final cleanupStarted = Completer<void>();
+      final cleanupRelease = Completer<void>();
+      bool? persistAllowed;
+
+      provider = AppProvider(
+        getAppInfo: GetAppInfo(repository),
+        checkConnection: CheckConnection(repository),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: localServerRuntime,
+        serverHealthProbe: (_) async => ServerHealthStatus.unknown,
+        enableHealthPolling: false,
+        oauthServiceFactory:
+            ({
+              required profileId,
+              required serverUrl,
+              challengeHeaders,
+              challengeBody,
+              shouldPersistCredential,
+            }) => _FakeOAuthService(
+              profileId: profileId,
+              serverUrl: serverUrl,
+              authenticateHandler: () async {
+                if (!authStarted.isCompleted) authStarted.complete();
+                await authRelease.future;
+                persistAllowed = shouldPersistCredential?.call();
+                return OAuthFlowResult(token: 'stale-token');
+              },
+              clearCredentialHandler: shouldPersistCredential == null
+                  ? () async {
+                      cleanupStarted.complete();
+                      await cleanupRelease.future;
+                    }
+                  : null,
+            ),
+      );
+
+      await provider.initialize();
+      await provider.addServerProfile(
+        url: 'https://code.example.com',
+        oauthEnabled: true,
+      );
+      final profile = provider.activeServer!;
+      final auth = provider.handleOAuthChallenge(serverUrl: profile.url);
+      await authStarted.future;
+
+      final removal = provider.removeServerProfile(profile.id);
+      await cleanupStarted.future;
+      authRelease.complete();
+
+      expect(await auth, isFalse);
+      expect(persistAllowed, isFalse);
+      cleanupRelease.complete();
+      expect(await removal, isTrue);
+      expect(provider.serverProfiles, isEmpty);
+    });
+
+    test('shared OAuth callers receive one normalized failure', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final started = Completer<void>();
+      final release = Completer<void>();
+      var authenticateCalls = 0;
+
+      provider = AppProvider(
+        getAppInfo: GetAppInfo(repository),
+        checkConnection: CheckConnection(repository),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: localServerRuntime,
+        serverHealthProbe: (_) async => ServerHealthStatus.unknown,
+        enableHealthPolling: false,
+        oauthServiceFactory:
+            ({
+              required profileId,
+              required serverUrl,
+              challengeHeaders,
+              challengeBody,
+              shouldPersistCredential,
+            }) => _FakeOAuthService(
+              profileId: profileId,
+              serverUrl: serverUrl,
+              authenticateHandler: () async {
+                authenticateCalls++;
+                if (!started.isCompleted) started.complete();
+                await release.future;
+                throw StateError('synthetic OAuth failure');
+              },
+            ),
+      );
+
+      await provider.initialize();
+      await provider.addServerProfile(
+        url: 'https://code.example.com',
+        oauthEnabled: true,
+      );
+      final first = provider.handleOAuthChallenge(
+        serverUrl: 'https://code.example.com',
+      );
+      await started.future;
+      final second = provider.handleOAuthChallenge(
+        serverUrl: 'https://code.example.com',
+      );
+      release.complete();
+
+      expect(await Future.wait(<Future<bool>>[first, second]), <bool>[
+        false,
+        false,
+      ]);
+      expect(authenticateCalls, 1);
+    });
 
     test('setActiveServer blocks unhealthy profiles', () async {
       await provider.initialize();

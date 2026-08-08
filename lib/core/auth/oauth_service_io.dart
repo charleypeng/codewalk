@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
@@ -75,17 +76,135 @@ class OAuthService {
     required this.serverUrl,
     this.challengeHeaders,
     this.challengeBody,
+    bool Function()? shouldPersistCredential,
     OAuthTokenStorage? storage,
-  }) : _storage = storage ?? OAuthTokenStorage();
+  }) : _shouldPersistCredential = shouldPersistCredential,
+       _storage = storage ?? OAuthTokenStorage();
 
   static const _androidChannel = MethodChannel('codewalk/system');
+  static const _bodyTimeout = Duration(seconds: 15);
+  static const _maxJsonBodyBytes = 256 * 1024;
+  static const _maxDiscoveryBodyBytes = 1024 * 1024;
+  static final Map<String, void Function()> _androidCloseListeners =
+      <String, void Function()>{};
+  static bool _androidCloseHandlerInstalled = false;
 
   final String profileId;
   final String serverUrl;
   final Map<String, String>? challengeHeaders;
   final String? challengeBody;
 
+  final bool Function()? _shouldPersistCredential;
   final OAuthTokenStorage _storage;
+
+  static String loopbackRedirectUriForPort(int port) {
+    if (port < 1 || port > 65535) {
+      throw RangeError.range(port, 1, 65535, 'port');
+    }
+    return 'http://127.0.0.1:$port/oauth/callback';
+  }
+
+  static Map<String, dynamic> clientRegistrationPayload({
+    required String redirectUri,
+    required String resource,
+  }) {
+    return <String, dynamic>{
+      'redirect_uris': <String>[redirectUri],
+      'token_endpoint_auth_method': 'none',
+      'grant_types': <String>['authorization_code', 'refresh_token'],
+      'response_types': <String>['code'],
+      'client_name': 'CodeWalk',
+      'client_uri': 'https://github.com/verseles/codewalk',
+      'resource': resource,
+    };
+  }
+
+  static Map<String, String> authorizationParameters({
+    required String redirectUri,
+    required String challenge,
+    required String state,
+    required String resource,
+    String? clientId,
+  }) {
+    return <String, String>{
+      'response_type': 'code',
+      'redirect_uri': redirectUri,
+      'code_challenge': challenge,
+      'code_challenge_method': 'S256',
+      'state': state,
+      'resource': resource,
+      'client_id': ?clientId,
+    };
+  }
+
+  static Map<String, String> authorizationCodeParameters({
+    required String code,
+    required String verifier,
+    required String redirectUri,
+    required String resource,
+    String? clientId,
+  }) {
+    return <String, String>{
+      'grant_type': 'authorization_code',
+      'code': code,
+      'code_verifier': verifier,
+      'redirect_uri': redirectUri,
+      'resource': resource,
+      'client_id': ?clientId,
+    };
+  }
+
+  static bool canRetryAuthorizationCodeExchange({
+    required Object error,
+    required bool requestMayHaveBeenSent,
+  }) {
+    return !requestMayHaveBeenSent &&
+        (error is SocketException ||
+            error is TimeoutException ||
+            error is HandshakeException);
+  }
+
+  static Future<String> readBoundedBody(
+    Stream<List<int>> body, {
+    Duration timeout = _bodyTimeout,
+    int maxBytes = _maxJsonBodyBytes,
+  }) async {
+    final bytes = await _readBoundedBytes(
+      body,
+      timeout: timeout,
+      maxBytes: maxBytes,
+    );
+    return utf8.decode(bytes);
+  }
+
+  static Future<Uint8List> _readBoundedBytes(
+    Stream<List<int>> body, {
+    required Duration timeout,
+    required int maxBytes,
+  }) async {
+    final iterator = StreamIterator<List<int>>(body);
+    final stopwatch = Stopwatch()..start();
+    final bytes = BytesBuilder(copy: false);
+    try {
+      while (true) {
+        final remaining = timeout - stopwatch.elapsed;
+        if (remaining <= Duration.zero) {
+          throw TimeoutException('OAuth response body timed out.', timeout);
+        }
+        final hasNext = await iterator.moveNext().timeout(remaining);
+        if (!hasNext) break;
+        final chunk = iterator.current;
+        if (bytes.length + chunk.length > maxBytes) {
+          throw const FormatException('OAuth response body is too large.');
+        }
+        bytes.add(chunk);
+      }
+      return bytes.takeBytes();
+    } finally {
+      stopwatch.stop();
+      await iterator.cancel();
+    }
+  }
 
   static bool isOAuthChallenge(int statusCode, Map<String, String> headers) {
     if (statusCode != 401 && statusCode != 403) return false;
@@ -243,6 +362,13 @@ class OAuthService {
   Future<OAuthFlowResult> authenticate({bool skipCache = false}) async {
     try {
       return await _authenticate(skipCache: skipCache);
+    } on OAuthTokenStorageException {
+      _log('OAuth flow aborted because secure storage is unavailable');
+      return OAuthFlowResult(
+        log: [],
+        error: 'Secure credential storage is unavailable for OAuth.',
+        token: null,
+      );
     } catch (e) {
       // Never let an unexpected failure (secure-storage errors, loopback
       // bind failures, browser launch errors, malformed token responses)
@@ -328,7 +454,14 @@ class OAuthService {
       clientId: client?['client_id'] as String?,
     );
     try {
-      await _storage.saveCredential(credential);
+      final persisted = await _persistCredentialIfCurrent(credential);
+      if (!persisted) {
+        return OAuthFlowResult(
+          log: [],
+          error: 'The server profile changed before OAuth could finish.',
+          token: null,
+        );
+      }
       _log('Credential saved securely');
     } catch (e) {
       _log('Credential save failed: secure storage unavailable');
@@ -389,7 +522,7 @@ class OAuthService {
       final response = await request.close().timeout(
         const Duration(seconds: 15),
       );
-      final body = await response.transform(utf8.decoder).join();
+      final body = await readBoundedBody(response);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(body) as Map<String, dynamic>;
@@ -404,12 +537,26 @@ class OAuthService {
           serverUrl: serverUrl,
           clientId: credential.clientId,
         );
-        await _storage.saveCredential(newCredential);
+        final persisted = await _persistCredentialIfCurrent(newCredential);
+        if (!persisted) {
+          return OAuthFlowResult(
+            log: [],
+            error: 'The server profile changed before OAuth could finish.',
+            token: null,
+          );
+        }
         _log('Token refreshed and saved securely');
         return OAuthFlowResult(token: newCredential.accessToken);
       }
       _log('Refresh failed (${response.statusCode}), re-authenticating');
       return authenticate(skipCache: true);
+    } on OAuthTokenStorageException {
+      _log('Credential refresh failed: secure storage unavailable');
+      return OAuthFlowResult(
+        log: [],
+        error: 'Secure credential storage is unavailable for OAuth.',
+        token: null,
+      );
     } catch (e) {
       _log('Refresh failed with ${e.runtimeType}; re-authenticating');
       return authenticate(skipCache: true);
@@ -420,6 +567,14 @@ class OAuthService {
 
   Future<void> clearCredential() async {
     await _storage.deleteCredential(profileId: profileId, serverUrl: serverUrl);
+  }
+
+  Future<bool> _persistCredentialIfCurrent(OAuthCredential credential) async {
+    if (!(_shouldPersistCredential?.call() ?? true)) return false;
+    await _storage.saveCredential(credential);
+    if (_shouldPersistCredential?.call() ?? true) return true;
+    await _storage.deleteCredential(profileId: profileId, serverUrl: serverUrl);
+    return false;
   }
 
   Future<Map<String, dynamic>?> _fetchOAuthMetadata() async {
@@ -449,7 +604,10 @@ class OAuthService {
         final response = await request.close().timeout(
           const Duration(seconds: 10),
         );
-        final body = await response.transform(utf8.decoder).join();
+        final body = await readBoundedBody(
+          response,
+          maxBytes: _maxDiscoveryBodyBytes,
+        );
 
         if (response.statusCode == 200) {
           final ct = response.headers.contentType?.value ?? '';
@@ -518,20 +676,17 @@ class OAuthService {
       final request = await httpClient.postUrl(Uri.parse(regEndpoint));
       request.headers.contentType = ContentType.json;
       request.write(
-        jsonEncode({
-          'redirect_uris': [redirectUri],
-          'token_endpoint_auth_method': 'none',
-          'grant_types': ['authorization_code', 'refresh_token'],
-          'response_types': ['code'],
-          'client_name': 'CodeWalk',
-          'client_uri': 'https://github.com/verseles/codewalk',
-          'resource': _baseUrl,
-        }),
+        jsonEncode(
+          clientRegistrationPayload(
+            redirectUri: redirectUri,
+            resource: _baseUrl,
+          ),
+        ),
       );
       final response = await request.close().timeout(
         const Duration(seconds: 15),
       );
-      final body = await response.transform(utf8.decoder).join();
+      final body = await readBoundedBody(response);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(body) as Map<String, dynamic>;
@@ -558,7 +713,7 @@ class OAuthService {
 
     final callbackServer = await HttpServer.bind('127.0.0.1', 0);
     try {
-      final redirectUri = _redirectUriFor(callbackServer.port);
+      final redirectUri = loopbackRedirectUriForPort(callbackServer.port);
       final client = await _registerClient(meta, redirectUri);
 
       final verifier = _generateVerifier();
@@ -567,15 +722,13 @@ class OAuthService {
 
       final clientId = client?['client_id'] as String?;
 
-      final params = <String, String>{
-        'response_type': 'code',
-        'redirect_uri': redirectUri,
-        'code_challenge': challenge,
-        'code_challenge_method': 'S256',
-        'state': state,
-        'resource': _baseUrl,
-      };
-      if (clientId != null) params['client_id'] = clientId;
+      final params = authorizationParameters(
+        redirectUri: redirectUri,
+        challenge: challenge,
+        state: state,
+        resource: _baseUrl,
+        clientId: clientId,
+      );
 
       final authUri = Uri.parse(authEp).replace(queryParameters: params);
       _log('Opening browser for authorization');
@@ -698,45 +851,74 @@ class OAuthService {
       return completer.future;
     }
 
-    final launched = await _launchAuthorization(authUri);
-    if (!launched) {
-      _log('Browser failed to open');
-      completeOnce(
-        _CallbackResult.failure(
-          'Could not open the system browser for OAuth sign-in.',
-        ),
-      );
-      return completer.future;
+    final flowId = _generateVerifier();
+    if (Platform.isAndroid) {
+      _registerAndroidCloseListener(flowId, () {
+        completeOnce(_CallbackResult.failure('OAuth sign-in was canceled.'));
+      });
     }
-
-    _log('Waiting for callback (timeout: 5 min)...');
-    final result = await completer.future.timeout(
-      const Duration(minutes: 5),
-      onTimeout: () {
-        completionGuard.tryMarkTerminal();
-        _log('Login timed out after 5 minutes');
-        return _CallbackResult.failure(
-          'No authorization callback reached the app within 5 minutes. '
-          'The browser was expected to redirect to the local callback '
-          'address after consent. '
-          'If the browser showed a connection error instead, this device '
-          'or network blocks loopback redirects.',
+    try {
+      final launched = await _launchAuthorization(authUri, flowId);
+      if (!launched) {
+        _log('Browser failed to open');
+        completeOnce(
+          _CallbackResult.failure(
+            'Could not open the system browser for OAuth sign-in.',
+          ),
         );
-      },
-    );
-    await server.close(force: true);
-    _log('Callback server stopped');
-    return result;
+        return completer.future;
+      }
+
+      _log('Waiting for callback (timeout: 5 min)...');
+      final result = await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () {
+          completionGuard.tryMarkTerminal();
+          _log('Login timed out after 5 minutes');
+          return _CallbackResult.failure(
+            'No authorization callback reached the app within 5 minutes. '
+            'The browser was expected to redirect to the local callback '
+            'address after consent. '
+            'If the browser showed a connection error instead, this device '
+            'or network blocks loopback redirects.',
+          );
+        },
+      );
+      await server.close(force: true);
+      _log('Callback server stopped');
+      return result;
+    } finally {
+      if (Platform.isAndroid) {
+        _androidCloseListeners.remove(flowId);
+      }
+    }
   }
 
-  Future<bool> _launchAuthorization(Uri authUri) async {
+  static void _registerAndroidCloseListener(
+    String flowId,
+    void Function() onClosed,
+  ) {
+    _androidCloseListeners[flowId] = onClosed;
+    if (_androidCloseHandlerInstalled) return;
+    _androidCloseHandlerInstalled = true;
+    _androidChannel.setMethodCallHandler((call) async {
+      if (call.method != 'oauthAuthorizationClosed') return;
+      final arguments = call.arguments;
+      if (arguments is! Map) return;
+      final closedFlowId = arguments['flowId'];
+      if (closedFlowId is! String) return;
+      _androidCloseListeners.remove(closedFlowId)?.call();
+    });
+  }
+
+  Future<bool> _launchAuthorization(Uri authUri, String flowId) async {
     if (!Platform.isAndroid) {
       return launchUrl(authUri, mode: LaunchMode.externalApplication);
     }
     try {
       final mode = await _androidChannel.invokeMethod<String>(
         'launchOAuthAuthorization',
-        {'url': authUri.toString()},
+        {'url': authUri.toString(), 'flowId': flowId},
       );
       if (mode == 'custom_tab') {
         _log('Opening authorization in a browser Custom Tab');
@@ -761,19 +943,16 @@ class OAuthService {
     String? clientId,
   ) async {
     _log('Exchanging authorization code');
-    final bodyParams = <String, String>{
-      'grant_type': 'authorization_code',
-      'code': code,
-      'code_verifier': verifier,
-      'redirect_uri': redirectUri,
-      'resource': _baseUrl,
-    };
-    if (clientId != null) bodyParams['client_id'] = clientId;
+    final bodyParams = authorizationCodeParameters(
+      code: code,
+      verifier: verifier,
+      redirectUri: redirectUri,
+      resource: _baseUrl,
+      clientId: clientId,
+    );
 
-    // Retry transient network failures (e.g. DNS resolution hiccups on
-    // emulators or mobile networks) with a short backoff. The authorization
-    // code stays valid because a failed lookup/connection never reached the
-    // token endpoint, so retrying cannot consume it.
+    // Retry only failures known to happen before request.close(), the point
+    // after which the one-time authorization code may have been consumed.
     const maxAttempts = 3;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       final outcome = await _exchangeCodeOnce(tokenEp, bodyParams);
@@ -798,6 +977,7 @@ class OAuthService {
     Map<String, String> bodyParams,
   ) async {
     HttpClient? client;
+    var requestMayHaveBeenSent = false;
     try {
       client = HttpClient();
       final request = await client.postUrl(Uri.parse(tokenEp));
@@ -813,10 +993,11 @@ class OAuthService {
             )
             .join('&'),
       );
+      requestMayHaveBeenSent = true;
       final response = await request.close().timeout(
         const Duration(seconds: 15),
       );
-      final body = await response.transform(utf8.decoder).join();
+      final body = await readBoundedBody(response);
 
       if (response.statusCode != 200) {
         _log('Token exchange failed with HTTP ${response.statusCode}');
@@ -834,15 +1015,12 @@ class OAuthService {
         'expires_in=${hasExpiry ? 'present' : 'absent'}',
       );
       return _ExchangeResult.data(data);
-    } on SocketException {
-      _log('Token exchange network error');
-      return null;
-    } on TimeoutException {
-      _log('Token exchange timeout');
-      return null;
-    } on HandshakeException {
-      _log('Token exchange TLS error');
-      return null;
+    } on SocketException catch (error) {
+      return _authorizationCodeTransportFailure(error, requestMayHaveBeenSent);
+    } on TimeoutException catch (error) {
+      return _authorizationCodeTransportFailure(error, requestMayHaveBeenSent);
+    } on HandshakeException catch (error) {
+      return _authorizationCodeTransportFailure(error, requestMayHaveBeenSent);
     } catch (e) {
       _log('Token exchange failed with ${e.runtimeType}');
       return _ExchangeResult.failure(
@@ -851,6 +1029,24 @@ class OAuthService {
     } finally {
       client?.close(force: true);
     }
+  }
+
+  _ExchangeResult? _authorizationCodeTransportFailure(
+    Object error,
+    bool requestMayHaveBeenSent,
+  ) {
+    if (canRetryAuthorizationCodeExchange(
+      error: error,
+      requestMayHaveBeenSent: requestMayHaveBeenSent,
+    )) {
+      _log('Token exchange failed before request send; retry is safe');
+      return null;
+    }
+    _log('Token exchange failed after possible request send; not retrying');
+    return _ExchangeResult.failure(
+      'Token exchange did not complete after the authorization code was sent. '
+      'Please start OAuth sign-in again.',
+    );
   }
 
   String? _parseWwwAuthenticate(String? header) {
@@ -881,7 +1077,11 @@ class OAuthService {
         const Duration(seconds: 10),
       );
       final location = response.headers.value('location');
-      await response.drain<List<int>>();
+      await _readBoundedBytes(
+        response,
+        timeout: _bodyTimeout,
+        maxBytes: _maxDiscoveryBodyBytes,
+      );
       if (location != null) {
         final uri = Uri.tryParse(location);
         if (uri != null && isCloudflareAccessHost(uri.host)) {
@@ -944,10 +1144,6 @@ class OAuthService {
   String _generateChallenge(String verifier) {
     final bytes = sha256.convert(utf8.encode(verifier)).bytes;
     return base64Url.encode(bytes).replaceAll('=', '');
-  }
-
-  String _redirectUriFor(int port) {
-    return 'http://127.0.0.1:$port/oauth/callback';
   }
 
   String get _baseUrl {

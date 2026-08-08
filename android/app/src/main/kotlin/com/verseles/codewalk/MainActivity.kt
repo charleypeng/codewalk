@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.PowerManager
 import android.provider.OpenableColumns
 import android.provider.Settings
@@ -23,9 +24,40 @@ class MainActivity : FlutterActivity() {
         private const val COMPOSER_CLIPBOARD_CHANNEL = "codewalk/composer_clipboard"
         private const val SESSION_OVERLAY_CHANNEL = "codewalk/session_overlay_host"
         private const val SESSION_OVERLAY_ACTIVATION_CHANNEL = "codewalk/session_overlay_activation"
+        private const val OAUTH_AUTHORIZATION_REQUEST_CODE = 47021
+        private const val OAUTH_FLOW_ID_STATE = "codewalk.oauth.flow_id"
+
+        fun isTrustedOAuthAuthorizationUri(uri: Uri): Boolean =
+            uri.scheme == "https" && !uri.host.isNullOrBlank()
+
+        fun buildOAuthCustomTabIntent(uri: Uri, packageName: String): Intent =
+            CustomTabsIntent.Builder()
+                .setShowTitle(true)
+                .build()
+                .intent
+                .apply {
+                    data = uri
+                    setPackage(packageName)
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                }
+
+        fun buildOAuthExternalBrowserIntent(uri: Uri): Intent =
+            Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)
     }
 
     private var sessionOverlayActivationChannel: MethodChannel? = null
+    private var systemChannel: MethodChannel? = null
+    private var activeOAuthFlowId: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        activeOAuthFlowId = savedInstanceState?.getString(OAUTH_FLOW_ID_STATE)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        activeOAuthFlowId?.let { outState.putString(OAUTH_FLOW_ID_STATE, it) }
+        super.onSaveInstanceState(outState)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -100,10 +132,10 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(
+        systemChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             SYSTEM_CHANNEL,
-        ).setMethodCallHandler { call, result ->
+        ).also { channel -> channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startForegroundService" -> {
                     startCodeWalkForegroundService()
@@ -132,45 +164,59 @@ class MainActivity : FlutterActivity() {
                 }
                 "launchOAuthAuthorization" -> {
                     result.success(
-                        launchOAuthAuthorization(call.argument<String>("url")),
+                        launchOAuthAuthorization(
+                            call.argument<String>("url"),
+                            call.argument<String>("flowId"),
+                        ),
                     )
                 }
                 else -> result.notImplemented()
             }
-        }
+        } }
     }
 
-    private fun launchOAuthAuthorization(rawUrl: String?): String? {
+    private fun launchOAuthAuthorization(rawUrl: String?, flowId: String?): String? {
         val uri = rawUrl?.let(Uri::parse) ?: return null
-        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
+        if (!isTrustedOAuthAuthorizationUri(uri) || flowId.isNullOrBlank()) return null
 
         val customTabsPackage = CustomTabsClient.getPackageName(this, null)
-        if (customTabsPackage != null) {
+        if (customTabsPackage != null && activeOAuthFlowId == null) {
             try {
-                val customTab = CustomTabsIntent.Builder()
-                    .setShowTitle(true)
-                    .build()
-                customTab.intent.setPackage(customTabsPackage)
-                customTab.launchUrl(this, uri)
+                activeOAuthFlowId = flowId
+                startActivityForResult(
+                    buildOAuthCustomTabIntent(uri, customTabsPackage),
+                    OAUTH_AUTHORIZATION_REQUEST_CODE,
+                )
                 return "custom_tab"
             } catch (_: ActivityNotFoundException) {
+                activeOAuthFlowId = null
                 // The selected browser disappeared; retry with a normal browser.
             } catch (_: SecurityException) {
+                activeOAuthFlowId = null
                 // A restricted Custom Tabs provider must not trigger WebView use.
             }
         }
 
         return try {
-            startActivity(
-                Intent(Intent.ACTION_VIEW, uri)
-                    .addCategory(Intent.CATEGORY_BROWSABLE),
-            )
+            startActivity(buildOAuthExternalBrowserIntent(uri))
             "external_browser"
         } catch (_: ActivityNotFoundException) {
             null
         } catch (_: SecurityException) {
             null
         }
+    }
+
+    @Deprecated("Deprecated in Android; retained for the Custom Tab close signal.")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != OAUTH_AUTHORIZATION_REQUEST_CODE) return
+        val flowId = activeOAuthFlowId ?: return
+        activeOAuthFlowId = null
+        systemChannel?.invokeMethod(
+            "oauthAuthorizationClosed",
+            mapOf("flowId" to flowId),
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
