@@ -4,11 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeOAuthTokenStorageBackend implements OAuthTokenStorageBackend {
   final Map<String, String> values = <String, String>{};
-  bool fail = false;
+  bool failRead = false;
+  bool failWrite = false;
+  bool failDelete = false;
+  var deleteCalls = 0;
 
   @override
   Future<void> write({required String key, required String value}) async {
-    if (fail) {
+    if (failWrite) {
       throw StateError('secure storage unavailable');
     }
     values[key] = value;
@@ -16,7 +19,7 @@ class _FakeOAuthTokenStorageBackend implements OAuthTokenStorageBackend {
 
   @override
   Future<String?> read({required String key}) async {
-    if (fail) {
+    if (failRead) {
       throw StateError('secure storage unavailable');
     }
     return values[key];
@@ -24,7 +27,8 @@ class _FakeOAuthTokenStorageBackend implements OAuthTokenStorageBackend {
 
   @override
   Future<void> delete({required String key}) async {
-    if (fail) {
+    deleteCalls++;
+    if (failDelete) {
       throw StateError('secure storage unavailable');
     }
     values.remove(key);
@@ -66,10 +70,10 @@ void main() {
       );
     });
 
-    test('fails closed when secure storage is unavailable', () async {
-      final backend = _FakeOAuthTokenStorageBackend()..fail = true;
+    test('fails closed when secure storage writes are unavailable', () async {
+      final backend = _FakeOAuthTokenStorageBackend()..failWrite = true;
       final storage = OAuthTokenStorage(backend: backend);
-      final credential = OAuthCredential(
+      const credential = OAuthCredential(
         profileId: 'profile-a',
         accessToken: 'access-token',
         serverUrl: 'https://code.example.com',
@@ -79,6 +83,12 @@ void main() {
         () => storage.saveCredential(credential),
         throwsA(isA<OAuthTokenStorageException>()),
       );
+    });
+
+    test('propagates secure storage read failures without deleting', () async {
+      final backend = _FakeOAuthTokenStorageBackend()..failRead = true;
+      final storage = OAuthTokenStorage(backend: backend);
+
       expect(
         () => storage.loadCredential(
           profileId: 'profile-a',
@@ -86,6 +96,30 @@ void main() {
         ),
         throwsA(isA<OAuthTokenStorageException>()),
       );
+      expect(backend.deleteCalls, 0);
+    });
+
+    test('deletes malformed credential payloads only', () async {
+      final backend = _FakeOAuthTokenStorageBackend();
+      final storage = OAuthTokenStorage(backend: backend);
+      await storage.saveCredential(
+        const OAuthCredential(
+          profileId: 'profile-a',
+          accessToken: 'access-token',
+          serverUrl: 'https://code.example.com',
+        ),
+      );
+      backend.values[backend.values.keys.single] = '{not-json';
+
+      expect(
+        await storage.loadCredential(
+          profileId: 'profile-a',
+          serverUrl: 'https://code.example.com',
+        ),
+        isNull,
+      );
+      expect(backend.values, isEmpty);
+      expect(backend.deleteCalls, 1);
     });
   });
 }

@@ -23,7 +23,8 @@ abstract class OAuthTokenStorageBackend {
   Future<void> delete({required String key});
 }
 
-class FlutterSecureOAuthTokenStorageBackend implements OAuthTokenStorageBackend {
+class FlutterSecureOAuthTokenStorageBackend
+    implements OAuthTokenStorageBackend {
   const FlutterSecureOAuthTokenStorageBackend([this._secureStorage]);
 
   final FlutterSecureStorage? _secureStorage;
@@ -82,28 +83,40 @@ class OAuthTokenStorage {
     required String profileId,
     required String serverUrl,
   }) async {
+    final key = _key(profileId: profileId, serverUrl: serverUrl);
+    final String? raw;
     try {
-      final raw = await _backend.read(
-        key: _key(profileId: profileId, serverUrl: serverUrl),
-      );
-      if (raw != null && raw.isNotEmpty) {
-        final map = jsonDecode(raw) as Map<String, dynamic>;
-        final credential = OAuthCredential.fromJson(map);
-        if (credential.profileId != profileId ||
-            credential.serverUrl != serverUrl) {
-          return null;
-        }
-        return credential;
-      }
-    } on FormatException {
-      return null;
+      raw = await _backend.read(key: key);
     } catch (error) {
       throw OAuthTokenStorageException(
         'Secure credential storage is unavailable.',
         error,
       );
     }
-    return null;
+    if (raw == null || raw.isEmpty) return null;
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid OAuth credential payload.');
+      }
+      final credential = OAuthCredential.fromJson(decoded);
+      if (credential.profileId != profileId ||
+          credential.serverUrl != serverUrl) {
+        throw const FormatException('OAuth credential scope mismatch.');
+      }
+      return credential;
+    } catch (_) {
+      try {
+        await _backend.delete(key: key);
+      } catch (deleteError) {
+        throw OAuthTokenStorageException(
+          'Secure credential storage is unavailable.',
+          deleteError,
+        );
+      }
+      return null;
+    }
   }
 
   Future<void> deleteCredential({

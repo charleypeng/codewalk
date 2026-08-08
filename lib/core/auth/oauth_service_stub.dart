@@ -8,6 +8,7 @@ class OAuthService {
     required this.serverUrl,
     this.challengeHeaders,
     this.challengeBody,
+    bool Function()? shouldPersistCredential,
     OAuthTokenStorage? storage,
   }) : _storage = storage ?? OAuthTokenStorage();
 

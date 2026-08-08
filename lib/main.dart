@@ -25,9 +25,16 @@ import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/services/android_background_alert_worker.dart';
 import 'presentation/services/desktop_window_chrome_service.dart';
+import 'presentation/services/session_attention/session_overlay_entrypoint.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/opencode_theme_presets.dart';
 import 'presentation/widgets/desktop_window_title_bar.dart';
+
+// Keeps the native Android service entrypoint reachable in AOT builds.
+@pragma('vm:entry-point')
+void _sessionOverlayAndroidEntrypointAnchor() {
+  sessionOverlayAndroidMain();
+}
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
