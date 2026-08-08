@@ -141,6 +141,7 @@ Future<void> init() async {
   var sessionAttentionHostRevision = 0;
   var sessionAttentionPublishTail = Future<void>.value();
   SessionAttentionAggregate? liveAttention;
+  var sessionAttentionAppInForeground = true;
 
   Future<void> publishSessionAttention() async {
     final revision = ++sessionAttentionHostRevision;
@@ -158,13 +159,17 @@ Future<void> init() async {
           (await sl<SessionAttentionSnapshotStore>().read()).payload;
       var presentation =
           sl<SettingsProvider>().settings.sessionAttentionPresentation;
+      var bubbleSize =
+          sl<SettingsProvider>().settings.sessionAttentionBubbleSize;
       final persistedSettings = await sl<AppLocalDataSource>()
           .getExperienceSettingsJson();
       if (persistedSettings != null && persistedSettings.isNotEmpty) {
         try {
-          presentation = ExperienceSettings.fromJson(
+          final restored = ExperienceSettings.fromJson(
             Map<String, dynamic>.from(jsonDecode(persistedSettings) as Map),
-          ).sessionAttentionPresentation;
+          );
+          presentation = restored.sessionAttentionPresentation;
+          bubbleSize = restored.sessionAttentionBubbleSize;
         } catch (_) {
           // Keep the initialized provider value if persisted data is malformed.
         }
@@ -255,6 +260,8 @@ Future<void> init() async {
           generation: sessionAttentionHostGeneration,
           revision: revision,
           presentation: presentation,
+          bubbleScale: sessionAttentionBubbleScale(bubbleSize),
+          appInForeground: sessionAttentionAppInForeground,
           activeServerId: activeServerId ?? '',
           items: items,
           fullResynchronization: revision == 1,
@@ -442,6 +449,10 @@ Future<void> init() async {
         liveAttention = aggregate;
         await publishSessionAttention();
       },
+      sessionAttentionAppForegroundPublisher: (isForeground) async {
+        sessionAttentionAppInForeground = isForeground;
+        await publishSessionAttention();
+      },
       eventFeedbackDispatcher: sl(),
       titleGenerator: sl(),
     ),
@@ -546,7 +557,11 @@ Future<void> _loadLocalConfig() async {
           final username = activeProfile['basicAuthUsername'] as String? ?? '';
           final password = activeProfile['basicAuthPassword'] as String? ?? '';
           if (basicEnabled && username.isNotEmpty && password.isNotEmpty) {
-            dioClient.setBasicAuth(username, password);
+            dioClient.setBasicAuth(
+              username,
+              password,
+              origin: dioClient.dio.options.baseUrl,
+            );
           } else {
             dioClient.clearAuth();
           }
@@ -572,7 +587,11 @@ Future<void> _loadLocalConfig() async {
       final password = await localDataSource.getBasicAuthPassword();
       if ((username != null && username.isNotEmpty) &&
           (password != null && password.isNotEmpty)) {
-        dioClient.setBasicAuth(username, password);
+        dioClient.setBasicAuth(
+          username,
+          password,
+          origin: dioClient.dio.options.baseUrl,
+        );
       }
     } else {
       dioClient.clearAuth();

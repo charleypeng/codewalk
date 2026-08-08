@@ -221,6 +221,13 @@ abstract class AppLocalDataSource {
   /// Technical comment translated to English.
   Future<void> saveExperienceSettingsJson(String settingsJson);
 
+  Future<String?> getSessionTabsStateJson({required String serverId});
+
+  Future<void> saveSessionTabsStateJson(
+    String stateJson, {
+    required String serverId,
+  });
+
   /// Technical comment translated to English.
   Future<String?> getLastSessionId();
 
@@ -1160,6 +1167,24 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     await sharedPreferences.setString(
       AppConstants.experienceSettingsKey,
       settingsJson,
+    );
+  }
+
+  @override
+  Future<String?> getSessionTabsStateJson({required String serverId}) async {
+    return sharedPreferences.getString(
+      _scopedKey(AppConstants.sessionTabsStateKey, serverId: serverId),
+    );
+  }
+
+  @override
+  Future<void> saveSessionTabsStateJson(
+    String stateJson, {
+    required String serverId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(AppConstants.sessionTabsStateKey, serverId: serverId),
+      stateJson,
     );
   }
 

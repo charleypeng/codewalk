@@ -787,6 +787,63 @@ void main() {
       expect(second.showRecentSessions, isTrue);
     });
 
+    test('enables session tabs by default on every platform', () {
+      expect(SettingsProvider.defaultSessionTabsVisibility, isTrue);
+    });
+
+    test('persists and clears the session tabs visibility override', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await provider.initialize();
+
+      await provider.setShowSessionTabsOverride(false);
+
+      expect(provider.showSessionTabs, isFalse);
+      expect(
+        jsonDecode(local.experienceSettingsJson!)['showSessionTabsOverride'],
+        isFalse,
+      );
+
+      await provider.setShowSessionTabsOverride(null);
+
+      expect(provider.settings.showSessionTabsOverride, isNull);
+      expect(
+        jsonDecode(local.experienceSettingsJson!),
+        isNot(contains('showSessionTabsOverride')),
+      );
+    });
+
+    test('persists the session tabs gesture hint opt-out', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.sessionTabsGestureHintDismissed, isFalse);
+      await first.setSessionTabsGestureHintDismissed(true);
+
+      expect(
+        jsonDecode(
+          local.experienceSettingsJson!,
+        )['sessionTabsGestureHintDismissed'],
+        isTrue,
+      );
+      final restored = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await restored.initialize();
+      expect(restored.sessionTabsGestureHintDismissed, isTrue);
+    });
+
     test('persists background behavior preferences', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

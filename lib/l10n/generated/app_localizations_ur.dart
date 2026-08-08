@@ -1170,6 +1170,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'چیٹنگ شروع کرنے کے لیے ایک نئی گفتگو بنائیں';
 
   @override
+  String get chatSessionTabsToggle => 'سیشن ٹیبز';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
@@ -1491,10 +1494,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get composerDeleteAction => 'حذف کریں۔';
 
   @override
+  String get composerDropHint => 'منسلک کرنے کے لیے تصاویر یا PDF چھوڑیں';
+
+  @override
+  String get composerPastedImageName => 'چسپاں کردہ تصویر';
+
+  @override
   String get composerEdit => 'ترمیم کریں۔';
 
   @override
   String get composerExtras => 'اضافی';
+
+  @override
+  String get composerExtrasHide => 'اضافی چھپائیں';
 
   @override
   String get composerNewQuickReply => 'نیا فوری جواب';
@@ -1510,6 +1522,18 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get composerShellMode => 'شیل موڈ';
+
+  @override
+  String get desktopWindowClose => 'بند کریں';
+
+  @override
+  String get desktopWindowMaximize => 'بڑا کریں';
+
+  @override
+  String get desktopWindowMinimize => 'چھوٹا کریں';
+
+  @override
+  String get desktopWindowRestore => 'بحال کریں';
 
   @override
   String get dialogDownload => 'ڈاؤن لوڈ کریں۔';
@@ -1665,6 +1689,21 @@ class AppLocalizationsUr extends AppLocalizations {
   String get filesAddChat => 'چیٹ میں شامل کریں۔';
 
   @override
+  String get filesAutosave => 'خودکار محفوظ';
+
+  @override
+  String get filesAutosaveOn => 'خودکار محفوظ فعال';
+
+  @override
+  String get filesAutosaveOff => 'خودکار محفوظ غیر فعال';
+
+  @override
+  String get filesRedo => 'دوبارہ کریں';
+
+  @override
+  String get filesUndo => 'واپس کریں';
+
+  @override
   String get filesBinaryFilePreview =>
       'بائنری فائل کا پیش نظارہ دستیاب نہیں ہے۔';
 
@@ -1673,6 +1712,12 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get filesContents => 'مشمولات';
+
+  @override
+  String get filesDuplicate => 'نقل بنائیں';
+
+  @override
+  String get filesDuplicated => 'فائل کی نقل بن گئی';
 
   @override
   String get filesFileEmpty => 'فائل خالی ہے۔';
@@ -3416,6 +3461,27 @@ class AppLocalizationsUr extends AppLocalizations {
       'وال پیپر کے رنگ استعمال کرنے کے لیے CodeWalk Classic پر جائیں۔';
 
   @override
+  String get settingsAppearanceWindowChrome => 'ونڈو ٹیبز';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'منتخب کریں کہ ڈیسک ٹاپ پر سیشن ٹیبز اور ٹائٹل بار کیسے یکجا ہوں۔';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'مربوط ٹیبز';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'ٹیبز ونڈو کے اوپر ہوتے ہیں اور سسٹم ٹائٹل بار چھپ جاتا ہے۔';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'سسٹم سجاوٹ';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'مقامی ٹائٹل بار برقرار رکھتا ہے اور ٹیبز کو ایپ بار کے نیچے دکھاتا ہے۔';
+
+  @override
   String get settingsBack => 'پیچھے';
 
   @override
@@ -3941,6 +4007,24 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsServersTitle => 'سرورز';
+
+  @override
+  String get settingsSessionAttentionSize => 'ببل کا سائز';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'بہت بڑا';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'بہت چھوٹا';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'بڑا';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'چھوٹا';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'معیاری';
 
   @override
   String get settingsSetupWizard => 'سیٹ اپ وزرڈ';
@@ -4484,6 +4568,33 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt کی';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'نیچے کا تیر';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'بائیں تیر';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'دائیں تیر';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'اوپر کا تیر';
+
+  @override
+  String get terminalExtraKeyControl => 'Control کی';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape کی';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab کی';
+
+  @override
+  String get terminalExtraKeys => 'ٹرمینل کی اضافی کیز';
+
+  @override
   String get terminalHide => 'ٹرمینل چھپائیں';
 
   @override
@@ -4763,4 +4874,31 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => 'تجاویز';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }

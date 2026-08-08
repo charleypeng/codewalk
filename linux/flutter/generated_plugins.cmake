@@ -4,9 +4,10 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
-  desktop_multi_window
+  desktop_drop
   dynamic_color
   flutter_secure_storage_linux
+  pasteboard
   record_linux
   screen_retriever_linux
   tray_manager

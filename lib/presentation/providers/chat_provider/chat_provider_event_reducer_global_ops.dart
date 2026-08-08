@@ -92,6 +92,8 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
     AppLogger.debug(
       'Marked inactive context dirty and kept cache for SWR restore context=$targetContextKey event=$type',
     );
+    _updateSessionTabSignalsForEvent(event, contextKey: targetContextKey);
+    _reconcileSessionTabs();
   }
 
   bool _tryApplyGlobalEventIncremental(ChatEvent event) {
@@ -563,6 +565,8 @@ extension _ChatProviderEventReducerGlobalOps on ChatProvider {
     }
     _dismissResolvedInactiveInteractionFeedback(event, snapshot: nextSnapshot);
     _scheduleSessionUnreadHighlightTimer();
+    _updateSessionTabSignalsForEvent(event, contextKey: contextKey);
+    _reconcileSessionTabs();
     _notifyListeners();
     return true;
   }

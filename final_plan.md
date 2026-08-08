@@ -1,338 +1,683 @@
-# OpenCode v1.18.3 Compatibility Follow-up Plan
+# Issue #113: Recent Session Tabs Execution Plan
 
 ## Status
 
-Ready.
+Implementation and documentation are complete; the code steps were reviewed,
+and focused checks plus the stable `make check` gate pass. Consolidation and
+delivery are in progress.
 
-## Problem
+- Delivery branch: `main`.
+- Temporary execution branch: `agent/issue-113-session-tabs-20260730`.
+- Current version before execution: `1.179.0+1785246142`; requested minor
+  release target: `1.180.0` (build number remains release-tool owned).
 
-CodeWalk must remain compatible with the official OpenCode server and cross-client event semantics under ADR-023. OpenCode `v1.18.3`, published on 2026-07-16 at tag commit `127bdb30784d508cc556c71a0f32b508a3061517`, does not introduce a new legacy REST or SSE contract relative to `v1.18.2`, but validating CodeWalk against the exact release exposed three existing compatibility defects and one stale-catalog behavior:
+## Work Item
 
-1. `ChatEventModel.fromJson` unwraps the official `/global/event` `payload` but discards the outer `directory`, `project`, and `workspace` fields. The global reducer then cannot route events to the correct CodeWalk context.
-2. CodeWalk does not explicitly reconcile `session.next.revert.staged`, `session.next.revert.cleared`, or `session.next.revert.committed`. The per-instance stream ignores them, and the global fallback does not reliably refresh the active timeline.
-3. The managed local OpenCode installer detects Windows ARM64 but always selects `opencode-windows-x64.zip`, even though `v1.18.3` publishes `opencode-windows-arm64.zip`.
-4. CodeWalk ignores `catalog.updated`, leaving provider/model choices stale until another manual or lifecycle refresh.
+- Issue: https://github.com/verseles/codewalk/issues/113
+- Title: `Adicionar abas de sessoes recentes com indicadores de estado`
+- Objective: add a browser-like strip for switching quickly among open or
+  recently active root sessions without requiring the Conversations sidebar.
+- Before implementation, compare the plan against the recently added official
+  OpenCode Desktop session-tab implementation. OpenCode is the primary product
+  and lifecycle reference; OpenChamber remains a secondary community reference.
+- Product decisions confirmed during planning:
+  - show tabs only for the active server;
+  - allow root sessions only, not child/subagent sessions;
+  - preserve stable tab order and append newly opened/reopened tabs;
+  - closing the active tab selects the right neighbor, then the left neighbor;
+  - place the strip across the entire content width below the app bar, above
+    conversations, files, chat, and utility panes on desktop;
+  - keep the strip usable on mobile when explicitly enabled.
 
-The official `v1.18.3` release-note changes to the TUI subagent picker and official Desktop homepage, WSL readiness, help button, custom-agent selector, and command palette do not require equivalent CodeWalk UI changes.
+## Definition of Done
 
-## Objective
+- Tabs use normalized server + project scope + session identity and never use
+  title or visual position as identity.
+- Only non-archived root sessions belonging to the active server are eligible.
+- Eligibility uses the later of authoritative `ChatSession.time` and local
+  `lastOpenedAt`, with a rolling three-hour cutoff.
+- The selected session and busy/retry sessions are protected from automatic
+  expiry, but an explicit close still removes them.
+- Tabs restore in stable persisted order, never duplicate, and do not reorder
+  when selected, renamed, updated, or alerted.
+- Closing a tab is local only. It never archives, deletes, or mutates an
+  OpenCode session.
+- A user-closed tab stays closed across ordinary refresh/replay. A successful
+  explicit reopen or a strictly newer authoritative session interaction makes
+  it eligible again and appends it at the end.
+- Closing the active tab selects the right neighbor, then the left neighbor.
+  Closing the sole active tab enters the existing local New Chat draft flow.
+- Cross-project activation uses the existing cache-first project switch and
+  `ChatProvider.selectSession()` path.
+- The normal leading slot is `ProjectIcon` with the existing folder fallback.
+- Unseen attention uses error > question > completed priority. A busy/retry
+  sync indicator is rendered independently beside the leading slot.
+- Viewing a session marks current tab attention as seen without answering or
+  rejecting a pending OpenCode question.
+- A later completion, question, or error can become unseen again.
+- Long titles ellipsize visually while retaining the full title in tooltip and
+  semantics.
+- Horizontal overflow scrolls instead of shrinking click/touch targets without
+  bound, and the active tab is kept visible.
+- Close controls work with mouse, keyboard, and touch and do not activate the
+  underlying tab accidentally.
+- Fresh native desktop installs default to visible; fresh Android/iOS installs
+  default to hidden; web uses its initial viewport class. Explicit preference
+  always wins and survives restart, resize, and rotation.
+- Focused unit/widget tests, targeted analysis, and one stable `make check`
+  validation gate pass.
+- `BEHAVIOR.md` documents the implemented behavior and `CODEBASE.md` is updated
+  if the implementation adds the planned provider part/widget files.
+- After requested delivery, remote CI is successful and issue #113 receives an
+  evidence comment and is closed.
+- The completed implementation is released as minor version `1.180.0`; release
+  CI reaches a final successful state and `hey` notifies the user only after
+  that successful CI conclusion.
 
-Make CodeWalk safely consume the exact OpenCode `v1.18.3` global event envelope, reconcile remote revert lifecycle events, refresh provider/model state after catalog updates, and install the correct managed OpenCode binary on Windows ARM64. Preserve backward compatibility with flat legacy event fixtures and x64 fallback behavior. Add focused regression coverage and update current-behavior documentation.
+## Scope
 
-Completion is verifiable when:
+### In Scope
 
-- An official nested `/global/event` frame retains its outer context metadata after parsing.
-- Global events are routed to the context identified by the outer `directory` instead of defaulting to the active context.
-- All three `session.next.revert.*` events trigger server-authoritative reconciliation on both per-instance and global streams, including when aggressive data saver disables the global stream.
-- `catalog.updated` coalesces into the existing provider refresh path.
-- Windows ARM64 selects `opencode-windows-arm64.zip` before the x64 fallback, while all existing macOS/Linux/x64 preferences remain unchanged.
-- Focused tests and `make check` pass.
+- Active-server root-session tab collection across open/cached project scopes.
+- Versioned, server-scoped local persistence for order, recency, close
+  suppression, cached display metadata, and tab attention viewing state.
+- Three-hour reconciliation and active/busy exceptions.
+- Cross-project tab activation and deterministic local close fallback.
+- Responsive tab strip, project icons, attention indicators, busy indicator,
+  accessibility, localization, and display preference.
+- Direct source comparison with the official OpenCode Desktop tabs at a pinned
+  revision, preserving applicable behavior while documenting deliberate
+  CodeWalk-specific differences.
+- Focused unit/widget tests and project documentation after implementation.
 
-## Context and Constraints
+### Out of Scope
 
-- Repository: `/home/ubuntu/MEGA/WORK/codewalk`.
-- CodeWalk is a Flutter client targeting Android, Linux, macOS, Windows, and Web.
-- ADR-023 at `ADR.md:1001-1015` makes official OpenCode API and event semantics authoritative and requires core compatibility with official CLI/Web behavior.
-- The live server OpenAPI document at `/doc` is authoritative for request and response contracts. Local anchors are `ai-docs/opencode_server.md`, `ai-docs/opencode_web.md`, and `ai-docs/opencode_models.md`.
-- Official `v1.18.3` `/global/event` frames use outer location metadata and a nested payload:
+- Tabs from multiple servers in one strip.
+- Child/subagent sessions.
+- OpenCode endpoint, schema, event, or lifecycle changes.
+- A new server-wide session discovery request or undocumented `/session` query
+  parameters. The first cut uses sessions already known through active/cached
+  contexts plus persisted tab metadata.
+- Making close archive or delete a session.
+- Drag-and-drop/manual reordering.
+- OpenCode Desktop parity features outside issue #113, including cross-server
+  tabs, explicit reopen-closed history, draft tabs in the strip, numeric/cycle
+  shortcuts, and tab renaming.
+- Middle-click close as a release blocker.
+- The OpenChamber 48-hour recency window.
+- Persisting live busy, retry, error, question, or completion booleans as if
+  they were server state.
+- Changing project icon discovery or adding an icon field to OpenCode payloads.
 
-  ```json
-  {
-    "directory": "/repo",
-    "project": "project-id",
-    "workspace": "workspace-id",
-    "payload": {
-      "id": "evt_...",
-      "type": "session.updated",
-      "properties": {}
-    }
-  }
-  ```
+## Architectural Alignment
 
-- Initial `server.connected` and periodic `server.heartbeat` global frames may contain only `payload` and omit location metadata. The parser must continue accepting them.
-- Per-instance `/event` frames remain flat `{id, type, properties}` objects.
-- Existing tests incorrectly model `/global/event` as a flat event with `directory` inside `properties` at `test/integration/opencode_server_integration_test.dart:269-283`.
-- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_global_ops.dart:24-59` depends on `event.properties` containing directory metadata.
-- `initializeProviders()` already coalesces refreshes through `_providersRefreshTask` at `lib/presentation/providers/chat_provider.dart:2366-2383`; reuse it instead of adding another debounce or refresh subsystem.
-- Managed local OpenCode is desktop-only. Do not alter Web, Android, or iOS runtime availability.
-- Do not implement OpenCode provider OAuth, `integration.*`, `reference.updated`, or new v2 storage APIs in this task.
-- Do not recreate `ROADMAP.md`; GitHub Issues are the canonical tracker.
-- Do not add an ADR exception. The changes restore ADR-023 alignment rather than introduce a divergence.
-- Preserve existing style, architecture, naming, data-saver behavior, and server-authoritative state rules.
-- Do not locally fabricate or delete messages when the legacy server APIs do not expose enough data to reproduce a v2 revert result.
+### ADR-023
 
-## Decisions (Resolved)
+The feature is client-owned navigation and presentation. OpenCode remains
+authoritative for sessions, timestamps, status, questions, errors, and events.
+The implementation consumes the existing official session/event paths and does
+not add or reinterpret a server contract. No ADR-023 exception is required.
 
-1. Preserve global envelope metadata by copying non-empty outer `directory`, `project`, and `workspace` values into a fresh parsed properties map. Outer location values are authoritative when a payload property has the same key.
-2. Keep `ChatEvent` and downstream reducer interfaces unchanged. Enriching the parsed properties map is the smallest compatible change because existing reducers already extract context from `event.properties`.
-3. Continue accepting flat legacy events and nested global frames without location metadata.
-4. Treat all three `session.next.revert.*` events as context-affecting session events. Route them through `_applyChatEvent`, refresh session metadata/status, and refresh active messages when the event targets the visible session or lacks a usable session ID.
-5. Use server responses as the only source of revert state. If refreshed legacy APIs do not expose a v2 commit, retain the server-returned timeline and do not infer deletions locally.
-6. Handle `catalog.updated` by invoking the existing coalesced `initializeProviders()` path. Do not map `integration.*` to `/provider`, because the v2 integration credential store is not proven to update the legacy provider endpoint.
-7. Extract the release-asset name preference into a deterministic top-level helper in `local_opencode_server_runtime_io.dart` so it can be unit tested without network access or host-architecture dependence.
-8. On Windows ARM64, prefer `opencode-windows-arm64.zip` and then fall back to `opencode-windows-x64.zip`. On Windows x64, select only the x64 asset. Preserve current macOS and Linux ordering exactly.
-9. Update current-behavior and compatibility documentation only after code and tests establish the final behavior.
+### ADR-002, ADR-020, ADR-021, and ADR-022
 
-## Why This Plan
+- Context identity remains `serverId::scopeId`.
+- Cross-project activation switches context before selecting the session.
+- Session reopening remains cache-first/SWR through the existing provider path.
+- Draft state remains isolated per project scope.
+- The tab strip adds another navigation surface; it does not become a second
+  owner for the active OpenCode session.
 
-- It fixes concrete contract drift discovered against the exact immutable release rather than copying unrelated official Desktop UI changes.
-- It reuses existing parsing, reducer, provider-refresh, and fallback mechanisms instead of adding parallel abstractions.
-- It preserves old server compatibility while making the official nested envelope authoritative.
-- It avoids unsafe local reconstruction when the legacy API cannot expose v2-only state.
-- It adds deterministic tests for the two previously inaccurate or untested boundaries: global event envelopes and platform asset selection.
+### ADR-040
 
-## Overview
+Tabs reuse `ProjectIcon` and local project icon metadata. Open/active projects
+may follow existing render-triggered discovery. Closed project tabs use cached
+icon data without introducing background filesystem scans. Missing/unresolved
+projects use the existing `Symbols.folder_open` fallback.
 
-First correct the transport model so all downstream routing receives the official context metadata. Then extend session event reconciliation and catalog refresh behavior using existing ChatProvider paths. Correct Windows ARM64 asset preference through a small pure selector seam. Finish by updating compatibility documentation and running focused and full validation.
+### ADR Decision
 
-## Steps
+Do not add or update an ADR for this feature unless implementation discovers a
+new architecture boundary or a required behavior that conflicts with the ADRs
+above. The current design is an additive application of accepted decisions.
 
-### 1. Preserve official `/global/event` context metadata
+## Official OpenCode Desktop Reference
 
-- **Files**:
-  - `lib/data/models/chat_realtime_model.dart`
-  - `test/unit/models/chat_realtime_model_test.dart` (create)
-  - `test/integration/opencode_server_integration_test.dart`
-- **Changes**:
-  1. In `ChatEventModel.fromJson`, continue detecting a nested `payload` map.
-  2. Always create a mutable copy of the selected properties map with `Map<String, dynamic>.from(...)`; do not mutate the caller's decoded JSON map.
-  3. For nested payloads, inspect outer keys `directory`, `project`, and `workspace`. Copy each non-empty string into the properties copy. Make the outer value override a same-named payload property because it identifies the event-routing context.
-  4. Do not add missing keys with null or empty-string values.
-  5. Keep flat `{type, properties}` parsing unchanged.
-  6. Keep unknown event types parseable as today; do not introduce an event enum or rejection list.
-  7. Replace the flat scripted event in `test/integration/opencode_server_integration_test.dart:269-283` with the official nested global envelope and retain the assertion that the resulting event exposes the directory.
-- **Tests**:
-  - Parse a nested official global event and assert that payload properties plus outer `directory`, `project`, and `workspace` are retained.
-  - Assert that an outer location value wins over a conflicting payload property.
-  - Parse nested `server.connected` without outer metadata and assert that no empty context keys are synthesized.
-  - Parse a flat `/event` frame and assert existing behavior remains unchanged.
-- **Risk**: Medium. Incorrect precedence can route an event to the wrong context.
-- **Mitigation**: Make outer metadata authoritative and cover collision, missing metadata, nested, and flat cases.
-- **Validation gate**: Run the new model test and the integration SSE test before proceeding.
+The official OpenCode repository is the primary implementation reference for
+this feature. Initial anchor-time inspection used revision
+`1e17856ba4b5b052650c8115060852f3f023844e`; re-check the current `dev` revision
+before writing production code and record any behaviorally relevant changes in
+the first progress commit.
 
-### 2. Reconcile OpenCode revert lifecycle events
+Applicable upstream evidence:
 
-- **Files**:
-  - `lib/presentation/providers/chat_provider/chat_provider_event_reducer_global_ops.dart`
+- `packages/app/src/context/tabs.tsx` owns persisted ordered session/draft tab
+  identity, cached title/directory metadata, atomic navigation transitions,
+  server/session cleanup, and local close behavior without deleting a session.
+- `packages/app/src/context/closed-tabs.ts` proves deterministic active-close
+  fallback to the right neighbor and then the left neighbor.
+- `packages/app/src/components/titlebar-tab-strip.tsx` resolves sessions through
+  their server context, retains cached labels, scrolls horizontally, separates
+  close gestures from navigation, and covers keyboard/overflow behavior.
+- `packages/app/src/components/titlebar-session-events.ts` removes tabs only
+  from explicit session-removal evidence instead of treating missing context as
+  authoritative deletion.
+
+Deliberate CodeWalk differences remain binding unless the deeper source review
+finds a correctness issue:
+
+- CodeWalk issue #113 is active-server-only and keys by normalized server,
+  project scope/directory, and root-session ID.
+- CodeWalk auto-collects recent sessions with a rolling three-hour window;
+  OpenCode Desktop models explicitly opened tabs and drafts.
+- CodeWalk keeps stable append order and does not add upstream drag-and-drop,
+  reopen-closed history, cross-server tabs, draft tabs, or renaming in this cut.
+- CodeWalk retains its mobile-first visibility preference and Material You
+  composition rather than copying the desktop titlebar presentation.
+- Official source informs local client behavior but does not override ADR-023,
+  CodeWalk's existing provider ownership, or the issue's accepted decisions.
+
+## Current Code Anchors
+
+- Session cache, selection, context snapshots, status, and attention:
+  - `lib/presentation/providers/chat_provider.dart`
+  - `lib/presentation/providers/chat_provider_types_part.dart`
+  - `lib/presentation/providers/chat_provider/chat_provider_preference_ops.dart`
+  - `lib/presentation/providers/chat_provider/chat_provider_session_attention_ops.dart`
+  - `lib/presentation/providers/chat_provider/chat_provider_session_ops.dart`
   - `lib/presentation/providers/chat_provider/chat_provider_event_reducer_session_ops.dart`
-  - `test/contract/chat_event_contract_test.dart`
-  - `test/unit/providers/chat_provider_realtime_test.dart`
-- **Changes**:
-  1. Add these exact types to the global reducer's supported incremental event set:
-     - `session.next.revert.staged`
-     - `session.next.revert.cleared`
-     - `session.next.revert.committed`
-  2. Add one shared switch branch for the three types in `_applyChatEvent`.
-  3. Extract the event session ID with the existing event-session helpers. Mark the active context dirty.
-  4. Schedule a server-authoritative refresh with `refreshSessions: true` and `refreshStatus: true`.
-  5. Set `refreshActiveSession: true` when the extracted session ID matches the visible session. Also set it to true when no usable session ID is available, because retaining a stale visible timeline is riskier than an extra scoped fetch.
-  6. Do not locally mutate `_messages`, delete tail messages, or construct `SessionRevert` data from the event body. Let refreshed session/message responses drive state.
-  7. Keep existing `session.next.moved` handling intact.
-  8. Preserve recent-event deduplication so the same event arriving on `/event` and `/global/event` does not start duplicate reconciliation.
-- **Tests**:
-  - Emit each exact event type on the per-instance stream and assert that session/status refresh occurs.
-  - Emit an active-session revert event and assert that active messages are reloaded and visible-message filtering follows the refreshed server `revert` boundary.
-  - Emit a non-current-session event with a known session ID and assert that the current timeline is not replaced.
-  - Emit an event without a usable session ID and assert the safe current-context fallback runs.
-  - Enable aggressive data saver so `/global/event` is absent, emit the event on `/event`, and assert reconciliation still occurs.
-  - Emit duplicate equivalent events across both streams and assert refresh is coalesced/deduplicated.
-- **Fallback behavior**: If a live `v1.18.3` server emits a committed v2 revert but the legacy session/message endpoints still return the unreverted timeline, display the refreshed legacy server response, retain the context as dirty for later SWR, and do not fabricate local deletions.
-- **Risk**: High. Incorrect local truncation could hide or lose messages; excessive refreshes could disrupt active streaming.
-- **Mitigation**: Perform reads only, target the active session precisely, reuse current scheduling/deduplication, and never synthesize revert state.
-- **Validation gate**: Run the contract event suite and ChatProvider realtime suite before proceeding.
-
-### 3. Refresh provider/model state on `catalog.updated`
-
-- **Files**:
   - `lib/presentation/providers/chat_provider/chat_provider_event_reducer_global_ops.dart`
-  - `test/contract/chat_event_contract_test.dart`
-  - `test/unit/providers/chat_provider_realtime_test.dart`
-- **Changes**:
-  1. Handle `catalog.updated` before the context-prefix filter that currently rejects non-session events.
-  2. Invoke `initializeProviders()` with `unawaited`; rely on `_providersRefreshTask` to coalesce concurrent catalog events.
-  3. Keep the existing provider catalog visible while refresh is in progress.
-  4. On refresh failure, preserve the existing cached catalog and existing refresh-error behavior.
-  5. Do not handle `integration.updated`, `integration.connection.updated`, or `reference.updated` in this task.
-- **Tests**:
-  - Emit one `catalog.updated` event and assert one provider refresh updates available models.
-  - Emit several catalog events while a refresh is in flight and assert the existing task coalescing prevents parallel provider requests.
-  - Force refresh failure and assert the prior provider/model selection remains available.
-- **Risk**: Medium. A refresh loop could restart realtime subscriptions repeatedly.
-- **Mitigation**: Reuse the existing in-flight task guard and verify one request for a burst of events.
-- **Validation gate**: Run focused ChatProvider provider/realtime tests.
+- Cross-project navigation:
+  - `lib/presentation/pages/chat_page/chat_page_workspace_controller.dart`
+  - `lib/presentation/pages/chat_page/chat_page_scaffold.dart`
+- Responsive page composition:
+  - `lib/presentation/pages/chat_page.dart`
+- Display toggles:
+  - `lib/domain/entities/experience_settings.dart`
+  - `lib/presentation/providers/settings_provider.dart`
+  - `lib/presentation/pages/chat_page/chat_page_chrome.dart`
+  - `lib/presentation/pages/chat_page/chat_page_mobile_overflow.dart`
+- Persistence:
+  - `lib/core/constants/app_constants.dart`
+  - `lib/data/datasources/app_local_datasource.dart`
+  - `lib/data/datasources/app_local_datasource_storage_helpers.dart`
+- Visual reuse:
+  - `lib/presentation/widgets/project_icon.dart`
+  - `lib/presentation/widgets/chat_session_list.dart`
+  - `lib/presentation/widgets/sidebar_selection_indicator.dart`
+  - `lib/presentation/pages/chat_page/chat_page_file_viewer.dart`
 
-### 4. Select the native Windows ARM64 OpenCode asset
+## Resolved State Design
 
-- **Files**:
-  - `lib/presentation/services/local_opencode_server_runtime_io.dart`
-  - `test/unit/services/local_opencode_release_asset_selector_test.dart` (create)
-- **Changes**:
-  1. Extract the preferred asset-name ordering into a deterministic top-level helper that accepts:
-     - available asset names,
-     - `TargetPlatform`,
-     - `bool isArm64`.
-  2. Keep the helper free of network, filesystem, and `Abi.current()` calls. `_selectAssetForCurrentPlatform` must compute the real platform/ABI and pass them into the helper.
-  3. Use these exact Windows preferences:
-     - Windows ARM64: `opencode-windows-arm64.zip`, then `opencode-windows-x64.zip`.
-     - Windows x64: `opencode-windows-x64.zip` only.
-  4. Preserve these existing macOS preferences:
-     - ARM64: `opencode-darwin-arm64.zip`.
-     - x64: `opencode-darwin-x64.zip`, then `opencode-darwin-x64-baseline.zip`.
-  5. Preserve these existing Linux preferences:
-     - ARM64: `opencode-linux-arm64.tar.gz`, then `opencode-linux-arm64-musl.tar.gz`.
-     - x64: `opencode-linux-x64.tar.gz`, `opencode-linux-x64-baseline.tar.gz`, `opencode-linux-x64-musl.tar.gz`, then `opencode-linux-x64-baseline-musl.tar.gz`.
-  6. Continue returning no asset when none of the platform preferences exist. Do not select Desktop application installers such as `opencode-desktop-win-arm64.exe`.
-  7. Preserve SHA-256 extraction and verification unchanged.
-- **Tests**:
-  - Windows ARM64 prefers the native archive when both native and x64 assets exist.
-  - Windows ARM64 falls back to x64 when the native archive is absent.
-  - Windows x64 never chooses the ARM64 archive.
-  - Existing macOS and Linux preference order remains unchanged.
-  - Unrelated Desktop assets are ignored.
-  - No matching CLI archive returns null.
-- **Risk**: Medium. A selector regression could break managed installation on another desktop platform.
-- **Mitigation**: Preserve all current non-Windows orderings verbatim and test every supported platform family.
-- **Validation gate**: Run the pure selector unit test and targeted analysis for the runtime file.
+### Ownership
 
-### 5. Update compatibility and current-behavior documentation
+Keep tab metadata in a dedicated `ChatProvider` part, for example
+`chat_provider_session_tab_ops.dart`, with small immutable types in
+`chat_provider_types_part.dart` or a narrowly named adjacent model file.
 
-- **Files**:
-  - `ai-docs/opencode_server.md`
-  - `ai-docs/opencode_models.md`
-  - `CONTRACT_MATRIX.md`
-  - `BEHAVIOR.md`
-- **Changes**:
-  1. Document the exact `v1.18.3` `/event` and `/global/event` envelopes, including that initial connected/heartbeat global frames may omit location metadata.
-  2. Document the cumulative EventV2 families relevant to CodeWalk: `catalog.updated` and `session.next.revert.*`.
-  3. Record that `integration.*` belongs to newer integration behavior and is not assumed to update the legacy `/provider` contract.
-  4. Update the realtime contract row in `CONTRACT_MATRIX.md` to name outer-context preservation and revert reconciliation as tested invariants.
-  5. Update `BEHAVIOR.md` to describe only the implemented final behavior: global context routing, server-authoritative remote revert refresh, catalog refresh coalescing, and native Windows ARM64 managed-runtime selection.
-  6. Do not add release-note history or planned behavior to `BEHAVIOR.md`.
-  7. Do not recreate `ROADMAP.md`.
-- **Risk**: Low.
-- **Mitigation**: Pin upstream links to `v1.18.3` and distinguish exact-release changes from behavior merely present cumulatively in the tag.
-- **Validation gate**: Review links and terminology against official tag-pinned sources and the live `/doc` output.
+This is the smallest boundary because `ChatProvider` already owns:
 
-### 6. Run final validation and independent review
+- active server and project context transitions;
+- active/cached session snapshots;
+- successful session selection;
+- realtime session updates/deletions;
+- scoped status, question, error, and completion attention;
+- route visibility needed to determine whether attention is being viewed;
+- local session navigation preferences and `AppLocalDataSource`.
 
-- **Commands**: Run from `/home/ubuntu/MEGA/WORK/codewalk`.
+Do not create a page-only tab authority that must independently replay provider
+events. Do not put tab records in `ExperienceSettings`; that model stores a
+global visibility preference, not server-scoped runtime navigation state.
 
-  ```bash
-  export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/models/chat_realtime_model_test.dart
-  export PATH="$HOME/flutter/bin:$PATH" && flutter test test/integration/opencode_server_integration_test.dart
-  export PATH="$HOME/flutter/bin:$PATH" && flutter test test/contract/chat_event_contract_test.dart
-  export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/providers/chat_provider_realtime_test.dart
-  export PATH="$HOME/flutter/bin:$PATH" && flutter test test/unit/services/local_opencode_release_asset_selector_test.dart
-  export PATH="$HOME/flutter/bin:$PATH" && flutter analyze lib/data/models/chat_realtime_model.dart lib/presentation/providers/chat_provider lib/presentation/services/local_opencode_server_runtime_io.dart test/unit/models/chat_realtime_model_test.dart test/integration/opencode_server_integration_test.dart test/contract/chat_event_contract_test.dart test/unit/providers/chat_provider_realtime_test.dart test/unit/services/local_opencode_release_asset_selector_test.dart
-  export PATH="$HOME/flutter/bin:$PATH" && make check
-  ```
+### Identity
 
-- **Live verification**:
-  1. Start OpenCode `v1.18.3` with an isolated test directory and verify `/global/health` reports the expected version.
-  2. Inspect `http://127.0.0.1:4096/doc` and confirm `/event`, `/global/event`, `/session/:sessionID/revert`, `/session/:sessionID/unrevert`, and `/provider` contracts.
-  3. Connect CodeWalk and a second official client to the same server. Create/update a session in the second client and confirm CodeWalk routes the event to the correct directory.
-  4. Exercise staged, cleared, and committed revert behavior from the official client. Confirm CodeWalk refreshes without local data loss.
-  5. Trigger or simulate `catalog.updated` and confirm available provider/models refresh once.
-  6. Validate the release asset selector against the official `v1.18.3` GitHub asset list. When Windows ARM64 hardware or CI is available, perform one managed direct-binary install and verify `opencode --version` reports `1.18.3`.
-- **Review gate**:
-  - Run the project Reviewer Loop on the final code diff after tests pass.
-  - Apply only correctness, regression, concurrency, contract, or maintainability findings validated against local evidence.
-  - Rerun focused tests for reviewer-requested micro-fixes; rerun `make check` only if a fix invalidates the completed full check.
-- **Delivery**:
-  - Do not build an Android APK unless explicitly requested; this task has no Android-specific UI delivery.
-  - Do not commit or push unless authorized by the active execution protocol.
+Reuse the normalization semantics of `SessionAttentionIdentity` where practical:
 
-## Risks & Mitigations
+```text
+serverId + normalized project directory/scope + rootSessionId
+```
 
-1. **High — wrong-context state mutation**: Losing or trusting the wrong directory can apply a global event to another project.
-   - Mitigation: Treat outer global-envelope location metadata as authoritative and test conflicting values.
-2. **High — message loss during revert reconciliation**: Local truncation based only on an event could hide data the legacy API still considers present.
-   - Mitigation: Never delete locally; fetch server session/message state and render only the server-authoritative result.
-3. **Medium — refresh storms or subscription churn**: Event bursts can trigger repeated provider or session requests.
-   - Mitigation: Reuse `_providersRefreshTask`, existing current-context scheduling, and cross-stream deduplication.
-4. **Medium — Windows architecture regression**: Changing asset ordering could select an incompatible archive.
-   - Mitigation: Make platform/architecture selection deterministic, preserve x64 fallback, and test every platform preference list.
-5. **Medium — upstream v2/legacy store mismatch**: A v2 revert commit may not be fully represented by legacy message endpoints.
-   - Mitigation: Keep the legacy response visible, mark the context dirty for later SWR, and record an upstream compatibility issue rather than fabricating state.
-6. **Low — documentation drift**: Moving `dev` links can stop representing the reviewed release.
-   - Mitigation: Use tag-pinned `v1.18.3` links and record the review date.
+The tab model may hold `SessionAttentionIdentity` directly because this feature
+is root-only, or use an equally normalized tab identity without changing wire
+models. Never key by title, project label, list index, or session ID alone.
 
-## Assumptions to Validate
+### Persisted Payload
 
-1. **Official global envelopes match the tag source.**
-   - Validation: Capture frames from a running `v1.18.3` `/global/event` endpoint.
-   - If false: Preserve support for the observed shape additively; do not remove nested or flat parsing.
-2. **Revert events expose a usable session ID through existing extraction helpers.**
-   - Validation: Capture all three event payloads during live cross-client revert operations.
-   - If false: Use the documented safe current-context refresh fallback and do not infer an ID.
-3. **Legacy session/message endpoints reflect enough state to render remote revert behavior.**
-   - Validation: Compare responses before staging, after staging, after clearing, and after committing.
-   - If false: Keep the server-returned legacy timeline, do not synthesize deletions, and document the upstream limitation.
-4. **`catalog.updated` may arrive in bursts.**
-   - Validation: Emit multiple events in tests while provider refresh is delayed.
-   - If false: Retain coalescing anyway because it is harmless and protects future server behavior.
-5. **The Windows ARM64 CLI asset name is stable for `v1.18.3`.**
-   - Validation: Confirm `opencode-windows-arm64.zip` in the official release assets API.
-   - If false in a future release: Fall back to `opencode-windows-x64.zip`; do not select a Desktop installer.
+Add a versioned JSON payload under a new `AppConstants` key, scoped by
+`serverId` through the existing `_scopedKey` helper and not by `scopeId`:
 
-## Decisions and Nuances
+```json
+{
+  "version": 1,
+  "open": [
+    {
+      "directory": "/project",
+      "projectId": "project-id",
+      "sessionId": "ses_123",
+      "title": "Cached title",
+      "lastOpenedAtMs": 0,
+      "serverUpdatedAtMs": 0,
+      "seenQuestionIds": [],
+      "seenCompletionToken": null,
+      "seenErrorToken": null
+    }
+  ],
+  "closed": [
+    {
+      "directory": "/project",
+      "sessionId": "ses_123",
+      "closedAtMs": 0,
+      "observedServerUpdatedAtMs": 0
+    }
+  ]
+}
+```
 
-- The release API's `target_commitish` points to `c69abee0c73253aebae65e87e4e1b9bfa8c38021`, while the immutable `v1.18.3` tag points to release commit `127bdb30784d508cc556c71a0f32b508a3061517`. Use the tag as the source reference.
-- The EventV2 types covered here were already present in `v1.18.2`; do not describe them as newly introduced by `v1.18.3`.
-- The release-note Desktop fixes belong to the official Desktop application, not CodeWalk's Flutter desktop UI.
-- `server.connected` and `server.heartbeat` can legitimately lack outer directory metadata. Missing context on those transport events is not a parser failure.
-- The parser must make a fresh properties map before enrichment to avoid mutating decoded input shared elsewhere.
-- Provider/model identifiers remain untranslated and server-defined. Do not add allowlists.
-- OpenChamber may be inspected only as a secondary community implementation reference. Official OpenCode tag source and `/doc` override it.
-- `CODEBASE.md` does not require an update because this plan does not add a new production module or change architectural entry points.
+Exact field names may follow repository conventions, but preserve these rules:
 
-## Blockers and Open Questions
+- array order is display order;
+- title/project ID are cache-only display/navigation fallbacks;
+- `ChatSession.time` replaces cached server time when fresher;
+- attention viewing tokens contain server/event-owned IDs or deterministic
+  fingerprints, never fabricated OpenCode state;
+- live status/attention booleans are always derived from `ChatProvider`;
+- malformed/unknown-version entries are ignored safely without blocking chat;
+- writes are serialized so late saves cannot restore a closed/reordered record.
 
-None. The live-server checks may expose an upstream legacy/v2 limitation, but the safe fallback behavior is already defined and does not block the local compatibility fixes.
+No hard visible-tab count is introduced in the first cut. The three-hour window
+bounds normal records, while closed tombstones are pruned after they can no
+longer suppress an otherwise eligible stale record.
 
-## Testing Strategy
+## Eligibility and Reconciliation
 
-- Cover parsing at the model boundary with exact wire fixtures.
-- Cover reducer behavior with both event streams and aggressive-data-saver conditions.
-- Cover context routing with conflicting active and event directories.
-- Cover provider refresh coalescing and failure retention.
-- Cover release-asset selection as a pure platform/architecture matrix.
-- Run focused tests first, targeted analysis second, and `make check` only after the implementation is stable.
-- Perform live cross-client verification with OpenCode `v1.18.3` because mocks cannot prove legacy/v2 revert-store behavior.
-- Skip `make android` unless a testable APK is explicitly requested; `make check` covers the shared Dart behavior in this task.
+Use an injectable/current clock in pure reconciliation helpers so boundaries
+are deterministic in tests.
 
-## Execution Handoff
+For every root session known from the active context, cached context snapshots,
+or persisted open records:
 
-1. Start in `/home/ubuntu/MEGA/WORK/codewalk` with a clean understanding of any user-owned working-tree changes; do not overwrite them.
-2. Read `AGENTS.md`, `BEHAVIOR.md`, ADR-023 in `ADR.md`, and the three `ai-docs/opencode_*` anchors before editing.
-3. Recover the latest `AGENT_PLAN_ANCHOR`. When the user authorizes execution of this file, follow the required plan-anchored commit protocol before modifying code.
-4. Open these first:
-   - `lib/data/models/chat_realtime_model.dart`
-   - `lib/presentation/providers/chat_provider/chat_provider_event_reducer_global_ops.dart`
-   - `lib/presentation/providers/chat_provider/chat_provider_event_reducer_session_ops.dart`
-   - `lib/presentation/services/local_opencode_server_runtime_io.dart`
-   - `test/integration/opencode_server_integration_test.dart`
-5. Implement Steps 1 through 4 in order. Do not start documentation until code behavior and focused tests are stable.
-6. Complete the full validation and reviewer gates before any requested commit or push.
+```text
+effectiveRecentAt = max(ChatSession.time, lastOpenedAt)
+eligible = effectiveRecentAt >= now - 3 hours
+           || selected in the active context
+           || busy/retry in its cached/active context
+```
 
-## Out of Scope
+Apply these rules in order:
 
-- Reproducing official OpenCode Desktop homepage, command-palette, WSL readiness, help-button, or custom-agent-selector changes.
-- Implementing OpenCode provider OAuth or connector setup UI.
-- Migrating CodeWalk wholesale to v2 session, message, integration, or durable sync APIs.
-- Acting on `integration.updated`, `integration.connection.updated`, or `reference.updated`.
-- Changing message send, `prompt_async`, permission, question, or legacy revert endpoint contracts.
-- Adding provider/model allowlists.
-- Recreating `ROADMAP.md`.
-- Android APK delivery, release versioning, push, deployment, or CI monitoring unless separately requested.
+1. Normalize identity and reject empty server, directory, or session values.
+2. Restrict output to the active server.
+3. Exclude child sessions and archived root sessions.
+4. Deduplicate by normalized identity, preserving the first persisted position.
+5. Refresh cached title/project/server timestamp without moving the tab.
+6. Append newly eligible identities to the end.
+7. Keep selected and busy/retry tabs through cutoff expiry.
+8. Prune stale, non-selected, non-busy entries during restore/reconciliation.
+9. Remove a session after authoritative remote deletion or confirmed local API
+   deletion. Do not treat an unloaded/offline scope as deletion.
+10. Remove project references only after explicit project-history/context
+    removal, not merely because a project is currently closed.
 
-## Official References
+### Close Suppression and Reopening
 
-- OpenCode `v1.18.3` release: https://github.com/anomalyco/opencode/releases/tag/v1.18.3
-- Global event schema: https://github.com/anomalyco/opencode/blob/v1.18.3/packages/opencode/src/server/routes/instance/httpapi/groups/global.ts#L35-L46
-- Global event handler: https://github.com/anomalyco/opencode/blob/v1.18.3/packages/opencode/src/server/routes/instance/httpapi/handlers/global.ts#L16-L58
-- Instance event handler: https://github.com/anomalyco/opencode/blob/v1.18.3/packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts#L12-L78
-- Revert event definitions: https://github.com/anomalyco/opencode/blob/v1.18.3/packages/schema/src/session-event.ts#L434-L443
-- Catalog event definition: https://github.com/anomalyco/opencode/blob/v1.18.3/packages/schema/src/catalog.ts#L5-L6
-- Windows ARM64 CLI asset: https://github.com/anomalyco/opencode/releases/download/v1.18.3/opencode-windows-arm64.zip
-- Secondary community reference: https://github.com/openchamber/openchamber
+- Closing writes a tombstone before/with removing the visible record.
+- Snapshot refreshes, status replays, and unchanged session timestamps do not
+  resurrect a tombstoned tab.
+- Successful explicit navigation to that session clears the tombstone, updates
+  `lastOpenedAt`, and appends the tab.
+- A strictly newer authoritative session timestamp than the version observed at
+  close also clears the tombstone and appends the tab.
+- Busy/retry state alone does not immediately undo an explicit close.
+- Expiry pruning is not a user close and needs no tombstone; later interaction
+  naturally makes the session eligible again.
+
+### Interaction and Seen Semantics
+
+- Update `lastOpenedAt` only after the target session successfully becomes the
+  visible current session, regardless of whether navigation originated in the
+  sidebar, recent sessions, notification, fork result, or the tab strip.
+- Failed/aborted selection attempts do not refresh recency.
+- While the chat route and selected session are visible, current attention is
+  considered viewed. If the route is inactive or another session is selected,
+  new attention remains unseen.
+- Completion and error viewing may reuse existing provider clear behavior.
+- Pending questions remain server-owned and unresolved after viewing. Persist a
+  fingerprint/set of seen pending question IDs so the question icon can clear
+  while the request remains pending and reappear for a later question.
+- If existing `SessionAttentionState` cannot distinguish questions from generic
+  pending permissions, extend it narrowly or expose a scoped pending-question
+  accessor. Do not label all permissions as questions accidentally.
+- Use deterministic event/message/request fingerprints so a replay is not new
+  attention and a genuinely later event can alert again.
+
+## Preference and Defaults
+
+Add nullable `showSessionTabsOverride` to `ExperienceSettings`:
+
+- `null` means no explicit user choice;
+- `true` or `false` is persisted explicit intent.
+
+Effective default when the override is null:
+
+- Linux, macOS, and Windows: `true`;
+- Android and iOS: `false`;
+- web: capture the initial `WindowSizeClass` once; non-compact is `true` and
+  compact is `false`.
+
+Do not persist the computed default as an explicit choice. Do not recompute the
+web default after resize/rotation within the same app run. The first toggle
+stores the opposite of the current effective value, after which that explicit
+value always wins.
+
+Add the setting to both existing Display Toggles surfaces with localized label,
+tooltip/description, and tests. Do not couple it to `showRecentSessions`.
+
+## Navigation and Close Flow
+
+### Activate Tab
+
+1. Ignore a duplicate activation already in flight for the same identity.
+2. If the tab project is closed, reopen it with `makeActive: true`; otherwise
+   switch through the existing serialized project-scope transition.
+3. Let `ChatProvider.onProjectScopeChanged(waitForRevalidation: false)` restore
+   cache/SWR state.
+4. Resolve the session from the restored/loaded target scope.
+5. Call the existing `selectSession()` path.
+6. Only after success, mark the tab selected/viewed and update `lastOpenedAt`.
+7. On failure, retain the prior active selection/tab and surface the existing
+   bounded navigation error behavior.
+
+The project transition overlay covers the full body, including the tab strip,
+so users cannot start competing transitions from another tab.
+
+### Close Tab
+
+1. Stop close-button pointer/tap handling from activating the tab.
+2. Persist local close suppression and remove the tab immediately.
+3. If the closed tab was inactive, keep the current session unchanged.
+4. If active, select the right neighbor from the pre-close order; if absent,
+   select the left neighbor.
+5. If no neighbor exists, enter the existing New Chat local draft flow without
+   creating a remote session until first send.
+6. If neighbor activation fails, restore a coherent prior tab/selection rather
+   than leaving the visible session and active-tab identity mismatched.
+
+Never call `deleteSession`, `DELETE /session/:id`, archive, or another remote
+mutation from this flow.
+
+## Responsive UI
+
+Create a focused widget such as
+`lib/presentation/widgets/session_tab_strip.dart` and compose it in
+`ChatPage` immediately below the app bar and above the complete body content.
+
+Desktop/web expanded structure:
+
+```text
+Scaffold body
+  Column
+    SessionTabStrip (when enabled and non-empty)
+    Expanded
+      Row
+        Conversations pane
+        Files pane
+        Chat
+        Utility pane
+```
+
+Mobile/compact uses the same full-width strip above chat content. The drawer
+remains unchanged.
+
+Each tab contains:
+
+- leading project/attention slot;
+- truncated session title;
+- separate busy/retry sync indicator when applicable;
+- close button with localized tooltip/semantic label.
+
+Visual priority:
+
+```text
+error > unseen pending question > unseen completion > ProjectIcon/folder
+```
+
+The busy/retry indicator never replaces that slot. Use the existing
+`Symbols.sync_rounded` treatment and retry semantics where available.
+
+Interaction/accessibility requirements:
+
+- horizontal scroll with desktop scrollbar/touch drag and no unbounded tab
+  compression;
+- selected tab auto-scrolls into view after activation/restore/resize;
+- `Semantics(selected: true)` and full title/status announcements;
+- visible hover, focus, pressed, selected, and attention states in light/dark
+  themes without color-only meaning;
+- Material minimum hit targets, including close on mobile;
+- keyboard activation and close focus behavior;
+- text direction and horizontal scroll behavior remain valid for RTL locales;
+- middle-click may be added only if local and low-risk after required behavior
+  is complete.
+
+## Implementation Sequence
+
+### Step 1: Preference and Persisted Tab Metadata
+
+- Re-check the official OpenCode Desktop tab implementation on current `dev`,
+  compare it with the pinned files above and OpenChamber, and record which
+  lifecycle, identity, navigation, close, overflow, and test patterns are
+  adopted or deliberately rejected before finalizing local types.
+- Add nullable visibility override to `ExperienceSettings`, JSON/copy/equality,
+  `SettingsProvider`, and both Display Toggles surfaces.
+- Add the server-scoped versioned tab-state key and datasource interface/impl.
+- Extend test fakes.
+- Add round-trip, missing-key, corrupt JSON, unknown-version, native default,
+  mobile default, web initial-viewport, explicit override, and resize tests.
+- Use the safe ARB translation workflow; never run the destructive global
+  `dart tool/i18n/generate_arb.dart` path.
+- Focused validation: relevant settings/datasource tests and targeted analysis.
+- Review gate: run the Reviewer Loop and apply only judge-approved corrections.
+
+### Step 2: Tab State, Recency, and Attention Viewing
+
+- Add immutable identity/record/snapshot types and provider tab-state part.
+- Load tab state atomically when active server changes, with generation guards
+  so late reads/writes cannot leak across servers.
+- Implement pure eligibility, deduplication, stable order, append, tombstone,
+  expiry, active/busy exception, and seen-fingerprint helpers.
+- Reconcile active and cached context sessions without new network contracts.
+- Hook successful selection, session create/update/delete, confirmed local
+  deletion, server switch, and explicit project-history removal.
+- Add scoped status/question access needed by the tab UI without changing
+  existing attention semantics for sidebar/notifications.
+- Focused validation: new tab-state tests plus provider project/session/event
+  tests and targeted analysis.
+- Review gate: run the Reviewer Loop and apply only judge-approved corrections.
+
+### Step 3: Navigation and Responsive Tab Strip
+
+- Generalize/reuse the current cross-project session opening path for tab
+  activation.
+- Implement right-then-left close fallback and sole-tab New Chat behavior.
+- Add the full-width strip below the app bar and above all body panes.
+- Reuse `ProjectIcon`, existing status/attention sources, Material tokens, and
+  existing close/overflow/accessibility patterns.
+- Add localization and widget keys/semantics needed for deterministic tests.
+- Add widget/integration tests for desktop, web compact/expanded, mobile opt-in,
+  cross-project activation, close behavior, status combinations, project icon
+  fallback, overflow, active visibility, keyboard, touch, and semantics.
+- Focused validation: tab/widget/chat-page tests and targeted analysis.
+- Stable gate: run `make check` once after focused checks are green.
+- Review gate: run the Reviewer Loop and apply only judge-approved corrections;
+  use focused revalidation for micro-fixes unless they invalidate `make check`.
+
+### Step 4: Documentation and Delivery
+
+- Update `BEHAVIOR.md` only after behavior is implemented and verified.
+- Update `CODEBASE.md` through the codebase documentation flow if new provider
+  part/widget files create a durable structural entry point.
+- Keep `ADR.md` unchanged unless execution discovers a real new decision or
+  ADR-023 conflict.
+- Inspect final diff and status; run any final focused check invalidated by docs
+  or reviewer fixes.
+- Consolidate the reviewed execution-branch progress commits onto `main` while
+  preserving the immutable anchor and verifying identical trees.
+- Push the consolidated `main`, monitor its CI to a final successful result,
+  and resolve any judge-approved failure before release.
+- Delegate `make release V=minor` to the release flow, producing `v1.180.0`,
+  then monitor release/tag CI through `cimonitor` until final success.
+- After release CI succeeds, run `~/bin/hey` with a specific Portuguese message
+  saying that CodeWalk `v1.180.0` and its CI completed successfully. Do not send
+  the completion notification while release CI is pending or failed.
+- Post a Portuguese evidence comment on issue #113 with tests and behavior
+  delivered, then close the issue only after successful CI and acceptance gates.
+
+## Test Plan
+
+### Unit Coverage
+
+- normalized triple identity and cross-project/session collision resistance;
+- root-only and non-archived filtering;
+- exact three-hour boundary;
+- `max(server time, lastOpenedAt)`;
+- selected and busy/retry expiry exceptions;
+- explicit close overriding active/busy retention;
+- stable order, deduplication, append-on-new, and append-on-reopen;
+- close tombstone surviving ordinary refresh/replay;
+- strictly newer interaction clearing close suppression;
+- right neighbor, left neighbor, and sole-tab fallback;
+- malformed/versioned persistence and serialized write races;
+- active-server switch generation isolation;
+- seen question IDs/fingerprints and new-question re-alert;
+- deterministic error > question > completion priority;
+- active route viewed versus inactive route unseen behavior;
+- authoritative delete versus unloaded/offline context behavior;
+- nullable visibility preference and platform/web defaults.
+
+### Widget Coverage
+
+- strip absent when disabled or empty;
+- desktop default visible and mobile default hidden;
+- explicit mobile enable and explicit desktop disable;
+- web initial compact/expanded defaults remain stable after resize;
+- full-width placement above all desktop body panes;
+- project icon and folder fallback;
+- title ellipsis with complete tooltip/semantics;
+- active selection and ensure-visible behavior;
+- independent busy indicator with project/error/question/completion slot;
+- light/dark attention contrast and non-color semantics;
+- horizontal overflow at narrow widths with no RenderFlex overflow;
+- mouse, keyboard, and touch close without accidental activation;
+- cross-project cache-first activation and failed-navigation recovery.
+
+### Candidate Test Files
+
+- `test/unit/domain/experience_settings_test.dart`
+- `test/unit/providers/settings_provider_test.dart`
+- `test/unit/datasources/app_local_datasource_impl_test.dart`
+- `test/unit/providers/chat_provider_session_ops_test.dart`
+- `test/unit/providers/chat_provider_project_test.dart`
+- `test/unit/providers/chat_provider_concurrency_test.dart`
+- new focused provider/helper tests for tab reconciliation
+- new `test/widget/session_tab_strip_test.dart`
+- `test/widget/chat_page_test.dart`
+- `test/support/fakes.dart`
+
+### Validation Commands
+
+Use the narrowest relevant commands while iterating, always with Flutter on PATH:
+
+```bash
+export PATH="$HOME/flutter/bin:$PATH" && flutter test <focused test files>
+export PATH="$HOME/flutter/bin:$PATH" && flutter analyze <changed Dart paths>
+```
+
+When stable:
+
+```bash
+make check
+```
+
+Run `make android` only if the user requests a testable APK and the current host
+supports it. Android packaging is not required merely to complete planning.
+
+## Risks and Mitigations
+
+- Risk: a closed tab reappears on the next provider notification.
+  - Mitigation: persisted version-aware tombstone cleared only by successful
+    explicit reopen or strictly newer authoritative interaction.
+- Risk: stale async storage work leaks tab state between servers.
+  - Mitigation: active-server generation tokens and serialized writes.
+- Risk: cross-project activation targets the old project/session.
+  - Mitigation: reuse serialized workspace transition, resolve after hydration,
+    and update recency only after successful selection.
+- Risk: pending questions never clear because they remain server-side.
+  - Mitigation: persist seen request IDs/fingerprints independently from request
+    resolution; never mutate the OpenCode question.
+- Risk: generic pending permissions are mislabeled as questions.
+  - Mitigation: expose question-specific state instead of relying only on the
+    combined `hasPendingInteraction` flag.
+- Risk: inactive cached contexts have stale status.
+  - Mitigation: display only best-known provider state, never fabricate state,
+    and reconcile authoritatively when the project becomes active.
+- Risk: a missing snapshot is mistaken for remote deletion.
+  - Mitigation: prune only after explicit/authoritative deletion or explicit
+    local project-history removal.
+- Risk: many tabs create rebuild/jank pressure.
+  - Mitigation: three-hour pruning, immutable selected slices/keys, per-tab
+    selectors where practical, bounded title width, and focused performance
+    inspection before introducing an unspecified hard cap.
+- Risk: web resize changes an implicit default unexpectedly.
+  - Mitigation: capture initial web size class once; explicit nullable override
+    remains authoritative.
+
+## Rejected Alternatives
+
+- Global tabs across all configured servers: rejected for the first cut because
+  inactive-server realtime/status would be stale and switching transport/auth
+  broadens scope.
+- Child/subagent tabs: rejected because current recent-session and attention
+  surfaces are root-oriented; nested navigation remains a separate concern.
+- Dynamic MRU reordering: rejected because moving tabs on every activation is
+  visually unstable and unlike the confirmed browser-style behavior.
+- Page-only tab controller: rejected because it would duplicate provider event,
+  route visibility, server lifecycle, and persistence coordination.
+- Storing tab records in `ExperienceSettings`: rejected because tab state is
+  active-server runtime navigation metadata, not a global preference.
+- New server-wide session scan or undocumented query parameters: rejected to
+  preserve ADR-023 and the issue's client-side scope.
+- Hard tab count in the first cut: rejected because acceptance requires all
+  three-hour-eligible sessions and overflow is already required.
+- Reusing `deleteSession` for close: rejected because it is destructive server
+  mutation and directly violates the issue.
+- Updating ADR.md preemptively: rejected because accepted ADRs already cover the
+  design and no exception/new boundary is currently required.
+
+## References
+
+- https://github.com/verseles/codewalk/issues/113
+- `BEHAVIOR.md`, Sessions section
+- `ADR.md`: ADR-002, ADR-020, ADR-021, ADR-022, ADR-023, ADR-040
+- `ai-docs/opencode_server.md`: `/session`, `/session/status`, `/event`, and
+  `/global/event` contracts
+- `ai-docs/opencode_web.md`: sessions shared across clients
+- https://github.com/openchamber/openchamber/blob/main/packages/ui/src/components/layout/ContextPanel.tsx
+- https://github.com/openchamber/openchamber/blob/main/packages/ui/src/components/ui/sortable-tabs-strip.tsx
+- https://github.com/openchamber/openchamber/blob/main/packages/ui/src/components/session/sidebar/activitySections.ts
+- https://github.com/anomalyco/opencode/blob/1e17856ba4b5b052650c8115060852f3f023844e/packages/app/src/context/tabs.tsx
+- https://github.com/anomalyco/opencode/blob/1e17856ba4b5b052650c8115060852f3f023844e/packages/app/src/context/closed-tabs.ts
+- https://github.com/anomalyco/opencode/blob/1e17856ba4b5b052650c8115060852f3f023844e/packages/app/src/components/titlebar-tab-strip.tsx
+- https://github.com/anomalyco/opencode/blob/1e17856ba4b5b052650c8115060852f3f023844e/packages/app/src/components/titlebar-session-events.ts
+
+## Handoff Notes
+
+- Execution of this file must begin with the required immutable
+  `AGENT_PLAN_ANCHOR` commit and use one reviewed progress commit per step.
+- Preserve unrelated worktree changes and never recreate `ROADMAP.md`.
+- Build tests alongside each implementation step, not as a final retrofit.
+- Reviewer findings are advisory; apply only judge-validated corrections.
+- Treat official OpenCode Desktop as the primary UI/lifecycle reference and
+  OpenChamber as secondary; copy neither implementation mechanically.
+- The final delivery is not complete at the feature push: release minor version
+  `1.180.0`, wait for release CI success, notify through `hey`, then post issue
+  evidence and close issue #113.
+- Do not close issue #113 before remote CI and all applicable acceptance gates
+  are successful.

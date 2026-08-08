@@ -10,10 +10,26 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
       await _showMobileTerminalInfoSheet();
       return;
     }
+    // A second tap while the shell is starting would open another one.
+    if (_isOpeningTerminal) {
+      return;
+    }
     final nextVisible = !settingsProvider.terminalPanelVisible;
-    await settingsProvider.setTerminalPanelVisible(nextVisible);
-    if (nextVisible) {
+    if (!nextVisible) {
+      await settingsProvider.setTerminalPanelVisible(false);
+      return;
+    }
+    _setState(() => _isOpeningTerminal = true);
+    try {
+      await settingsProvider.setTerminalPanelVisible(true);
       await _startTerminalForCurrentProject();
+    } finally {
+      // Always restored, so a failure never leaves the button spinning.
+      if (mounted) {
+        _setState(() => _isOpeningTerminal = false);
+      } else {
+        _isOpeningTerminal = false;
+      }
     }
   }
 
@@ -191,6 +207,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
         onHeightDelta(delta);
       },
       onTerminalKeyEvent: onTerminalKeyEvent,
+      keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
     );
   }
 }

@@ -92,6 +92,14 @@ abstract class WorkspaceFileOperationsService {
     required String newName,
   });
 
+  Future<WorkspaceFileOperationResult> duplicateFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  });
+
   Future<WorkspaceFileOperationResult> delete({
     required String serverScopeKey,
     required String rootDirectory,
@@ -129,6 +137,18 @@ class WorkspaceFileOperationsServiceImpl
   Future<WorkspaceFileOperationsCapabilities> getCapabilities({
     required String serverScopeKey,
     required String directory,
+  }) {
+    return _getCapabilities(
+      serverScopeKey: serverScopeKey,
+      directory: directory,
+      baseUrl: _dio.options.baseUrl,
+    );
+  }
+
+  Future<WorkspaceFileOperationsCapabilities> _getCapabilities({
+    required String serverScopeKey,
+    required String directory,
+    required String baseUrl,
   }) async {
     if (_isUnsafeRoot(directory)) {
       return const WorkspaceFileOperationsCapabilities(
@@ -147,6 +167,7 @@ class WorkspaceFileOperationsServiceImpl
       result = await _runShellScript(
         directory: normalizeFilePath(directory),
         command: _buildProbeCommand(decoder),
+        baseUrl: baseUrl,
       );
       if (result.ok) {
         _shellDecoderCache[key] = decoder;
@@ -161,6 +182,9 @@ class WorkspaceFileOperationsServiceImpl
       shellFileOpsSupported: result.ok,
       message: result.message,
     );
+    if (!_isBoundBaseUrlActive(baseUrl)) {
+      return capabilities;
+    }
     _capabilityCache[key] = capabilities;
     return capabilities;
   }
@@ -182,11 +206,13 @@ class WorkspaceFileOperationsServiceImpl
     required String parentDirectory,
     required String name,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _prepareLeafOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -203,6 +229,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -213,11 +240,13 @@ class WorkspaceFileOperationsServiceImpl
     required String parentDirectory,
     required String name,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _prepareLeafOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -234,6 +263,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -245,6 +275,7 @@ class WorkspaceFileOperationsServiceImpl
     required String oldName,
     required String newName,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final preparedOld = _normalizeLeafName(oldName);
     if (preparedOld.result != null) {
       return preparedOld.result!;
@@ -279,6 +310,50 @@ class WorkspaceFileOperationsServiceImpl
       ),
       path: source,
       newPath: destination,
+      baseUrl: baseUrl,
+    );
+  }
+
+  @override
+  Future<WorkspaceFileOperationResult> duplicateFile({
+    required String serverScopeKey,
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  }) async {
+    final baseUrl = _dio.options.baseUrl;
+    final preparedSource = _normalizeLeafName(sourceName);
+    if (preparedSource.result != null) {
+      return preparedSource.result!;
+    }
+    final preparedDestination = _normalizeLeafName(destinationName);
+    if (preparedDestination.result != null) {
+      return preparedDestination.result!;
+    }
+
+    final root = normalizeFilePath(rootDirectory);
+    final parent = normalizeFilePath(parentDirectory);
+    final rootCheck = _validateRootParent(rootDirectory: root, parent: parent);
+    if (rootCheck != null) {
+      return rootCheck;
+    }
+
+    final source = _joinPath(parent, preparedSource.name);
+    final destination = _joinPath(parent, preparedDestination.name);
+    return _runMutation(
+      serverScopeKey: serverScopeKey,
+      rootDirectory: root,
+      commandBuilder: (decoder) => _buildDuplicateFileCommand(
+        rootDirectory: root,
+        parentDirectory: parent,
+        sourceName: preparedSource.name,
+        destinationName: preparedDestination.name,
+        decoder: decoder,
+      ),
+      path: source,
+      newPath: destination,
+      baseUrl: baseUrl,
     );
   }
 
@@ -289,12 +364,14 @@ class WorkspaceFileOperationsServiceImpl
     required String parentDirectory,
     required String name,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _prepareLeafOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       parentDirectory: parentDirectory,
       name: name,
       checkCapabilities: false,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -306,9 +383,10 @@ class WorkspaceFileOperationsServiceImpl
       return _result(WorkspaceFileOperationCode.rootDeleteBlocked);
     }
 
-    final capabilities = await getCapabilities(
+    final capabilities = await _getCapabilities(
       serverScopeKey: serverScopeKey,
       directory: prepared.rootDirectory,
+      baseUrl: baseUrl,
     );
     if (!capabilities.shellFileOpsSupported) {
       return _result(
@@ -327,6 +405,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -337,10 +416,12 @@ class WorkspaceFileOperationsServiceImpl
     required String path,
     required String content,
   }) async {
+    final baseUrl = _dio.options.baseUrl;
     final prepared = await _preparePathOperation(
       serverScopeKey: serverScopeKey,
       rootDirectory: rootDirectory,
       path: path,
+      baseUrl: baseUrl,
     );
     if (prepared.result != null) {
       return prepared.result!;
@@ -358,6 +439,7 @@ class WorkspaceFileOperationsServiceImpl
         decoder: decoder,
       ),
       path: target,
+      baseUrl: baseUrl,
     );
   }
 
@@ -365,12 +447,14 @@ class WorkspaceFileOperationsServiceImpl
     required String serverScopeKey,
     required String rootDirectory,
     required String Function(String decoder) commandBuilder,
+    required String baseUrl,
     String? path,
     String? newPath,
   }) async {
-    final capabilities = await getCapabilities(
+    final capabilities = await _getCapabilities(
       serverScopeKey: serverScopeKey,
       directory: rootDirectory,
+      baseUrl: baseUrl,
     );
     if (!capabilities.shellFileOpsSupported) {
       return _result(
@@ -387,6 +471,7 @@ class WorkspaceFileOperationsServiceImpl
     final result = await _runShellScript(
       directory: rootDirectory,
       command: commandBuilder(decoder),
+      baseUrl: baseUrl,
     );
     if (!result.ok) {
       AppLogger.warn(
@@ -416,6 +501,7 @@ class WorkspaceFileOperationsServiceImpl
     required String rootDirectory,
     required String parentDirectory,
     required String name,
+    required String baseUrl,
     bool checkCapabilities = true,
   }) async {
     final preparedName = _normalizeLeafName(name);
@@ -431,9 +517,10 @@ class WorkspaceFileOperationsServiceImpl
     }
 
     if (checkCapabilities) {
-      final capabilities = await getCapabilities(
+      final capabilities = await _getCapabilities(
         serverScopeKey: serverScopeKey,
         directory: root,
+        baseUrl: baseUrl,
       );
       if (!capabilities.shellFileOpsSupported) {
         return _PreparedLeafOperation(
@@ -456,6 +543,7 @@ class WorkspaceFileOperationsServiceImpl
     required String serverScopeKey,
     required String rootDirectory,
     required String path,
+    required String baseUrl,
   }) async {
     final root = normalizeFilePath(rootDirectory);
     final normalizedPath = normalizeFilePath(path);
@@ -485,9 +573,10 @@ class WorkspaceFileOperationsServiceImpl
       return _PreparedLeafOperation(result: rootCheck);
     }
 
-    final capabilities = await getCapabilities(
+    final capabilities = await _getCapabilities(
       serverScopeKey: serverScopeKey,
       directory: root,
+      baseUrl: baseUrl,
     );
     if (!capabilities.shellFileOpsSupported) {
       return _PreparedLeafOperation(
@@ -579,16 +668,26 @@ class WorkspaceFileOperationsServiceImpl
   Future<WorkspaceFileOperationResult> _runShellScript({
     required String directory,
     required String command,
+    required String baseUrl,
   }) async {
+    if (!_isBoundBaseUrlActive(baseUrl)) {
+      return _result(WorkspaceFileOperationCode.unavailable);
+    }
     String? sessionId;
     try {
-      sessionId = await _createEphemeralSession(directory: directory);
+      sessionId = await _createEphemeralSession(
+        directory: directory,
+        baseUrl: baseUrl,
+      );
       if (sessionId == null) {
+        return _result(WorkspaceFileOperationCode.unavailable);
+      }
+      if (!_isBoundBaseUrlActive(baseUrl)) {
         return _result(WorkspaceFileOperationCode.unavailable);
       }
 
       final response = await _dio.post<dynamic>(
-        '/session/$sessionId/shell',
+        _boundRequestPath(baseUrl, '/session/$sessionId/shell'),
         data: <String, dynamic>{'agent': 'build', 'command': command},
         queryParameters: <String, String>{'directory': directory},
       );
@@ -612,10 +711,10 @@ class WorkspaceFileOperationsServiceImpl
     } catch (_) {
       return _result(WorkspaceFileOperationCode.failed);
     } finally {
-      if (sessionId != null) {
+      if (sessionId != null && _isBoundBaseUrlActive(baseUrl)) {
         try {
           await _dio.delete<dynamic>(
-            '/session/$sessionId',
+            _boundRequestPath(baseUrl, '/session/$sessionId'),
             queryParameters: <String, String>{'directory': directory},
           );
         } catch (_) {}
@@ -627,9 +726,12 @@ class WorkspaceFileOperationsServiceImpl
     }
   }
 
-  Future<String?> _createEphemeralSession({required String directory}) async {
+  Future<String?> _createEphemeralSession({
+    required String directory,
+    required String baseUrl,
+  }) async {
     final response = await _dio.post<dynamic>(
-      '/session',
+      _boundRequestPath(baseUrl, '/session'),
       data: <String, dynamic>{
         'title': ChatTitleGenerator.ephemeralSessionTitle,
       },
@@ -645,6 +747,18 @@ class WorkspaceFileOperationsServiceImpl
     }
     ChatTitleGenerator.ephemeralSessionIds.add(sessionId);
     return sessionId;
+  }
+
+  String _boundRequestPath(String baseUrl, String path) {
+    final normalizedBase = baseUrl.trim();
+    if (normalizedBase.isEmpty) {
+      return path;
+    }
+    return '${normalizedBase.replaceFirst(RegExp(r'/+$'), '')}$path';
+  }
+
+  bool _isBoundBaseUrlActive(String baseUrl) {
+    return _dio.options.baseUrl.trim() == baseUrl.trim();
   }
 
   String _capabilityKey(String serverScopeKey, String directory) {
@@ -938,6 +1052,22 @@ class WorkspaceFileOperationsServiceImpl
   }
 
   @visibleForTesting
+  String buildDuplicateFileCommandForTest({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+  }) {
+    return _buildDuplicateFileCommand(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      sourceName: sourceName,
+      destinationName: destinationName,
+      decoder: _shellDecoders.first,
+    );
+  }
+
+  @visibleForTesting
   String buildWriteFileCommandForTest({
     required String rootDirectory,
     required String parentDirectory,
@@ -1023,6 +1153,47 @@ if ! [ -e "$source" ] && ! [ -L "$source" ]; then cw_fail missing; fi
 if [ -e "$destination" ] || [ -L "$destination" ]; then cw_fail alreadyExists; fi
 if ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
 if mv -- "$source" "$destination" 2>/dev/null; then cw_ok; fi
+cw_fail failed
+''',
+    );
+  }
+
+  String _buildDuplicateFileCommand({
+    required String rootDirectory,
+    required String parentDirectory,
+    required String sourceName,
+    required String destinationName,
+    required String decoder,
+  }) {
+    return _buildScript(
+      rootDirectory: rootDirectory,
+      parentDirectory: parentDirectory,
+      name: sourceName,
+      newName: destinationName,
+      decoder: decoder,
+      body: r'''
+cw_validate_name "$CW_NAME"
+cw_validate_name "$CW_NEW_NAME"
+cw_prepare_parent
+source="$parent/$CW_NAME"
+destination="$parent/$CW_NEW_NAME"
+if [ "$source" = "$root" ]; then cw_fail rootDeleteBlocked; fi
+if ! [ -e "$source" ] && ! [ -L "$source" ]; then cw_fail missing; fi
+if [ -d "$source" ] || [ -L "$source" ]; then cw_fail failed; fi
+if [ -e "$destination" ] || [ -L "$destination" ]; then cw_fail alreadyExists; fi
+if ! [ -r "$source" ] || ! [ -w "$parent" ]; then cw_fail permissionDenied; fi
+tmpdir=$(mktemp -d "$parent/.cw-copy.XXXXXX" 2>/dev/null) || cw_fail failed
+tmp="$tmpdir/content"
+if cp -p -- "$source" "$tmp" 2>/dev/null; then
+  if ln -- "$tmp" "$destination" 2>/dev/null; then
+    rm -f -- "$tmp" 2>/dev/null || true
+    rmdir -- "$tmpdir" 2>/dev/null || true
+    cw_ok
+  fi
+fi
+rm -f -- "$tmp" 2>/dev/null || true
+rmdir -- "$tmpdir" 2>/dev/null || true
+if [ -e "$destination" ] || [ -L "$destination" ]; then cw_fail alreadyExists; fi
 cw_fail failed
 ''',
     );

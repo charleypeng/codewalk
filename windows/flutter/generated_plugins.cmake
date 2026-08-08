@@ -5,10 +5,11 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   connectivity_plus
-  desktop_multi_window
+  desktop_drop
   dynamic_color
   flutter_secure_storage_windows
   flutter_tts
+  pasteboard
   record_windows
   screen_retriever_windows
   share_plus

@@ -64,9 +64,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
 
     final selection = _resolveForwardSelection(chatProvider, message);
     if (selection == null) {
-      _showChatPageMessageSnackBar(
-        context.l10n.forwardNoProviderModel,
-      );
+      _showChatPageMessageSnackBar(context.l10n.forwardNoProviderModel);
       return;
     }
 
@@ -118,9 +116,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
       return;
     }
     if (result.successes.isEmpty) {
-      _showChatPageSnackBar(
-        content: Text(context.l10n.forwardAllFailed),
-      );
+      _showChatPageSnackBar(content: Text(context.l10n.forwardAllFailed));
       return;
     }
     messenger.showSnackBar(
@@ -165,7 +161,8 @@ extension _ChatPageForwardRuntime on _ChatPageState {
           ? null
           : SnackBarAction(
               label: context.l10n.forwardRetry,
-              onPressed: () => _runRetry(retryable, provenanceLine, forwardService),
+              onPressed: () =>
+                  _runRetry(retryable, provenanceLine, forwardService),
             ),
     );
   }
@@ -177,9 +174,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     final failed = await forwardService.undoForward(entries);
     if (!mounted) return;
     if (failed.isEmpty) return;
-    _showChatPageSnackBar(
-      content: Text(context.l10n.forwardUndoFailed),
-    );
+    _showChatPageSnackBar(content: Text(context.l10n.forwardUndoFailed));
   }
 
   Future<void> _runRetry(
@@ -219,9 +214,7 @@ extension _ChatPageForwardRuntime on _ChatPageState {
     ChatProvider chatProvider,
     ChatMessage? message,
   ) {
-    final providerId = message is AssistantMessage
-        ? message.providerId
-        : null;
+    final providerId = message is AssistantMessage ? message.providerId : null;
     final modelId = message is AssistantMessage ? message.modelId : null;
     final variant = message is AssistantMessage ? message.variant : null;
     final mode = message is AssistantMessage ? message.mode : null;

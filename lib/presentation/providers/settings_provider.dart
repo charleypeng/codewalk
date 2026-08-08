@@ -19,6 +19,7 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/cellular_data_saver_service.dart';
+import '../services/desktop_window_chrome_service.dart';
 import '../services/session_attention/session_attention_host_service.dart';
 import '../services/sound_service.dart';
 import '../services/tts/read_aloud_default_resolver.dart';
@@ -201,6 +202,10 @@ class SettingsProvider extends ChangeNotifier {
   bool get showTaskList => _settings.showTaskList;
   bool get showReviewChanges => _settings.showReviewChanges;
   bool get showRecentSessions => _settings.showRecentSessions;
+  bool get showSessionTabs =>
+      _settings.showSessionTabsOverride ?? defaultSessionTabsVisibility;
+  bool get sessionTabsGestureHintDismissed =>
+      _settings.sessionTabsGestureHintDismissed;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
   bool get showMathRendering => _settings.showMathRendering;
@@ -212,6 +217,10 @@ class SettingsProvider extends ChangeNotifier {
       _settings.composerAutoApprovePermissions;
   DesktopCloseBehavior get desktopCloseBehavior =>
       _settings.desktopCloseBehavior;
+  DesktopWindowChrome get desktopWindowChrome => _settings.desktopWindowChrome;
+  bool get editorAutosaveEnabled => _settings.editorAutosaveEnabled;
+  SessionAttentionBubbleSize get sessionAttentionBubbleSize =>
+      _settings.sessionAttentionBubbleSize;
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get dataSaverEnabled => _settings.dataSaverEnabled;
@@ -264,6 +273,9 @@ class SettingsProvider extends ChangeNotifier {
   double get terminalFontSize => _settings.terminalFontSize;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
+
+  @visibleForTesting
+  static const bool defaultSessionTabsVisibility = true;
 
   bool notifyOnlyWhenBackground(NotificationCategory category) {
     return _settings.notifyOnlyWhenBackground[category] ?? false;
@@ -728,6 +740,22 @@ class SettingsProvider extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setShowSessionTabsOverride(bool? value) async {
+    if (_settings.showSessionTabsOverride == value) {
+      return;
+    }
+    _settings = _settings.copyWith(showSessionTabsOverride: () => value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSessionTabsGestureHintDismissed(bool dismissed) async {
+    if (_settings.sessionTabsGestureHintDismissed == dismissed) return;
+    _settings = _settings.copyWith(sessionTabsGestureHintDismissed: dismissed);
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setTaskListCollapsed(bool collapsed) async {
     if (_settings.taskListCollapsed == collapsed) {
       return;
@@ -778,6 +806,38 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(desktopCloseBehavior: behavior);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setDesktopWindowChrome(DesktopWindowChrome chrome) async {
+    if (_settings.desktopWindowChrome == chrome) {
+      return;
+    }
+    _settings = _settings.copyWith(desktopWindowChrome: chrome);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSessionAttentionBubbleSize(
+    SessionAttentionBubbleSize size,
+  ) async {
+    if (_settings.sessionAttentionBubbleSize == size) {
+      return;
+    }
+    _settings = _settings.copyWith(sessionAttentionBubbleSize: size);
+    notifyListeners();
+    await _persist();
+    // Republish so the running overlay resizes immediately instead of waiting
+    // for the next unrelated snapshot.
+    await _sessionAttentionRepublish?.call();
+  }
+
+  Future<void> setEditorAutosaveEnabled(bool enabled) async {
+    if (_settings.editorAutosaveEnabled == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(editorAutosaveEnabled: enabled);
     notifyListeners();
     await _persist();
   }

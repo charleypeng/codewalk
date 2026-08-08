@@ -391,10 +391,17 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required bool dialogFullscreen,
     VoidCallback? onUpdated,
   }) async {
+    final normalizedPath = _normalizeFilePath(path);
+    final cached = fileState.tabsByPath[normalizedPath];
+    final revalidateInDialog =
+        cached != null &&
+        cached.status != _FileTabLoadStatus.error &&
+        cached.status != _FileTabLoadStatus.loading;
     await _openFileInTab(
       fileState: fileState,
       projectProvider: projectProvider,
-      path: path,
+      path: normalizedPath,
+      revalidateCached: !revalidateInDialog,
       onUpdated: onUpdated,
     );
     if (!mounted) {
@@ -404,6 +411,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       fileState: fileState,
       projectProvider: projectProvider,
       fullscreen: dialogFullscreen,
+      revalidatePath: revalidateInDialog ? normalizedPath : null,
     );
   }
 
@@ -466,13 +474,71 @@ extension _ChatPageFileRuntime on _ChatPageState {
     onUpdated?.call();
   }
 
+  /// Saves a dirty tab and only then closes it, used when autosave is on.
+  Future<void> _saveAndCloseFileTab({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String path,
+    VoidCallback? onUpdated,
+  }) async {
+    await _saveFileEditorDraft(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      path: path,
+      onUpdated: onUpdated,
+    );
+    if (!mounted) {
+      return;
+    }
+    var draft = fileState.editorDraftsByPath[_normalizeFilePath(path)];
+    if (draft != null &&
+        draft.isDirty &&
+        draft.activeSave == null &&
+        draft.saveErrorMessage == null) {
+      await _saveFileEditorDraft(
+        fileState: fileState,
+        projectProvider: projectProvider,
+        path: path,
+        onUpdated: onUpdated,
+      );
+      if (!mounted) {
+        return;
+      }
+      draft = fileState.editorDraftsByPath[_normalizeFilePath(path)];
+    }
+    if (draft != null && draft.isDirty) {
+      // The save failed; keep the tab open so the error stays visible.
+      onUpdated?.call();
+      return;
+    }
+    _closeFileTab(fileState: fileState, path: path, onUpdated: onUpdated);
+  }
+
   void _closeFileTab({
     required _FileExplorerContextState fileState,
     required String path,
+    ProjectProvider? projectProvider,
     VoidCallback? onUpdated,
   }) {
     final normalizedPath = _normalizeFilePath(path);
     final draft = fileState.editorDraftsByPath[normalizedPath];
+    if (draft != null &&
+        draft.isDirty &&
+        projectProvider != null &&
+        context.read<SettingsProvider>().editorAutosaveEnabled) {
+      // With autosave on, closing is an implicit save: blocking here would
+      // contradict the promise that work is never lost.
+      draft.cancelAutosave();
+      unawaited(
+        _saveAndCloseFileTab(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          path: normalizedPath,
+          onUpdated: onUpdated,
+        ),
+      );
+      return;
+    }
     if (draft != null && draft.isDirty) {
       _setState(() {
         draft.saveErrorMessage = _ChatPageFileViewer._dirtyCloseBlockedMessage;
@@ -482,6 +548,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
       return;
     }
     _setState(() {
+      fileState.fileReloadGenerations[normalizedPath] =
+          ++fileState.nextFileReloadGeneration;
       fileState.tabSelection = closeFileTab(fileState.tabSelection, path);
       // Clean up line selection state for the closed tab.
       fileState.selectedLinesByPath.remove(normalizedPath);
@@ -496,11 +564,18 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required ProjectProvider projectProvider,
     required String path,
     bool silent = false,
+    bool background = false,
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
     final dirtyDraft = fileState.editorDraftsByPath[normalizedPath];
     if (dirtyDraft != null && dirtyDraft.isDirty) {
+      // A background revalidation the user did not ask for must stay invisible
+      // when there are unsaved changes: the draft is protected (ADR-043) but
+      // reporting it as an error would be noise.
+      if (background) {
+        return;
+      }
       const message = 'Unsaved changes; reload skipped.';
       _setState(() {
         dirtyDraft.saveErrorMessage = message;
@@ -511,6 +586,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
       }
       return;
     }
+    final requestGeneration = ++fileState.nextFileReloadGeneration;
+    fileState.fileReloadGenerations[normalizedPath] = requestGeneration;
     if (!silent && mounted) {
       _setState(() {
         fileState.tabsByPath[normalizedPath] = const _FileTabViewState(
@@ -525,7 +602,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
       projectProvider: projectProvider,
       path: normalizedPath,
     );
-    if (!mounted) {
+    if (!mounted ||
+        fileState.fileReloadGenerations[normalizedPath] != requestGeneration) {
+      return;
+    }
+    final latestDraft = fileState.editorDraftsByPath[normalizedPath];
+    if (latestDraft != null && latestDraft.isDirty) {
+      return;
+    }
+    if (content == null && background) {
       return;
     }
     _setState(() {
@@ -561,6 +646,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required bool fullscreen,
+    String? revalidatePath,
   }) async {
     if (!fileState.tabSelection.hasOpenTabs || !mounted) {
       return;
@@ -569,6 +655,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     final dialogWidth = (mediaQuery.size.width * 0.7).clamp(560.0, 1200.0);
     final dialogHeight = (mediaQuery.size.height * 0.7).clamp(420.0, 900.0);
     var capabilityRefreshAttached = false;
+    var revalidationScheduled = false;
 
     await showDialog<void>(
       context: context,
@@ -576,6 +663,28 @@ extension _ChatPageFileRuntime on _ChatPageState {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
+            if (!revalidationScheduled && revalidatePath != null) {
+              revalidationScheduled = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted || !dialogContext.mounted) {
+                  return;
+                }
+                unawaited(
+                  _reloadFileTab(
+                    fileState: fileState,
+                    projectProvider: projectProvider,
+                    path: revalidatePath,
+                    silent: true,
+                    background: true,
+                    onUpdated: () {
+                      if (dialogContext.mounted) {
+                        setDialogState(() {});
+                      }
+                    },
+                  ),
+                );
+              });
+            }
             if (!capabilityRefreshAttached &&
                 fileState.fileOperationCapabilitiesLoading) {
               capabilityRefreshAttached = true;
@@ -708,9 +817,11 @@ extension _ChatPageFileRuntime on _ChatPageState {
           ..add(_fileTreeAction(FileTreeContextMenuActionType.newFile))
           ..add(_fileTreeAction(FileTreeContextMenuActionType.newFolder));
       }
-      actions
-        ..add(_fileTreeAction(FileTreeContextMenuActionType.rename))
-        ..add(_fileTreeAction(FileTreeContextMenuActionType.delete));
+      actions.add(_fileTreeAction(FileTreeContextMenuActionType.rename));
+      if (!node.isDirectory) {
+        actions.add(_fileTreeAction(FileTreeContextMenuActionType.duplicate));
+      }
+      actions.add(_fileTreeAction(FileTreeContextMenuActionType.delete));
     }
     actions
       ..add(_fileTreeAction(FileTreeContextMenuActionType.copyPath))
@@ -737,6 +848,8 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return context.l10n.filesNewFolder;
       case FileTreeContextMenuActionType.rename:
         return context.l10n.filesRename;
+      case FileTreeContextMenuActionType.duplicate:
+        return context.l10n.filesDuplicate;
       case FileTreeContextMenuActionType.delete:
         return context.l10n.filesDelete;
       case FileTreeContextMenuActionType.copyPath:
@@ -772,6 +885,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
         );
         return;
       case FileTreeContextMenuActionType.rename:
+      case FileTreeContextMenuActionType.duplicate:
       case FileTreeContextMenuActionType.delete:
       case FileTreeContextMenuActionType.copyPath:
       case FileTreeContextMenuActionType.refresh:
@@ -816,6 +930,15 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return;
       case FileTreeContextMenuActionType.rename:
         await _renameFileTreeNode(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          node: node,
+          parentCacheKey: parentCacheKey,
+          onUpdated: onUpdated,
+        );
+        return;
+      case FileTreeContextMenuActionType.duplicate:
+        await _duplicateFileTreeNode(
           fileState: fileState,
           projectProvider: projectProvider,
           node: node,
@@ -994,6 +1117,53 @@ extension _ChatPageFileRuntime on _ChatPageState {
         newPath: _siblingFileTreePath(originalNodePath, nextName),
       );
     }
+    await _refreshFileTreeDirectory(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      directory: parentDirectory,
+      cacheKey: parentCacheKey,
+      requestPath: _requestPathForFileTreeCacheKey(
+        fileState: fileState,
+        cacheKey: parentCacheKey,
+        fallbackDirectory: parentDirectory,
+      ),
+      onUpdated: onUpdated,
+    );
+    _showFileOperationSnackBar(successMessage);
+  }
+
+  Future<void> _duplicateFileTreeNode({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required FileNode node,
+    required String parentCacheKey,
+    VoidCallback? onUpdated,
+  }) async {
+    final successMessage = context.l10n.filesDuplicated;
+    final nodePath = _absoluteFileTreePath(fileState, node.path);
+    final parentDirectory = _parentDirectoryForFilePath(nodePath);
+
+    final siblings = fileState.directoryChildren[parentCacheKey] ?? const [];
+    final existingNames = siblings.map((child) => child.name).toSet();
+    final copyName = duplicateFileName(node.name, existingNames);
+
+    final result = await di.sl<WorkspaceFileOperationsService>().duplicateFile(
+      serverScopeKey: projectProvider.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      parentDirectory: parentDirectory,
+      sourceName: node.name,
+      destinationName: copyName,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (!result.ok) {
+      _showFileOperationSnackBar(
+        _fileOperationErrorLabel(result.code, message: result.message),
+      );
+      return;
+    }
+
     await _refreshFileTreeDirectory(
       fileState: fileState,
       projectProvider: projectProvider,
@@ -1190,13 +1360,101 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required String path,
+    bool allowInactiveContext = false,
+    bool silent = false,
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
     final draft = fileState.editorDraftsByPath[normalizedPath];
-    if (draft == null || !draft.isDirty || draft.isSaving) {
+    if (draft == null) {
       return;
     }
+    final activeSave = draft.activeSave;
+    if (activeSave != null) {
+      await activeSave;
+      return;
+    }
+    if (!draft.isDirty ||
+        _appProvider?.activeServerId != fileState.serverId ||
+        (!allowInactiveContext &&
+            projectProvider.contextKey != fileState.contextKey)) {
+      return;
+    }
+    late final Future<void> save;
+    save = _performFileEditorDraftSave(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      path: normalizedPath,
+      draft: draft,
+      allowInactiveContext: allowInactiveContext,
+      silent: silent,
+      onUpdated: onUpdated,
+    );
+    draft.activeSave = save;
+    try {
+      await save;
+    } finally {
+      if (identical(draft.activeSave, save)) {
+        draft.activeSave = null;
+      }
+      final pendingFlushContent = draft.pendingLifecycleFlushContent;
+      final pendingFlushAllowsInactiveContext =
+          draft.pendingLifecycleFlushAllowsInactiveContext;
+      draft.pendingLifecycleFlushContent = null;
+      draft.pendingLifecycleFlushAllowsInactiveContext = false;
+      if (pendingFlushContent != null &&
+          pendingFlushContent != draft.savedContent &&
+          _settingsProvider?.editorAutosaveEnabled == true &&
+          _appProvider?.activeServerId == fileState.serverId) {
+        if (mounted && fileState.editorDraftsByPath[normalizedPath] == draft) {
+          unawaited(
+            _saveFileEditorDraft(
+              fileState: fileState,
+              projectProvider: projectProvider,
+              path: normalizedPath,
+              allowInactiveContext: pendingFlushAllowsInactiveContext,
+              silent: true,
+            ),
+          );
+        } else {
+          unawaited(
+            _writeFileEditorSnapshot(
+              fileState: fileState,
+              path: normalizedPath,
+              content: pendingFlushContent,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _writeFileEditorSnapshot({
+    required _FileExplorerContextState fileState,
+    required String path,
+    required String content,
+  }) async {
+    if (!di.sl.isRegistered<WorkspaceFileOperationsService>()) {
+      return;
+    }
+    await di.sl<WorkspaceFileOperationsService>().writeFile(
+      serverScopeKey: fileState.contextKey,
+      rootDirectory: fileState.rootDirectory,
+      path: path,
+      content: content,
+    );
+  }
+
+  Future<void> _performFileEditorDraftSave({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required String path,
+    required _FileEditorDraftState draft,
+    required bool allowInactiveContext,
+    required bool silent,
+    VoidCallback? onUpdated,
+  }) async {
+    final normalizedPath = _normalizeFilePath(path);
     if (_hasPendingFileTreeMutation(
       fileState,
       _fileTreePathAliases(fileState, normalizedPath),
@@ -1206,7 +1464,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = message;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(message);
+      if (!silent) {
+        _showFileOperationSnackBar(message);
+      }
       return;
     }
     if (!di.sl.isRegistered<WorkspaceFileOperationsService>() ||
@@ -1216,7 +1476,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = message;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(message);
+      if (!silent) {
+        _showFileOperationSnackBar(message);
+      }
       return;
     }
 
@@ -1227,9 +1489,14 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = _ChatPageFileViewer._draftTooLargeSaveMessage;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(_ChatPageFileViewer._draftTooLargeSaveMessage);
+      if (!silent) {
+        _showFileOperationSnackBar(
+          _ChatPageFileViewer._draftTooLargeSaveMessage,
+        );
+      }
       return;
     }
+    draft.cancelAutosave();
     _setState(() {
       draft.isSaving = true;
       draft.saveErrorMessage = null;
@@ -1237,7 +1504,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     onUpdated?.call();
 
     final result = await di.sl<WorkspaceFileOperationsService>().writeFile(
-      serverScopeKey: projectProvider.contextKey,
+      serverScopeKey: fileState.contextKey,
       rootDirectory: fileState.rootDirectory,
       path: normalizedPath,
       content: contentToSave,
@@ -1256,12 +1523,16 @@ extension _ChatPageFileRuntime on _ChatPageState {
         draft.saveErrorMessage = message;
       });
       onUpdated?.call();
-      _showFileOperationSnackBar(message);
+      if (!silent && projectProvider.contextKey == fileState.contextKey) {
+        _showFileOperationSnackBar(message);
+      }
       return;
     }
 
     final previousTab = fileState.tabsByPath[normalizedPath];
     _setState(() {
+      fileState.fileReloadGenerations[normalizedPath] =
+          ++fileState.nextFileReloadGeneration;
       draft.isSaving = false;
       draft.markSavedContent(contentToSave);
       fileState.tabsByPath[normalizedPath] = _FileTabViewState(
@@ -1271,7 +1542,29 @@ extension _ChatPageFileRuntime on _ChatPageState {
       );
     });
     onUpdated?.call();
-    _showFileOperationSnackBar('File saved.');
+    if (draft.isDirty &&
+        context.read<SettingsProvider>().editorAutosaveEnabled &&
+        (allowInactiveContext ||
+            projectProvider.contextKey == fileState.contextKey)) {
+      _scheduleEditorAutosave(
+        draft: draft,
+        onSave: () => unawaited(
+          _saveFileEditorDraft(
+            fileState: fileState,
+            projectProvider: projectProvider,
+            path: normalizedPath,
+            allowInactiveContext: allowInactiveContext,
+            silent: silent,
+            onUpdated: onUpdated,
+          ),
+        ),
+      );
+    }
+    if (!silent &&
+        !allowInactiveContext &&
+        projectProvider.contextKey == fileState.contextKey) {
+      _showFileOperationSnackBar('File saved.');
+    }
   }
 
   String _directoryCacheKey(
@@ -1390,6 +1683,13 @@ extension _ChatPageFileRuntime on _ChatPageState {
     required String newPath,
   }) {
     _setState(() {
+      for (final path in fileState.fileReloadGenerations.keys.toList()) {
+        if (_pathEqualsOrIsChild(path, oldPath) ||
+            _pathEqualsOrIsChild(path, newPath)) {
+          fileState.fileReloadGenerations[path] =
+              ++fileState.nextFileReloadGeneration;
+        }
+      }
       final renamedTabs = <String, _FileTabViewState>{};
       for (final entry in fileState.tabsByPath.entries) {
         renamedTabs[_replacePathPrefix(entry.key, oldPath, newPath)] =
@@ -1434,6 +1734,12 @@ extension _ChatPageFileRuntime on _ChatPageState {
   }) {
     final normalized = _normalizeFilePath(path);
     _setState(() {
+      for (final path in fileState.fileReloadGenerations.keys.toList()) {
+        if (_pathEqualsOrIsChild(path, normalized)) {
+          fileState.fileReloadGenerations[path] =
+              ++fileState.nextFileReloadGeneration;
+        }
+      }
       for (final cacheKey in fileState.directoryChildren.keys.toList()) {
         final children = fileState.directoryChildren[cacheKey]!;
         final remaining = children

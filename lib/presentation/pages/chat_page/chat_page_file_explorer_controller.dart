@@ -61,9 +61,16 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     );
     final state = _fileContextStates.putIfAbsent(
       contextKey,
-      () => _FileExplorerContextState(rootDirectory: rootDirectory),
+      () => _FileExplorerContextState(
+        contextKey: contextKey,
+        serverId: projectProvider.activeServerId,
+        rootDirectory: rootDirectory,
+      ),
     );
     if (state.rootDirectory != rootDirectory) {
+      if (state.hasUnsavedDrafts) {
+        return state;
+      }
       state.resetForRoot(rootDirectory);
     }
     _ensureFileRootLoaded(state: state, projectProvider: projectProvider);
@@ -475,6 +482,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
     required String path,
+    bool revalidateCached = true,
     VoidCallback? onUpdated,
   }) async {
     final normalizedPath = _normalizeFilePath(path);
@@ -496,6 +504,24 @@ extension _ChatPageFileExplorerController on _ChatPageState {
         cached.status != _FileTabLoadStatus.error &&
         cached.status != _FileTabLoadStatus.loading) {
       onUpdated?.call();
+      // Cache-first, stale-while-revalidate (ADR-020, applied to the file
+      // domain of ADR-008): the cached content is shown immediately, and a
+      // fresh read runs in the background so edits made outside the editor —
+      // by the agent or another client — appear when the file is reopened.
+      // Silent, so the editor is never covered by a spinner, and background,
+      // so a dirty draft is left alone without reporting an error.
+      if (revalidateCached) {
+        unawaited(
+          _reloadFileTab(
+            fileState: fileState,
+            projectProvider: projectProvider,
+            path: normalizedPath,
+            silent: true,
+            background: true,
+            onUpdated: onUpdated,
+          ),
+        );
+      }
       return;
     }
 
@@ -523,229 +549,227 @@ extension _ChatPageFileExplorerController on _ChatPageState {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
-      child: Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 8, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      context.l10n.filesTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            // Single inset layer: the pane padding above already provides the
+            // horizontal edge, so only the header spacing remains.
+            padding: const EdgeInsetsDirectional.only(end: 4, bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.filesTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  if (fileState.tabSelection.hasOpenTabs)
-                    Flexible(
-                      child: TextButton(
-                        key: const ValueKey<String>(
-                          'file_tree_open_files_button',
-                        ),
-                        style: TextButton.styleFrom(
-                          visualDensity: Theme.of(context).visualDensity,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        onPressed: () {
-                          unawaited(
-                            _openOpenFilesDialog(
-                              fileState: fileState,
-                              projectProvider: projectProvider,
-                              fullscreen: isMobileLayout,
-                            ),
-                          );
-                        },
-                        child: Text(
-                          '${fileState.tabSelection.openPaths.length} open file${fileState.tabSelection.openPaths.length == 1 ? '' : 's'}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                ),
+                if (fileState.tabSelection.hasOpenTabs)
+                  Flexible(
+                    child: TextButton(
+                      key: const ValueKey<String>(
+                        'file_tree_open_files_button',
                       ),
-                    ),
-                  IconButton(
-                    key: const ValueKey<String>('file_tree_quick_open_button'),
-                    tooltip: context.l10n.filesQuickOpen,
-                    visualDensity: Theme.of(context).visualDensity,
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
-                    ),
-                    onPressed: () {
-                      unawaited(
-                        _openQuickFileDialog(
-                          fileState: fileState,
-                          projectProvider: projectProvider,
-                          onFileOpened: onStateChanged,
-                          openInDialogAfterSelect: true,
-                          dialogFullscreen: isMobileLayout,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Symbols.search),
-                  ),
-                  if (_fileMutationsSupported(fileState))
-                    PopupMenuButton<FileTreeContextMenuActionType>(
-                      key: const ValueKey<String>('file_tree_new_button'),
-                      tooltip: context.l10n.filesNew,
-                      icon: const Icon(Symbols.add),
-                      itemBuilder: (context) => [
-                        PopupMenuItem<FileTreeContextMenuActionType>(
-                          key: const ValueKey<String>(
-                            'file_tree_menu_new_file',
-                          ),
-                          value: FileTreeContextMenuActionType.newFile,
-                          child: Row(
-                            children: [
-                              Icon(
-                                fileTreeActionIcon(
-                                  FileTreeContextMenuActionType.newFile,
-                                ),
-                                size: 18,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(context.l10n.filesNewFile),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<FileTreeContextMenuActionType>(
-                          key: const ValueKey<String>(
-                            'file_tree_menu_new_folder',
-                          ),
-                          value: FileTreeContextMenuActionType.newFolder,
-                          child: Row(
-                            children: [
-                              Icon(
-                                fileTreeActionIcon(
-                                  FileTreeContextMenuActionType.newFolder,
-                                ),
-                                size: 18,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(context.l10n.filesNewFolder),
-                            ],
-                          ),
-                        ),
-                      ],
-                      onSelected: (action) {
+                      style: TextButton.styleFrom(
+                        visualDensity: Theme.of(context).visualDensity,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () {
                         unawaited(
-                          _handleRootFileTreeAction(
-                            action: action,
+                          _openOpenFilesDialog(
                             fileState: fileState,
                             projectProvider: projectProvider,
-                            onUpdated: onStateChanged,
+                            fullscreen: isMobileLayout,
                           ),
                         );
                       },
+                      child: Text(
+                        '${fileState.tabSelection.openPaths.length} open file${fileState.tabSelection.openPaths.length == 1 ? '' : 's'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                  ),
+                IconButton(
+                  key: const ValueKey<String>('file_tree_quick_open_button'),
+                  tooltip: context.l10n.filesQuickOpen,
+                  visualDensity: Theme.of(context).visualDensity,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  onPressed: () {
+                    unawaited(
+                      _openQuickFileDialog(
+                        fileState: fileState,
+                        projectProvider: projectProvider,
+                        onFileOpened: onStateChanged,
+                        openInDialogAfterSelect: true,
+                        dialogFullscreen: isMobileLayout,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Symbols.search),
+                ),
+                if (_fileMutationsSupported(fileState))
+                  PopupMenuButton<FileTreeContextMenuActionType>(
+                    key: const ValueKey<String>('file_tree_new_button'),
+                    tooltip: context.l10n.filesNew,
+                    icon: const Icon(Symbols.add),
+                    itemBuilder: (context) => [
+                      PopupMenuItem<FileTreeContextMenuActionType>(
+                        key: const ValueKey<String>('file_tree_menu_new_file'),
+                        value: FileTreeContextMenuActionType.newFile,
+                        child: Row(
+                          children: [
+                            Icon(
+                              fileTreeActionIcon(
+                                FileTreeContextMenuActionType.newFile,
+                              ),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(context.l10n.filesNewFile),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<FileTreeContextMenuActionType>(
+                        key: const ValueKey<String>(
+                          'file_tree_menu_new_folder',
+                        ),
+                        value: FileTreeContextMenuActionType.newFolder,
+                        child: Row(
+                          children: [
+                            Icon(
+                              fileTreeActionIcon(
+                                FileTreeContextMenuActionType.newFolder,
+                              ),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(context.l10n.filesNewFolder),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (action) {
+                      unawaited(
+                        _handleRootFileTreeAction(
+                          action: action,
+                          fileState: fileState,
+                          projectProvider: projectProvider,
+                          onUpdated: onStateChanged,
+                        ),
+                      );
+                    },
+                  ),
+                IconButton(
+                  key: const ValueKey<String>('file_tree_refresh_button'),
+                  tooltip: context.l10n.filesRefresh,
+                  visualDensity: Theme.of(context).visualDensity,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  onPressed: () {
+                    unawaited(
+                      _loadRootDirectoryNodes(
+                        state: fileState,
+                        projectProvider: projectProvider,
+                        force: true,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Symbols.refresh_rounded),
+                ),
+                if (onCollapseRequested != null)
                   IconButton(
-                    key: const ValueKey<String>('file_tree_refresh_button'),
-                    tooltip: context.l10n.filesRefresh,
+                    key: const ValueKey<String>('hide_files_sidebar_button'),
+                    tooltip: context.l10n.filesHideSidebar,
                     visualDensity: Theme.of(context).visualDensity,
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
                     ),
-                    onPressed: () {
-                      unawaited(
-                        _loadRootDirectoryNodes(
-                          state: fileState,
-                          projectProvider: projectProvider,
-                          force: true,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Symbols.refresh_rounded),
+                    onPressed: onCollapseRequested,
+                    icon: const Icon(Symbols.left_panel_close_rounded),
                   ),
-                  if (onCollapseRequested != null)
-                    IconButton(
-                      key: const ValueKey<String>('hide_files_sidebar_button'),
-                      tooltip: context.l10n.filesHideSidebar,
-                      visualDensity: Theme.of(context).visualDensity,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                      onPressed: onCollapseRequested,
-                      icon: const Icon(Symbols.left_panel_close_rounded),
-                    ),
-                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Text(
+              _directoryLabel(projectProvider.currentDirectory),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: Text(
-                _directoryLabel(projectProvider.currentDirectory),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: Builder(
-                builder: (_) {
-                  if (rootLoading && (rootNodes == null || rootNodes.isEmpty)) {
-                    return ListView(
-                      key: const ValueKey<String>('file_tree_loading_skeleton'),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      children: _buildFileTreeLoadingRows(
-                        depth: 0,
-                        cacheKey: _ChatPageState._rootTreeCacheKey,
-                        rowCount: 5,
-                      ),
-                    );
-                  }
-                  if (fileState.treeError != null &&
-                      (rootNodes == null || rootNodes.isEmpty)) {
-                    return ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      children: [
-                        _buildFileTreeErrorRow(
-                          fileState: fileState,
-                          projectProvider: projectProvider,
-                          cacheKey: _ChatPageState._rootTreeCacheKey,
-                          requestPath: '.',
-                          message: fileState.treeError!,
-                          depth: 0,
-                        ),
-                      ],
-                    );
-                  }
-                  if (rootNodes == null || rootNodes.isEmpty) {
-                    return const Center(child: Text('No files found'));
-                  }
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: Builder(
+              builder: (_) {
+                if (rootLoading && (rootNodes == null || rootNodes.isEmpty)) {
                   return ListView(
-                    key: const ValueKey<String>('file_tree_list'),
+                    key: const ValueKey<String>('file_tree_loading_skeleton'),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    children: _buildFileTreeLoadingRows(
+                      depth: 0,
+                      cacheKey: _ChatPageState._rootTreeCacheKey,
+                      rowCount: 5,
+                    ),
+                  );
+                }
+                if (fileState.treeError != null &&
+                    (rootNodes == null || rootNodes.isEmpty)) {
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     children: [
-                      if (fileState.treeError != null)
-                        _buildFileTreeErrorRow(
-                          fileState: fileState,
-                          projectProvider: projectProvider,
-                          cacheKey: _ChatPageState._rootTreeCacheKey,
-                          requestPath: '.',
-                          message: fileState.treeError!,
-                          depth: 0,
-                        ),
-                      ..._buildFileTreeChildren(
+                      _buildFileTreeErrorRow(
                         fileState: fileState,
                         projectProvider: projectProvider,
-                        dialogFullscreen: isMobileLayout,
-                        onStateChanged: onStateChanged,
-                        parentCacheKey: _ChatPageState._rootTreeCacheKey,
+                        cacheKey: _ChatPageState._rootTreeCacheKey,
+                        requestPath: '.',
+                        message: fileState.treeError!,
                         depth: 0,
                       ),
                     ],
                   );
-                },
-              ),
+                }
+                if (rootNodes == null || rootNodes.isEmpty) {
+                  return const Center(child: Text('No files found'));
+                }
+                return ListView(
+                  key: const ValueKey<String>('file_tree_list'),
+                  children: [
+                    if (fileState.treeError != null)
+                      _buildFileTreeErrorRow(
+                        fileState: fileState,
+                        projectProvider: projectProvider,
+                        cacheKey: _ChatPageState._rootTreeCacheKey,
+                        requestPath: '.',
+                        message: fileState.treeError!,
+                        depth: 0,
+                      ),
+                    ..._buildFileTreeChildren(
+                      fileState: fileState,
+                      projectProvider: projectProvider,
+                      dialogFullscreen: isMobileLayout,
+                      onStateChanged: onStateChanged,
+                      parentCacheKey: _ChatPageState._rootTreeCacheKey,
+                      depth: 0,
+                    ),
+                  ],
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

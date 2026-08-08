@@ -43,6 +43,7 @@ class DioClient {
   late final Dio _dio;
   late final Dio _sseDio;
   String? _basicAuthHeader;
+  Uri? _basicAuthOrigin;
   String? _oauthBearerToken;
   Uri? _oauthOrigin;
   HttpClientAdapter? _tailscaleAdapter;
@@ -97,17 +98,23 @@ class DioClient {
   }
 
   /// Set Basic Authorization header using username and password
-  void setBasicAuth(String username, String password) {
+  void setBasicAuth(
+    String username,
+    String password, {
+    required String origin,
+  }) {
     final credentials = '$username:$password';
     final encoded = base64Encode(utf8.encode(credentials));
     _basicAuthHeader = 'Basic $encoded';
-    _dio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
-    _sseDio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
+    _basicAuthOrigin = Uri.tryParse(origin);
+    _dio.options.headers.remove(ApiConstants.authorization);
+    _sseDio.options.headers.remove(ApiConstants.authorization);
     AppLogger.debug('[Dio] Basic auth header set');
   }
 
   void clearBasicAuth() {
     _basicAuthHeader = null;
+    _basicAuthOrigin = null;
     _dio.options.headers.remove(ApiConstants.authorization);
     _sseDio.options.headers.remove(ApiConstants.authorization);
     AppLogger.debug('[Dio] Basic auth header cleared');
@@ -132,13 +139,8 @@ class DioClient {
   void clearOAuthToken() {
     _oauthBearerToken = null;
     _oauthOrigin = null;
-    if (_basicAuthHeader == null) {
-      _dio.options.headers.remove(ApiConstants.authorization);
-      _sseDio.options.headers.remove(ApiConstants.authorization);
-    } else {
-      _dio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
-      _sseDio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
-    }
+    _dio.options.headers.remove(ApiConstants.authorization);
+    _sseDio.options.headers.remove(ApiConstants.authorization);
     AppLogger.debug('[Dio] OAuth bearer token cleared');
   }
 
@@ -150,16 +152,7 @@ class DioClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Ensure Authorization header is present if configured
-          if (_basicAuthHeader != null &&
-              (options.headers[ApiConstants.authorization] == null)) {
-            options.headers[ApiConstants.authorization] = _basicAuthHeader;
-          }
-
-          if (_shouldUseOAuthFor(options.uri)) {
-            options.headers[ApiConstants.authorization] =
-                'Bearer $_oauthBearerToken';
-          }
+          _applyAuthorization(options);
 
           _applyStickySessionHeader(options);
 
@@ -267,15 +260,7 @@ class DioClient {
     _sseDio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (_basicAuthHeader != null &&
-              (options.headers[ApiConstants.authorization] == null)) {
-            options.headers[ApiConstants.authorization] = _basicAuthHeader;
-          }
-
-          if (_shouldUseOAuthFor(options.uri)) {
-            options.headers[ApiConstants.authorization] =
-                'Bearer $_oauthBearerToken';
-          }
+          _applyAuthorization(options);
 
           _applyStickySessionHeader(options);
 
@@ -333,6 +318,28 @@ class DioClient {
     final token = _oauthBearerToken;
     final origin = _oauthOrigin;
     if (token == null || token.isEmpty || origin == null) return false;
+    return uri.scheme == origin.scheme &&
+        uri.host == origin.host &&
+        uri.port == origin.port;
+  }
+
+  void _applyAuthorization(RequestOptions options) {
+    const authorization = ApiConstants.authorization;
+    final existing = options.headers[authorization]?.toString();
+    if (existing?.startsWith('Basic ') == true) {
+      options.headers.remove(authorization);
+    }
+    if (_sameOrigin(options.uri, _basicAuthOrigin) &&
+        _basicAuthHeader != null) {
+      options.headers[authorization] = _basicAuthHeader;
+    }
+    if (_shouldUseOAuthFor(options.uri)) {
+      options.headers[authorization] = 'Bearer $_oauthBearerToken';
+    }
+  }
+
+  bool _sameOrigin(Uri uri, Uri? origin) {
+    if (origin == null) return false;
     return uri.scheme == origin.scheme &&
         uri.host == origin.host &&
         uri.port == origin.port;

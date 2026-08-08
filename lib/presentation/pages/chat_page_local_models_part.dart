@@ -1,8 +1,14 @@
 part of 'chat_page.dart';
 
 class _FileExplorerContextState {
-  _FileExplorerContextState({required this.rootDirectory});
+  _FileExplorerContextState({
+    required this.contextKey,
+    required this.serverId,
+    required this.rootDirectory,
+  });
 
+  final String contextKey;
+  final String serverId;
   String rootDirectory;
   DateTime? lastLoadedAt;
   final Map<String, List<FileNode>> directoryChildren =
@@ -12,6 +18,8 @@ class _FileExplorerContextState {
   final Map<String, String> directoryErrors = <String, String>{};
   final Map<String, _FileTabViewState> tabsByPath =
       <String, _FileTabViewState>{};
+  final Map<String, int> fileReloadGenerations = <String, int>{};
+  int nextFileReloadGeneration = 0;
   final Map<String, _FileEditorDraftState> editorDraftsByPath =
       <String, _FileEditorDraftState>{};
   final Set<String> pendingMutationPaths = <String>{};
@@ -30,6 +38,10 @@ class _FileExplorerContextState {
   bool rootLoadScheduled = false;
   String? treeError;
 
+  bool get hasUnsavedDrafts => editorDraftsByPath.values.any(
+    (draft) => draft.isDirty || draft.activeSave != null,
+  );
+
   void resetForRoot(String nextRootDirectory) {
     rootDirectory = nextRootDirectory;
     lastLoadedAt = null;
@@ -38,6 +50,8 @@ class _FileExplorerContextState {
     loadingDirectories.clear();
     directoryErrors.clear();
     tabsByPath.clear();
+    nextFileReloadGeneration += 1;
+    fileReloadGenerations.clear();
     _disposeEditorDrafts();
     pendingMutationPaths.clear();
     fileOperationCapabilities = null;
@@ -102,6 +116,18 @@ class _FileEditorDraftState {
   String savedContent;
   bool isSaving = false;
   String? saveErrorMessage;
+  Future<void>? activeSave;
+  String? pendingLifecycleFlushContent;
+  bool pendingLifecycleFlushAllowsInactiveContext = false;
+
+  /// Pending autosave, debounced after the last edit so typing does not
+  /// produce a write per keystroke.
+  Timer? autosaveTimer;
+
+  void cancelAutosave() {
+    autosaveTimer?.cancel();
+    autosaveTimer = null;
+  }
 
   bool get isDirty => controller.text != savedContent;
 
@@ -117,6 +143,7 @@ class _FileEditorDraftState {
   }
 
   void dispose() {
+    cancelAutosave();
     controller.dispose();
     scrollController.verticalScroller.dispose();
     scrollController.horizontalScroller.dispose();

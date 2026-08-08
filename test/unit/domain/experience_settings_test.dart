@@ -3,6 +3,77 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('session tabs visibility serialization', () {
+    test('defaults to a platform-resolved override', () {
+      final settings = ExperienceSettings.defaults();
+
+      expect(settings.showSessionTabsOverride, isNull);
+      expect(settings.toJson(), isNot(contains('showSessionTabsOverride')));
+    });
+
+    test('round-trips explicit visibility overrides', () {
+      for (final value in <bool>[true, false]) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          showSessionTabsOverride: () => value,
+        );
+
+        expect(settings.toJson()['showSessionTabsOverride'], value);
+        expect(
+          ExperienceSettings.fromJson(
+            settings.toJson(),
+          ).showSessionTabsOverride,
+          value,
+        );
+      }
+    });
+
+    test('copyWith can clear the visibility override', () {
+      final settings = ExperienceSettings.defaults()
+          .copyWith(showSessionTabsOverride: () => true)
+          .copyWith(showSessionTabsOverride: () => null);
+
+      expect(settings.showSessionTabsOverride, isNull);
+      expect(settings.toJson(), isNot(contains('showSessionTabsOverride')));
+    });
+
+    test('ignores null and invalid persisted overrides', () {
+      expect(
+        ExperienceSettings.fromJson(const <String, dynamic>{
+          'showSessionTabsOverride': null,
+        }).showSessionTabsOverride,
+        isNull,
+      );
+      expect(
+        ExperienceSettings.fromJson(const <String, dynamic>{
+          'showSessionTabsOverride': 'yes',
+        }).showSessionTabsOverride,
+        isNull,
+      );
+    });
+
+    test('round-trips the session tabs gesture hint opt-out', () {
+      final defaults = ExperienceSettings.defaults();
+      expect(defaults.sessionTabsGestureHintDismissed, isFalse);
+
+      final dismissed = defaults.copyWith(
+        sessionTabsGestureHintDismissed: true,
+      );
+      expect(dismissed.toJson()['sessionTabsGestureHintDismissed'], isTrue);
+      expect(
+        ExperienceSettings.fromJson(
+          dismissed.toJson(),
+        ).sessionTabsGestureHintDismissed,
+        isTrue,
+      );
+      expect(
+        ExperienceSettings.fromJson(const <String, dynamic>{
+          'sessionTabsGestureHintDismissed': 'yes',
+        }).sessionTabsGestureHintDismissed,
+        isFalse,
+      );
+    });
+  });
+
   group('session attention presentation serialization', () {
     test('defaults new and migrated settings to off', () {
       expect(
@@ -542,6 +613,144 @@ void main() {
         restored.shortcuts[ShortcutAction.cycleAgentBackward],
         'alt+shift+k',
       );
+    });
+  });
+
+  group('session attention bubble size serialization', () {
+    test('defaults to standard, about 30% smaller than the base size', () {
+      expect(
+        ExperienceSettings.defaults().sessionAttentionBubbleSize,
+        SessionAttentionBubbleSize.standard,
+      );
+      expect(
+        sessionAttentionBubbleScale(SessionAttentionBubbleSize.standard),
+        0.7,
+      );
+    });
+
+    test('round-trips every level', () {
+      for (final size in SessionAttentionBubbleSize.values) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          sessionAttentionBubbleSize: size,
+        );
+
+        expect(
+          ExperienceSettings.fromJson(
+            settings.toJson(),
+          ).sessionAttentionBubbleSize,
+          size,
+        );
+      }
+    });
+
+    test('scale is monotonic across the five levels', () {
+      final scales = SessionAttentionBubbleSize.values
+          .map(sessionAttentionBubbleScale)
+          .toList();
+
+      for (var i = 1; i < scales.length; i += 1) {
+        expect(scales[i], greaterThan(scales[i - 1]));
+      }
+    });
+
+    test('unknown persisted values fall back to standard', () {
+      final json = ExperienceSettings.defaults().toJson()
+        ..['sessionAttentionBubbleSize'] = 'gigantic';
+
+      expect(
+        ExperienceSettings.fromJson(json).sessionAttentionBubbleSize,
+        SessionAttentionBubbleSize.standard,
+      );
+    });
+
+    test('installs without the key keep standard', () {
+      final legacy = ExperienceSettings.defaults().toJson()
+        ..remove('sessionAttentionBubbleSize');
+
+      expect(
+        ExperienceSettings.fromJson(legacy).sessionAttentionBubbleSize,
+        SessionAttentionBubbleSize.standard,
+      );
+    });
+  });
+
+  group('editor autosave serialization', () {
+    test('defaults to off so manual saving is unchanged', () {
+      expect(ExperienceSettings.defaults().editorAutosaveEnabled, isFalse);
+    });
+
+    test('round-trips both states', () {
+      for (final value in <bool>[true, false]) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          editorAutosaveEnabled: value,
+        );
+
+        expect(
+          ExperienceSettings.fromJson(settings.toJson()).editorAutosaveEnabled,
+          value,
+        );
+      }
+    });
+
+    test('existing installs without the key keep autosave off', () {
+      final legacy = ExperienceSettings.defaults().toJson()
+        ..remove('editorAutosaveEnabled');
+
+      expect(
+        ExperienceSettings.fromJson(legacy).editorAutosaveEnabled,
+        isFalse,
+      );
+    });
+  });
+
+  group('desktop window chrome serialization', () {
+    test('defaults to integrated tabs', () {
+      expect(
+        ExperienceSettings.defaults().desktopWindowChrome,
+        DesktopWindowChrome.integratedTabs,
+      );
+    });
+
+    test('round-trips both modes', () {
+      for (final value in DesktopWindowChrome.values) {
+        final settings = ExperienceSettings.defaults().copyWith(
+          desktopWindowChrome: value,
+        );
+
+        expect(
+          ExperienceSettings.fromJson(settings.toJson()).desktopWindowChrome,
+          value,
+        );
+      }
+    });
+
+    test('existing installs without the key migrate to integrated tabs', () {
+      final legacy = ExperienceSettings.defaults().toJson()
+        ..remove('desktopWindowChrome');
+
+      expect(
+        ExperienceSettings.fromJson(legacy).desktopWindowChrome,
+        DesktopWindowChrome.integratedTabs,
+      );
+    });
+
+    test('unknown persisted values fall back to integrated tabs', () {
+      final json = ExperienceSettings.defaults().toJson()
+        ..['desktopWindowChrome'] = 'not-a-mode';
+
+      expect(
+        ExperienceSettings.fromJson(json).desktopWindowChrome,
+        DesktopWindowChrome.integratedTabs,
+      );
+    });
+
+    test('keys stay lowercase so parsing survives case normalization', () {
+      for (final value in DesktopWindowChrome.values) {
+        final key = desktopWindowChromeKey(value);
+
+        expect(key, key.toLowerCase());
+        expect(desktopWindowChromeFromKey(key), value);
+      }
     });
   });
 }

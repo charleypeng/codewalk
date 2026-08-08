@@ -42,6 +42,7 @@ Widget _app({
   required List<SessionAttentionItem> items,
   required bool expanded,
   Size? hostSize,
+  bool reserveBubbleControls = false,
   ValueChanged<SessionAttentionItem>? onOpen,
   ValueChanged<SessionAttentionItem>? onRead,
   ValueChanged<SessionAttentionItem>? onDismiss,
@@ -66,6 +67,12 @@ Widget _app({
     onToggleExpanded: onToggle ?? () {},
     onStopOverlay: onStop ?? () {},
   );
+  final hostedOverlay = reserveBubbleControls
+      ? Padding(
+          padding: const EdgeInsetsDirectional.only(end: 8, bottom: 8),
+          child: overlay,
+        )
+      : overlay;
   return MaterialApp(
     home: Scaffold(
       body: Center(
@@ -74,7 +81,10 @@ Widget _app({
             : SizedBox.fromSize(
                 key: const ValueKey<String>('session_attention_test_host'),
                 size: hostSize,
-                child: Align(alignment: Alignment.topCenter, child: overlay),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: hostedOverlay,
+                ),
               ),
       ),
     ),
@@ -102,6 +112,31 @@ void main() {
     );
     expect(bubbleSize.width, lessThanOrEqualTo(96));
     expect(bubbleSize.height, lessThanOrEqualTo(96));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('extra-small Android host contains the expand control', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        items: <SessionAttentionItem>[_item()],
+        expanded: false,
+        hostSize: const Size(56, 56),
+        reserveBubbleControls: true,
+      ),
+    );
+
+    final hostRect = tester.getRect(
+      find.byKey(const ValueKey<String>('session_attention_test_host')),
+    );
+    final expandRect = tester.getRect(
+      find.byKey(const ValueKey<String>('session_attention_expand')),
+    );
+    expect(expandRect.left, greaterThanOrEqualTo(hostRect.left));
+    expect(expandRect.top, greaterThanOrEqualTo(hostRect.top));
+    expect(expandRect.right, lessThanOrEqualTo(hostRect.right));
+    expect(expandRect.bottom, lessThanOrEqualTo(hostRect.bottom));
     expect(tester.takeException(), isNull);
   });
 

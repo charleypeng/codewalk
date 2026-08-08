@@ -11,6 +11,12 @@ extension _ChatPageLifecycle on _ChatPageState {
     final settings =
         _settingsProvider?.settings ?? ExperienceSettings.defaults();
     final pendingPostOnboardingTour = settings.pendingPostOnboardingChatTour;
+    if (_lastEditorAutosaveEnabled != settings.editorAutosaveEnabled) {
+      _lastEditorAutosaveEnabled = settings.editorAutosaveEnabled;
+      _syncEditorAutosaveForActiveContext(
+        enabled: settings.editorAutosaveEnabled,
+      );
+    }
     if (pendingPostOnboardingTour != _lastPendingPostOnboardingChatTour) {
       _lastPendingPostOnboardingChatTour = pendingPostOnboardingTour;
       _queuedPendingPostOnboardingTourAutoStart = pendingPostOnboardingTour;
@@ -37,6 +43,9 @@ extension _ChatPageLifecycle on _ChatPageState {
       _syncBackgroundPermissionAutoApproveContext(reason: 'settings-changed'),
     );
     _flushPendingPostOnboardingTourAutoStart();
+    if (chatProvider != null) {
+      _syncSessionTabsGestureHint(chatProvider);
+    }
   }
 
   void _handleChatProviderChanged() {
@@ -60,6 +69,7 @@ extension _ChatPageLifecycle on _ChatPageState {
   void _handleChatProviderChangedBody() {
     final provider = _chatProvider;
     if (provider != null) {
+      _syncSessionTabsGestureHint(provider);
       _syncSessionScrollState(provider);
       _syncPassiveProviderMessageIndicator(provider);
       _syncResponseViewportPolicy(provider);
@@ -552,6 +562,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     _lastReturnToChatAt = now;
     _lastReturnToChatSignature = signature;
     _flushPendingPostOnboardingTourAutoStart();
+    _scheduleSessionTabsGestureHint();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
     if (_scrollFollowMode != _ScrollFollowMode.following ||

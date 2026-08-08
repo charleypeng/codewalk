@@ -24,6 +24,7 @@ import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
 import '../../domain/entities/experience_settings.dart';
+import '../../domain/entities/persisted_session_tabs_state.dart';
 import '../../domain/entities/provider.dart';
 import '../../domain/entities/session.dart';
 import '../../domain/entities/session_attention_overlay/session_attention_models.dart';
@@ -69,6 +70,8 @@ import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
 import 'settings_provider.dart';
 
+import 'chat_provider/message_reconciliation.dart';
+
 part 'chat_provider_draft_part.dart';
 part 'chat_provider_types_part.dart';
 part 'chat_provider/chat_provider_error_policy.dart';
@@ -81,6 +84,7 @@ part 'chat_provider/chat_provider_event_reducer_session_ops.dart';
 part 'chat_provider/chat_provider_event_reducer_global_ops.dart';
 part 'chat_provider/chat_provider_auto_title_ops.dart';
 part 'chat_provider/chat_provider_message_merge_ops.dart';
+part 'chat_provider/chat_provider_reconciliation_guard.dart';
 part 'chat_provider/chat_provider_session_ops.dart';
 part 'chat_provider/chat_provider_core.dart';
 part 'chat_provider/chat_provider_abort_policy_ops.dart';
@@ -91,6 +95,7 @@ part 'chat_provider/chat_provider_message_state_ops.dart';
 part 'chat_provider/chat_provider_shortcut_cycle_ops.dart';
 part 'chat_provider/chat_provider_history_ops.dart';
 part 'chat_provider/chat_provider_session_attention_ops.dart';
+part 'chat_provider/chat_provider_session_tab_ops.dart';
 part 'chat_provider/chat_provider_lifecycle_ops.dart';
 
 /// What a diff refresh attempt should do to the loaded/error bookkeeping
@@ -166,6 +171,8 @@ class ChatProvider extends ChangeNotifier {
     SessionAttentionCompletionResolver? sessionAttentionCompletionResolver,
     Future<void> Function(SessionAttentionAggregate aggregate)?
     sessionAttentionAggregatePublisher,
+    Future<void> Function(bool isForeground)?
+    sessionAttentionAppForegroundPublisher,
     this.eventFeedbackDispatcher,
     this.titleGenerator,
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
@@ -180,6 +187,7 @@ class ChatProvider extends ChangeNotifier {
     bool refreshlessRealtimeEnabled = FeatureFlags.refreshlessRealtime,
     Duration abortSuppressionWindow = const Duration(seconds: 8),
     Duration shortcutCycleWindow = const Duration(seconds: 3),
+    DateTime Function()? sessionTabsNow,
   }) {
     _cellularDataSaverService =
         cellularDataSaverService ?? CellularDataSaverService.disabled();
@@ -191,6 +199,8 @@ class ChatProvider extends ChangeNotifier {
         );
     _sessionAttentionCompletionResolver = sessionAttentionCompletionResolver;
     _sessionAttentionAggregatePublisher = sessionAttentionAggregatePublisher;
+    _sessionAttentionAppForegroundPublisher =
+        sessionAttentionAppForegroundPublisher;
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
@@ -205,6 +215,7 @@ class ChatProvider extends ChangeNotifier {
     _refreshlessRealtimeEnabled = refreshlessRealtimeEnabled;
     _abortSuppressionWindow = abortSuppressionWindow;
     _shortcutCycleWindow = shortcutCycleWindow;
+    _sessionTabsNow = sessionTabsNow ?? DateTime.now;
     _activeContextKey = _composeContextKey(
       _activeServerId,
       _resolveContextScopeId(),
@@ -281,6 +292,8 @@ class ChatProvider extends ChangeNotifier {
   _sessionAttentionCompletionResolver;
   late final Future<void> Function(SessionAttentionAggregate aggregate)?
   _sessionAttentionAggregatePublisher;
+  late final Future<void> Function(bool isForeground)?
+  _sessionAttentionAppForegroundPublisher;
   late final bool _ownsSessionAttentionCoordinator;
   final EventFeedbackDispatcher? eventFeedbackDispatcher;
   final ChatTitleGenerator? titleGenerator;
@@ -362,6 +375,7 @@ class ChatProvider extends ChangeNotifier {
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
   bool _isAppInForeground = true;
+  bool _isSessionAttentionAppInForeground = true;
   bool _isChatRouteActive = true;
   String? _abortSuppressionSessionId;
   DateTime? _abortSuppressionStartedAt;
@@ -382,6 +396,22 @@ class ChatProvider extends ChangeNotifier {
   final Map<String, Future<void>> _sessionMessagesSnapshotWriteQueue =
       <String, Future<void>>{};
   Future<void> _lastSessionSnapshotWriteQueue = Future<void>.value();
+  List<SessionTabRecord> _sessionTabs = const <SessionTabRecord>[];
+  PersistedSessionTabsState _sessionTabsPersistedState =
+      const PersistedSessionTabsState();
+  final Map<String, Future<void>> _sessionTabsWriteQueueByServer =
+      <String, Future<void>>{};
+  final Map<SessionTabIdentity, SessionTabCandidate>
+  _sessionTabEventCandidates = <SessionTabIdentity, SessionTabCandidate>{};
+  final Map<SessionTabIdentity, String> _sessionTabErrorTokens =
+      <SessionTabIdentity, String>{};
+  final Map<SessionTabIdentity, String> _sessionTabCompletionTokens =
+      <SessionTabIdentity, String>{};
+  String? _sessionTabBootstrapDirectory;
+  int _sessionTabBootstrapGeneration = 0;
+  String? _sessionTabsLoadedServerId;
+  int _sessionTabsGeneration = 0;
+  bool _sessionTabsDisposed = false;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -448,6 +478,7 @@ class ChatProvider extends ChangeNotifier {
   DateTime? _lastRealtimeSignalAt;
   ChatSyncState _syncState = ChatSyncState.reconnecting;
   bool _isForegroundActive = true;
+
   bool _degradedMode = false;
   bool _isInResumeGrace = false;
   bool _isForegroundResumeSyncing = false;
@@ -482,6 +513,7 @@ class ChatProvider extends ChangeNotifier {
   late final int _degradedFailureThreshold;
   late final bool _refreshlessRealtimeEnabled;
   late final Duration _shortcutCycleWindow;
+  late final DateTime Function() _sessionTabsNow;
   final Map<_ShortcutCycleDomain, _ShortcutCycleState>
   _shortcutCycleStateByDomain = <_ShortcutCycleDomain, _ShortcutCycleState>{};
 
@@ -814,12 +846,27 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
+  /// True when [sessionId] belongs to a subagent, i.e. it has a parent.
+  bool _isChildSessionId(String? sessionId) {
+    final normalized = sessionId?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return false;
+    }
+    final parentId = _sessionById(normalized)?.parentId?.trim();
+    return parentId != null && parentId.isNotEmpty;
+  }
+
   bool _shouldSchedulePassiveAutoScrollForSession(
     String sessionId, {
     ChatMessage? latestMessage,
   }) {
     final normalizedSessionId = sessionId.trim();
     if (normalizedSessionId.isEmpty || _isCompactingContext) {
+      return false;
+    }
+    // Subagent traffic must never take ownership of the main timeline's
+    // scroll: only the session actually on screen may move the anchor.
+    if (normalizedSessionId != _currentSession?.id.trim()) {
       return false;
     }
     final status = _sessionStatusById[normalizedSessionId]?.type;
@@ -875,12 +922,21 @@ class ChatProvider extends ChangeNotifier {
   // Getters
   ChatState get state => _state;
   List<ChatSession> get sessions => _sessions;
+  bool get hasLoadedSessionsAuthoritatively =>
+      _hasLoadedSessionsAuthoritatively;
   String get sessionSearchQuery => _sessionSearchQuery;
   SessionListFilter get sessionListFilter => _sessionListFilter;
   SessionListSort get sessionListSort => _sessionListSort;
   bool get isLoadingSessionInsights => _isLoadingSessionInsights;
   String? get sessionInsightsError => _sessionInsightsError;
   ChatSession? get currentSession => _currentSession;
+  List<SessionTabRecord> get sessionTabs {
+    if (_sessionTabsLoadedServerId != _activeServerId) {
+      return const <SessionTabRecord>[];
+    }
+    return List<SessionTabRecord>.unmodifiable(_sessionTabs);
+  }
+
   List<ChatMessage> get messages => _visibleMessagesForCurrentSession();
   List<ChatMessage> get rawMessages =>
       List<ChatMessage>.unmodifiable(_messages);
@@ -921,6 +977,39 @@ class ChatProvider extends ChangeNotifier {
       Map<String, int>.unmodifiable(_modelUsageCounts);
   String get activeServerId => _activeServerId;
   bool get isRespondingInteraction => _isRespondingInteraction;
+
+  Future<void> loadSessionTabs() async {
+    final serverId = await _resolveServerScopeId();
+    await _ensureSessionTabsLoaded(serverId: serverId);
+  }
+
+  void closeSessionTab(SessionTabIdentity identity) {
+    _closeSessionTab(identity);
+  }
+
+  bool restoreClosedSessionTab(SessionTabRecord tab, {required int index}) {
+    return _restoreClosedSessionTab(tab, index: index);
+  }
+
+  Future<void> removeSessionTabsForProjectHistory(
+    String directory, {
+    String? serverId,
+  }) async {
+    final normalizedDirectory = normalizeOptionalFilePath(directory);
+    if (normalizedDirectory == null) return;
+    final targetServerId = serverId?.trim().isNotEmpty ?? false
+        ? serverId!.trim()
+        : await _resolveServerScopeId();
+    await _removeSessionTabsForProjectHistory(
+      serverId: targetServerId,
+      directory: normalizedDirectory,
+    );
+  }
+
+  @visibleForTesting
+  Future<void> debugWaitForSessionTabPersistence() async {
+    await Future.wait(_sessionTabsWriteQueueByServer.values);
+  }
 
   /// Request IDs whose last submit/dismiss attempt returned an error.
   /// The UI can show a transient retry affordance for these requests.
@@ -1795,6 +1884,7 @@ class ChatProvider extends ChangeNotifier {
         }
         _sessionStatusById = statusMap;
         _syncAttentionFromStatusMap(statusMap);
+        _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
         if (!silent) {
           _sessionInsightsError = null;
         }
@@ -2611,10 +2701,14 @@ class ChatProvider extends ChangeNotifier {
     _selectionPersistenceTask = null;
   }
 
-  Future<void> onProjectScopeChanged({bool waitForRevalidation = true}) async {
+  Future<void> onProjectScopeChanged({
+    bool waitForRevalidation = true,
+    String? newlyOpenedDirectory,
+  }) async {
     await _switchContext(
       reason: 'project',
       waitForRevalidation: waitForRevalidation,
+      newlyOpenedDirectory: newlyOpenedDirectory,
     );
   }
 
@@ -3000,6 +3094,9 @@ class ChatProvider extends ChangeNotifier {
 
         final serverId = await _resolveServerScopeId();
         final scopeId = _resolveContextScopeId();
+        final bootstrapDirectory = _sessionTabBootstrapDirectory;
+        final bootstrapGeneration = _sessionTabBootstrapGeneration;
+        await _ensureSessionTabsLoaded(serverId: serverId);
         unawaited(
           Future<void>(() async {
             try {
@@ -3022,6 +3119,7 @@ class ChatProvider extends ChangeNotifier {
             scopeId: scopeId,
             preferredSessionId: storedSessionId,
           );
+          _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
 
           Future<void> revalidateFromServer({
             required bool preserveVisibleDataOnFailure,
@@ -3075,7 +3173,25 @@ class ChatProvider extends ChangeNotifier {
             _prunePinnedSessionIdsToKnownSessions();
             _sortSessionsInPlace();
             _pruneSessionAttentionStateToKnownSessions();
+            _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
+            _markAuthoritativeSessionTabBootstrapOpened(bootstrapDirectory);
             _setState(ChatState.loaded);
+
+            // #134: a project with no sessions has exactly one useful next
+            // state — an empty conversation ready for input — so the redundant
+            // "New chat" gate is skipped. Only reached after an authoritative
+            // load, never during loading, an error or an unresolved context,
+            // and it never overrides a session or a draft already in place.
+            // No remote session is created here; that still happens lazily on
+            // the first send.
+            if (filteredSessions.isEmpty &&
+                _currentSession == null &&
+                !_isNewChatDraftActive) {
+              await beginNewChatDraft();
+              if (fetchId != _sessionsFetchId) {
+                return;
+              }
+            }
 
             await _saveCachedSessions(
               filteredSessions,
@@ -3099,6 +3215,16 @@ class ChatProvider extends ChangeNotifier {
             }
             if (refreshSessionStatus) {
               await refreshSessionStatusSnapshot();
+            }
+            if (bootstrapDirectory != null &&
+                _sessionTabBootstrapGeneration == bootstrapGeneration &&
+                _sessionTabBootstrapDirectory == bootstrapDirectory &&
+                areEquivalentFilePaths(
+                  projectProvider.currentDirectory,
+                  bootstrapDirectory,
+                )) {
+              _sessionTabBootstrapDirectory = null;
+              _sessionTabBootstrapGeneration += 1;
             }
           }
 
@@ -3183,6 +3309,7 @@ class ChatProvider extends ChangeNotifier {
           serverId: serverId,
           scopeId: scopeId,
         );
+        _reconcileSessionTabs();
         return;
       }
 
@@ -3205,6 +3332,7 @@ class ChatProvider extends ChangeNotifier {
         _hasMoreOldMessages = false;
         _messagesVersion++;
         _clearPendingReplacementBranch();
+        _reconcileSessionTabs();
         _setState(ChatState.loaded);
         return;
       }
@@ -3238,6 +3366,7 @@ class ChatProvider extends ChangeNotifier {
       final currentSessionChanged = _currentSession != targetSession;
       final previousRevert = _currentSession?.revert;
       _currentSession = targetSession;
+      _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
       if (previousRevert != targetSession.revert) {
         _messagesVersion++;
       }
@@ -3347,6 +3476,7 @@ class ChatProvider extends ChangeNotifier {
 
     final serverId = await _resolveServerScopeId();
     final scopeId = _resolveContextScopeId();
+    await _ensureSessionTabsLoaded(serverId: serverId);
     await _saveCurrentSessionId('', serverId: serverId, scopeId: scopeId);
 
     _setState(ChatState.loaded);
@@ -3411,6 +3541,7 @@ class ChatProvider extends ChangeNotifier {
 
     final serverId = await _resolveServerScopeId();
     final scopeId = _resolveContextScopeId();
+    await _ensureSessionTabsLoaded(serverId: serverId);
     await _saveCurrentSessionId(
       session.id,
       serverId: serverId,
@@ -3425,6 +3556,7 @@ class ChatProvider extends ChangeNotifier {
     );
     unawaited(_persistSessionCacheBestEffort());
     unawaited(loadSessionInsights(session.id, silent: true));
+    _recordVisibleSessionTab(session);
     _setState(ChatState.loaded);
   }
 
@@ -3458,6 +3590,7 @@ class ChatProvider extends ChangeNotifier {
         _isNewChatDraftActive = false;
         if (_currentSession?.id == session.id) {
           _dismissNotificationsForSession(session.id);
+          _recordVisibleSessionTab(session);
           if (userInitiated) {
             unawaited(
               loadSessionInsights(
@@ -3545,6 +3678,10 @@ class ChatProvider extends ChangeNotifier {
         // Save current session ID and try cache-first restore (SWR).
         final serverId = await _resolveServerScopeId();
         final scopeId = _resolveContextScopeId();
+        await _ensureSessionTabsLoaded(serverId: serverId);
+        if (_currentSession?.id == session.id) {
+          _recordVisibleSessionTab(session);
+        }
         final restoredComposerDraft = await _loadPersistedComposerDraft(
           session.id,
           serverId: serverId,
@@ -3760,9 +3897,15 @@ class ChatProvider extends ChangeNotifier {
               return;
             }
 
-            _messages = List<ChatMessage>.from(mergedMessages);
+            final messagesApplied = _applyMessages(
+              mergedMessages,
+              origin: MessageUpdateOrigin.sessionRefresh,
+              kind: MessageUpdateKind.fullSnapshot,
+              sessionId: sessionId,
+              reason: 'session-refresh-merge',
+            );
             _cacheSessionMessages(sessionId, _messages);
-            if (messagesChanged) {
+            if (messagesApplied) {
               _messagesVersion++;
             }
             _hasMoreOldMessages = nextHasMoreOldMessages;
@@ -3784,7 +3927,7 @@ class ChatProvider extends ChangeNotifier {
               }
             }
             if (_state != ChatState.loaded ||
-                messagesChanged ||
+                messagesApplied ||
                 hasMoreOldMessagesChanged) {
               _setState(ChatState.loaded);
             }
@@ -3856,14 +3999,27 @@ class ChatProvider extends ChangeNotifier {
             messages,
             sessionId: sessionId,
           );
-          _messages = _mergeServerMessagesWithActiveLocalTail(
-            filteredMessages,
+          final messagesApplied = _applyMessages(
+            _mergeServerMessagesWithActiveLocalTail(
+              filteredMessages,
+              sessionId: sessionId,
+            ),
+            origin: MessageUpdateOrigin.httpFallback,
+            kind: MessageUpdateKind.fullSnapshot,
             sessionId: sessionId,
+            reason: 'server-messages-merge',
           );
           _cacheSessionMessages(sessionId, _messages);
-          _messagesVersion++;
+          if (messagesApplied) {
+            _messagesVersion++;
+          }
+          final hasMoreOldMessagesChanged =
+              _hasMoreOldMessages !=
+              (filteredMessages.length >= requestedLimit);
           _hasMoreOldMessages = filteredMessages.length >= requestedLimit;
-          _notifyListeners();
+          if (messagesApplied || hasMoreOldMessagesChanged) {
+            _notifyListeners();
+          }
           unawaited(_persistLastSessionSnapshotBestEffort());
           unawaited(
             _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
@@ -4199,7 +4355,9 @@ class ChatProvider extends ChangeNotifier {
                     _sessionStatusById[streamSessionId] =
                         const SessionStatusInfo(type: SessionStatusType.idle);
                     _clearSessionUnreadCompletion(streamSessionId);
-                    _sessionErrorAttentionIds.add(streamSessionId);
+                    if (!_isChildSessionId(streamSessionId)) {
+                      _sessionErrorAttentionIds.add(streamSessionId);
+                    }
                     _notifyListeners();
                     return;
                   }
@@ -4261,7 +4419,9 @@ class ChatProvider extends ChangeNotifier {
                   type: SessionStatusType.idle,
                 );
                 _clearSessionUnreadCompletion(streamSessionId);
-                _sessionErrorAttentionIds.add(streamSessionId);
+                if (!_isChildSessionId(streamSessionId)) {
+                  _sessionErrorAttentionIds.add(streamSessionId);
+                }
                 _notifyListeners();
                 return;
               }
@@ -4601,6 +4761,7 @@ class ChatProvider extends ChangeNotifier {
       (updated) {
         _pendingRenameTitleBySessionId.remove(session.id);
         _applySessionLocally(updated);
+        _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
         unawaited(_persistSessionCacheBestEffort());
         notifyListeners();
         return true;
@@ -4668,6 +4829,7 @@ class ChatProvider extends ChangeNotifier {
           _currentSession = updated;
           _dismissNotificationsForSession(updated.id);
         }
+        _reconcileSessionTabs(markCurrentViewed: _isSessionTabRouteVisible);
         unawaited(_persistSessionCacheBestEffort());
         notifyListeners();
         return true;
@@ -4739,6 +4901,8 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _sessionTabsDisposed = true;
+    _sessionTabsGeneration += 1;
     _cellularDataSaverService.removeListener(_handleCellularDataSaverChanged);
     unawaited(
       _cancelActiveMessageSubscription(

@@ -156,11 +156,12 @@ void main() {
     // ── session.updated ──
 
     group('session.updated', () {
-      test('updates existing session title', () async {
+      test('updates existing session title and creation time', () async {
         await initAndSelectSession();
         final futureMs = DateTime.now()
             .add(const Duration(hours: 1))
             .millisecondsSinceEpoch;
+        final createdMs = futureMs - 1000;
         chatRepository.emitEvent(
           ChatEvent(
             type: 'session.updated',
@@ -169,7 +170,7 @@ void main() {
                 'id': 'ses_1',
                 'workspaceId': 'default',
                 'time': <String, dynamic>{
-                  'created': futureMs,
+                  'created': createdMs,
                   'updated': futureMs,
                 },
                 'title': 'Updated Title',
@@ -185,6 +186,10 @@ void main() {
                   ?.title ==
               'Updated Title',
           reason: 'Expected session title to update from session.updated.',
+        );
+        expect(
+          provider.sessions.firstWhere((s) => s.id == 'ses_1').createdAt,
+          DateTime.fromMillisecondsSinceEpoch(createdMs),
         );
       });
 

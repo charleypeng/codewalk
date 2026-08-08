@@ -184,15 +184,55 @@ class SessionOverlayServiceInstrumentedTest {
         }
     }
 
+    @Test
+    fun staleLocalSnapshotCannotReplaceNewerMainRevision() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity {
+                ContextCompat.startForegroundService(
+                    it,
+                    Intent(it, SessionOverlayService::class.java),
+                )
+            }
+            assertTrue(waitUntil { SessionOverlayService.isRunning() })
+            assertTrue(updateSnapshot(attentionSnapshot(revision = 30)))
+            assertTrue(updateSnapshot(attentionSnapshot(revision = 31)))
+
+            assertFalse(applyLocalSnapshot(attentionSnapshot(revision = 30)))
+            assertEquals(31L, currentSnapshotRevision())
+        }
+    }
+
+    @Test
+    fun extraSmallBubbleKeepsControlOverflowInsideHost() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity {
+                ContextCompat.startForegroundService(
+                    it,
+                    Intent(it, SessionOverlayService::class.java),
+                )
+            }
+            assertTrue(waitUntil { SessionOverlayService.isRunning() })
+            assertTrue(
+                updateSnapshot(
+                    attentionSnapshot(revision = 40, bubbleScale = 0.5),
+                ),
+            )
+            assertTrue(waitUntil { overlayHasExpectedSize("bubble", 0.5) })
+        }
+    }
+
     private fun attentionSnapshot(
         revision: Int,
         presentation: String = "bubble",
+        bubbleScale: Double = 0.7,
     ): Map<String, Any?> {
         return mapOf(
             "schemaVersion" to 1,
             "generation" to "instrumentation",
             "revision" to revision,
             "presentation" to presentation,
+            "bubbleScale" to bubbleScale,
+            "appInForeground" to false,
             "activeServerId" to "server-a",
             "fullResynchronization" to true,
             "producer" to "main",
@@ -261,6 +301,9 @@ class SessionOverlayServiceInstrumentedTest {
     private fun applyFallbackSnapshot(snapshot: Map<String, Any?>): Boolean =
         runOnMainThread { SessionOverlayService.applyFallbackSnapshotForTest(snapshot) }
 
+    private fun applyLocalSnapshot(snapshot: Map<String, Any?>): Boolean =
+        runOnMainThread { SessionOverlayService.applyLocalSnapshotForTest(snapshot) }
+
     private fun hasAttachedOverlay(): Boolean =
         runOnMainThread { SessionOverlayService.hasAttachedOverlay() }
 
@@ -285,19 +328,24 @@ class SessionOverlayServiceInstrumentedTest {
         return task.get()
     }
 
-    private fun assertOverlayGeometry(presentation: String) {
+    private fun assertOverlayGeometry(presentation: String, bubbleScale: Double = 0.7) {
         val bounds = requireNotNull(currentMovementBounds())
         val rect = overlayRectOnMainThread()
         assertTrue("Overlay $rect must remain inside $bounds", bounds.contains(rect))
-        assertTrue(overlayHasExpectedSize(presentation))
+        assertTrue(overlayHasExpectedSize(presentation, bubbleScale))
     }
 
-    private fun overlayHasExpectedSize(presentation: String): Boolean {
+    private fun overlayHasExpectedSize(
+        presentation: String,
+        bubbleScale: Double = 0.7,
+    ): Boolean {
         val bounds = currentMovementBounds() ?: return false
         val actual = currentOverlaySize() ?: return false
         val density = targetContext.resources.displayMetrics.density
-        val expectedWidthDp = if (presentation == "panel") 360 else 96
-        val expectedHeightDp = if (presentation == "panel") 240 else 96
+        val expectedWidthDp = if (presentation == "panel") 360 else
+            (96 * bubbleScale).toInt().coerceAtLeast(56)
+        val expectedHeightDp = if (presentation == "panel") 240 else
+            (96 * bubbleScale).toInt().coerceAtLeast(56)
         val expectedWidth = (expectedWidthDp * density).roundToInt().coerceAtMost(bounds.width())
         val expectedHeight = (expectedHeightDp * density).roundToInt().coerceAtMost(bounds.height())
         return actual == (expectedWidth to expectedHeight)

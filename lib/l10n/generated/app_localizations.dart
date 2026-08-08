@@ -2129,6 +2129,12 @@ abstract class AppLocalizations {
   /// **'Create a new conversation to start chatting'**
   String get chatSessionCreateConversationStart;
 
+  /// CodeWalk UI string — chatSessionTabsToggle
+  ///
+  /// In en, this message translates to:
+  /// **'Session tabs'**
+  String get chatSessionTabsToggle;
+
   /// CodeWalk UI string — chatSessionsLength
   ///
   /// In en, this message translates to:
@@ -2699,6 +2705,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get composerDeleteAction;
 
+  /// CodeWalk UI string — composerDropHint
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images or PDFs to attach'**
+  String get composerDropHint;
+
+  /// CodeWalk UI string — composerPastedImageName
+  ///
+  /// In en, this message translates to:
+  /// **'Pasted image'**
+  String get composerPastedImageName;
+
   /// CodeWalk UI string — composerEdit
   ///
   /// In en, this message translates to:
@@ -2710,6 +2728,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Extras'**
   String get composerExtras;
+
+  /// CodeWalk UI string — composerExtrasHide
+  ///
+  /// In en, this message translates to:
+  /// **'Hide extras'**
+  String get composerExtrasHide;
 
   /// CodeWalk UI string — composerNewQuickReply
   ///
@@ -2740,6 +2764,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shell mode'**
   String get composerShellMode;
+
+  /// CodeWalk UI string — desktopWindowClose
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get desktopWindowClose;
+
+  /// CodeWalk UI string — desktopWindowMaximize
+  ///
+  /// In en, this message translates to:
+  /// **'Maximize'**
+  String get desktopWindowMaximize;
+
+  /// CodeWalk UI string — desktopWindowMinimize
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get desktopWindowMinimize;
+
+  /// CodeWalk UI string — desktopWindowRestore
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get desktopWindowRestore;
 
   /// CodeWalk UI string — dialogDownload
   ///
@@ -2999,6 +3047,36 @@ abstract class AppLocalizations {
   /// **'Add to chat'**
   String get filesAddChat;
 
+  /// CodeWalk UI string — filesAutosave
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave'**
+  String get filesAutosave;
+
+  /// CodeWalk UI string — filesAutosaveOn
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave on'**
+  String get filesAutosaveOn;
+
+  /// CodeWalk UI string — filesAutosaveOff
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave off'**
+  String get filesAutosaveOff;
+
+  /// CodeWalk UI string — filesRedo
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get filesRedo;
+
+  /// CodeWalk UI string — filesUndo
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get filesUndo;
+
   /// CodeWalk UI string — filesBinaryFilePreview
   ///
   /// In en, this message translates to:
@@ -3016,6 +3094,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contents'**
   String get filesContents;
+
+  /// CodeWalk UI string — filesDuplicate
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get filesDuplicate;
+
+  /// CodeWalk UI string — filesDuplicated
+  ///
+  /// In en, this message translates to:
+  /// **'File duplicated'**
+  String get filesDuplicated;
 
   /// CodeWalk UI string — filesFileEmpty
   ///
@@ -6044,6 +6134,42 @@ abstract class AppLocalizations {
   /// **'Switch to CodeWalk Classic to use wallpaper colors.'**
   String get settingsAppearanceWallpaperPresetBlocked;
 
+  /// CodeWalk UI string — settingsAppearanceWindowChrome
+  ///
+  /// In en, this message translates to:
+  /// **'Window tabs'**
+  String get settingsAppearanceWindowChrome;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how session tabs and the window title bar are combined on desktop.'**
+  String get settingsAppearanceWindowChromeDescription;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeIntegrated
+  ///
+  /// In en, this message translates to:
+  /// **'Integrated tabs'**
+  String get settingsAppearanceWindowChromeIntegrated;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeIntegratedDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs sit at the top of the window and the system title bar is hidden.'**
+  String get settingsAppearanceWindowChromeIntegratedDescription;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeSystem
+  ///
+  /// In en, this message translates to:
+  /// **'System decoration'**
+  String get settingsAppearanceWindowChromeSystem;
+
+  /// CodeWalk UI string — settingsAppearanceWindowChromeSystemDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the native title bar and show tabs below the app bar.'**
+  String get settingsAppearanceWindowChromeSystemDescription;
+
   /// CodeWalk UI string — settingsBack
   ///
   /// In en, this message translates to:
@@ -6955,6 +7081,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Servers'**
   String get settingsServersTitle;
+
+  /// CodeWalk UI string — settingsSessionAttentionSize
+  ///
+  /// In en, this message translates to:
+  /// **'Bubble size'**
+  String get settingsSessionAttentionSize;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeExtraLarge
+  ///
+  /// In en, this message translates to:
+  /// **'Extra large'**
+  String get settingsSessionAttentionSizeExtraLarge;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeExtraSmall
+  ///
+  /// In en, this message translates to:
+  /// **'Extra small'**
+  String get settingsSessionAttentionSizeExtraSmall;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeLarge
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get settingsSessionAttentionSizeLarge;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeSmall
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get settingsSessionAttentionSizeSmall;
+
+  /// CodeWalk UI string — settingsSessionAttentionSizeStandard
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get settingsSessionAttentionSizeStandard;
 
   /// CodeWalk UI string — settingsSetupWizard
   ///
@@ -7922,6 +8084,60 @@ abstract class AppLocalizations {
   /// **'Embedded terminal is not available on this runtime yet. Keep using composer shell mode for one-shot commands or open the terminal from a supported CodeWalk app runtime for {serverName}.'**
   String terminalEmbeddedUnavailable(String serverName);
 
+  /// CodeWalk UI string — terminalExtraKeyAlt
+  ///
+  /// In en, this message translates to:
+  /// **'Alt key'**
+  String get terminalExtraKeyAlt;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowDown
+  ///
+  /// In en, this message translates to:
+  /// **'Down arrow'**
+  String get terminalExtraKeyArrowDown;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowLeft
+  ///
+  /// In en, this message translates to:
+  /// **'Left arrow'**
+  String get terminalExtraKeyArrowLeft;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowRight
+  ///
+  /// In en, this message translates to:
+  /// **'Right arrow'**
+  String get terminalExtraKeyArrowRight;
+
+  /// CodeWalk UI string — terminalExtraKeyArrowUp
+  ///
+  /// In en, this message translates to:
+  /// **'Up arrow'**
+  String get terminalExtraKeyArrowUp;
+
+  /// CodeWalk UI string — terminalExtraKeyControl
+  ///
+  /// In en, this message translates to:
+  /// **'Control key'**
+  String get terminalExtraKeyControl;
+
+  /// CodeWalk UI string — terminalExtraKeyEscape
+  ///
+  /// In en, this message translates to:
+  /// **'Escape key'**
+  String get terminalExtraKeyEscape;
+
+  /// CodeWalk UI string — terminalExtraKeyTab
+  ///
+  /// In en, this message translates to:
+  /// **'Tab key'**
+  String get terminalExtraKeyTab;
+
+  /// CodeWalk UI string — terminalExtraKeys
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal extra keys'**
+  String get terminalExtraKeys;
+
   /// CodeWalk UI string — terminalHide
   ///
   /// In en, this message translates to:
@@ -8437,6 +8653,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggestions'**
   String get workspaceSuggestions;
+
+  /// Title for the session tab gesture onboarding dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Session tabs have new controls'**
+  String get sessionTabsGestureHintTitle;
+
+  /// Instructions for closing tabs, opening their menu, and disabling tabs
+  ///
+  /// In en, this message translates to:
+  /// **'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.'**
+  String get sessionTabsGestureHintBody;
+
+  /// Acknowledgement button for the session tab gesture dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get sessionTabsGestureHintAcknowledge;
+
+  /// Button that disables session tabs from the gesture dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Disable tabs'**
+  String get sessionTabsGestureHintDisableTabs;
+
+  /// Rename action in the active session tab menu
+  ///
+  /// In en, this message translates to:
+  /// **'Rename session'**
+  String get sessionTabRenameAction;
+
+  /// Snackbar shown after closing a session tab
+  ///
+  /// In en, this message translates to:
+  /// **'Tab \"{title}\" closed'**
+  String sessionTabClosedMessage(String title);
+
+  /// Snackbar action that restores a closed session tab
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get sessionTabUndo;
+
+  /// Snackbar shown when undo cannot restore a closed session tab
+  ///
+  /// In en, this message translates to:
+  /// **'Tab could not be restored.'**
+  String get sessionTabRestoreFailed;
 }
 
 class _AppLocalizationsDelegate

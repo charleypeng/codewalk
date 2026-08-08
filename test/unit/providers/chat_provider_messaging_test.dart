@@ -57,6 +57,8 @@ void main() {
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
       SettingsProvider? settingsProvider,
+      Future<void> Function(bool isForeground)?
+      sessionAttentionAppForegroundPublisher,
     }) {
       return buildChatProvider(
         chatRepository: chatRepository,
@@ -67,6 +69,8 @@ void main() {
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
         settingsProvider: settingsProvider,
+        sessionAttentionAppForegroundPublisher:
+            sessionAttentionAppForegroundPublisher,
       );
     }
 
@@ -113,6 +117,54 @@ void main() {
         provider.debugIsOptimisticLocalUserMessageId('LOCAL_USER_123'),
         isFalse,
       );
+    });
+
+    test('publishes actual app foreground transitions once', () async {
+      final transitions = <bool>[];
+      final scopedProvider = buildProvider(
+        sessionAttentionAppForegroundPublisher: (isForeground) async {
+          transitions.add(isForeground);
+        },
+      );
+
+      scopedProvider.setAppInForeground(
+        false,
+        isVisibleForSessionAttention: false,
+      );
+      scopedProvider.setAppInForeground(
+        false,
+        isVisibleForSessionAttention: false,
+      );
+      scopedProvider.setAppInForeground(
+        true,
+        isVisibleForSessionAttention: true,
+      );
+      await scopedProvider.setForegroundActive(false);
+
+      expect(transitions, <bool>[false, true]);
+      scopedProvider.dispose();
+    });
+
+    test('keeps overlay hidden while the app is inactive but visible', () {
+      final transitions = <bool>[];
+      final scopedProvider = buildProvider(
+        sessionAttentionAppForegroundPublisher: (isForeground) async {
+          transitions.add(isForeground);
+        },
+      );
+
+      scopedProvider.setAppInForeground(
+        false,
+        isVisibleForSessionAttention: true,
+      );
+      scopedProvider.setAppInForeground(false);
+      scopedProvider.setAppInForeground(
+        false,
+        isVisibleForSessionAttention: false,
+      );
+
+      expect(transitions, <bool>[false]);
+      scopedProvider.dispose();
     });
 
     test('duplicate echo suppression ignores server-format local ids', () {

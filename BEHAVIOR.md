@@ -385,18 +385,44 @@
 - **Then** `Contents` searches file text through the OpenCode content search endpoint and shows path, line number, and matching line preview
 - **Then** selecting a content result opens the matched file path while preserving the visible line context in the result subtitle
 
-### File viewer edits and explicitly saves text files
+### File viewer edits and saves text files
 
 - **Given** a connected server, an active project context, and shell-gated file operations supported for the project root
 - **When** the user opens a non-binary text file from the file tree, Quick Open, or a tapped assistant file path
 - **Then** the open-files surface renders a focused code editor with line numbers, syntax highlighting, tabbed open files, and the same desktop/mobile dialog behavior as the file viewer
 - **Then** editing a file marks its tab dirty with `*` and enables the viewer `Save` action
 - **Then** pressing the `Save` action or `Ctrl+S` / `Cmd+S` writes the active dirty file through the shell-gated workspace file operation service scoped to the active project directory, using one negotiated single-pipeline shell transport rather than a local client filesystem write
+- **Then** global autosave is off by default and can be toggled by the user
+- **Given** a dirty draft and autosave enabled
+- **When** the draft has not changed for 30 seconds
+- **Then** CodeWalk debounces and saves the draft automatically
+- **Given** autosave is enabled and a draft is dirty
+- **When** the editor loses focus, a dirty file is closed, or the app is controlled inactive, paused, minimized, or disposed
+- **Then** CodeWalk flushes the eligible draft
+- **Given** a dirty file has an in-flight save
+- **When** the user closes it
+- **Then** closing waits for that save to finish
+- **Given** autosave is disabled
+- **When** the setting changes
+- **Then** pending debounce timers and lifecycle follow-ups are canceled
+- **When** autosave is enabled again
+- **Then** eligible dirty drafts are rearmed for autosave
+- **Given** a draft is being saved
+- **When** the user leaves its context
+- **Then** the save remains bound to its owning server profile, project, root, and path
+- **Then** leaving to another context on the same server flushes safely, while leaving to another server never writes the draft there
+- **Given** the project root is reset while a draft is dirty or a save is in flight
+- **When** the reset is requested
+- **Then** the root reset is deferred until the draft is no longer dirty and the save has completed
+- **Given** a file mutation is in progress
+- **When** the server profile changes
+- **Then** the mutation aborts, and Basic Auth remains bound to its request origin so credentials cannot leak to another server
 - **Then** a successful save preserves the file's LF, CRLF, or CR line-ending style, clears the dirty marker, updates the open tab's saved content, shows a save confirmation, and remains visible after closing and reopening the file
 - **Then** save content is UTF-8 encoded, base64 chunked across the shell transport, and decoded with the cached supported shell decoder for the active project root before the server-side atomic replace completes
 - **Then** a failed save keeps the dirty marker, keeps the user's draft in the editor, and surfaces an actionable bounded operation error inline and via snackbar
 - **Then** selecting editor gutter lines and choosing Add to chat sends the current draft text for the selected line ranges, including LF, CRLF, and CR files
-- **Then** if a dirty open tab would be closed, reloaded by manual retry, or reloaded by diff-aware refresh, the action is skipped so unsaved edits are not overwritten
+- **Then** when autosave is enabled, closing a dirty open tab flushes its draft, waits for any in-flight save, and closes it
+- **Then** when autosave is disabled, closing a dirty open tab is blocked; manual retry and diff-aware refresh of a dirty tab are also blocked so unsaved edits are not overwritten
 - **Then** a confirmed successful delete runs in the active project directory, removes the deleted file or folder row from the tree immediately, and does not let failed, stale, or racing relists restore that row
 - **Then** while a delete is pending, matching and descendant editors become read-only and overlapping create, rename, delete, and save actions for the same path subtree are blocked to prevent data loss
 - **Then** failed delete, create, rename, and save operations keep the current draft or tree state and surface actionable bounded errors instead of silently reverting or dropping state
@@ -503,6 +529,73 @@
 - **Then** any recent row whose session is still busy shows the same sweep-style running indicator used by the composer, including sessions from other open/cached project contexts
 - **Then** if the currently open session also appears in `Recent sessions`, that row uses the same selected accent indicator and foreground emphasis as the project session list below it
 
+### Recent session tabs
+
+- **Given** the active server has session candidates across its known project contexts
+- **When** recent session tabs are reconciled
+- **Then** the strip normally contains recent non-archived root sessions from that server, keyed by normalized project directory and session ID; child sessions and sessions from other servers are excluded
+- **Then** normal eligibility uses the later of the official session update and successful local open time within a rolling 3-hour window, while selected and busy/retry sessions remain eligible
+- **Then** when opening a project that was not open, if no session from that project survives the normal eligibility rules, the strip adds only the most recent non-archived, non-suppressed root session from that project as a fallback
+- **Then** other tabs and project contexts remain unchanged, and local suppression continues to apply
+- **Then** persisted tab order remains stable through selection, title, status, and attention changes; newly eligible or explicitly reopened tabs append to the end
+- **Then** explicitly closing a tab only writes local suppression, never archives, deletes, or mutates the OpenCode session, and ordinary refresh/replay does not resurrect it; a successful explicit reopen or strictly newer authoritative interaction can append it again
+
+- **Given** the user closes a session tab
+- **When** the closed tab is active or inactive
+- **Then** closing the active tab selects the tab to its right, then the tab to its left; closing the sole active tab enters a local `New Chat` draft, while closing an inactive tab does not navigate
+- **Then** CodeWalk shows a localized 3-second `Snackbar` with `Undo`
+
+- **Given** the user presses `Undo` on the closed-tab `Snackbar`
+- **When** the closed tab can be restored
+- **Then** only that local tab is restored at its original position, without navigating back or mutating the OpenCode session
+
+- **Given** the user activates a tab for another project context
+- **When** that context is closed or not current
+- **Then** CodeWalk switches or reopens the project cache-first, waits boundedly for authoritative target session data, and restores the prior coherent project/session with an error if the target is unavailable
+
+- **Given** the session-tab display toggle is enabled and tabs are nonempty
+- **When** the chat surface is rendered
+- **Then** on desktop with integrated window chrome configured, the strip is rendered in the integrated desktop chrome; otherwise it appears below the app bar on compact and expanded layouts
+- **Then** tabs default to enabled on every platform when there is no override, and an explicit `Display Toggles` choice, including `false`, persists
+- **Then** the strip height is 20% smaller, with smaller gaps and shoulders; active tabs have an 8px top radius and inactive tabs have a 5px top radius
+
+- **Given** a selected tab represents the current session
+- **When** the chat surface is rendered
+- **Then** the selected tab shows the session title and context-usage control, and the duplicate compact session header is hidden
+- **Then** the compact session header remains visible when tabs are disabled or no selected tab represents the current session
+
+- **Given** the tab strip is rendered
+- **When** the user swipes, uses the wheel or trackpad, or the app scrolls programmatically
+- **Then** horizontal scrolling remains available while the scrollbar is completely hidden visually
+
+- **Given** a tab is selected at startup or after selection, insertion, or reorder changes its horizontal position
+- **When** the tab strip updates
+- **Then** the selected tab is brought into the viewport
+
+- **Given** a session tab has attention or activity state
+- **When** its leading indicator is rendered
+- **Then** visual priority is error, question, then completion, while busy/retry remains an independent status indicator; closed projects use their cached/default icon without discovery
+- **Then** the strip supports horizontal overflow, ensures the selected tab is visible, exposes the full title in a tooltip and semantics, reports selected and busy/retry status semantics, and keeps tab widths larger while remaining responsive to available space
+
+- **Given** a session tab is visible
+- **When** the user double-clicks/double-taps or middle-clicks it
+- **Then** only that local tab closes; the OpenCode session is not archived, deleted, or otherwise mutated
+- **When** the user right-clicks or touch-and-holds it
+- **Then** the current session actions menu opens, including `Rename session`; an inactive tab is activated first
+- **When** the user invokes the semantic session-actions action, `Context Menu`, or `Shift+F10`
+- **Then** the same current session actions menu opens
+- **When** the user presses `Delete` or invokes the semantic dismiss action
+- **Then** only that local tab closes
+- **Then** there is no visible close button on a tab
+
+- **Given** new session tabs become eligible while the tab gesture hint is enabled
+- **When** the chat is active
+- **Then** one dialog per batch aggregates and deduplicates the new tabs, explains the close and session-action gestures and `Display Toggles`, and offers `Don't show again`
+- **Then** the dialog offers `Disable tabs` beside `Got it`, and `Disable tabs` uses the same `Display Toggles` override
+- **Then** selecting `Don't show again` persists its dismissal independently of `Disable tabs`
+- **When** a hint request is pending while the chat is inactive
+- **Then** the request is shown when the chat becomes active again
+
 ### Sidebar session actions are available from row gestures
 
 - **Given** a session row is visible in the main Conversations list
@@ -553,10 +646,15 @@
 
 - **Given** the user switches project/directory context and that context has cached sessions
 - **When** the switch is triggered from the project context picker (open/reopen/close/switch)
+- **Then** project-scope transitions are serialized, and pointer input in the chat area is blocked immediately while a transition is active
+- **Then** the chat area keeps one visual tree/root `Stack` during the transition, preserving its visual state while transition layers are applied
+- **Then** the `Loading project context...` overlay appears only if the transition remains active after 150 ms; fast or cache-complete transitions finish without a loading flash
 - **Then** the new context renders immediately from cached scope data without waiting for network revalidation
 - **Then** session list revalidation runs in background and refreshes to server state when the response arrives
 - **Then** if background revalidation fails, the cached visible state remains stable (no forced blank/loading fallback)
 - **Then** when returning to a recently visited project that was marked dirty by global events, the previously cached session list remains visible immediately and is revalidated in background
+- **Then** the fast project path detaches message, event, and global-event subscriptions with generation guards and cancels them in parallel with a 100 ms bound; the cached snapshot is restored and notified before that cancellation bound is awaited
+- **Then** slow/server-backed transitions keep the normal subscription teardown path
 - **Then** project-switch transition teardown uses bounded cancellation time, so the `Loading project context...` blocker is brief and does not wait for long stream cancellation timeouts
 
 ### Active session SWR prefers delta-like refresh
@@ -1146,6 +1244,13 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **When** the embedded terminal is open
 - **Then** CodeWalk hides the composer input area until the terminal is minimized or closed so the terminal can use the available screen space
 - **Then** mobile soft-keyboard Backspace sends a terminal backspace instead of being ignored while editing the current shell input
+- **Given** an active embedded terminal has the software keyboard open on Android or iOS
+- **When** the terminal input controls appear above the keyboard
+- **Then** CodeWalk shows localized, accessible keys for `Escape`, `Tab`, one-shot `Ctrl` and `Alt`, and all four arrow directions while keeping terminal focus and the keyboard input connection active
+- **Then** `Ctrl` and `Alt` can be armed independently, apply together when both are selected, and clear after the next terminal input that produces output; empty IME updates and physical modifier keys do not consume them
+- **Then** tapping an arrow sends one movement, while holding it repeats the same resolved movement until release or cancellation
+- **Then** the controls scroll horizontally on narrow screens, respect the platform safe area, and disappear when the keyboard closes, the terminal becomes inactive, or the terminal surface is replaced
+- **Then** desktop and web terminal input remain unchanged and never show the mobile extra-key strip
 - **Given** the user is on an unsupported platform
 - **When** the user taps the same terminal button
 - **Then** CodeWalk opens an informational sheet explaining that the embedded server terminal is unavailable there and points the user to composer shell mode instead
@@ -1726,7 +1831,7 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 - **Given** Bubble or Panel is visible over another Android app
 - **Then** the Flutter surface and host window are transparent outside the rounded Material content instead of drawing an opaque rectangular background
 - **Then** the protected overlay keeps `FLAG_SECURE`; screenshots, screen recording, and device mirroring may therefore show the protected area as black even though normal on-device composition is transparent
-- **Then** Bubble uses a `96 x 96dp` host and Panel uses a `360 x 240dp` host, both constrained to usable display bounds with a `16dp` edge margin
+- **Then** Bubble uses a `96 x 96dp` base host with user scale applied, while the native host floors each dimension at `56dp` so the `48dp` Bubble and its reserved expand-control area stay inside bounds; Panel remains `360 x 240dp`, and both are constrained to usable display bounds with a `16dp` edge margin
 - **Then** Android content is top-centered, dragging persists normalized position, and rotation or display changes re-clamp the overlay without bypassing permission or lock-screen gates
 - **Given** the Android overlay does not reach a non-zero layout within 5 seconds, or reaches that layout but does not render its first Flutter frame within the following 5 seconds
 - **Then** only the overlay window is removed; the foreground service remains available for a later valid snapshot or lifecycle transition
@@ -2066,6 +2171,140 @@ Most shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms), with conflict-
 
 ---
 
+## Message Reconciliation
+
+The visible message collection is monotonic during normal updates. Asynchronous
+server snapshots, HTTP fallbacks, active-session refreshes and cache hydration
+that replace the visible list go through a shared rule instead of guarding
+themselves. Explicit resets and targeted realtime/local mutations remain
+authoritative dedicated paths.
+
+An update carries its provenance (origin) and what it claims to be (kind). The
+rule is: an update may never remove a message that is newer than everything the
+update itself carries. When it would, the newer tail is preserved and merged
+back in timeline order, and a warning is logged naming the origin, the kind and
+the preserved identifiers.
+
+Two kinds bypass the rule because dropping messages is their purpose: an
+authoritative removal from the server, and a reset such as a session switch or
+cache eviction. Everything else — full snapshots and partial deltas alike — is
+judged.
+
+Updates that produce no effective change do not write to the collection at all,
+because rebuilding with identical content still moves the reading anchor on
+some layouts.
+
+Reconciliation decisions are logged permanently at debug level, and at warning
+level when a regression is actually blocked. Only identifiers and counts are
+recorded, never message content.
+
+## Subagent Event Scope
+
+Subagents finish silently from the point of view of the session being read.
+
+A child session reaching idle, or failing, never marks unread on its parent,
+never raises an attention surface there, and never moves the parent's scroll.
+Only the session actually on screen may own the reading anchor: passive
+auto-scroll is refused for any session id that is not the current one.
+
+The subagent's own screen keeps receiving and rendering its events normally.
+A message genuinely added to the main timeline still triggers unread as before.
+
+## Subagent Navigation
+
+Opening a subagent from a task part prefers the child session id carried by the
+part metadata or the official completed-output `<task id="...">` envelope.
+When the part does not carry one and there is exactly one child candidate, that
+candidate is used.
+
+Otherwise the Nth task part is paired with the Nth child session by start time,
+but only when the number of task parts equals the number of candidates. With
+concurrent subagents those two sequences diverge, and pairing them anyway is
+what opened the wrong sibling.
+
+When the association is ambiguous, nothing is opened and the user is told no
+sub-conversation was found. Opening some other subagent is worse than opening
+none.
+
+## Android Attention Overlay
+
+The external overlay exists to follow work while the user is away from
+CodeWalk. Actual app visibility drives hiding: resumed and transient
+inactive-but-still-visible states keep the overlay detached, while
+background/hidden states allow it when there are still eligible items. Realtime
+transport holds do not drive overlay visibility. A visibility change republishes
+the attention snapshot immediately rather than waiting for the next unrelated
+update.
+
+The overlay also stays hidden when there are no items and while the device is
+locked.
+
+Its Flutter engine is hosted by a Service, which never receives an Activity
+lifecycle. The engine is therefore told explicitly that the app is resumed when
+the view attaches and paused when it detaches; without that the framework
+ignores pointer events and every control appears dead.
+
+Dragging and tapping are distinct: the native touch listener only consumes
+events once movement passes the touch slop, so a plain tap always reaches the
+Flutter widgets underneath.
+
+The Bubble's size is a five-level user preference, persisted with the rest of
+the experience settings and defaulting to a factor of 0.7 of its base size. The
+scale applies to the Bubble only — the Panel keeps fixed dimensions so its
+summary stays legible — and a floor is enforced so the smallest setting still
+leaves a usable touch target.
+
+## Composer External Files
+
+Images and PDFs reach the composer three ways — the file picker, dragging them
+onto it, and pasting — and all three end at the same attachment pipeline. The
+accepted formats, the model's allowed modalities, deduplication, draft
+persistence and the "some items were ignored" message therefore behave
+identically no matter how the file arrived.
+
+Dragging is offered on desktop and web, where the host can hand over external
+files; mobile keeps the picker. The drop zone highlights only when the composer
+can actually accept a file, so it never looks receptive while disabled, in
+shell mode, or when the selected model supports neither images nor PDFs.
+
+Pasting reads the clipboard for file references first and for raw image bytes
+second, so a screenshot with no filename still becomes an attachment. Its name
+is localised and its extension comes from the image's own signature rather than
+a guess. The paste keystroke is not consumed: text pasting proceeds untouched,
+and any attachable file found is added alongside it.
+
+Files whose extension is not one the composer accepts are counted as skipped
+rather than inspected, so arbitrary content is never classified as an image.
+
+## Block Render Mode
+
+Block mode exists to avoid showing half-written content, not to withhold a
+whole turn. While a session is responding it hides only the block still being
+written; every block that has reached a terminal state of its own is published
+immediately and keeps its chronological position.
+
+An assistant message counts as terminal once it is completed or has errored.
+Because the server reports tool parts individually, a finished tool appears
+without waiting for the final text — including one that ended in error.
+
+The compact placeholder stays after the blocks already published, for as long
+as generation continues, and disappears when the last block lands. Live mode is
+unaffected and keeps rendering text, reasoning and tools as they stream.
+
+## Empty Project Draft
+
+Opening a project that has no sessions puts CodeWalk straight into a local New
+Chat draft, so the composer is usable immediately instead of waiting behind a
+"New chat" button. Nothing is created remotely by opening a project: the
+session is still created lazily on the first send.
+
+The draft is entered only after an authoritative load reports the context
+empty, never during loading, a transient error, or an unresolved context
+switch. It never replaces an existing session or a draft already in place.
+
+A missing server outranks it: with no server configured the setup call to
+action is shown instead, because there is nothing to draft into.
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.
@@ -2108,7 +2347,7 @@ Switching project/directory context must complete from local scope snapshots whe
 
 ### Never cancel responses on session switch
 
-If the assistant is streaming a response and the user switches to a different session, the in-flight response must be preserved — not cancelled. The user can return to the original session and see the completed response.
+If the assistant is streaming a response and the user switches to a different session, cancelling the local message subscription does not abort the server-side `prompt_async` response. The in-flight response is preserved, and the user can return to the original session and see the completed response.
 
 ### Never collapse work groups during streaming
 

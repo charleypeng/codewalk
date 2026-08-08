@@ -2,6 +2,127 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.196.2 - 2026-08-05
+
+- fix(desktop): route integrated context usage popover
+
+## v1.196.1 - 2026-08-04
+
+- fix(desktop): restore integrated titlebar controls
+
+## v1.196.0 - 2026-08-04
+
+- fix(scope): smooth cached project transitions
+
+## v1.195.1 - 2026-08-03
+
+- fix(tabs): expire close snackbar
+
+## v1.195.0 - 2026-08-02
+
+- docs(tabs): describe refined tab behavior
+- fix(tabs): restore unloaded session tabs
+- fix(tabs): keep selected tab visible
+- feat(tabs): refine navigation and recovery
+
+## v1.194.0 - 2026-08-02
+
+- docs(tabs): document gesture controls
+- fix(tabs): preserve deferred and keyboard controls
+- fix(tabs): expose session actions to keyboard
+- feat(tabs): move session controls into tabs
+- fix(tabs): limit newly opened project sessions
+- fix(tabs): overlay session activity on project icons
+- fix(tabs): straighten tab sides
+
+## v1.193.0 - 2026-08-02
+
+- fix(chat): harden block mode transitions
+- fix(composer): harden external file attachments
+- fix(android): harden session attention overlay
+- fix(files): make autosave context-safe
+- fix(files): harden duplicate and cached reloads
+- fix(chat): harden subagent navigation and reconciliation
+- fix(tabs): enlarge touch close targets
+- fix(tabs): keep close actions accessible
+- fix(desktop): preserve integrated chrome across routes
+- docs(readme): add the capabilities shipped over the last two months
+- docs(readme): merge the two feature lists into one written for users
+- feat(chat): draft automatically when a project has no sessions
+
+## v1.192.0 - 2026-08-01
+
+- fix(chat): publish finished blocks while a Block-mode turn continues
+
+## v1.191.0 - 2026-08-01
+
+- feat(composer): attach images and PDFs by dragging or pasting
+- feat(composer): show a collapse arrow while the extras popover is open
+- chore(terminal): trace header control activations
+- feat(terminal): acknowledge opening and fit the extra keys on narrow phones
+- fix(files): honour dedicated clipboard keys in the file editor
+
+## v1.190.0 - 2026-08-01
+
+- fix(android): revive overlay taps, hide it in foreground, make it sizeable
+
+## v1.189.0 - 2026-08-01
+
+- feat(files): add undo, redo and autosave to the file editor
+- fix(files): offer cut and paste in the file editor selection menu
+- fix(files): give the file editor a selection toolbar
+
+## v1.188.0 - 2026-08-01
+
+- fix(files): revalidate file content when a tab is reopened
+- feat(files): highlight every language the package ships with
+- feat(files): duplicate a file from the micro file manager
+
+## v1.187.0 - 2026-08-01
+
+- fix(chat): stop stale payloads and subagent traffic from disturbing the timeline
+
+## v1.186.0 - 2026-08-01
+
+- fix(ui): refine tab silhouette, background and close affordance
+
+## v1.185.0 - 2026-08-01
+
+- fix(desktop): drop native registrations for the removed multi-window plugin
+
+## v1.184.0 - 2026-08-01
+
+- feat(desktop): remove the Bubble and Panel attention surfaces
+
+## v1.183.0 - 2026-08-01
+
+- feat(desktop): show the attention bubble without stealing focus
+- feat(ui): give session tabs a real browser silhouette
+- fix(desktop): keep window buttons flush against the trailing edge
+
+## v1.182.0 - 2026-07-31
+
+- fix(desktop): make the attention bubble frameless and stop focus theft
+
+## v1.181.0 - 2026-07-31
+
+- chore: ignore the local agent task checkpoint
+- feat(desktop): move session tabs into the window title bar
+- fix(ui): drop duplicated card wrappers from auxiliary sidebars
+
+## v1.180.0 - 2026-07-30
+
+- feat: add recent session tabs
+- plan: implement recent session tabs
+- delete roadmap done
+
+## v1.179.0 - 2026-07-28
+
+- chore(agent): [Step 3/3] Document mobile terminal extra keys
+- chore(agent): [Step 2/3] Integrate mobile terminal extra keys
+- chore(agent): [Step 1/3] Add mobile terminal input protocol
+- plan: add mobile terminal extra keys
+
 ## v1.178.0 - 2026-07-18
 
 - chore(agent): [Step 2/2] Document OpenCode compatibility

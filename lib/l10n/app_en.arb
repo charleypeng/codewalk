@@ -1447,6 +1447,10 @@
   "@chatSessionCreateConversationStart": {
     "description": "CodeWalk UI string — chatSessionCreateConversationStart"
   },
+  "chatSessionTabsToggle": "Session tabs",
+  "@chatSessionTabsToggle": {
+    "description": "CodeWalk UI string — chatSessionTabsToggle"
+  },
   "chatSessionsLength": "{length}",
   "@chatSessionsLength": {
     "description": "CodeWalk UI string — chatSessionsLength"
@@ -1845,6 +1849,14 @@
   "@composerDeleteAction": {
     "description": "CodeWalk UI string — composerDeleteAction"
   },
+  "composerDropHint": "Drop images or PDFs to attach",
+  "@composerDropHint": {
+    "description": "CodeWalk UI string — composerDropHint"
+  },
+  "composerPastedImageName": "Pasted image",
+  "@composerPastedImageName": {
+    "description": "CodeWalk UI string — composerPastedImageName"
+  },
   "composerEdit": "Edit",
   "@composerEdit": {
     "description": "CodeWalk UI string — composerEdit"
@@ -1852,6 +1864,10 @@
   "composerExtras": "Extras",
   "@composerExtras": {
     "description": "CodeWalk UI string — composerExtras"
+  },
+  "composerExtrasHide": "Hide extras",
+  "@composerExtrasHide": {
+    "description": "CodeWalk UI string — composerExtrasHide"
   },
   "composerNewQuickReply": "New quick reply",
   "@composerNewQuickReply": {
@@ -1872,6 +1888,22 @@
   "composerShellMode": "Shell mode",
   "@composerShellMode": {
     "description": "CodeWalk UI string — composerShellMode"
+  },
+  "desktopWindowClose": "Close",
+  "@desktopWindowClose": {
+    "description": "CodeWalk UI string — desktopWindowClose"
+  },
+  "desktopWindowMaximize": "Maximize",
+  "@desktopWindowMaximize": {
+    "description": "CodeWalk UI string — desktopWindowMaximize"
+  },
+  "desktopWindowMinimize": "Minimize",
+  "@desktopWindowMinimize": {
+    "description": "CodeWalk UI string — desktopWindowMinimize"
+  },
+  "desktopWindowRestore": "Restore",
+  "@desktopWindowRestore": {
+    "description": "CodeWalk UI string — desktopWindowRestore"
   },
   "dialogDownload": "Download",
   "@dialogDownload": {
@@ -2054,6 +2086,26 @@
   "@filesAddChat": {
     "description": "CodeWalk UI string — filesAddChat"
   },
+  "filesAutosave": "Autosave",
+  "@filesAutosave": {
+    "description": "CodeWalk UI string — filesAutosave"
+  },
+  "filesAutosaveOn": "Autosave on",
+  "@filesAutosaveOn": {
+    "description": "CodeWalk UI string — filesAutosaveOn"
+  },
+  "filesAutosaveOff": "Autosave off",
+  "@filesAutosaveOff": {
+    "description": "CodeWalk UI string — filesAutosaveOff"
+  },
+  "filesRedo": "Redo",
+  "@filesRedo": {
+    "description": "CodeWalk UI string — filesRedo"
+  },
+  "filesUndo": "Undo",
+  "@filesUndo": {
+    "description": "CodeWalk UI string — filesUndo"
+  },
   "filesBinaryFilePreview": "Binary file preview is not available.",
   "@filesBinaryFilePreview": {
     "description": "CodeWalk UI string — filesBinaryFilePreview"
@@ -2065,6 +2117,14 @@
   "filesContents": "Contents",
   "@filesContents": {
     "description": "CodeWalk UI string — filesContents"
+  },
+  "filesDuplicate": "Duplicate",
+  "@filesDuplicate": {
+    "description": "CodeWalk UI string — filesDuplicate"
+  },
+  "filesDuplicated": "File duplicated",
+  "@filesDuplicated": {
+    "description": "CodeWalk UI string — filesDuplicated"
   },
   "filesFileEmpty": "File is empty.",
   "@filesFileEmpty": {
@@ -4226,6 +4286,30 @@
   "@settingsAppearanceWallpaperPresetBlocked": {
     "description": "CodeWalk UI string — settingsAppearanceWallpaperPresetBlocked"
   },
+  "settingsAppearanceWindowChrome": "Window tabs",
+  "@settingsAppearanceWindowChrome": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChrome"
+  },
+  "settingsAppearanceWindowChromeDescription": "Choose how session tabs and the window title bar are combined on desktop.",
+  "@settingsAppearanceWindowChromeDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeDescription"
+  },
+  "settingsAppearanceWindowChromeIntegrated": "Integrated tabs",
+  "@settingsAppearanceWindowChromeIntegrated": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeIntegrated"
+  },
+  "settingsAppearanceWindowChromeIntegratedDescription": "Tabs sit at the top of the window and the system title bar is hidden.",
+  "@settingsAppearanceWindowChromeIntegratedDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeIntegratedDescription"
+  },
+  "settingsAppearanceWindowChromeSystem": "System decoration",
+  "@settingsAppearanceWindowChromeSystem": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeSystem"
+  },
+  "settingsAppearanceWindowChromeSystemDescription": "Keep the native title bar and show tabs below the app bar.",
+  "@settingsAppearanceWindowChromeSystemDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceWindowChromeSystemDescription"
+  },
   "settingsBack": "Back",
   "@settingsBack": {
     "description": "CodeWalk UI string — settingsBack"
@@ -4839,6 +4923,30 @@
   "settingsServersTitle": "Servers",
   "@settingsServersTitle": {
     "description": "CodeWalk UI string — settingsServersTitle"
+  },
+  "settingsSessionAttentionSize": "Bubble size",
+  "@settingsSessionAttentionSize": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSize"
+  },
+  "settingsSessionAttentionSizeExtraLarge": "Extra large",
+  "@settingsSessionAttentionSizeExtraLarge": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeExtraLarge"
+  },
+  "settingsSessionAttentionSizeExtraSmall": "Extra small",
+  "@settingsSessionAttentionSizeExtraSmall": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeExtraSmall"
+  },
+  "settingsSessionAttentionSizeLarge": "Large",
+  "@settingsSessionAttentionSizeLarge": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeLarge"
+  },
+  "settingsSessionAttentionSizeSmall": "Small",
+  "@settingsSessionAttentionSizeSmall": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeSmall"
+  },
+  "settingsSessionAttentionSizeStandard": "Standard",
+  "@settingsSessionAttentionSizeStandard": {
+    "description": "CodeWalk UI string — settingsSessionAttentionSizeStandard"
   },
   "settingsSetupWizard": "Setup Wizard",
   "@settingsSetupWizard": {
@@ -5518,6 +5626,42 @@
     "placeholders": {
       "serverName": { "type": "String" }
     }  },
+  "terminalExtraKeyAlt": "Alt key",
+  "@terminalExtraKeyAlt": {
+    "description": "CodeWalk UI string — terminalExtraKeyAlt"
+  },
+  "terminalExtraKeyArrowDown": "Down arrow",
+  "@terminalExtraKeyArrowDown": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowDown"
+  },
+  "terminalExtraKeyArrowLeft": "Left arrow",
+  "@terminalExtraKeyArrowLeft": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowLeft"
+  },
+  "terminalExtraKeyArrowRight": "Right arrow",
+  "@terminalExtraKeyArrowRight": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowRight"
+  },
+  "terminalExtraKeyArrowUp": "Up arrow",
+  "@terminalExtraKeyArrowUp": {
+    "description": "CodeWalk UI string — terminalExtraKeyArrowUp"
+  },
+  "terminalExtraKeyControl": "Control key",
+  "@terminalExtraKeyControl": {
+    "description": "CodeWalk UI string — terminalExtraKeyControl"
+  },
+  "terminalExtraKeyEscape": "Escape key",
+  "@terminalExtraKeyEscape": {
+    "description": "CodeWalk UI string — terminalExtraKeyEscape"
+  },
+  "terminalExtraKeyTab": "Tab key",
+  "@terminalExtraKeyTab": {
+    "description": "CodeWalk UI string — terminalExtraKeyTab"
+  },
+  "terminalExtraKeys": "Terminal extra keys",
+  "@terminalExtraKeys": {
+    "description": "CodeWalk UI string — terminalExtraKeys"
+  },
   "terminalHide": "Hide terminal",
   "@terminalHide": {
     "description": "CodeWalk UI string — terminalHide"
@@ -5853,5 +5997,21 @@
   "workspaceSuggestions": "Suggestions",
   "@workspaceSuggestions": {
     "description": "CodeWalk UI string — workspaceSuggestions"
-  }
+  },
+  "sessionTabsGestureHintTitle": "Session tabs have new controls",
+  "@sessionTabsGestureHintTitle": {"description": "Title for the session tab gesture onboarding dialog"},
+  "sessionTabsGestureHintBody": "Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.",
+  "@sessionTabsGestureHintBody": {"description": "Instructions for closing tabs, opening their menu, and disabling tabs"},
+  "sessionTabsGestureHintAcknowledge": "Got it",
+  "@sessionTabsGestureHintAcknowledge": {"description": "Acknowledgement button for the session tab gesture dialog"},
+  "sessionTabsGestureHintDisableTabs": "Disable tabs",
+  "@sessionTabsGestureHintDisableTabs": {"description": "Button that disables session tabs from the gesture dialog"},
+  "sessionTabRenameAction": "Rename session",
+  "@sessionTabRenameAction": {"description": "Rename action in the active session tab menu"},
+  "sessionTabClosedMessage": "Tab \"{title}\" closed",
+  "@sessionTabClosedMessage": {"description": "Snackbar shown after closing a session tab", "placeholders": {"title": {"type": "String"}}},
+  "sessionTabUndo": "Undo",
+  "@sessionTabUndo": {"description": "Snackbar action that restores a closed session tab"},
+  "sessionTabRestoreFailed": "Tab could not be restored.",
+  "@sessionTabRestoreFailed": {"description": "Snackbar shown when undo cannot restore a closed session tab"}
 }

@@ -1130,6 +1130,75 @@ void main() {
         },
       );
 
+      test(
+        'stale loadMessages keeps newer visible tail without incrementing',
+        () async {
+          final oldMessage = UserMessage(
+            id: 'msg_old_load',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[],
+          );
+          final recentMessage = UserMessage(
+            id: 'msg_recent_load',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(3000),
+            parts: const <MessagePart>[],
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            oldMessage,
+            recentMessage,
+          ];
+
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
+
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[oldMessage];
+          final versionBeforeRefresh = provider.messagesVersion;
+          await provider.loadMessages('ses_1', preserveVisibleState: true);
+
+          expect(provider.messages.map((message) => message.id), <String>[
+            'msg_old_load',
+            'msg_recent_load',
+          ]);
+          expect(provider.messagesVersion, versionBeforeRefresh);
+        },
+      );
+
+      test('active refresh cannot replace a newer visible tail', () async {
+        final oldMessage = UserMessage(
+          id: 'msg_old_active_refresh',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[],
+        );
+        final recentMessage = UserMessage(
+          id: 'msg_recent_active_refresh',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(3000),
+          parts: const <MessagePart>[],
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          oldMessage,
+          recentMessage,
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[oldMessage];
+        final versionBeforeRefresh = provider.messagesVersion;
+        await provider.refreshActiveSessionView(reason: 'test-stale-snapshot');
+
+        expect(provider.messages.map((message) => message.id), <String>[
+          'msg_old_active_refresh',
+          'msg_recent_active_refresh',
+        ]);
+        expect(provider.messagesVersion, versionBeforeRefresh);
+      });
+
       test('increments on sendMessage (local user message added)', () async {
         chatRepository.sendMessageHandler = (_, _, _, _) async* {
           // Never emit — we only care about the local user message bump.

@@ -30,6 +30,40 @@ enum DataSaverLevel { off, standard, aggressive }
 
 enum SessionAttentionPresentation { off, bubble, panel }
 
+/// Size of the Android attention Bubble. Panel keeps a fixed size.
+enum SessionAttentionBubbleSize {
+  extraSmall,
+  small,
+  standard,
+  large,
+  extraLarge,
+}
+
+/// Linear factor applied to the Bubble's base dimensions.
+///
+/// `standard` is 0.7, i.e. about 30% smaller than the original fixed size.
+double sessionAttentionBubbleScale(SessionAttentionBubbleSize size) {
+  return switch (size) {
+    SessionAttentionBubbleSize.extraSmall => 0.5,
+    SessionAttentionBubbleSize.small => 0.6,
+    SessionAttentionBubbleSize.standard => 0.7,
+    SessionAttentionBubbleSize.large => 0.85,
+    SessionAttentionBubbleSize.extraLarge => 1.0,
+  };
+}
+
+String sessionAttentionBubbleSizeKey(SessionAttentionBubbleSize size) =>
+    size.name;
+
+SessionAttentionBubbleSize sessionAttentionBubbleSizeFromKey(String value) {
+  for (final size in SessionAttentionBubbleSize.values) {
+    if (size.name.toLowerCase() == value.toLowerCase()) {
+      return size;
+    }
+  }
+  return SessionAttentionBubbleSize.standard;
+}
+
 enum ChatRenderMode { live, block }
 
 enum ThemeModeOption { system, light, dark }
@@ -81,6 +115,8 @@ enum SpeechToTextEngine { native, sherpa, moonshine, parakeet, sensevoice }
 enum ReadAloudProvider { native, edgeExperimental, openAiCompatible }
 
 enum DesktopCloseBehavior { tray, minimize, close }
+
+enum DesktopWindowChrome { integratedTabs, systemDecoration }
 
 const String kSherpaLanguageSystem = 'system';
 const String kMoonshineModelTiny = 'tiny';
@@ -489,6 +525,20 @@ DesktopCloseBehavior desktopCloseBehaviorFromKey(String value) {
   };
 }
 
+String desktopWindowChromeKey(DesktopWindowChrome chrome) {
+  return switch (chrome) {
+    DesktopWindowChrome.integratedTabs => 'integrated',
+    DesktopWindowChrome.systemDecoration => 'system',
+  };
+}
+
+DesktopWindowChrome desktopWindowChromeFromKey(String value) {
+  return switch (value) {
+    'system' => DesktopWindowChrome.systemDecoration,
+    _ => DesktopWindowChrome.integratedTabs,
+  };
+}
+
 DesktopPane? desktopPaneFromKey(String value) {
   return switch (value) {
     'conversations' => DesktopPane.conversations,
@@ -735,12 +785,17 @@ class ExperienceSettings {
       showTaskList: true,
       showReviewChanges: true,
       showRecentSessions: true,
+      showSessionTabsOverride: null,
+      sessionTabsGestureHintDismissed: false,
       taskListCollapsed: false,
       showComposerTips: true,
       showMathRendering: true,
       composerSpellCheckEnabled: true,
       composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
+      desktopWindowChrome: DesktopWindowChrome.integratedTabs,
+      editorAutosaveEnabled: false,
+      sessionAttentionBubbleSize: SessionAttentionBubbleSize.standard,
       dataSaverEnabled: true,
       dataSaverLevel: DataSaverLevel.standard,
       androidBackgroundAlertsEnabled: true,
@@ -803,12 +858,17 @@ class ExperienceSettings {
     required this.showTaskList,
     required this.showReviewChanges,
     required this.showRecentSessions,
+    this.showSessionTabsOverride,
+    this.sessionTabsGestureHintDismissed = false,
     required this.taskListCollapsed,
     required this.showComposerTips,
     required this.showMathRendering,
     this.composerSpellCheckEnabled = true,
     required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
+    this.desktopWindowChrome = DesktopWindowChrome.integratedTabs,
+    this.editorAutosaveEnabled = false,
+    this.sessionAttentionBubbleSize = SessionAttentionBubbleSize.standard,
     required this.dataSaverEnabled,
     required this.dataSaverLevel,
     required this.androidBackgroundAlertsEnabled,
@@ -871,12 +931,19 @@ class ExperienceSettings {
   final bool showTaskList;
   final bool showReviewChanges;
   final bool showRecentSessions;
+  final bool? showSessionTabsOverride;
+  final bool sessionTabsGestureHintDismissed;
   final bool taskListCollapsed;
   final bool showComposerTips;
   final bool showMathRendering;
   final bool composerSpellCheckEnabled;
   final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
+  final DesktopWindowChrome desktopWindowChrome;
+
+  /// Autosave in the file micro editor. Global: applies to every open tab.
+  final bool editorAutosaveEnabled;
+  final SessionAttentionBubbleSize sessionAttentionBubbleSize;
   final bool dataSaverEnabled;
   final DataSaverLevel dataSaverLevel;
   final bool androidBackgroundAlertsEnabled;
@@ -941,12 +1008,17 @@ class ExperienceSettings {
     bool? showTaskList,
     bool? showReviewChanges,
     bool? showRecentSessions,
+    bool? Function()? showSessionTabsOverride,
+    bool? sessionTabsGestureHintDismissed,
     bool? taskListCollapsed,
     bool? showComposerTips,
     bool? showMathRendering,
     bool? composerSpellCheckEnabled,
     bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
+    DesktopWindowChrome? desktopWindowChrome,
+    bool? editorAutosaveEnabled,
+    SessionAttentionBubbleSize? sessionAttentionBubbleSize,
     bool? dataSaverEnabled,
     DataSaverLevel? dataSaverLevel,
     bool? androidBackgroundAlertsEnabled,
@@ -1021,6 +1093,12 @@ class ExperienceSettings {
       showTaskList: showTaskList ?? this.showTaskList,
       showReviewChanges: showReviewChanges ?? this.showReviewChanges,
       showRecentSessions: showRecentSessions ?? this.showRecentSessions,
+      showSessionTabsOverride: showSessionTabsOverride != null
+          ? showSessionTabsOverride()
+          : this.showSessionTabsOverride,
+      sessionTabsGestureHintDismissed:
+          sessionTabsGestureHintDismissed ??
+          this.sessionTabsGestureHintDismissed,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
       showMathRendering: showMathRendering ?? this.showMathRendering,
@@ -1029,6 +1107,11 @@ class ExperienceSettings {
       composerAutoApprovePermissions:
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
+      desktopWindowChrome: desktopWindowChrome ?? this.desktopWindowChrome,
+      editorAutosaveEnabled:
+          editorAutosaveEnabled ?? this.editorAutosaveEnabled,
+      sessionAttentionBubbleSize:
+          sessionAttentionBubbleSize ?? this.sessionAttentionBubbleSize,
       dataSaverEnabled: nextDataSaverLevel != DataSaverLevel.off,
       dataSaverLevel: nextDataSaverLevel,
       androidBackgroundAlertsEnabled:
@@ -1148,12 +1231,20 @@ class ExperienceSettings {
       'showTaskList': showTaskList,
       'showReviewChanges': showReviewChanges,
       'showRecentSessions': showRecentSessions,
+      if (showSessionTabsOverride != null)
+        'showSessionTabsOverride': showSessionTabsOverride,
+      'sessionTabsGestureHintDismissed': sessionTabsGestureHintDismissed,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
       'showMathRendering': showMathRendering,
       'composerSpellCheckEnabled': composerSpellCheckEnabled,
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
+      'desktopWindowChrome': desktopWindowChromeKey(desktopWindowChrome),
+      'editorAutosaveEnabled': editorAutosaveEnabled,
+      'sessionAttentionBubbleSize': sessionAttentionBubbleSizeKey(
+        sessionAttentionBubbleSize,
+      ),
       'dataSaverEnabled': dataSaverEnabled,
       'dataSaverLevel': dataSaverLevelKey(dataSaverLevel),
       'keepDesktopRunningInTray':
@@ -1236,6 +1327,9 @@ class ExperienceSettings {
     var showTaskList = defaults.showTaskList;
     var showReviewChanges = defaults.showReviewChanges;
     var showRecentSessions = defaults.showRecentSessions;
+    var showSessionTabsOverride = defaults.showSessionTabsOverride;
+    var sessionTabsGestureHintDismissed =
+        defaults.sessionTabsGestureHintDismissed;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
     var showMathRendering = defaults.showMathRendering;
@@ -1243,6 +1337,9 @@ class ExperienceSettings {
     var composerAutoApprovePermissions =
         defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
+    var desktopWindowChrome = defaults.desktopWindowChrome;
+    var editorAutosaveEnabled = defaults.editorAutosaveEnabled;
+    var sessionAttentionBubbleSize = defaults.sessionAttentionBubbleSize;
     var dataSaverEnabled = defaults.dataSaverEnabled;
     var dataSaverLevel = defaults.dataSaverLevel;
     var androidBackgroundAlertsEnabled =
@@ -1438,6 +1535,17 @@ class ExperienceSettings {
       showRecentSessions = showRecentSessionsJson;
     }
 
+    final showSessionTabsOverrideJson = json['showSessionTabsOverride'];
+    if (showSessionTabsOverrideJson is bool) {
+      showSessionTabsOverride = showSessionTabsOverrideJson;
+    }
+
+    final sessionTabsGestureHintDismissedJson =
+        json['sessionTabsGestureHintDismissed'];
+    if (sessionTabsGestureHintDismissedJson is bool) {
+      sessionTabsGestureHintDismissed = sessionTabsGestureHintDismissedJson;
+    }
+
     final taskListCollapsedJson = json['taskListCollapsed'];
     if (taskListCollapsedJson is bool) {
       taskListCollapsed = taskListCollapsedJson;
@@ -1477,6 +1585,28 @@ class ExperienceSettings {
             ? DesktopCloseBehavior.tray
             : DesktopCloseBehavior.close;
       }
+    }
+
+    // Absent key keeps the default, so existing installs migrate to integrated
+    // tabs without an explicit opt-in, as required by the desktop chrome rollout.
+    final desktopWindowChromeJson = json['desktopWindowChrome'];
+    if (desktopWindowChromeJson is String &&
+        desktopWindowChromeJson.trim().isNotEmpty) {
+      desktopWindowChrome = desktopWindowChromeFromKey(
+        desktopWindowChromeJson.trim().toLowerCase(),
+      );
+    }
+
+    final editorAutosaveEnabledJson = json['editorAutosaveEnabled'];
+    if (editorAutosaveEnabledJson is bool) {
+      editorAutosaveEnabled = editorAutosaveEnabledJson;
+    }
+
+    final bubbleSizeJson = json['sessionAttentionBubbleSize'];
+    if (bubbleSizeJson is String && bubbleSizeJson.trim().isNotEmpty) {
+      sessionAttentionBubbleSize = sessionAttentionBubbleSizeFromKey(
+        bubbleSizeJson.trim(),
+      );
     }
 
     final dataSaverEnabledJson = json['dataSaverEnabled'];
@@ -1747,12 +1877,17 @@ class ExperienceSettings {
       showTaskList: showTaskList,
       showReviewChanges: showReviewChanges,
       showRecentSessions: showRecentSessions,
+      showSessionTabsOverride: showSessionTabsOverride,
+      sessionTabsGestureHintDismissed: sessionTabsGestureHintDismissed,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
       showMathRendering: showMathRendering,
       composerSpellCheckEnabled: composerSpellCheckEnabled,
       composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
+      desktopWindowChrome: desktopWindowChrome,
+      editorAutosaveEnabled: editorAutosaveEnabled,
+      sessionAttentionBubbleSize: sessionAttentionBubbleSize,
       dataSaverEnabled: dataSaverEnabled,
       dataSaverLevel: dataSaverLevel,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,

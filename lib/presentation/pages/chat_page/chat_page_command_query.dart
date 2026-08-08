@@ -115,7 +115,8 @@ extension _ChatPageCommandQuery on _ChatPageState {
         commands.add(
           ChatComposerSlashCommandSuggestion(
             name: name.trim(),
-            source: raw['source'] as String? ??
+            source:
+                raw['source'] as String? ??
                 context.l10n.chatCommandSourceGeneric,
             description: raw['description'] as String?,
           ),

@@ -186,6 +186,44 @@ void main() {
       skip: Platform.isWindows ? 'requires a POSIX shell' : false,
     );
 
+    test(
+      'duplicate command preserves binary bytes and refuses overwrite',
+      () async {
+        final root = Directory.systemTemp.createTempSync('codewalk-copy-op-');
+        addTearDown(() {
+          if (root.existsSync()) {
+            root.deleteSync(recursive: true);
+          }
+        });
+        final source = File('${root.path}/source.bin')
+          ..writeAsBytesSync(<int>[0, 1, 2, 127, 128, 255]);
+        final destination = File('${root.path}/source copy.bin');
+        final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
+        final command = service.buildDuplicateFileCommandForTest(
+          rootDirectory: root.path,
+          parentDirectory: root.path,
+          sourceName: 'source.bin',
+          destinationName: 'source copy.bin',
+        );
+
+        expect(command, isNot(contains('\n')));
+        final first = await Process.run('/bin/sh', <String>['-c', command]);
+        expect(first.exitCode, 0, reason: '${first.stderr}');
+        expect(_parsedShellStdout(first.stdout).ok, isTrue);
+        expect(destination.readAsBytesSync(), source.readAsBytesSync());
+
+        destination.writeAsBytesSync(<int>[9, 9, 9]);
+        final second = await Process.run('/bin/sh', <String>['-c', command]);
+        expect(second.exitCode, 0, reason: '${second.stderr}');
+        expect(
+          _parsedShellStdout(second.stdout).code,
+          WorkspaceFileOperationCode.alreadyExists,
+        );
+        expect(destination.readAsBytesSync(), <int>[9, 9, 9]);
+      },
+      skip: Platform.isWindows ? 'requires a POSIX shell' : false,
+    );
+
     test('chunks large editor content below environment entry limits', () {
       final service = WorkspaceFileOperationsServiceImpl(dio: Dio());
       final content = List<String>.filled(200 * 1024, 'x').join();
@@ -546,6 +584,45 @@ void main() {
       expect(capabilities.shellFileOpsSupported, isFalse);
       expect(fakeServer.shellCallCount, 4);
     });
+
+    test('aborts a complete mutation when its server changes', () async {
+      final fakeServer = _FakeShellServer(
+        shellPayloads: const <String?>[
+          '{"ok":true,"code":"ok"}',
+          '{"ok":true,"code":"ok"}',
+        ],
+        switchBaseUrlAfterSession: 'http://next-server',
+        replacementAuthorizationAfterSession: 'Basic server-b',
+      );
+      final service = WorkspaceFileOperationsServiceImpl(dio: fakeServer.dio);
+
+      final result = await service.writeFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        path: '/repo/a/file.txt',
+        content: 'content',
+      );
+
+      expect(result.code, WorkspaceFileOperationCode.unavailable);
+      expect(fakeServer.dio.options.baseUrl, 'http://next-server');
+      expect(fakeServer.requestOrigins, <String>['http://localhost']);
+      expect(fakeServer.requestAuthorizationHeaders, <String?>[null]);
+
+      fakeServer.dio.options
+        ..baseUrl = 'http://localhost'
+        ..headers.remove('Authorization');
+      final retry = await service.writeFile(
+        serverScopeKey: 'srv',
+        rootDirectory: '/repo/a',
+        path: '/repo/a/file.txt',
+        content: 'content',
+      );
+      expect(retry.ok, isTrue);
+      expect(
+        fakeServer.requestOrigins,
+        List<String>.filled(7, 'http://localhost'),
+      );
+    });
   });
 }
 
@@ -573,18 +650,35 @@ String _decodedMutationScript(String command) {
 }
 
 class _FakeShellServer {
-  _FakeShellServer({required List<String?> shellPayloads})
-    : _shellPayloads = List<String?>.from(shellPayloads) {
+  _FakeShellServer({
+    required List<String?> shellPayloads,
+    this.switchBaseUrlAfterSession,
+    this.replacementAuthorizationAfterSession,
+  }) : _shellPayloads = List<String?>.from(shellPayloads) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final path = options.path;
+          final path = options.uri.path;
+          requestOrigins.add(options.uri.origin);
+          requestAuthorizationHeaders.add(
+            options.headers['Authorization'] as String?,
+          );
           if (options.method == 'POST' && path == '/session') {
             final id = 'ses_${createdSessions.length + 1}';
             createdSessions.add(id);
             createdSessionDirectories.add(
               options.queryParameters['directory'] as String?,
             );
+            final nextBaseUrl = switchBaseUrlAfterSession;
+            if (nextBaseUrl != null && !_didSwitchBaseUrl) {
+              _didSwitchBaseUrl = true;
+              dio.options.baseUrl = nextBaseUrl;
+              final replacementAuthorization =
+                  replacementAuthorizationAfterSession;
+              if (replacementAuthorization != null) {
+                dio.options.headers['Authorization'] = replacementAuthorization;
+              }
+            }
             handler.resolve(
               Response<dynamic>(
                 requestOptions: options,
@@ -644,6 +738,11 @@ class _FakeShellServer {
 
   final Dio dio = Dio(BaseOptions(baseUrl: 'http://localhost'));
   final List<String?> _shellPayloads;
+  final String? switchBaseUrlAfterSession;
+  final String? replacementAuthorizationAfterSession;
+  final List<String> requestOrigins = <String>[];
+  final List<String?> requestAuthorizationHeaders = <String?>[];
+  bool _didSwitchBaseUrl = false;
   final List<String> createdSessions = <String>[];
   final List<String> deletedSessions = <String>[];
   final List<String?> createdSessionDirectories = <String?>[];

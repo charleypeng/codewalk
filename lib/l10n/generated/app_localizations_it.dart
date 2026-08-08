@@ -1193,6 +1193,9 @@ class AppLocalizationsIt extends AppLocalizations {
       'Crea una nuova conversazione per iniziare a chattare';
 
   @override
+  String get chatSessionTabsToggle => 'Schede delle sessioni';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
@@ -1520,10 +1523,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get composerDeleteAction => 'Elimina';
 
   @override
+  String get composerDropHint => 'Rilascia immagini o PDF da allegare';
+
+  @override
+  String get composerPastedImageName => 'Immagine incollata';
+
+  @override
   String get composerEdit => 'Modifica';
 
   @override
   String get composerExtras => 'Extra';
+
+  @override
+  String get composerExtrasHide => 'Nascondi extra';
 
   @override
   String get composerNewQuickReply => 'Nuova risposta rapida';
@@ -1539,6 +1551,18 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get composerShellMode => 'Modalità shell';
+
+  @override
+  String get desktopWindowClose => 'Chiudi';
+
+  @override
+  String get desktopWindowMaximize => 'Ingrandisci';
+
+  @override
+  String get desktopWindowMinimize => 'Riduci a icona';
+
+  @override
+  String get desktopWindowRestore => 'Ripristina';
 
   @override
   String get dialogDownload => 'Scarica';
@@ -1695,6 +1719,21 @@ class AppLocalizationsIt extends AppLocalizations {
   String get filesAddChat => 'Aggiungi alla chat';
 
   @override
+  String get filesAutosave => 'Salvataggio automatico';
+
+  @override
+  String get filesAutosaveOn => 'Salvataggio automatico attivo';
+
+  @override
+  String get filesAutosaveOff => 'Salvataggio automatico disattivato';
+
+  @override
+  String get filesRedo => 'Ripeti';
+
+  @override
+  String get filesUndo => 'Annulla';
+
+  @override
   String get filesBinaryFilePreview =>
       'L\'anteprima del file binario non è disponibile.';
 
@@ -1703,6 +1742,12 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get filesContents => 'Contenuti';
+
+  @override
+  String get filesDuplicate => 'Duplica';
+
+  @override
+  String get filesDuplicated => 'File duplicato';
 
   @override
   String get filesFileEmpty => 'Il file è vuoto.';
@@ -3463,6 +3508,27 @@ class AppLocalizationsIt extends AppLocalizations {
       'Passa a CodeWalk Classico per utilizzare i colori dello sfondo.';
 
   @override
+  String get settingsAppearanceWindowChrome => 'Schede della finestra';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Scegli come combinare le schede di sessione e la barra del titolo sul desktop.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Schede integrate';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Le schede stanno in cima alla finestra e la barra del titolo di sistema è nascosta.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Decorazione di sistema';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Mantiene la barra del titolo nativa e mostra le schede sotto la barra dell’app.';
+
+  @override
   String get settingsBack => 'Indietro';
 
   @override
@@ -4003,6 +4069,24 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settingsServersTitle => 'Server';
+
+  @override
+  String get settingsSessionAttentionSize => 'Dimensione della bolla';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'Molto grande';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'Molto piccolo';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'Grande';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'Piccolo';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'Standard';
 
   @override
   String get settingsSetupWizard => 'Configurazione guidata';
@@ -4556,6 +4640,33 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Tasto Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Freccia giù';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Freccia sinistra';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Freccia destra';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Freccia su';
+
+  @override
+  String get terminalExtraKeyControl => 'Tasto Ctrl';
+
+  @override
+  String get terminalExtraKeyEscape => 'Tasto Esc';
+
+  @override
+  String get terminalExtraKeyTab => 'Tasto Tab';
+
+  @override
+  String get terminalExtraKeys => 'Tasti aggiuntivi del terminale';
+
+  @override
   String get terminalHide => 'Nascondi terminale';
 
   @override
@@ -4835,4 +4946,31 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => 'Suggerimenti';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }

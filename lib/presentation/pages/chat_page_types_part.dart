@@ -579,6 +579,7 @@ enum _DisplayToggleAction {
   taskList,
   reviewChanges,
   recentSessions,
+  sessionTabs,
   composerTips,
   replayTour,
 }
@@ -595,6 +596,7 @@ enum _SessionHeaderMenuAction {
 enum _HistoryToolbarAction { undo, redo }
 
 enum _CurrentSessionAction {
+  rename,
   shareToggle,
   copyLink,
   exportMarkdown,

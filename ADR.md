@@ -53,6 +53,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-047: Experimental Direct Microsoft Edge/Bing Read Aloud TTS via Client WebSocket
 - ADR-048: Adaptive First-Run Read-Aloud TTS Defaults
 - ADR-049: Cross-Platform Attention Surfaces and Secure Background Continuity
+- ADR-052: Bounded Default-Off Autosave Addendum for the Focused File Editor
 
 ---
 
@@ -2444,7 +2445,9 @@ This ADR is fully compliant with ADR-023. It introduces no OpenCode server contr
 
 **Status**: Accepted
 
-**Related**: ADR-008 (Context-Scoped File Explorer and Viewer with Quick Open and Diff-Aware Refresh), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-027 (Server-Hosted PTY Terminal with Embedded Client Rendering), ADR-029 (Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity), ADR-002 (Context Isolation), ADR-040 (Client-Owned Per-Project Icon Discovery). Ref: issue #89, issue #90.
+**Related**: ADR-008 (Context-Scoped File Explorer and Viewer with Quick Open and Diff-Aware Refresh), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-027 (Server-Hosted PTY Terminal with Embedded Client Rendering), ADR-029 (Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity), ADR-002 (Context Isolation), ADR-040 (Client-Owned Per-Project Icon Discovery), ADR-052 (Bounded Default-Off Autosave Addendum for the Focused File Editor). Ref: issue #89, issue #90.
+
+**Scoped addendum**: ADR-052 supersedes only the explicit-save-only/autosave exclusion below. All other ADR-043 decisions, including the shell-backed mutation boundary and focused-editor save contract, remain accepted.
 
 ### Context
 
@@ -2550,7 +2553,7 @@ Issue #90 extends the same surface with a focused text/code editor and explicit 
 - ❌ Servers without ephemeral shell support cannot enable file mutations. This is the intentional safe fallback; no client-side bypass path is provided.
 - ❌ No move-across-directories, no permissions editor, no bulk operations, no multi-select, no undo. These are follow-ups behind a future ADR.
 - ❌ No local `dart:io` mutation path. The client never writes to the project filesystem directly — the host is always authoritative.
-- ❌ The editor is intentionally explicit-save only: no autosave, no debounced background flush, no client-side format-on-save, no diff/merge view. The `Save` action is the single contract; richer editor affordances (autosave, format, diff, multi-cursor persistence) are follow-ups behind a future ADR.
+- ⚠ The original explicit-save-only boundary is narrowed by ADR-052: manual `Save` remains available and authoritative, while bounded opt-in autosave is governed by that addendum. Client-side format-on-save, diff/merge view, and multi-cursor persistence remain follow-ups behind separate decisions.
 
 ### ADR-023 Exception Declaration
 
@@ -2565,7 +2568,7 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - The probe uses canonical `pwd -P` and the strict `case "$parent" in "$root"|"$root"/*) ;; *) cw_fail outsideRoot ;; esac` containment so the server-side script enforces the same project-root boundary the client checks. The script is auditable, single-purpose, and short.
 - The implementation never writes to the project filesystem on the client; the host is always authoritative.
 
-**Why this is not a free pass for additional divergences**: The exception is scoped to the four mutation operations, focused-editor `writeFile` save (issue #90), and capability/decoder probe. Save is in scope only as the same one-shot encoded static-program pipeline with `CW_FILE_OP_JSON:` and `shellFileOpsSupported`; it adds no endpoint, request schema, or event semantic. Any new mutation, cross-directory move, bulk operation, autosave/diff/format-on-save, or read-side change must be separately evaluated against ADR-023. Future shell growth must preserve the encoded static pipeline, containment, bounded parsing, and no-content logging.
+**Why this is not a free pass for additional divergences**: The exception is scoped to the four mutation operations, focused-editor `writeFile` save (issue #90), capability/decoder probe, and the bounded autosave scheduling policy in ADR-052. Save and autosave are in scope only as the same one-shot encoded static-program pipeline with `CW_FILE_OP_JSON:` and `shellFileOpsSupported`; neither adds an endpoint, request schema, or event semantic. Any new mutation, cross-directory move, bulk operation, format-on-save, diff/merge view, or read-side change must still be separately evaluated against ADR-023. Future shell growth must preserve the encoded static pipeline, containment, bounded parsing, and no-content logging.
 
 ### Risks
 
@@ -3105,3 +3108,188 @@ The bounded final root-session fetch is solely the explicit ADR-003 event-scope 
 - `lib/presentation/services/attention/desktop/` and `pubspec.yaml` — planned app-owned desktop window abstraction and `desktop_multi_window` 0.3.0 compatibility gate.
 - `ios/Runner/` and in-app presentation widgets — in-app-only iOS capability path.
 - `test/unit/`, `test/widget/`, and Android/desktop integration coverage — identity isolation, post-idle fetch bounds, encryption, pause observability, permission/policy gates, process-death fallback, and rollback-to-Off behavior.
+
+---
+
+## ADR-050: Fork of `desktop_multi_window` for Non-Activating Window Presentation (2026-08-01) ⚠️ SUPERSEDED by ADR-051
+
+**Status**: Superseded
+
+**Related**: GitHub issue #129; ADR-049 (cross-platform attention surfaces).
+
+### Context
+
+The desktop attention Bubble delivered by ADR-049 is a `desktop_multi_window` sub-window. Issue #129 requires that showing or refreshing it never move keyboard focus away from the application the user is working in.
+
+Two mitigations were possible without touching the plugin and both were applied first: the child engine now marks itself frameless and skip-taskbar before `runApp`, and the host service only calls show on the hidden→visible transition, so snapshot refreshes no longer touch window state. Neither addresses the first presentation, which still activates.
+
+There is no API for a non-activating show. `window_manager` 0.5.1 exposes `setAsFrameless`, `setAlwaysOnTop`, `setSkipTaskbar`, `isFocused` and `isVisible`, but no `setFocusable`. `desktop_multi_window` 0.3.0 exposes only `show`, `hide`, `invokeMethod` and `setWindowMethodHandler`, and its native `window_show` actively takes focus on all three platforms: `ShowWindow(hwnd_, SW_SHOW)` on Windows, `gtk_widget_show` on Linux, and `makeKeyAndOrderFront` plus `NSApp.activate(ignoringOtherApps: true)` on macOS. The only `NOACTIVATE` in the package is in the Windows resize path, not in presentation.
+
+### Decision
+
+Fork `MixinNetwork/flutter-plugins` and add `WindowController.showWithoutActivating()` to `desktop_multi_window`, consumed as a Git dependency pinned to a branch.
+
+Per platform the new method maps to the conventional no-activate presentation:
+
+- **Linux (GTK):** `gtk_window_set_accept_focus(FALSE)` before mapping the window; `show()` restores accept-focus so both entry points remain usable.
+- **Windows:** add `WS_EX_NOACTIVATE` to the extended style, then `ShowWindow(SW_SHOWNOACTIVATE)`.
+- **macOS:** `orderFrontRegardless()` without making the window key and without activating the application.
+
+Pointer input continues to work in all three cases, so the Bubble stays interactive when the user clicks it deliberately, satisfying the acceptance criterion that explicit interaction must keep working.
+
+Rejected alternative: replacing `desktop_multi_window` with app-owned windows in our own runners. The plugin carries roughly 3,900 lines of native code across 24 files, and most of that is secondary Flutter engine plumbing rather than window management. Owning it would concentrate maintenance in the two platforms this project cannot validate locally — macOS is absent from CI and Windows has a single job — for a gain limited to focus policy.
+
+### Consequences
+
+- The project no longer tracks published releases of `desktop_multi_window` automatically. This is a small change in practice: the dependency was already pinned to an exact version rather than a caret range, and the package has published only six versions in its lifetime, the latest being 0.3.0 on 2025-10-28.
+- The fork tracks upstream `main`, which is version 0.3.1, so the project also picks up unreleased upstream changes.
+- The patch is deliberately small and confined to the presentation entry points, so rebasing onto a future upstream release is cheap.
+- Wayland remains a documented limitation: focus policy belongs to the compositor and a non-activating show may not be honoured everywhere. This is a limitation, not a defect.
+
+### Exit Criteria
+
+Submit the change upstream as a pull request. If it is accepted and released, drop the fork and return to the published package. If it is rejected, keep the fork and rebase it on each upstream release that matters to the project.
+
+### Key Files
+
+- `pubspec.yaml` — Git dependency pointing at the fork branch, with the reason recorded inline.
+- `lib/presentation/services/session_attention/session_attention_host_service_io.dart` — `_showDesktopWindow` calls `showWithoutActivating` and skips redundant presentations.
+- `lib/presentation/services/session_attention/session_overlay_entrypoint.dart` — frameless and skip-taskbar applied before `runApp`.
+- Fork: `insign/flutter-plugins`, branch `feat/show-without-activating`.
+
+---
+
+## ADR-051: Removal of Desktop Attention Surfaces (2026-08-01)
+
+**Status**: Accepted
+
+**Related**: Supersedes ADR-050; narrows ADR-049; GitHub issues #98 and #129.
+
+### Context
+
+ADR-049 gave every platform an attention surface. On desktop that meant a `desktop_multi_window` child window rendering the Bubble or Panel. Making that window behave like an overlay rather than an ordinary window required, in sequence: hiding it from the taskbar, removing its frame, forcing always-on-top, suppressing redundant re-presentations, and finally forking the plugin (ADR-050) to add a non-activating show with native patches on Linux, Windows and macOS.
+
+That cost bought a surface that duplicates what desktop already provides. The project initialises native notifications for Linux, macOS and Windows in `notification_service.dart`, ships a tray icon with tooltip and context menu in `desktop_tray_service_io.dart`, and, since the session tab strip landed, shows per-session error, question, completion and activity indicators in the top band of the window.
+
+A self-drawn floating window is also a worse notification than the native one: it does not appear in the notification centre, does not respect Do Not Disturb or Focus modes, has no history, does not stack, and ignores the position the user configured at system level.
+
+The calculus differs on Android, where the overlay is the only way to draw over other applications and the pattern is familiar to users, and on iOS, where the surface is in-app only.
+
+### Decision
+
+Remove Bubble and Panel from desktop entirely. Desktop reports `SessionAttentionHostKind.unsupported`, the preference is not offered there, and no attention window is created. Attention on desktop is carried by native notifications, the tray, and the session tab indicators.
+
+Drop the `desktop_multi_window` dependency and delete the fork created in ADR-050. Android and iOS behaviour is unchanged.
+
+### Consequences
+
+- The project no longer depends on `desktop_multi_window`, and no longer maintains a fork with native code on three platforms. The native no-activate patches are discarded along with it.
+- Desktop users lose a persistent floating list of sessions needing attention. This is the accepted trade: the same information is available from notifications, the tray, and the tab indicators, all of which integrate with the operating system.
+- `SessionAttentionPresentation` remains in the settings model because Android and iOS still use it. Only the desktop producer and consumer are gone.
+- ADR-049 stays valid for Android and iOS; its desktop window lifecycle section no longer applies.
+
+### Key Files
+
+- `pubspec.yaml` — `desktop_multi_window` removed.
+- `lib/presentation/services/session_attention/session_attention_host_service_io.dart` — desktop capability, activation, snapshot and window helpers removed; desktop now falls through to unsupported.
+- `lib/presentation/services/session_attention/session_overlay_entrypoint.dart` — desktop child entry point, window channel and `WindowListener` removed; the host app is Android-only.
+- `lib/main.dart` — desktop child bootstrap removed.
+- `lib/presentation/pages/settings/sections/behavior_settings_section.dart` — the control is hidden where the capability is unsupported.
+
+---
+
+## ADR-052: Bounded Default-Off Autosave Addendum for the Focused File Editor (2026-08-02)
+
+**Status**: Accepted
+
+**Related**: ADR-043 (Files as a Shell-Gated Micro File Manager with Capability-Probed Mutations), ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-002 (Context Isolation), ADR-008 (Context-Scoped File Explorer and Viewer).
+
+**Scope**: This is a narrowly scoped addendum to ADR-043. It supersedes only the explicit-save-only/autosave exclusion; the existing mutation transport, containment, capability gate, editor size boundary, and manual-save contract remain accepted.
+
+### Context
+
+ADR-043 shipped a focused editor whose dirty drafts could be persisted only through an explicit `Save` action and deliberately deferred autosave for separate evaluation. Autosave is now shipped, but it must not become a second mutation architecture or allow a delayed write to cross a server, project context, root, or file path while the user navigates.
+
+The feature also spans debounce timers, context transitions, controlled lifecycle callbacks, tab close, authentication, and the existing multi-request ephemeral shell operation. These boundaries must remain conservative: an autosave may reduce friction, but it cannot promise durability across an operating-system hard kill, invent OpenCode behavior, or silently write a draft into a new context.
+
+### Decision
+
+1. **Autosave is opt-in and bounded.** The autosave preference defaults to off. When enabled, a dirty draft schedules one autosave after **30 seconds of inactivity**; edits during the window reset the timer. Autosave is not a bulk queue, a continuous stream, or a format-on-save feature.
+
+2. **Manual save remains available.** The focused editor's explicit `Save` action and `Ctrl+S` / `Cmd+S` shortcut remain available regardless of the autosave preference. Manual save and autosave use the same draft state, dirty marker, size limit, error handling, and host-authoritative completion rules.
+
+3. **Reuse the same shell-gated one-shot write pipeline.** An autosave calls `WorkspaceFileOperationsService.writeFile` through ADR-043's capability gate and encoded static POSIX program. It uses the existing official `POST /session`, `POST /session/:id/shell`, and `DELETE /session/:id` lifecycle, `CW_FILE_OP_JSON:` sentinel, negotiated decoder, containment checks, ordered content chunks, and atomic sibling-temp write. Autosave adds no custom OpenCode endpoint, request/response schema, or event semantic.
+
+4. **Every write carries exact ownership.** The autosave ownership tuple is the exact `(serverId, context/directory, rootDirectory, path)` captured by the draft. A delayed callback must match all four values before dispatching or applying a result; a server/profile label, display project name, current active root, or descendant session is not a substitute. A successful result clears only the matching draft, and a failed or stale result cannot clear another context's dirty state.
+
+5. **Flush only within the same server and only when enabled.** Leaving a context on the same server and controlled lifecycle callbacks may request a **best-effort** flush of enabled, dirty drafts owned by that same server/context. No cross-server flush is attempted. A disabled preference suppresses both the debounce and lifecycle flush; autosave never turns an unrelated server switch into a write opportunity.
+
+6. **Coordinate close and in-flight work.** Tab close, root/context disposal, reload, rename, and delete coordinate with an in-flight save instead of disposing or retargeting its draft. The existing dirty/saving guards remain effective; a close is deferred or refused until the matching write resolves, and a failure retains the dirty draft. No fire-and-forget completion may mark a replacement tab clean.
+
+7. **Cancellation and rearming are generation-scoped.** Disabling autosave cancels pending debounce and lifecycle work and invalidates its callbacks. Cancellation of a request already accepted by the host is best-effort and cannot undo a host write, but its stale completion cannot rearm or clear a disabled/replaced draft. Re-enabling creates a new generation and rearms a fresh 30-second debounce from the current dirty draft; it does not reuse a stale timer or silently flush a different context.
+
+8. **A server switch aborts the multi-request mutation.** Switching servers invalidates the autosave generation and aborts the in-flight client orchestration of the ephemeral-session create/shell/cleanup mutation. Once the active profile/base changes, remaining old-origin shell and `DELETE` requests are aborted or skipped to avoid cross-profile auth/transport; they are never rerouted to the new server, and stale results are ignored. An already-created old ephemeral session may remain and be cleaned server-side later; the client does not send cleanup to the captured old server after the switch.
+
+9. **Basic auth is exact-origin only.** A lifecycle or autosave request using Basic auth must use the captured profile's exact origin (scheme, host, and effective port) and the matching configured server identity. Redirects, origin changes, host-only matches, or reuse of credentials against another origin fail closed; a server ID alone does not authorize the request.
+
+10. **Do not reset dirty root ownership eagerly.** If a dirty or saving draft survives a root/context transition, its original `rootDirectory` and path ownership remain attached until the matching write resolves, is aborted, or the draft is explicitly discarded. Resetting dirty-root metadata is deferred so a delayed save cannot resolve its path against the newly selected root; a new root receives a separate draft identity.
+
+11. **Durability remains explicitly bounded.** The 30-second debounce and lifecycle flush are best-effort. A crash, process termination, OS hard kill, power loss, or lifecycle callback that never runs may lose changes that were not explicitly saved or completed by the host. Autosave is not advertised as a durability guarantee.
+
+### Rationale
+
+- Reusing ADR-043's one-shot shell pipeline preserves server authority and ADR-023 alignment without creating a custom OpenCode contract.
+- A default-off 30-second debounce coalesces active typing while bounding shell-session creation, network traffic, and host writes.
+- Exact server/context/root/path ownership plus generation checks prevent delayed callbacks from leaking drafts across profiles or saving into a newly selected root.
+- Same-server lifecycle flushing captures common navigation and controlled shutdown paths without pretending that an app can observe every process death.
+- Keeping manual `Save` independent preserves an immediate user-controlled durability path and a clear recovery action after an autosave failure.
+- Disable cancellation and enable rearm make preference changes deterministic: old work cannot revive after disable, and enabling starts from current state rather than stale timer state.
+- Exact-origin Basic-auth validation prevents a convenience lifecycle path from becoming a credential-forwarding path.
+
+### Consequences
+
+- ✅ Typing-heavy editor use can persist dirty drafts without abandoning the explicit manual-save path.
+- ✅ Autosave remains default-off, capability-gated, host-authoritative, and bounded to the existing ADR-043 transport and 64 KiB editor/save boundary.
+- ✅ Exact ownership, same-server filtering, generation invalidation, and deferred root reset protect multi-server and project-context isolation.
+- ✅ Close, path mutation, disable, re-enable, and server-switch races have explicit coordination rules rather than relying on timer timing.
+- ⚠ Every autosave is still a full ephemeral-session round trip and may take longer than the 30-second quiet period; the UI must keep the draft dirty until the matching host result.
+- ⚠ Controlled lifecycle flushes are best-effort and may be skipped when authentication, origin, capability, connectivity, or process lifecycle conditions are not safe.
+- ⚠ A host-side change made after the editor read is not automatically merged; autosave retains the existing write semantics and does not add conflict resolution.
+- ❌ There is no cross-server flush, bulk/multi-file autosave, format-on-save, diff/merge workflow, or guarantee against hard-kill data loss.
+
+### ADR-023 Compatibility
+
+This addendum does not create or broaden an OpenCode contract exception. Autosave is a client-side scheduling and lifecycle policy over ADR-043's already scoped shell-backed `writeFile` exception. It uses the same official session and shell endpoints, the same request/response envelopes and `CW_FILE_OP_JSON:` sentinel, and the same server event semantics; no custom endpoint, schema, event, or server-side autosave behavior is introduced. Any future bulk mutation, conflict/merge protocol, or new server behavior requires a separate ADR-023 evaluation.
+
+### Risks
+
+- **Medium lifecycle/durability risk.** A hard kill or crash before the debounce or controlled lifecycle callback completes can lose a draft; explicit `Save` remains the recovery and durability path.
+- **Medium isolation risk.** A missing ownership or generation check could write to the wrong root or clear a replacement draft; every dispatch and completion must validate the exact tuple.
+- **Medium transport risk.** The existing multi-request shell pipeline can fail or be interrupted between legs; server switches must abort it rather than reroute it.
+- **Low authentication risk.** Exact-origin Basic-auth checks reduce availability when a profile origin changes, but fail-closed behavior is preferred to credential reuse across origins.
+- **Low conflict risk.** Autosave can persist a draft over an external host change because ADR-043 has no merge protocol; the feature deliberately does not invent one.
+
+### Rollback / Fallback Plan
+
+- **User rollback:** turn autosave off. Pending debounce and lifecycle work are cancelled/invalidated; manual `Save` remains unchanged.
+- **Feature rollback:** remove the autosave scheduler and lifecycle coordinator only. ADR-043's explicit editor save, capability probe, read-only fallback, containment, and write pipeline remain in place.
+- **Transport fallback:** `unavailable`, malformed response, decoder failure, origin mismatch, or unsafe ownership fails closed; no client-side or cross-server write path is attempted.
+- **In-flight fallback:** disabling or switching servers invalidates callbacks and aborts remaining client orchestration. A host write that already completed is not rolled back by the client.
+- **Durability fallback:** there is no persisted autosave queue to replay after restart; users retain the explicit `Save` action for changes that must survive process termination.
+
+### Regression Tests
+
+The addendum retains the existing named regression anchors from ADR-043 and applies autosave assertions at the same service/widget seams:
+
+- **Service anchors** in `test/unit/presentation/workspace_file_operations_service_test.dart`: one encoded-static-script pipeline with no semicolon-split execution path; decoder negotiation/caching per server+directory with capability invalidation; ordered 48 KiB environment chunk streaming and last-valid-sentinel extraction; the 64 KiB UTF-8 editor/save boundary; and containment, atomic sibling-temp write, mode preservation, pending-delete locks, and delete alias reconciliation.
+- **Widget anchors** in `test/widget/chat_page_test.dart`: `file editor saves dirty content from open files dialog`; `file editor keeps dirty state when save fails`; `file editor opens empty text files as editable drafts`; `file editor preserves CRLF line endings when saving`; `file editor gutter selection adds current draft to chat context`; `file editor blocks closing dirty tabs`; and `file tree rename blocks dirty relative editor drafts`.
+- **Named seams to preserve:** `FakeWorkspaceFileOperationsService`, `writeFileCallCount`, `lastContent`, `file_viewer_tab_dirty_<path>`, `file_editor_save_error_<path>`, and `_blockPathMutationForActiveEditorDrafts`.
+- **Autosave policy assertions:** default-off produces no write; the 30-second debounce coalesces edits; same-server leaving-context and controlled lifecycle flush only run when enabled; disable cancels and invalidates callbacks and enable rearms; exact server/context/root/path ownership prevents cross-server flush; server switching aborts multi-request mutation; Basic auth rejects non-exact origins; dirty root reset is deferred; and no completion clears a replacement draft after close or hard lifecycle interruption.
+
+### Key Files
+
+- `lib/presentation/services/workspace_file_operations_service.dart` — existing capability-gated one-shot write transport and ownership inputs.
+- `lib/presentation/pages/chat_page/chat_page_file_runtime.dart` — draft lifecycle, autosave scheduling, context/root transitions, close coordination, and mutation guards.
+- `lib/presentation/pages/chat_page/chat_page_file_viewer.dart` — editor dirty state, manual `Save`, debounce ownership, and save error presentation.
+- `test/unit/presentation/workspace_file_operations_service_test.dart` — transport, containment, decoder, sentinel, and write regression anchors.
+- `test/widget/chat_page_test.dart` — focused-editor, dirty-tab, path-mutation, and fake-service regression anchors.

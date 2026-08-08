@@ -91,8 +91,8 @@ class SessionAttentionOverlay extends StatelessWidget {
               children: <Widget>[
                 Center(child: Icon(_iconFor(primary.kind), color: colors.$2)),
                 PositionedDirectional(
-                  top: -4,
-                  end: -4,
+                  top: 0,
+                  end: 0,
                   child: Badge(label: Text('$count')),
                 ),
                 PositionedDirectional(

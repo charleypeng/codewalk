@@ -13,36 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:re_editor/re_editor.dart';
-import 'package:re_highlight/languages/bash.dart' as re_bash;
-import 'package:re_highlight/languages/c.dart' as re_c;
-import 'package:re_highlight/languages/cpp.dart' as re_cpp;
-import 'package:re_highlight/languages/csharp.dart' as re_csharp;
-import 'package:re_highlight/languages/css.dart' as re_css;
-import 'package:re_highlight/languages/dart.dart' as re_dart;
-import 'package:re_highlight/languages/dockerfile.dart' as re_dockerfile;
-import 'package:re_highlight/languages/go.dart' as re_go;
-import 'package:re_highlight/languages/ini.dart' as re_ini;
-import 'package:re_highlight/languages/java.dart' as re_java;
-import 'package:re_highlight/languages/javascript.dart' as re_javascript;
-import 'package:re_highlight/languages/json.dart' as re_json;
-import 'package:re_highlight/languages/kotlin.dart' as re_kotlin;
-import 'package:re_highlight/languages/less.dart' as re_less;
-import 'package:re_highlight/languages/makefile.dart' as re_makefile;
-import 'package:re_highlight/languages/markdown.dart' as re_markdown;
-import 'package:re_highlight/languages/php.dart' as re_php;
-import 'package:re_highlight/languages/plaintext.dart' as re_plaintext;
-import 'package:re_highlight/languages/powershell.dart' as re_powershell;
-import 'package:re_highlight/languages/python.dart' as re_python;
-import 'package:re_highlight/languages/ruby.dart' as re_ruby;
-import 'package:re_highlight/languages/rust.dart' as re_rust;
-import 'package:re_highlight/languages/scss.dart' as re_scss;
-import 'package:re_highlight/languages/shell.dart' as re_shell;
-import 'package:re_highlight/languages/sql.dart' as re_sql;
-import 'package:re_highlight/languages/swift.dart' as re_swift;
-import 'package:re_highlight/languages/typescript.dart' as re_typescript;
-import 'package:re_highlight/languages/vue.dart' as re_vue;
-import 'package:re_highlight/languages/xml.dart' as re_xml;
-import 'package:re_highlight/languages/yaml.dart' as re_yaml;
+import 'package:re_highlight/languages/all.dart';
 import 'package:re_highlight/re_highlight.dart' show Mode;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
@@ -85,8 +56,8 @@ import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
 import '../services/read_aloud_service.dart';
 import '../services/session_attention/session_attention_completion_resolver.dart';
-import '../services/tts/tts_executor.dart';
 import '../services/session_export_service.dart';
+import '../services/tts/tts_executor.dart';
 import '../services/workspace_file_operations_service.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_shapes.dart';
@@ -94,11 +65,11 @@ import '../theme/app_theme.dart';
 import '../theme/app_visual_style_tokens.dart';
 import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
-import '../widgets/session_attention_overlay/session_attention_overlay.dart';
-import '../widgets/session_attention_overlay/session_attention_overlay_controller.dart';
 import '../utils/app_page_route.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_server_error_formatter.dart';
+import '../utils/duplicate_file_name.dart';
+import '../utils/file_highlight_language.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/session_title_formatter.dart';
@@ -111,6 +82,7 @@ import '../widgets/chat_session_list.dart';
 import '../widgets/chat_skeleton_shimmer.dart';
 import '../widgets/chat_tour_showcase.dart';
 import '../widgets/codewalk_terminal_panel.dart';
+import '../widgets/desktop_window_title_bar.dart';
 import '../widgets/file_tree_context_menu.dart';
 import '../widgets/forward_message_dialog.dart';
 import '../widgets/message_entrance_animation.dart';
@@ -119,8 +91,11 @@ import '../widgets/permission_request_card.dart';
 import '../widgets/project_icon.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/quota/quota_popup_section.dart';
+import '../widgets/session_attention_overlay/session_attention_overlay.dart';
+import '../widgets/session_attention_overlay/session_attention_overlay_controller.dart';
 import '../widgets/session_context_menu.dart';
 import '../widgets/session_diff_viewer.dart';
+import '../widgets/session_tab_strip.dart';
 import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import '../widgets/sidebar_selection_indicator.dart';
@@ -132,6 +107,7 @@ part 'chat_page_local_models_part.dart';
 part 'chat_page/chat_page_lifecycle.dart';
 part 'chat_page/chat_page_scroll_coordinator.dart';
 part 'chat_page/chat_page_workspace_controller.dart';
+part 'chat_page/chat_page_session_tabs.dart';
 part 'chat_page/chat_page_shortcuts.dart';
 part 'chat_page/chat_page_status_presenter.dart';
 part 'chat_page/chat_page_selector_flow.dart';
@@ -252,6 +228,9 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _userScrollIntentHoldDuration = Duration(
     milliseconds: 900,
   );
+  static const Duration _projectScopeLoadingOverlayDelay = Duration(
+    milliseconds: 150,
+  );
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   List<String> get _receivingTips => buildComposerReceivingTips(context.l10n);
@@ -330,6 +309,7 @@ class _ChatPageState extends State<ChatPage>
   AppProvider? _appProvider;
   ProjectProvider? _projectProvider;
   SettingsProvider? _settingsProvider;
+  DesktopWindowChromeController? _desktopWindowChromeController;
   bool _autoApprovePermissionDrainScheduled = false;
   bool _autoApprovePermissionDrainRunning = false;
   bool _autoApprovePermissionDrainQueued = false;
@@ -350,7 +330,26 @@ class _ChatPageState extends State<ChatPage>
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
+  bool _showProjectScopeLoadingOverlay = false;
+  int _projectScopeTransitionGeneration = 0;
+  Timer? _projectScopeLoadingOverlayTimer;
+
+  /// True while the terminal is being opened.
+  ///
+  /// Opening persists a setting and then starts a shell, so it is not
+  /// instantaneous. Without this the button gave no sign it had been pressed
+  /// and repeated taps could start more than one shell (#125).
+  bool _isOpeningTerminal = false;
   Future<void>? _projectScopeTransitionTask;
+  SessionTabIdentity? _activatingSessionTabIdentity;
+  Future<bool>? _sessionTabActivationTask;
+  Set<SessionTabIdentity> _knownSessionTabIdentities = <SessionTabIdentity>{};
+  final Set<SessionTabIdentity> _pendingSessionTabHintIdentities =
+      <SessionTabIdentity>{};
+  bool _sessionTabHintScheduled = false;
+  bool _sessionTabHintShowing = false;
+  int _sessionTabHintGeneration = 0;
+  Timer? _sessionTabSnackBarExpirationTimer;
   bool _isProjectSelectorActionInFlight = false;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
   // Stores the last expanded history group ID for each session ID.
@@ -566,6 +565,8 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, GlobalKey> _messageRevealMeasurementKeysByMessageId =
       <String, GlobalKey>{};
   String? _lastForegroundPolicySettingsSignature;
+  bool? _lastEditorAutosaveEnabled;
+  String? _lastFileEditorAutosaveContextKey;
   String? _terminalSessionSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
@@ -729,6 +730,7 @@ class _ChatPageState extends State<ChatPage>
       _projectProvider?.removeListener(_handleProjectProviderChange);
       _projectProvider = nextProjectProvider;
       _projectProvider?.addListener(_handleProjectProviderChange);
+      _lastFileEditorAutosaveContextKey = nextProjectProvider.contextKey;
     }
     if (di.sl.isRegistered<NotificationService>()) {
       final nextNotificationService = di.sl<NotificationService>();
@@ -757,12 +759,35 @@ class _ChatPageState extends State<ChatPage>
       _applyForegroundPolicy(reason: 'settings-provider-attached');
       _lastForegroundPolicySettingsSignature =
           _foregroundPolicySettingsSignature(nextSettingsProvider.settings);
+      _lastEditorAutosaveEnabled = nextSettingsProvider.editorAutosaveEnabled;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
         }
+        final chatProvider = _chatProvider;
+        if (chatProvider != null) {
+          _syncSessionTabsGestureHint(chatProvider);
+        }
         _flushPendingPostOnboardingTourAutoStart();
       });
+    }
+    final nextDesktopWindowChromeController = context
+        .read<DesktopWindowChromeController?>();
+    if (!identical(
+      _desktopWindowChromeController,
+      nextDesktopWindowChromeController,
+    )) {
+      _desktopWindowChromeController?.detach(this);
+      _desktopWindowChromeController = nextDesktopWindowChromeController;
+      final controller = nextDesktopWindowChromeController;
+      if (_isDesktopRuntime && controller != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted &&
+              identical(_desktopWindowChromeController, controller)) {
+            controller.attach(this, _buildIntegratedWindowTitleBar);
+          }
+        });
+      }
     }
     _ensureSessionAttentionOverlayController();
   }
@@ -796,6 +821,7 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void dispose() {
+    _flushActiveFileEditorDrafts();
     // Clean up scroll callback using saved reference
     _chatProvider?.setScrollToBottomCallback(null);
     _chatProvider?.setChatRouteActive(false);
@@ -806,6 +832,11 @@ class _ChatPageState extends State<ChatPage>
     _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
+    _projectScopeTransitionGeneration += 1;
+    _projectScopeLoadingOverlayTimer?.cancel();
+    _sessionTabHintGeneration += 1;
+    _sessionTabSnackBarExpirationTimer?.cancel();
+    _desktopWindowChromeController?.detach(this);
     _sessionAttentionOverlayController
       ?..removeListener(_handleSessionAttentionOverlayChanged)
       ..dispose();
@@ -849,9 +880,17 @@ class _ChatPageState extends State<ChatPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _isAppInForeground = state == AppLifecycleState.resumed;
+    if (!_isAppInForeground) {
+      _flushActiveFileEditorDrafts();
+    }
     final provider = _chatProvider;
     if (provider != null) {
-      provider.setAppInForeground(_isAppInForeground);
+      provider.setAppInForeground(
+        _isAppInForeground,
+        isVisibleForSessionAttention:
+            state == AppLifecycleState.resumed ||
+            state == AppLifecycleState.inactive,
+      );
       _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
         _startForegroundWarningGrace();
@@ -896,6 +935,7 @@ class _ChatPageState extends State<ChatPage>
   @override
   void onWindowMinimize() {
     _isAppInForeground = false;
+    _flushActiveFileEditorDrafts();
     _chatProvider?.setAppInForeground(false);
     _applyForegroundPolicy(reason: 'window-minimize');
   }
@@ -1028,6 +1068,7 @@ class _ChatPageState extends State<ChatPage>
     final serverChanged = currentServerId != _lastServerId;
 
     if (serverChanged) {
+      _syncEditorAutosaveForActiveContext(enabled: false);
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
       _lastActiveServerHealthStatus = currentHealth;
@@ -1086,6 +1127,21 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _handleProjectProviderChange() {
+    final contextKey = _projectProvider?.contextKey;
+    if (contextKey != null && contextKey != _lastFileEditorAutosaveContextKey) {
+      final previousContextKey = _lastFileEditorAutosaveContextKey;
+      if (previousContextKey != null &&
+          _settingsProvider?.editorAutosaveEnabled == true) {
+        _flushFileEditorContext(
+          contextKey: previousContextKey,
+          allowInactiveContext: true,
+        );
+      }
+      _lastFileEditorAutosaveContextKey = contextKey;
+      _syncEditorAutosaveForActiveContext(
+        enabled: _settingsProvider?.editorAutosaveEnabled == true,
+      );
+    }
     if (_settingsProvider?.terminalPanelVisible != true) {
       return;
     }
@@ -1245,6 +1301,7 @@ class _ChatPageState extends State<ChatPage>
     Duration duration = const Duration(seconds: 4),
     SnackBarBehavior behavior = SnackBarBehavior.floating,
     bool? showCloseIcon,
+    bool? persist,
   }) {
     final dismissOnTap = action == null;
     return SnackBar(
@@ -1252,6 +1309,7 @@ class _ChatPageState extends State<ChatPage>
       duration: duration,
       action: action,
       showCloseIcon: showCloseIcon,
+      persist: persist,
       padding: dismissOnTap ? EdgeInsets.zero : null,
       content: dismissOnTap
           ? GestureDetector(
@@ -1270,31 +1328,34 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  void _showChatPageSnackBar({
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+  _showChatPageSnackBar({
     required Widget content,
     SnackBarAction? action,
     Duration duration = const Duration(seconds: 4),
     bool hideCurrent = true,
     SnackBarBehavior behavior = SnackBarBehavior.floating,
     bool? showCloseIcon,
+    bool? persist,
   }) {
     if (!mounted) {
-      return;
+      return null;
     }
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
-      return;
+      return null;
     }
     if (hideCurrent) {
       messenger.hideCurrentSnackBar();
     }
-    messenger.showSnackBar(
+    return messenger.showSnackBar(
       _buildChatPageSnackBar(
         content: content,
         action: action,
         duration: duration,
         behavior: behavior,
         showCloseIcon: showCloseIcon,
+        persist: persist,
       ),
     );
   }
@@ -1306,6 +1367,7 @@ class _ChatPageState extends State<ChatPage>
     bool hideCurrent = true,
     SnackBarBehavior behavior = SnackBarBehavior.floating,
     bool? showCloseIcon,
+    bool? persist,
   }) {
     _showChatPageSnackBar(
       content: Text(message),
@@ -1314,6 +1376,7 @@ class _ChatPageState extends State<ChatPage>
       hideCurrent: hideCurrent,
       behavior: behavior,
       showCloseIcon: showCloseIcon,
+      persist: persist,
     );
   }
 
@@ -2400,16 +2463,35 @@ class _ChatPageState extends State<ChatPage>
                                 );
                               }
 
-                              if (!_isProjectScopeTransitioning) {
-                                return content;
-                              }
+                              final bodyContent = Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // In the integrated chrome the strip is drawn
+                                  // in the window title bar instead.
+                                  if (!_usesIntegratedWindowChrome(
+                                    settingsProvider,
+                                  ))
+                                    _buildSessionTabStrip(
+                                      isCompact: isMobile,
+                                      settingsProvider: settingsProvider,
+                                    ),
+                                  Expanded(child: content),
+                                ],
+                              );
 
                               return Stack(
+                                fit: StackFit.expand,
                                 children: [
-                                  Positioned.fill(child: content),
-                                  Positioned.fill(
-                                    child: _buildProjectScopeLoadingOverlay(),
-                                  ),
+                                  bodyContent,
+                                  if (_isProjectScopeTransitioning)
+                                    const AbsorbPointer(
+                                      key: ValueKey<String>(
+                                        'project_scope_transition_blocker',
+                                      ),
+                                      child: SizedBox.expand(),
+                                    ),
+                                  if (_showProjectScopeLoadingOverlay)
+                                    _buildProjectScopeLoadingOverlay(),
                                 ],
                               );
                             },

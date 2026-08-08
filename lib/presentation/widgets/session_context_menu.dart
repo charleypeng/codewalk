@@ -272,7 +272,7 @@ Future<void> handleSessionContextMenuSelection(
 }) async {
   switch (value) {
     case sessionMenuRename:
-      _showRenameDialog(context, session, actions);
+      showSessionRenameDialog(context, session, actions);
       return;
     case sessionMenuShare:
       await _toggleShare(context, session, actions);
@@ -302,7 +302,7 @@ void logSessionContextMenuOpen({
   AppLogger.debug('session_context_menu_open surface=$surface id=$sessionId');
 }
 
-void _showRenameDialog(
+void showSessionRenameDialog(
   BuildContext context,
   ChatSession session,
   SessionContextMenuActions actions,

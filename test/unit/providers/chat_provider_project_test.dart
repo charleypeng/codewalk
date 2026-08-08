@@ -724,7 +724,7 @@ void main() {
     );
 
     test(
-      'project scope round-trip does not cancel in-flight stream from previous context',
+      'project fast-path bounds in-flight stream cancellation across round-trip',
       () async {
         final scopedRepository = FakeChatRepository(
           sessions: <ChatSession>[
@@ -739,13 +739,22 @@ void main() {
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
         var streamCancelled = false;
+        final cancelStarted = Completer<void>();
+        final cancelGate = Completer<void>();
         streamController.onCancel = () {
           streamCancelled = true;
+          if (!cancelStarted.isCompleted) {
+            cancelStarted.complete();
+          }
+          return cancelGate.future;
         };
         scopedRepository.sendMessageHandler = (_, _, _, _) {
           return streamController.stream;
         };
         addTearDown(() async {
+          if (!cancelGate.isCompleted) {
+            cancelGate.complete();
+          }
           await streamController.close();
         });
 
@@ -811,14 +820,20 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         await scopedProvider.projectProvider.switchProject('proj_b');
-        await scopedProvider.onProjectScopeChanged();
+        final switchToProjectB = scopedProvider.onProjectScopeChanged(
+          waitForRevalidation: false,
+        );
+        await cancelStarted.future.timeout(const Duration(milliseconds: 100));
+        await switchToProjectB.timeout(const Duration(seconds: 1));
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         await scopedProvider.projectProvider.switchProject('proj_a');
-        await scopedProvider.onProjectScopeChanged();
+        await scopedProvider.onProjectScopeChanged(waitForRevalidation: false);
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         expect(streamCancelled, isTrue);
+        expect(scopedProvider.currentSession?.id, 'ses_a');
+        cancelGate.complete();
       },
     );
 

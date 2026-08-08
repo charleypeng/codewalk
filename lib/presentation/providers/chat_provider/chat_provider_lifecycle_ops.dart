@@ -5,6 +5,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
+    if (isActive && !wasActive) {
+      _markCurrentSessionTabViewed();
+    }
     if (!isActive) {
       _cancelResumeGrace(reason: 'background');
       _stopForegroundResumeSyncIndicator(reason: 'background');
@@ -63,9 +66,35 @@ extension ChatProviderLifecycleOps on ChatProvider {
   }
 
   // Foreground state setter.
-  void setAppInForeground(bool isForeground) {
+  void setAppInForeground(
+    bool isForeground, {
+    bool? isVisibleForSessionAttention,
+  }) {
     _isAppInForeground = isForeground;
     _cellularDataSaverService.setAppForeground(isForeground);
+    final attentionForeground = isVisibleForSessionAttention;
+    if (attentionForeground == null) {
+      return;
+    }
+    if (_isSessionAttentionAppInForeground == attentionForeground) {
+      return;
+    }
+    _isSessionAttentionAppInForeground = attentionForeground;
+    final publisher = _sessionAttentionAppForegroundPublisher;
+    if (publisher != null) {
+      unawaited(
+        publisher(attentionForeground).catchError((
+          Object error,
+          StackTrace stackTrace,
+        ) {
+          AppLogger.warn(
+            'Failed to publish app foreground state for session attention',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }),
+      );
+    }
   }
 
   // Chat route state setter.
@@ -74,6 +103,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
       return;
     }
     _isChatRouteActive = isActive;
+    if (isActive) {
+      _markCurrentSessionTabViewed();
+    }
     if (!_cellularDataSaverService.isAggressiveDataSaverActive) {
       return;
     }
@@ -288,14 +320,22 @@ extension ChatProviderLifecycleOps on ChatProvider {
             return;
           }
 
-          _messages = List<ChatMessage>.from(mergedMessages);
+          final messagesApplied = _applyMessages(
+            mergedMessages,
+            origin: MessageUpdateOrigin.sessionRefresh,
+            kind: MessageUpdateKind.fullSnapshot,
+            sessionId: session.id,
+            reason: 'active-session-refresh',
+          );
           _cacheSessionMessages(session.id, _messages);
-          if (messagesChanged) {
+          if (messagesApplied) {
             _messagesVersion++;
           }
           _hasMoreOldMessages = nextHasMoreOldMessages;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
-          notifyListeners();
+          if (messagesApplied || hasMoreOldMessagesChanged) {
+            _notifyListeners();
+          }
           _traceFinal(
             'refresh-active-merged',
             sessionId: session.id,
@@ -357,6 +397,15 @@ extension ChatProviderLifecycleOps on ChatProvider {
     final previousCurrent = _currentSession;
     final previousMessages = List<ChatMessage>.from(_messages);
     final wasCurrent = previousCurrent?.id == sessionId;
+    final deletedSession = previousSessions
+        .where((session) => session.id == sessionId)
+        .firstOrNull;
+    final tabIdentity = deletedSession == null
+        ? null
+        : _sessionTabIdentityForSession(
+            deletedSession,
+            contextKey: _activeContextKey,
+          );
     final attentionIdentity = _sessionAttentionIdentityFor(
       contextKey: _activeContextKey,
       sessionId: sessionId,
@@ -409,6 +458,9 @@ extension ChatProviderLifecycleOps on ChatProvider {
         _handleFailure(failure);
       },
       (_) async {
+        if (tabIdentity != null) {
+          _removeSessionTabAuthoritatively(tabIdentity);
+        }
         if (attentionIdentity != null) {
           _deleteSessionAttentionSnapshotIdentity(attentionIdentity);
         }

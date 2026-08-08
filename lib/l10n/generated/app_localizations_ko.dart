@@ -1115,6 +1115,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatSessionCreateConversationStart => '대화를 시작하려면 새 대화를 만드세요';
 
   @override
+  String get chatSessionTabsToggle => '세션 탭';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
@@ -1415,10 +1418,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get composerDeleteAction => '삭제';
 
   @override
+  String get composerDropHint => '이미지나 PDF를 놓아 첨부';
+
+  @override
+  String get composerPastedImageName => '붙여넣은 이미지';
+
+  @override
   String get composerEdit => '편집';
 
   @override
   String get composerExtras => '추가 기능';
+
+  @override
+  String get composerExtrasHide => '추가 기능 숨기기';
 
   @override
   String get composerNewQuickReply => '새 빠른 답장';
@@ -1434,6 +1446,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get composerShellMode => '셸 모드';
+
+  @override
+  String get desktopWindowClose => '닫기';
+
+  @override
+  String get desktopWindowMaximize => '최대화';
+
+  @override
+  String get desktopWindowMinimize => '최소화';
+
+  @override
+  String get desktopWindowRestore => '복원';
 
   @override
   String get dialogDownload => '다운로드';
@@ -1581,6 +1605,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get filesAddChat => '채팅에 추가';
 
   @override
+  String get filesAutosave => '자동 저장';
+
+  @override
+  String get filesAutosaveOn => '자동 저장 켜짐';
+
+  @override
+  String get filesAutosaveOff => '자동 저장 꺼짐';
+
+  @override
+  String get filesRedo => '다시 실행';
+
+  @override
+  String get filesUndo => '실행 취소';
+
+  @override
   String get filesBinaryFilePreview => '바이너리 파일 미리보기는 지원되지 않습니다.';
 
   @override
@@ -1588,6 +1627,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get filesContents => '콘텐츠';
+
+  @override
+  String get filesDuplicate => '복제';
+
+  @override
+  String get filesDuplicated => '파일이 복제되었습니다';
 
   @override
   String get filesFileEmpty => '파일이 비어 있습니다.';
@@ -3284,6 +3329,27 @@ class AppLocalizationsKo extends AppLocalizations {
       '배경화면 색상을 사용하려면 CodeWalk 클래식으로 전환하세요.';
 
   @override
+  String get settingsAppearanceWindowChrome => '창 탭';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      '데스크톱에서 세션 탭과 제목 표시줄을 결합하는 방식을 선택합니다.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => '통합 탭';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      '탭이 창 상단에 위치하고 시스템 제목 표시줄이 숨겨집니다.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => '시스템 장식';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      '네이티브 제목 표시줄을 유지하고 탭을 앱 바 아래에 표시합니다.';
+
+  @override
   String get settingsBack => '뒤로';
 
   @override
@@ -3785,6 +3851,24 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsServersTitle => '서버';
+
+  @override
+  String get settingsSessionAttentionSize => '버블 크기';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => '아주 크게';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => '아주 작게';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => '크게';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => '작게';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => '표준';
 
   @override
   String get settingsSetupWizard => '설정 마법사';
@@ -4319,6 +4403,33 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt 키';
+
+  @override
+  String get terminalExtraKeyArrowDown => '아래쪽 화살표';
+
+  @override
+  String get terminalExtraKeyArrowLeft => '왼쪽 화살표';
+
+  @override
+  String get terminalExtraKeyArrowRight => '오른쪽 화살표';
+
+  @override
+  String get terminalExtraKeyArrowUp => '위쪽 화살표';
+
+  @override
+  String get terminalExtraKeyControl => 'Control 키';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape 키';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab 키';
+
+  @override
+  String get terminalExtraKeys => '터미널 추가 키';
+
+  @override
   String get terminalHide => '터미널 숨기기';
 
   @override
@@ -4590,4 +4701,31 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => '추천 프로젝트';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }

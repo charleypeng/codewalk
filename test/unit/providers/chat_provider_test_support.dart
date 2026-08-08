@@ -211,11 +211,14 @@ ChatProvider buildChatProvider({
   Duration syncHealthCheckInterval = const Duration(seconds: 5),
   Duration abortSuppressionWindow = const Duration(milliseconds: 30),
   Duration shortcutCycleWindow = const Duration(seconds: 3),
+  DateTime Function()? sessionTabsNow,
   SettingsProvider? settingsProvider,
   CellularDataSaverService? cellularDataSaverService,
   EventFeedbackDispatcher? eventFeedbackDispatcher,
   Future<void> Function(SessionAttentionAggregate aggregate)?
   sessionAttentionAggregatePublisher,
+  Future<void> Function(bool isForeground)?
+  sessionAttentionAppForegroundPublisher,
 }) {
   return ChatProvider(
     sendChatMessage: SendChatMessage(chatRepository),
@@ -254,10 +257,13 @@ ChatProvider buildChatProvider({
     cellularDataSaverService: cellularDataSaverService,
     eventFeedbackDispatcher: eventFeedbackDispatcher,
     sessionAttentionAggregatePublisher: sessionAttentionAggregatePublisher,
+    sessionAttentionAppForegroundPublisher:
+        sessionAttentionAppForegroundPublisher,
     syncSignalStaleThreshold: syncSignalStaleThreshold,
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,
     shortcutCycleWindow: shortcutCycleWindow,
+    sessionTabsNow: sessionTabsNow,
   );
 }
 

@@ -153,6 +153,7 @@ extension _ChatPageFileViewer on _ChatPageState {
                                       _closeFileTab(
                                         fileState: fileState,
                                         path: path,
+                                        projectProvider: projectProvider,
                                         onUpdated: onStateChanged,
                                       );
                                     },
@@ -443,18 +444,230 @@ extension _ChatPageFileViewer on _ChatPageState {
           draft: draft,
         );
     final isSaving = draft?.isSaving == true;
+    final autosaveEnabled = context
+        .watch<SettingsProvider>()
+        .editorAutosaveEnabled;
+    final controller = draft?.controller;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (controller != null) ...[
+          IconButton(
+            key: const ValueKey<String>('file_viewer_undo_button'),
+            tooltip: context.l10n.filesUndo,
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: controller.canUndo ? controller.undo : null,
+            icon: const Icon(Symbols.undo),
+          ),
+          IconButton(
+            key: const ValueKey<String>('file_viewer_redo_button'),
+            tooltip: context.l10n.filesRedo,
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: controller.canRedo ? controller.redo : null,
+            icon: const Icon(Symbols.redo),
+          ),
+        ],
+        // Autosave is global: flipping it here applies to every open tab and
+        // is persisted with the rest of the experience settings.
+        IconButton(
+          key: const ValueKey<String>('file_viewer_autosave_toggle'),
+          tooltip: autosaveEnabled
+              ? context.l10n.filesAutosaveOn
+              : context.l10n.filesAutosaveOff,
+          iconSize: 18,
+          visualDensity: VisualDensity.compact,
+          isSelected: autosaveEnabled,
+          onPressed: () => unawaited(
+            context.read<SettingsProvider>().setEditorAutosaveEnabled(
+              !autosaveEnabled,
+            ),
+          ),
+          icon: const Icon(Symbols.autorenew),
+          selectedIcon: const Icon(Symbols.autorenew, fill: 1),
+        ),
+        _buildFileViewerSaveButton(
+          canSave: canSave,
+          isSaving: isSaving,
+          onSave: () => unawaited(
+            _saveFileEditorDraft(
+              fileState: fileState,
+              projectProvider: projectProvider,
+              path: normalizedPath,
+              onUpdated: onStateChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Debounce before an idle autosave fires.
+  ///
+  /// Deliberately long: autosave here exists to avoid losing work, not to
+  /// mirror every keystroke to disk, so it waits for a real pause.
+  static const Duration _autosaveIdleDelay = Duration(seconds: 30);
+
+  /// Restarts the idle autosave countdown after an edit.
+  void _scheduleEditorAutosave({
+    required _FileEditorDraftState draft,
+    required VoidCallback onSave,
+  }) {
+    draft.cancelAutosave();
+    if (!context.read<SettingsProvider>().editorAutosaveEnabled) {
+      return;
+    }
+    draft.autosaveTimer = Timer(_autosaveIdleDelay, () {
+      draft.autosaveTimer = null;
+      if (mounted &&
+          context.read<SettingsProvider>().editorAutosaveEnabled &&
+          draft.isDirty &&
+          draft.activeSave == null) {
+        onSave();
+      }
+    });
+  }
+
+  void _syncEditorAutosaveForActiveContext({required bool enabled}) {
+    for (final fileState in _fileContextStates.values) {
+      for (final draft in fileState.editorDraftsByPath.values) {
+        draft.cancelAutosave();
+        if (!enabled) {
+          draft.pendingLifecycleFlushContent = null;
+          draft.pendingLifecycleFlushAllowsInactiveContext = false;
+        }
+      }
+    }
+    if (!enabled) {
+      return;
+    }
+    final projectProvider = _projectProvider;
+    if (projectProvider == null) {
+      return;
+    }
+    final fileState = _fileContextStates[projectProvider.contextKey];
+    if (fileState == null) {
+      return;
+    }
+    for (final entry in fileState.editorDraftsByPath.entries) {
+      final draft = entry.value;
+      if (!draft.isDirty || draft.activeSave != null) {
+        continue;
+      }
+      _scheduleEditorAutosave(
+        draft: draft,
+        onSave: () => unawaited(
+          _saveFileEditorDraft(
+            fileState: fileState,
+            projectProvider: projectProvider,
+            path: entry.key,
+            onUpdated: () {
+              if (mounted) {
+                _setState(() {});
+              }
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _flushActiveFileEditorDrafts() {
+    if (_settingsProvider?.editorAutosaveEnabled != true) {
+      return;
+    }
+    final projectProvider = _projectProvider;
+    final activeServerId = _appProvider?.activeServerId;
+    if (projectProvider == null || activeServerId == null) {
+      return;
+    }
+    for (final fileState in _fileContextStates.values) {
+      if (fileState.serverId != activeServerId) {
+        continue;
+      }
+      _flushFileEditorContextState(
+        fileState: fileState,
+        projectProvider: projectProvider,
+        allowInactiveContext: true,
+      );
+    }
+  }
+
+  void _flushFileEditorContext({
+    required String contextKey,
+    required bool allowInactiveContext,
+  }) {
+    final projectProvider = _projectProvider;
+    final activeServerId = _appProvider?.activeServerId;
+    final fileState = _fileContextStates[contextKey];
+    if (projectProvider == null ||
+        activeServerId == null ||
+        fileState == null ||
+        fileState.serverId != activeServerId) {
+      return;
+    }
+    _flushFileEditorContextState(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      allowInactiveContext: allowInactiveContext,
+    );
+  }
+
+  void _flushFileEditorContextState({
+    required _FileExplorerContextState fileState,
+    required ProjectProvider projectProvider,
+    required bool allowInactiveContext,
+  }) {
+    for (final entry in fileState.editorDraftsByPath.entries) {
+      final draft = entry.value;
+      draft.cancelAutosave();
+      if (!draft.isDirty) {
+        continue;
+      }
+      if (draft.activeSave != null) {
+        draft.pendingLifecycleFlushContent = draft.controller.text;
+        draft.pendingLifecycleFlushAllowsInactiveContext = allowInactiveContext;
+        continue;
+      }
+      unawaited(
+        _saveFileEditorDraft(
+          fileState: fileState,
+          projectProvider: projectProvider,
+          path: entry.key,
+          allowInactiveContext: allowInactiveContext,
+          silent: true,
+        ),
+      );
+    }
+  }
+
+  /// Saves immediately instead of waiting for the countdown.
+  ///
+  /// Used when the editor loses focus and when a tab is closed, so pending
+  /// work is never discarded with a timer still pending.
+  void _flushEditorAutosave({
+    required _FileEditorDraftState draft,
+    required VoidCallback onSave,
+  }) {
+    draft.cancelAutosave();
+    if (!mounted || !draft.isDirty || draft.activeSave != null) {
+      return;
+    }
+    if (!context.read<SettingsProvider>().editorAutosaveEnabled) {
+      return;
+    }
+    onSave();
+  }
+
+  Widget _buildFileViewerSaveButton({
+    required bool canSave,
+    required bool isSaving,
+    required VoidCallback onSave,
+  }) {
     return TextButton.icon(
       key: const ValueKey<String>('file_viewer_save_button'),
-      onPressed: canSave
-          ? () => unawaited(
-              _saveFileEditorDraft(
-                fileState: fileState,
-                projectProvider: projectProvider,
-                path: normalizedPath,
-                onUpdated: onStateChanged,
-              ),
-            )
-          : null,
+      onPressed: canSave ? onSave : null,
       icon: isSaving
           ? const SizedBox(
               width: 16,
@@ -552,6 +765,9 @@ extension _ChatPageFileViewer on _ChatPageState {
       scrollController: draft.scrollController,
       readOnly: readOnly,
       showCursorWhenReadOnly: false,
+      toolbarController: fileEditorSelectionToolbarController(
+        readOnly: readOnly,
+      ),
       wordWrap: false,
       chunkAnalyzer: const NonCodeChunkAnalyzer(),
       onChanged: (_) {
@@ -560,6 +776,7 @@ extension _ChatPageFileViewer on _ChatPageState {
         } else if (draft.saveErrorMessage != null) {
           draft.saveErrorMessage = null;
         }
+        _scheduleEditorAutosave(draft: draft, onSave: onSave);
         onChanged?.call();
       },
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
@@ -712,86 +929,55 @@ extension _ChatPageFileViewer on _ChatPageState {
           ),
       ],
     );
-    return CallbackShortcuts(
-      bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
-          if (canSave) {
-            onSave();
-          }
-        },
-        const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () {
-          if (canSave) {
-            onSave();
-          }
-        },
+    return Focus(
+      key: ValueKey<String>('file_editor_focus_$normalizedPath'),
+      onFocusChange: (hasFocus) {
+        // Leaving the editor is an explicit pause, so any pending autosave is
+        // written now instead of waiting out the countdown.
+        if (!hasFocus) {
+          _flushEditorAutosave(draft: draft, onSave: onSave);
+        }
       },
-      child: stack,
+      child: CallbackShortcuts(
+        bindings: <ShortcutActivator, VoidCallback>{
+          const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+            if (canSave) {
+              onSave();
+            }
+          },
+          const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () {
+            if (canSave) {
+              onSave();
+            }
+          },
+          // Keyboards with dedicated clipboard keys emit these instead of
+          // Ctrl+V and friends, and re_editor only binds the Ctrl/Cmd
+          // combinations, so the keyboard's own paste button did nothing
+          // inside the editor while working everywhere else (#121).
+          const SingleActivator(LogicalKeyboardKey.copy): () {
+            unawaited(draft.controller.copy());
+          },
+          if (!readOnly) ...<ShortcutActivator, VoidCallback>{
+            const SingleActivator(LogicalKeyboardKey.paste): () {
+              draft.controller.paste();
+            },
+            const SingleActivator(LogicalKeyboardKey.cut): () {
+              draft.controller.cut();
+            },
+          },
+        },
+        child: stack,
+      ),
     );
   }
 
+  /// Resolves the highlight mode for [language].
+  ///
+  /// Backed by the package's full language map rather than a hand-curated
+  /// switch, so every language it ships with is available (#107). Unknown
+  /// names fall back to plaintext, which stays readable instead of erroring.
   Mode _resolveEditorLanguageMode(String language) {
-    switch (language) {
-      case 'bash':
-        return re_bash.langBash;
-      case 'c':
-        return re_c.langC;
-      case 'cpp':
-        return re_cpp.langCpp;
-      case 'csharp':
-        return re_csharp.langCsharp;
-      case 'css':
-        return re_css.langCss;
-      case 'dart':
-        return re_dart.langDart;
-      case 'dockerfile':
-        return re_dockerfile.langDockerfile;
-      case 'go':
-        return re_go.langGo;
-      case 'ini':
-        return re_ini.langIni;
-      case 'java':
-        return re_java.langJava;
-      case 'javascript':
-        return re_javascript.langJavascript;
-      case 'json':
-        return re_json.langJson;
-      case 'kotlin':
-        return re_kotlin.langKotlin;
-      case 'less':
-        return re_less.langLess;
-      case 'makefile':
-        return re_makefile.langMakefile;
-      case 'markdown':
-        return re_markdown.langMarkdown;
-      case 'php':
-        return re_php.langPhp;
-      case 'powershell':
-        return re_powershell.langPowershell;
-      case 'python':
-        return re_python.langPython;
-      case 'ruby':
-        return re_ruby.langRuby;
-      case 'rust':
-        return re_rust.langRust;
-      case 'scss':
-        return re_scss.langScss;
-      case 'shell':
-        return re_shell.langShell;
-      case 'sql':
-        return re_sql.langSql;
-      case 'swift':
-        return re_swift.langSwift;
-      case 'typescript':
-        return re_typescript.langTypescript;
-      case 'vue':
-        return re_vue.langVue;
-      case 'xml':
-        return re_xml.langXml;
-      case 'yaml':
-        return re_yaml.langYaml;
-      default:
-        return re_plaintext.langPlaintext;
-    }
+    return builtinAllLanguages[language] ?? builtinAllLanguages['plaintext']!;
   }
 
   int? _lineNumberForEditorGutterTap({
@@ -1052,10 +1238,80 @@ extension _ChatPageFileViewer on _ChatPageState {
         return 'ini';
       case 'vue':
         return 'vue';
-      default:
-        return 'plaintext';
     }
+
+    // Canonical names and package-declared aliases stay available without a
+    // hand-maintained case for every shipped language.
+    return resolveBuiltinFileHighlightLanguage(extension) ?? 'plaintext';
   }
+}
+
+/// Selection toolbars for the file editor, one per edit mode.
+///
+/// `CodeEditor` only shows a selection menu when a toolbar controller is
+/// supplied; without one it calls `toolbarController?.show(...)` and nothing
+/// happens, which is why copying and pasting were unavailable on Android
+/// (#121). Button labels come from `ContextMenuButtonType`, so Flutter
+/// localises them and no new strings are needed.
+final Map<bool, SelectionToolbarController> _fileEditorToolbarControllers =
+    <bool, SelectionToolbarController>{};
+
+SelectionToolbarController fileEditorSelectionToolbarController({
+  required bool readOnly,
+}) {
+  return _fileEditorToolbarControllers.putIfAbsent(
+    readOnly,
+    () => MobileSelectionToolbarController(
+      builder:
+          ({
+            required BuildContext context,
+            required TextSelectionToolbarAnchors anchors,
+            required CodeLineEditingController controller,
+            required VoidCallback onDismiss,
+            required VoidCallback onRefresh,
+          }) {
+            final hasSelection = controller.selectedText.isNotEmpty;
+            return AdaptiveTextSelectionToolbar.buttonItems(
+              anchors: anchors,
+              buttonItems: <ContextMenuButtonItem>[
+                if (hasSelection)
+                  ContextMenuButtonItem(
+                    type: ContextMenuButtonType.copy,
+                    onPressed: () {
+                      unawaited(controller.copy());
+                      onDismiss();
+                    },
+                  ),
+                if (hasSelection && !readOnly)
+                  ContextMenuButtonItem(
+                    type: ContextMenuButtonType.cut,
+                    onPressed: () {
+                      controller.cut();
+                      onDismiss();
+                    },
+                  ),
+                // Pasting needs a writable buffer, so it is offered only when
+                // the file is actually editable.
+                if (!readOnly)
+                  ContextMenuButtonItem(
+                    type: ContextMenuButtonType.paste,
+                    onPressed: () {
+                      controller.paste();
+                      onDismiss();
+                    },
+                  ),
+                ContextMenuButtonItem(
+                  type: ContextMenuButtonType.selectAll,
+                  onPressed: () {
+                    controller.selectAll();
+                    onRefresh();
+                  },
+                ),
+              ],
+            );
+          },
+    ),
+  );
 }
 
 class _EditorLineSelectionPainter extends CustomPainter {

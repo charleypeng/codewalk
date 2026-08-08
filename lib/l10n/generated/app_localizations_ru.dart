@@ -1186,6 +1186,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'Создайте новую беседу, чтобы начать общение';
 
   @override
+  String get chatSessionTabsToggle => 'Вкладки сессий';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
@@ -1512,10 +1515,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get composerDeleteAction => 'Удалить';
 
   @override
+  String get composerDropHint => 'Перетащите изображения или PDF';
+
+  @override
+  String get composerPastedImageName => 'Вставленное изображение';
+
+  @override
   String get composerEdit => 'Редактировать';
 
   @override
   String get composerExtras => 'Дополнительно';
+
+  @override
+  String get composerExtrasHide => 'Скрыть дополнительно';
 
   @override
   String get composerNewQuickReply => 'Новый быстрый ответ';
@@ -1531,6 +1543,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get composerShellMode => 'Режим терминала';
+
+  @override
+  String get desktopWindowClose => 'Закрыть';
+
+  @override
+  String get desktopWindowMaximize => 'Развернуть';
+
+  @override
+  String get desktopWindowMinimize => 'Свернуть';
+
+  @override
+  String get desktopWindowRestore => 'Восстановить';
 
   @override
   String get dialogDownload => 'Скачать';
@@ -1688,6 +1712,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filesAddChat => 'Добавить в чат';
 
   @override
+  String get filesAutosave => 'Автосохранение';
+
+  @override
+  String get filesAutosaveOn => 'Автосохранение включено';
+
+  @override
+  String get filesAutosaveOff => 'Автосохранение выключено';
+
+  @override
+  String get filesRedo => 'Повторить';
+
+  @override
+  String get filesUndo => 'Отменить';
+
+  @override
   String get filesBinaryFilePreview =>
       'Предпросмотр бинарного файла недоступен.';
 
@@ -1696,6 +1735,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get filesContents => 'Содержимое';
+
+  @override
+  String get filesDuplicate => 'Дублировать';
+
+  @override
+  String get filesDuplicated => 'Файл продублирован';
 
   @override
   String get filesFileEmpty => 'Файл пуст.';
@@ -3448,6 +3493,27 @@ class AppLocalizationsRu extends AppLocalizations {
       'Переключитесь на CodeWalk Classic, чтобы использовать цвета обоев.';
 
   @override
+  String get settingsAppearanceWindowChrome => 'Вкладки окна';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'Выберите, как вкладки сессий сочетаются с заголовком окна на десктопе.';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => 'Встроенные вкладки';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'Вкладки расположены вверху окна, системный заголовок скрыт.';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'Системное оформление';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'Сохраняет системный заголовок и показывает вкладки под панелью приложения.';
+
+  @override
   String get settingsBack => 'Назад';
 
   @override
@@ -3980,6 +4046,24 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsServersTitle => 'Серверы';
+
+  @override
+  String get settingsSessionAttentionSize => 'Размер пузырька';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => 'Очень большой';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => 'Очень маленький';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => 'Большой';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => 'Маленький';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => 'Стандартный';
 
   @override
   String get settingsSetupWizard => 'Мастер настройки';
@@ -4528,6 +4612,33 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Клавиша Alt';
+
+  @override
+  String get terminalExtraKeyArrowDown => 'Стрелка вниз';
+
+  @override
+  String get terminalExtraKeyArrowLeft => 'Стрелка влево';
+
+  @override
+  String get terminalExtraKeyArrowRight => 'Стрелка вправо';
+
+  @override
+  String get terminalExtraKeyArrowUp => 'Стрелка вверх';
+
+  @override
+  String get terminalExtraKeyControl => 'Клавиша Control';
+
+  @override
+  String get terminalExtraKeyEscape => 'Клавиша Escape';
+
+  @override
+  String get terminalExtraKeyTab => 'Клавиша Tab';
+
+  @override
+  String get terminalExtraKeys => 'Дополнительные клавиши терминала';
+
+  @override
   String get terminalHide => 'Скрыть терминал';
 
   @override
@@ -4807,4 +4918,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => 'Предложения';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }

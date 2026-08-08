@@ -21,13 +21,32 @@ extension _ChatPageWorkspaceController on _ChatPageState {
 
     final completion = Completer<void>();
     _projectScopeTransitionTask = completion.future;
+    final transitionGeneration = ++_projectScopeTransitionGeneration;
+    _projectScopeLoadingOverlayTimer?.cancel();
 
     Object? pendingError;
     StackTrace? pendingStackTrace;
 
     _setState(() {
       _isProjectScopeTransitioning = true;
+      _showProjectScopeLoadingOverlay = false;
     });
+    final overlayTimer = Timer(
+      _ChatPageState._projectScopeLoadingOverlayDelay,
+      () {
+        if (!mounted ||
+            transitionGeneration != _projectScopeTransitionGeneration) {
+          return;
+        }
+        _setState(() {
+          if (_isProjectScopeTransitioning &&
+              transitionGeneration == _projectScopeTransitionGeneration) {
+            _showProjectScopeLoadingOverlay = true;
+          }
+        });
+      },
+    );
+    _projectScopeLoadingOverlayTimer = overlayTimer;
 
     try {
       await operation();
@@ -35,9 +54,17 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       pendingError = error;
       pendingStackTrace = stackTrace;
     } finally {
+      overlayTimer.cancel();
+      if (identical(_projectScopeLoadingOverlayTimer, overlayTimer)) {
+        _projectScopeLoadingOverlayTimer = null;
+      }
+      if (_projectScopeTransitionGeneration == transitionGeneration) {
+        _projectScopeTransitionGeneration += 1;
+      }
       if (mounted) {
         _setState(() {
           _isProjectScopeTransitioning = false;
+          _showProjectScopeLoadingOverlay = false;
         });
       }
       if (!completion.isCompleted) {
@@ -60,11 +87,15 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     }
     final chatProvider = context.read<ChatProvider>();
     await _runProjectScopeTransition(() async {
+      final wasOpen = projectProvider.openProjectIds.contains(projectId);
       final changed = await projectProvider.switchProject(projectId);
       if (!changed) {
         return;
       }
-      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+      await chatProvider.onProjectScopeChanged(
+        waitForRevalidation: false,
+        newlyOpenedDirectory: wasOpen ? null : projectProvider.currentDirectory,
+      );
     });
   }
 
@@ -86,13 +117,23 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     final chatProvider = context.read<ChatProvider>();
     try {
       await _runProjectScopeTransition(() async {
+        final wasOpen = projectProvider.projects.any(
+          (project) =>
+              projectProvider.openProjectIds.contains(project.id) &&
+              areEquivalentFilePaths(project.path, normalized),
+        );
         final switched = await projectProvider.switchToDirectoryContext(
           normalized,
         );
         if (!switched) {
           return;
         }
-        await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+        await chatProvider.onProjectScopeChanged(
+          waitForRevalidation: false,
+          newlyOpenedDirectory: wasOpen
+              ? null
+              : projectProvider.currentDirectory,
+        );
       });
       task.end();
     } catch (error, stackTrace) {
@@ -118,6 +159,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     final projectProvider = context.read<ProjectProvider>();
     final chatProvider = context.read<ChatProvider>();
     await _runProjectScopeTransition(() async {
+      final wasOpen = projectProvider.openProjectIds.contains(projectId);
       final changed = await projectProvider.reopenProject(
         projectId,
         makeActive: true,
@@ -125,13 +167,27 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed) {
         return;
       }
-      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
+      await chatProvider.onProjectScopeChanged(
+        waitForRevalidation: false,
+        newlyOpenedDirectory: wasOpen ? null : projectProvider.currentDirectory,
+      );
     });
   }
 
   Future<void> _archiveClosedProjectContext(String projectId) async {
     final projectProvider = context.read<ProjectProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final project = projectProvider.projects
+        .where((candidate) => candidate.id == projectId)
+        .firstOrNull;
+    final serverId = chatProvider.activeServerId;
     final ok = await projectProvider.archiveClosedProject(projectId);
+    if (ok && project != null) {
+      await chatProvider.removeSessionTabsForProjectHistory(
+        project.path,
+        serverId: serverId,
+      );
+    }
     if (!mounted) {
       return;
     }

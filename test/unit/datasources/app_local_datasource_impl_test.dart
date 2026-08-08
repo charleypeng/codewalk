@@ -272,7 +272,7 @@ void main() {
     final encodedSession = Uri.encodeComponent(sessionId);
     final cachedSessionsKey =
         '${AppConstants.cachedSessionsKey}::$encodedServer::$encodedScope';
-    final lastSessionKey = AppConstants.lastSessionSnapshotKey;
+    const lastSessionKey = AppConstants.lastSessionSnapshotKey;
     final sessionSnapshotKey =
         '${AppConstants.sessionMessagesSnapshotKey}::$encodedSession::$encodedServer::$encodedScope';
     final sessionSnapshotUpdatedAtKey =
@@ -404,6 +404,35 @@ void main() {
         '${AppConstants.cannedAnswersKey}::${Uri.encodeComponent('srv-1')}::${Uri.encodeComponent('/repo/demo')}',
       ),
       '[{"id":"p"}]',
+    );
+  });
+
+  test('stores session tab state separately for each server', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final dataSource = AppLocalDataSourceImpl(sharedPreferences: prefs);
+
+    await dataSource.saveSessionTabsStateJson(
+      '{"version":1,"open":["first"]}',
+      serverId: 'srv/one',
+    );
+    await dataSource.saveSessionTabsStateJson(
+      '{"version":1,"open":["second"]}',
+      serverId: 'srv/two',
+    );
+
+    expect(
+      await dataSource.getSessionTabsStateJson(serverId: 'srv/one'),
+      '{"version":1,"open":["first"]}',
+    );
+    expect(
+      await dataSource.getSessionTabsStateJson(serverId: 'srv/two'),
+      '{"version":1,"open":["second"]}',
+    );
+    expect(
+      prefs.getString(
+        '${AppConstants.sessionTabsStateKey}::${Uri.encodeComponent('srv/one')}',
+      ),
+      '{"version":1,"open":["first"]}',
     );
   });
 }

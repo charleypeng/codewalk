@@ -1097,6 +1097,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatSessionCreateConversationStart => '创建一个新对话以开始聊天';
 
   @override
+  String get chatSessionTabsToggle => '会话标签页';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
@@ -1394,10 +1397,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get composerDeleteAction => '删除';
 
   @override
+  String get composerDropHint => '拖放图片或 PDF 以附加';
+
+  @override
+  String get composerPastedImageName => '粘贴的图片';
+
+  @override
   String get composerEdit => '编辑';
 
   @override
   String get composerExtras => '附加功能';
+
+  @override
+  String get composerExtrasHide => '隐藏更多';
 
   @override
   String get composerNewQuickReply => '新建快速回复';
@@ -1413,6 +1425,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get composerShellMode => 'Shell 模式';
+
+  @override
+  String get desktopWindowClose => '关闭';
+
+  @override
+  String get desktopWindowMaximize => '最大化';
+
+  @override
+  String get desktopWindowMinimize => '最小化';
+
+  @override
+  String get desktopWindowRestore => '还原';
 
   @override
   String get dialogDownload => '下载';
@@ -1551,6 +1575,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filesAddChat => '添加到聊天';
 
   @override
+  String get filesAutosave => '自动保存';
+
+  @override
+  String get filesAutosaveOn => '自动保存已开启';
+
+  @override
+  String get filesAutosaveOff => '自动保存已关闭';
+
+  @override
+  String get filesRedo => '重做';
+
+  @override
+  String get filesUndo => '撤销';
+
+  @override
   String get filesBinaryFilePreview => '二进制文件预览不可用。';
 
   @override
@@ -1558,6 +1597,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get filesContents => '内容';
+
+  @override
+  String get filesDuplicate => '复制';
+
+  @override
+  String get filesDuplicated => '文件已复制';
 
   @override
   String get filesFileEmpty => '文件为空。';
@@ -3213,6 +3258,27 @@ class AppLocalizationsZh extends AppLocalizations {
       '切换到 CodeWalk 经典以使用壁纸颜色。';
 
   @override
+  String get settingsAppearanceWindowChrome => '窗口标签页';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      '选择桌面端会话标签页与标题栏的组合方式。';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => '集成标签页';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      '标签页位于窗口顶部，系统标题栏被隐藏。';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => '系统装饰';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      '保留原生标题栏，并在应用栏下方显示标签页。';
+
+  @override
   String get settingsBack => '返回';
 
   @override
@@ -3701,6 +3767,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsServersTitle => '服务器';
+
+  @override
+  String get settingsSessionAttentionSize => '气泡大小';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => '特大';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => '特小';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => '大';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => '小';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => '标准';
 
   @override
   String get settingsSetupWizard => '设置向导';
@@ -4224,6 +4308,33 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt 键';
+
+  @override
+  String get terminalExtraKeyArrowDown => '向下箭头';
+
+  @override
+  String get terminalExtraKeyArrowLeft => '向左箭头';
+
+  @override
+  String get terminalExtraKeyArrowRight => '向右箭头';
+
+  @override
+  String get terminalExtraKeyArrowUp => '向上箭头';
+
+  @override
+  String get terminalExtraKeyControl => 'Control 键';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape 键';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab 键';
+
+  @override
+  String get terminalExtraKeys => '终端附加键';
+
+  @override
   String get terminalHide => '隐藏终端';
 
   @override
@@ -4492,4 +4603,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => '建议';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }

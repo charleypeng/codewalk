@@ -5,6 +5,7 @@ enum FileTreeContextMenuActionType {
   newFile,
   newFolder,
   rename,
+  duplicate,
   delete,
   copyPath,
   refresh,
@@ -103,6 +104,8 @@ class FileTreeContextMenuRegion extends StatelessWidget {
         return 'file_tree_menu_new_folder';
       case FileTreeContextMenuActionType.rename:
         return 'file_tree_menu_rename';
+      case FileTreeContextMenuActionType.duplicate:
+        return 'file_tree_menu_duplicate';
       case FileTreeContextMenuActionType.delete:
         return 'file_tree_menu_delete';
       case FileTreeContextMenuActionType.copyPath:
@@ -121,6 +124,8 @@ IconData fileTreeActionIcon(FileTreeContextMenuActionType type) {
       return Symbols.create_new_folder;
     case FileTreeContextMenuActionType.rename:
       return Symbols.drive_file_rename_outline;
+    case FileTreeContextMenuActionType.duplicate:
+      return Symbols.file_copy;
     case FileTreeContextMenuActionType.delete:
       return Symbols.delete;
     case FileTreeContextMenuActionType.copyPath:

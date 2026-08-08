@@ -4,6 +4,7 @@ extension _ChatProviderRealtimeOps on ChatProvider {
   Future<void> _cancelActiveMessageSubscription({
     required String reason,
     bool invalidateGeneration = false,
+    Duration timeout = const Duration(seconds: 2),
   }) async {
     final active = _messageSubscription;
     if (invalidateGeneration) {
@@ -11,7 +12,11 @@ extension _ChatProviderRealtimeOps on ChatProvider {
     }
     _messageSubscription = null;
     _activeMessageStreamSessionId = null;
-    await _cancelSubscriptionSafely(active, label: 'message stream ($reason)');
+    await _cancelSubscriptionSafely(
+      active,
+      label: 'message stream ($reason)',
+      timeout: timeout,
+    );
   }
 
   void _setSyncState(ChatSyncState nextState, {String? reason}) {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -8,11 +9,18 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/i18n/l10n_context.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/desktop_window_chrome_service.dart';
 import '../../../theme/brand_colors.dart';
 import '../../../theme/opencode_theme_presets.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
 enum _AppearanceThemeFamily { classic, presets }
+
+bool get _isDesktopPlatform =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows);
 
 String _contrastLabel(double level) {
   if (level <= -0.83) return 'Reduced';
@@ -25,6 +33,65 @@ String _contrastLabel(double level) {
 
 class AppearanceSettingsSection extends StatelessWidget {
   const AppearanceSettingsSection({super.key});
+
+  Widget _buildWindowChromeCard(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    Future<void> select(DesktopWindowChrome? value) async {
+      if (value == null || value == settingsProvider.desktopWindowChrome) {
+        return;
+      }
+      await settingsProvider.setDesktopWindowChrome(value);
+      // Applied immediately so the change is visible without a restart.
+      await DesktopWindowChromeService.apply(value);
+    }
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.settingsAppearanceWindowChrome,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.l10n.settingsAppearanceWindowChromeDescription,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          RadioListTile<DesktopWindowChrome>.adaptive(
+            key: const ValueKey<String>('settings_window_chrome_integrated'),
+            title: Text(context.l10n.settingsAppearanceWindowChromeIntegrated),
+            subtitle: Text(
+              context.l10n.settingsAppearanceWindowChromeIntegratedDescription,
+            ),
+            value: DesktopWindowChrome.integratedTabs,
+            groupValue: settingsProvider.desktopWindowChrome,
+            onChanged: (value) => unawaited(select(value)),
+          ),
+          RadioListTile<DesktopWindowChrome>.adaptive(
+            key: const ValueKey<String>('settings_window_chrome_system'),
+            title: Text(context.l10n.settingsAppearanceWindowChromeSystem),
+            subtitle: Text(
+              context.l10n.settingsAppearanceWindowChromeSystemDescription,
+            ),
+            value: DesktopWindowChrome.systemDecoration,
+            groupValue: settingsProvider.desktopWindowChrome,
+            onChanged: (value) => unawaited(select(value)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -553,6 +620,10 @@ class AppearanceSettingsSection extends StatelessWidget {
                 ),
               ),
             ),
+            if (_isDesktopPlatform) ...[
+              const SizedBox(height: 12),
+              _buildWindowChromeCard(context, settingsProvider),
+            ],
             const SizedBox(height: 12),
             Card(
               child: Column(

@@ -17,6 +17,7 @@ void main() {
       final domain = model.toDomain();
       expect(domain.summary, 'additions: 12, deletions: 3');
       expect(domain.shared, isFalse);
+      expect(domain.createdAt, DateTime.fromMillisecondsSinceEpoch(1000));
     });
 
     test('roundtrips domain object through model json', () {
@@ -24,6 +25,7 @@ void main() {
         id: 'ses_2',
         workspaceId: 'ws_2',
         time: DateTime.fromMillisecondsSinceEpoch(5000),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(4000),
         title: 'Session title',
         shared: true,
         summary: 'summary',
@@ -40,6 +42,7 @@ void main() {
       expect(roundtrip.id, original.id);
       expect(roundtrip.workspaceId, original.workspaceId);
       expect(roundtrip.title, original.title);
+      expect(roundtrip.createdAt, original.createdAt);
       expect(roundtrip.path, original.path);
       expect(roundtrip.shared, isFalse);
     });

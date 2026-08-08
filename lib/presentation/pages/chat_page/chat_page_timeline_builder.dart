@@ -335,6 +335,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final showTerminalPanel =
         terminalPanelVisible && !settingsProvider.terminalPanelMaximized;
     final hideComposerForTerminal = isCompactLayout && terminalPanelVisible;
+    final currentSessionId = chatProvider.currentSession?.id;
+    final sessionTabsRepresentCurrentSession =
+        settingsProvider.showSessionTabs &&
+        currentSessionId != null &&
+        chatProvider.sessionTabs.any(
+          (tab) => tab.isSelected && tab.identity.sessionId == currentSessionId,
+        );
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
@@ -353,7 +360,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   child: Column(
                     children: [
                       // Active session header
-                      if (chatProvider.currentSession != null)
+                      if (chatProvider.currentSession != null &&
+                          !sessionTabsRepresentCurrentSession)
                         Builder(
                           builder: (context) {
                             final currentSession = chatProvider.currentSession!;
@@ -398,59 +406,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                               title,
                                             ),
                                       );
-                                      final sessionActionsButton = Builder(
-                                        builder: (context) {
-                                          final currentShareUrl = chatProvider
-                                              .currentSession
-                                              ?.shareUrl
-                                              ?.trim();
-                                          final hasShareUrl =
-                                              currentShareUrl != null &&
-                                              currentShareUrl.isNotEmpty;
-                                          final canCompact =
-                                              !chatProvider
-                                                  .isCompactingContext &&
-                                              !chatProvider
-                                                  .canAbortActiveResponse;
-
-                                          PopupMenuItem<_CurrentSessionAction>
-                                          buildActionItem(
-                                            _CurrentSessionAction action, {
-                                            bool enabled = true,
-                                          }) {
-                                            return PopupMenuItem<
-                                              _CurrentSessionAction
-                                            >(
-                                              value: action,
-                                              enabled: enabled,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    _sessionActionIcon(
-                                                      action,
-                                                      isShared:
-                                                          currentSession.shared,
-                                                    ),
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Flexible(
-                                                    child: Text(
-                                                      _sessionActionLabel(
-                                                        action,
-                                                        isShared: currentSession
-                                                            .shared,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }
-
-                                          return PopupMenuButton<
+                                      final sessionActionsButton =
+                                          PopupMenuButton<
                                             _CurrentSessionAction
                                           >(
                                             key: const ValueKey<String>(
@@ -464,120 +421,21 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                                 action: action,
                                               ),
                                             ),
-                                            itemBuilder: (context) {
-                                              return [
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .shareToggle,
+                                            itemBuilder: (context) =>
+                                                _buildCurrentSessionActionItems(
+                                                  chatProvider,
+                                                  currentSession,
                                                 ),
-                                                if (hasShareUrl)
-                                                  buildActionItem(
-                                                    _CurrentSessionAction
-                                                        .copyLink,
-                                                  ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .exportMarkdown,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .exportJson,
-                                                ),
-                                                const PopupMenuDivider(),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .viewTasks,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .reviewChanges,
-                                                ),
-                                                const PopupMenuDivider(),
-                                                buildActionItem(
-                                                  _CurrentSessionAction.undo,
-                                                  enabled: chatProvider
-                                                      .canUndoCurrentSession,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction.redo,
-                                                  enabled: chatProvider
-                                                      .canRedoCurrentSession,
-                                                ),
-                                                buildActionItem(
-                                                  _CurrentSessionAction
-                                                      .compactContext,
-                                                  enabled: canCompact,
-                                                ),
-                                              ];
-                                            },
                                             child: const Padding(
                                               padding: EdgeInsets.all(4),
                                               child: Icon(Symbols.more_horiz),
                                             ),
                                           );
-                                        },
-                                      );
-                                      final contextUsageButton = Builder(
-                                        builder: (context) {
-                                          final usage =
-                                              _resolveSessionContextUsage(
-                                                chatProvider,
-                                              );
-                                          final canCompact =
-                                              !chatProvider
-                                                  .isCompactingContext &&
-                                              !chatProvider
-                                                  .canAbortActiveResponse;
-
-                                          return PopupMenuButton<void>(
-                                            key: const ValueKey<String>(
-                                              'appbar_context_usage_button',
-                                            ),
-                                            tooltip:
-                                                context.l10n.chatCompactContext,
-                                            padding: EdgeInsets.zero,
-                                            itemBuilder: (popupContext) {
-                                              final serverId = context
-                                                  .read<AppProvider>()
-                                                  .activeServer
-                                                  ?.id;
-                                              context
-                                                  .read<QuotaProvider>()
-                                                  .ensureLoaded(
-                                                    serverId: serverId,
-                                                  );
-                                              return [
-                                                PopupMenuItem<void>(
-                                                  enabled: false,
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 8,
-                                                      ),
-                                                  child: _buildContextUsagePopover(
-                                                    context,
-                                                    usage: usage,
-                                                    isCompacting: chatProvider
-                                                        .isCompactingContext,
-                                                    canCompact: canCompact,
-                                                    onCompactNow: () =>
-                                                        _compactCurrentSession(
-                                                          chatProvider,
-                                                        ),
-                                                  ),
-                                                ),
-                                              ];
-                                            },
-                                            child: _buildContextUsageControl(
-                                              context,
-                                              usage: usage,
-                                              isCompacting: chatProvider
-                                                  .isCompactingContext,
-                                              enabled: true,
-                                            ),
+                                      final contextUsageButton =
+                                          _buildSessionContextUsageButton(
+                                            context,
+                                            chatProvider,
                                           );
-                                        },
-                                      );
                                       final actionsRow = Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -1219,11 +1077,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (candidates.isEmpty) {
       return null;
     }
+    final sessionIds = _extractChildSessionIdsFromTaskToolPart(part);
     return _resolveSubConversationFromCandidatesByPartOrder(
       chatProvider,
       candidates: candidates,
       targetPartId: part.id,
-      explicitSessionIds: _extractChildSessionIdsFromTaskToolPart(part),
+      authoritativeSessionIds: sessionIds.authoritative,
+      explicitSessionIds: sessionIds.heuristic,
       anchorMatcher: (messagePart) =>
           messagePart is ToolPart &&
           _normalizeToolNameForSubConversation(messagePart.tool) == 'task',
@@ -1262,29 +1122,56 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required String targetPartId,
     required Iterable<String> explicitSessionIds,
     required bool Function(MessagePart part) anchorMatcher,
+    Iterable<String> authoritativeSessionIds = const <String>[],
   }) {
-    final sortedCandidates = List<ChatSession>.from(candidates)
-      ..sort((a, b) => a.time.compareTo(b.time));
+    final sortedCandidates = List<ChatSession>.from(
+      candidates,
+    )..sort((a, b) => (a.createdAt ?? a.time).compareTo(b.createdAt ?? b.time));
     final candidateIds = sortedCandidates.map((session) => session.id).toSet();
 
-    for (final sessionId in explicitSessionIds) {
-      final normalizedSessionId = sessionId.trim();
-      if (normalizedSessionId.isEmpty ||
-          !candidateIds.contains(normalizedSessionId)) {
-        continue;
-      }
-      for (final session in sortedCandidates) {
-        if (session.id == normalizedSessionId) {
-          return session;
+    ChatSession? resolveExplicit(Iterable<String> sessionIds) {
+      for (final sessionId in sessionIds) {
+        final normalizedSessionId = sessionId.trim();
+        if (normalizedSessionId.isEmpty ||
+            !candidateIds.contains(normalizedSessionId)) {
+          continue;
+        }
+        for (final session in sortedCandidates) {
+          if (session.id == normalizedSessionId) {
+            return session;
+          }
         }
       }
+      return null;
+    }
+
+    final authoritativeIds = authoritativeSessionIds
+        .map((sessionId) => sessionId.trim())
+        .where((sessionId) => sessionId.isNotEmpty)
+        .toList(growable: false);
+    final authoritativeTarget = resolveExplicit(authoritativeIds);
+    if (authoritativeTarget != null) {
+      return authoritativeTarget;
+    }
+    if (authoritativeIds.isNotEmpty) {
+      return null;
+    }
+
+    final heuristicTarget = resolveExplicit(explicitSessionIds);
+    if (heuristicTarget != null) {
+      return heuristicTarget;
     }
 
     if (sortedCandidates.length == 1) {
       return sortedCandidates.first;
     }
 
-    var taskIndex = 0;
+    // Positional matching pairs the Nth task part with the Nth child session by
+    // start time. That only holds when both sequences describe the same set:
+    // with concurrent subagents the orders diverge and the wrong sibling opens,
+    // which is issue #112. Count the anchors first and only trust the index
+    // when the two sequences line up exactly.
+    var anchorCount = 0;
     int? selectedTaskIndex;
     for (final message in chatProvider.messages) {
       for (final messagePart in message.parts) {
@@ -1292,23 +1179,22 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           continue;
         }
         if (messagePart.id == targetPartId) {
-          selectedTaskIndex = taskIndex;
-          break;
+          selectedTaskIndex = anchorCount;
         }
-        taskIndex += 1;
-      }
-      if (selectedTaskIndex != null) {
-        break;
+        anchorCount += 1;
       }
     }
 
     if (selectedTaskIndex != null &&
+        anchorCount == sortedCandidates.length &&
         selectedTaskIndex >= 0 &&
         selectedTaskIndex < sortedCandidates.length) {
       return sortedCandidates[selectedTaskIndex];
     }
 
-    return sortedCandidates.last;
+    // Ambiguous: guessing here is what opened somebody else's subagent. Report
+    // nothing found so the caller surfaces a notice instead of lying.
+    return null;
   }
 
   String _normalizeToolNameForSubConversation(String rawToolName) {
@@ -1323,9 +1209,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     return compactName.replaceAll('-', '_');
   }
 
-  List<String> _extractChildSessionIdsFromTaskToolPart(ToolPart part) {
-    final ids = <String>[];
-    final seen = <String>{};
+  ({List<String> authoritative, List<String> heuristic})
+  _extractChildSessionIdsFromTaskToolPart(ToolPart part) {
+    final authoritative = <String>[];
+    final heuristic = <String>[];
+    final authoritativeSeen = <String>{};
+    final heuristicSeen = <String>{};
 
     bool shouldCaptureKey(String key) {
       final normalized = key
@@ -1345,7 +1234,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return candidateKeys.contains(normalized);
     }
 
-    void visit(dynamic value, {String? key}) {
+    void visit(
+      dynamic value, {
+      String? key,
+      required List<String> ids,
+      required Set<String> seen,
+    }) {
       if (value == null) {
         return;
       }
@@ -1361,38 +1255,52 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       if (value is Map) {
         for (final entry in value.entries) {
           final entryKey = entry.key.toString();
-          visit(entry.value, key: entryKey);
+          visit(entry.value, key: entryKey, ids: ids, seen: seen);
         }
         return;
       }
       if (value is Iterable) {
         for (final item in value) {
-          visit(item, key: key);
+          visit(item, key: key, ids: ids, seen: seen);
         }
+      }
+    }
+
+    void visitTaskOutput(String output) {
+      final match = RegExp(
+        r'<task\s+id="([^"]+)"(?:\s+[^>]*)?>',
+        caseSensitive: false,
+      ).firstMatch(output);
+      final sessionId = match?.group(1)?.trim();
+      if (sessionId != null &&
+          sessionId.isNotEmpty &&
+          authoritativeSeen.add(sessionId)) {
+        authoritative.add(sessionId);
       }
     }
 
     switch (part.state.status) {
       case ToolStatus.running:
         final state = part.state as ToolStateRunning;
-        visit(state.input);
-        visit(state.metadata);
+        visit(state.metadata, ids: authoritative, seen: authoritativeSeen);
+        visit(state.input, ids: heuristic, seen: heuristicSeen);
         break;
       case ToolStatus.completed:
         final state = part.state as ToolStateCompleted;
-        visit(state.input);
-        visit(state.metadata);
+        visit(state.metadata, ids: authoritative, seen: authoritativeSeen);
+        visitTaskOutput(state.output);
+        visit(state.input, ids: heuristic, seen: heuristicSeen);
         break;
       case ToolStatus.error:
         final state = part.state as ToolStateError;
-        visit(state.input);
-        visit(state.metadata);
+        visit(state.metadata, ids: authoritative, seen: authoritativeSeen);
+        visit(state.input, ids: heuristic, seen: heuristicSeen);
         break;
       case ToolStatus.pending:
         break;
     }
 
-    return ids;
+    return (authoritative: authoritative, heuristic: heuristic);
   }
 
   void _showSubConversationNotice(String message) {

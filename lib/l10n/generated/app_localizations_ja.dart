@@ -1115,6 +1115,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSessionCreateConversationStart => '新しい会話を作成してチャットを開始してください';
 
   @override
+  String get chatSessionTabsToggle => 'セッションタブ';
+
+  @override
   String chatSessionsLength(int length) {
     return '$length';
   }
@@ -1415,10 +1418,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get composerDeleteAction => '削除';
 
   @override
+  String get composerDropHint => '画像やPDFをドロップして添付';
+
+  @override
+  String get composerPastedImageName => '貼り付けた画像';
+
+  @override
   String get composerEdit => '編集';
 
   @override
   String get composerExtras => 'その他';
+
+  @override
+  String get composerExtrasHide => 'その他を隠す';
 
   @override
   String get composerNewQuickReply => '新規クイック返信';
@@ -1434,6 +1446,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get composerShellMode => 'シェルモード';
+
+  @override
+  String get desktopWindowClose => '閉じる';
+
+  @override
+  String get desktopWindowMaximize => '最大化';
+
+  @override
+  String get desktopWindowMinimize => '最小化';
+
+  @override
+  String get desktopWindowRestore => '元のサイズに戻す';
 
   @override
   String get dialogDownload => 'ダウンロード';
@@ -1578,6 +1602,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get filesAddChat => 'チャットに追加';
 
   @override
+  String get filesAutosave => '自動保存';
+
+  @override
+  String get filesAutosaveOn => '自動保存オン';
+
+  @override
+  String get filesAutosaveOff => '自動保存オフ';
+
+  @override
+  String get filesRedo => 'やり直す';
+
+  @override
+  String get filesUndo => '元に戻す';
+
+  @override
   String get filesBinaryFilePreview => 'バイナリファイルのプレビューは利用できません。';
 
   @override
@@ -1585,6 +1624,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get filesContents => 'コンテンツ';
+
+  @override
+  String get filesDuplicate => '複製';
+
+  @override
+  String get filesDuplicated => 'ファイルを複製しました';
 
   @override
   String get filesFileEmpty => 'ファイルは空です。';
@@ -3281,6 +3326,27 @@ class AppLocalizationsJa extends AppLocalizations {
       '壁紙の色を使用するには、CodeWalk クラシックに切り替えてください。';
 
   @override
+  String get settingsAppearanceWindowChrome => 'ウィンドウのタブ';
+
+  @override
+  String get settingsAppearanceWindowChromeDescription =>
+      'デスクトップでセッションタブとタイトルバーをどう組み合わせるか選びます。';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegrated => '統合タブ';
+
+  @override
+  String get settingsAppearanceWindowChromeIntegratedDescription =>
+      'タブがウィンドウ最上部に配置され、システムのタイトルバーは非表示になります。';
+
+  @override
+  String get settingsAppearanceWindowChromeSystem => 'システムの装飾';
+
+  @override
+  String get settingsAppearanceWindowChromeSystemDescription =>
+      'ネイティブのタイトルバーを維持し、タブをアプリバーの下に表示します。';
+
+  @override
   String get settingsBack => '戻る';
 
   @override
@@ -3784,6 +3850,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsServersTitle => 'サーバー';
+
+  @override
+  String get settingsSessionAttentionSize => 'バブルのサイズ';
+
+  @override
+  String get settingsSessionAttentionSizeExtraLarge => '特大';
+
+  @override
+  String get settingsSessionAttentionSizeExtraSmall => '極小';
+
+  @override
+  String get settingsSessionAttentionSizeLarge => '大';
+
+  @override
+  String get settingsSessionAttentionSizeSmall => '小';
+
+  @override
+  String get settingsSessionAttentionSizeStandard => '標準';
 
   @override
   String get settingsSetupWizard => 'セットアップウィザード';
@@ -4318,6 +4402,33 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get terminalExtraKeyAlt => 'Alt キー';
+
+  @override
+  String get terminalExtraKeyArrowDown => '下矢印';
+
+  @override
+  String get terminalExtraKeyArrowLeft => '左矢印';
+
+  @override
+  String get terminalExtraKeyArrowRight => '右矢印';
+
+  @override
+  String get terminalExtraKeyArrowUp => '上矢印';
+
+  @override
+  String get terminalExtraKeyControl => 'Control キー';
+
+  @override
+  String get terminalExtraKeyEscape => 'Escape キー';
+
+  @override
+  String get terminalExtraKeyTab => 'Tab キー';
+
+  @override
+  String get terminalExtraKeys => 'ターミナルの追加キー';
+
+  @override
   String get terminalHide => 'ターミナルを隠す';
 
   @override
@@ -4589,4 +4700,31 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get workspaceSuggestions => '提案';
+
+  @override
+  String get sessionTabsGestureHintTitle => 'Session tabs have new controls';
+
+  @override
+  String get sessionTabsGestureHintBody =>
+      'Double-click or double-tap a tab to close it. Right-click or touch and hold to open session actions. You can disable tabs in Display Toggles.';
+
+  @override
+  String get sessionTabsGestureHintAcknowledge => 'Got it';
+
+  @override
+  String get sessionTabsGestureHintDisableTabs => 'Disable tabs';
+
+  @override
+  String get sessionTabRenameAction => 'Rename session';
+
+  @override
+  String sessionTabClosedMessage(String title) {
+    return 'Tab \"$title\" closed';
+  }
+
+  @override
+  String get sessionTabUndo => 'Undo';
+
+  @override
+  String get sessionTabRestoreFailed => 'Tab could not be restored.';
 }
