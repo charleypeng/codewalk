@@ -256,11 +256,18 @@
 
 - **Given** a user on desktop or Android configures a server profile protected by Cloudflare Access Managed OAuth
 - **When** the user enables Cloudflare Access OAuth for that profile
-- **Then** CodeWalk opens the system browser (Chrome Custom Tab on Android) for OAuth authorization code + PKCE authentication
+- **Then** CodeWalk binds a real ephemeral local callback on `127.0.0.1` before Dynamic Client Registration or browser launch
+- **Then** the same exact redirect URI, including its ephemeral port and callback path, is reused for registration, authorization, callback validation, and token exchange
+- **Then** desktop opens authorization in the external system browser
+- **Then** Android opens authorization in a browser-owned AndroidX Custom Tab and falls back only to an external browser when Custom Tabs are unavailable
+- **Then** OAuth uses authorization code + PKCE authentication
+- **Then** the callback accepts only an exact GET request for the expected origin, port, and raw path
+- **Then** the callback requires one non-empty matching state and exactly one non-empty authorization code or provider error
+- **Then** unrelated callback paths are non-terminal and callback completion is single-use
 - **Then** OAuth credentials are stored in platform secure storage scoped to that server profile and URL
 - **Then** Cloudflare OAuth and OpenCode Basic Auth are mutually exclusive profile modes in this release
-- **Then** Cloudflare's loopback redirect (`allow_any_on_loopback`) enables the authorization callback across both platforms
-- **Then** iOS, and web users do not get a broken OAuth flow and should use Basic Auth or another supported access path
+- **Then** logs and errors do not expose OAuth secrets or raw provider/token responses
+- **Then** iOS and web users do not get this OAuth flow and should use Basic Auth or another supported access path
 
 ### Cloudflare Access OAuth challenge recovery
 

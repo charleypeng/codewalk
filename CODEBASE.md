@@ -85,8 +85,12 @@ codewalk/
 ├── .github/workflows/                  # CI and release workflows
 ├── .opencode/agents/                  # Repo-local OpenCode agents
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
+│   ├── android/app/build.gradle.kts      # Android build config and AndroidX Browser Custom Tabs dependency
+│   ├── android/app/src/main/AndroidManifest.xml # Android package-visibility query for Custom Tabs
 │   ├── android/app/src/main/kotlin/com/verseles/codewalk/
-│       ├── MainActivity.kt              # Android composer clipboard content-URI resolver MethodChannel, session-overlay host channel, permission/service controls, and activation forwarding
+<<<<<<< HEAD
+│       ├── MainActivity.kt              # Android session-overlay/system channel host, composer clipboard content-URI resolver, native CustomTabs OAuth launcher, and activation forwarding
+>>>>>>> origin/main
 │       └── overlay/SessionOverlayService.kt # Android foreground overlay host and service-owned Flutter engine
 │   └── windows/runner/                   # Windows runner sources (incl. `windows_microphone_plugin.{h,cpp}` runner-owned WASAPI bridge for on-device STT — see ADR-038)
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
@@ -107,7 +111,9 @@ lib/presentation/pages/settings_page.dart     # Settings landing and responsive 
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; mounts the in-app session-attention overlay on iOS; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard; exposes buildComposerReceivingTips() for the localized composer status-tip catalog
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 lib/presentation/services/session_attention/session_overlay_entrypoint.dart # Desktop child-window and Android service-engine Flutter entrypoints
-android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android composer clipboard content-URI resolver MethodChannel and session-overlay host/activation handoff entrypoint
+<<<<<<< HEAD
+android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android platform-channel host (session overlay, composer clipboard, launches native OAuth in CustomTabs) and activation handoff entrypoint
+>>>>>>> origin/main
 android/app/src/main/kotlin/com/verseles/codewalk/overlay/SessionOverlayService.kt # Android foreground-service overlay entrypoint
 lib/presentation/pages/logs_page.dart           # In-app App Logs surface; gated by `SettingsProvider.loggingEnabled` (disabled by default) — renders `_LogsDisabledState` empty-state with enable action when off, otherwise filters by time range/level/search/performance, supports **tag filter chips** (common task/network/cache presets plus **custom tag** input dialog), copies filtered entries, surfaces `Slowest performance logs` modal or, when a `task:*` tag is selected, `Slowest tasks` modal; AppLogger/measurePerformance toggle persisted via SettingsProvider
 .github/workflows/ci.yml                      # CI workflow entry
@@ -134,7 +140,7 @@ lib/core/tailscale/tailscale_state.dart            # TailscaleNodeState enum (di
 lib/core/tailscale/tailscale_http_adapter.dart     # Dio HttpClientAdapter bridging Tailscale's http.Client to Dio; implements fetch() delegating to http.StreamedRequest; handles cancelFuture, body streaming, redirect policy; used by applyTailscaleAdapter to swap default transport
 lib/core/logging/app_logger.dart                   # Centralized logger: global `loggingEnabled` gate (default off), `_performanceLoggingEnabled` second gate, 1000-entry in-memory buffer exposed via ValueListenable, debug/info/warn/error recording with auth/secret redaction, sanitized metric serialization, safeContextId/safePathShape helpers, **structured task tracking** via `beginTask` returning a `TaskHandle` and `runTask<T>` wrapping sync/async bodies (zone-scoped parent task linking, phase tags `phase:start`/`phase:end`, status tags, `taskId`/`parentTaskId`/`elapsedMs` metrics, end/cancel), plus `runPerformanceTask`/`measurePerformance` with **lazy `contextBuilder`** callbacks so performance context is only computed when performance logging is enabled; `installGlobalHandlers()` wires FlutterError/PlatformDispatcher error capture and resets the session clock; `setLoggingEnabled(false)` clears the buffer
 lib/core/auth/oauth_service.dart                   # Conditional export barrel: re-exports oauth_service_result.dart, routes to IO or stub via `export if (dart.library.io)`
-lib/core/auth/oauth_service_io.dart                # OAuthService IO implementation (desktop + Android): Cloudflare Access Managed OAuth with PKCE (S256); desktop uses an in-app local HttpServer loopback callback with the system browser; Android uses an in-app WebView that intercepts the registered loopback redirect before it is loaded (Cloudflare DCR only allows loopback redirect URIs); credential caching/refresh, OAuth metadata discovery, trusted endpoint validation, callback URL validation
+lib/core/auth/oauth_service_io.dart                # OAuthService IO implementation (desktop + Android): Cloudflare Access Managed OAuth with PKCE (S256); binds one ephemeral 127.0.0.1 HttpServer callback before DCR and reuses the exact redirect URI; desktop launches the system browser, while Android delegates authorization to MainActivity's AndroidX Custom Tab with external-browser fallback; credential caching/refresh, OAuth metadata discovery, trusted endpoint validation, strict callback validation
 lib/core/auth/oauth_service_stub.dart              # Non-IO platforms: OAuthService stub (isOAuthChallenge returns false, all other methods throw "not supported on this platform")
 lib/core/auth/oauth_service_result.dart            # OAuthFlowResult model: ok/token/error/needsConsent/log fields for flow completion tracking
 lib/core/auth/oauth_token_storage.dart             # Secure OAuth credential persistence: OAuthTokenStorageBackend interface, FlutterSecureOAuthTokenStorageBackend (flutter_secure_storage), OAuthTokenStorage with save/load/delete/hasValidCredential, cross-profile key scoping, OAuthTokenStorageException
@@ -216,6 +222,7 @@ lib/presentation/services/session_attention/session_attention_host_contract.dart
 lib/presentation/services/session_attention/session_attention_host_protocol.dart # Versioned host snapshot and command protocol
 lib/presentation/services/session_attention/session_attention_host_service*.dart # Conditional Android, desktop child-window, iOS in-app, and unsupported host implementation selection
 lib/presentation/services/session_attention/session_overlay_entrypoint.dart # Flutter entrypoints and IPC bridge for desktop child and Android service hosts
+android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android system/platform channel host; native OAuth launch via AndroidX Custom Tabs with ACTION_VIEW fallback
 lib/presentation/widgets/session_attention_overlay/session_attention_overlay.dart # Shared bubble/panel attention presentation
 lib/presentation/widgets/session_attention_overlay/session_attention_overlay_controller.dart # In-app snapshot, read-aloud, and action controller used by ChatPage on iOS
 lib/presentation/services/workspace_file_operations_service.dart # WorkspaceFileOperationsService (issues #89/#90): shell-gated `createFolder`/`createFile`/`rename`/`delete`/`writeFile` with capability probe and ephemeral `/session` lifecycle; server-bound cancellation/failure aborts the active remote operation before session teardown rather than only dropping the local wait; parses shell responses with the official OpenCode tool-state parser; `writeFile` transports UTF-8 content as 48 KiB environment chunks and uses a negotiated GNU/BSD/Python decoder pipeline to stage an atomic mode-preserving replacement; operation logs are privacy-safe; capabilities are cache-scoped per `serverScopeKey::directory`
@@ -481,7 +488,7 @@ test/unit/presentation/session_attention_host_protocol_test.dart # Versioned hos
 test/unit/domain/experience_settings_test.dart # `ExperienceSettings` JSON round-trip covers `visualStyle` and provider-aware read-aloud settings (`ReadAloudProvider`, voice/model/baseUrl/format)
 test/unit/domain/persisted_session_tabs_state_test.dart # Versioned persisted open/closed session-tab payload round trips and invalid-input handling
 test/unit/auth/                        # OAuth auth unit tests
-test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare Managed OAuth flow, PKCE S256 challenge/verifier generation, local callback server lifecycle, credential caching/refresh, isOAuthChallenge detection, trusted endpoint validation, cross-profile isolation
+test/unit/auth/oauth_service_io_test.dart # OAuth callback validation tests: exact method/origin/effective-port/raw-path/state/code-error cardinality decisions, non-terminal unrelated paths, single-use completion guard, generic token-exchange HTTP failure text, trusted Cloudflare Access host matching, HTTPS-only trusted OAuth endpoint checks, and metadata endpoint trust for the configured server origin or a trusted Cloudflare Access origin
 test/unit/auth/oauth_token_storage_test.dart # OAuth token storage tests: save/load/delete credential, hasValidCredential, OAuthTokenStorageException backend error handling, cross-profile key isolation
 test/unit/auth/tts_api_key_storage_test.dart # TTS API-key storage tests: trim/save/load/delete, per-provider isolation, secure-storage exception mapping
 test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with exact-origin Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth only for the configured origin, sticky OpenCode `X-Session-Id` echo (echoed on later requests, cleared on base URL change, cleared on `clearAuth`)
@@ -554,7 +561,7 @@ tool/release/changelog.py              # Changelog update/extract helper used by
 - Linux keeps native STT disabled; new installs default to Parakeet while Sherpa, Moonshine, Parakeet, and SenseVoice remain explicit desktop-selectable alternatives.
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
 - Material Symbols are the default app icon set in UI surfaces; `SimpleIcons` remains intentional for brand/file-type icons and a few legacy Material `Icons.*` calls remain in focused quota/open/close controls.
-- Cloudflare Access OAuth supported on Android and desktop via the same in-app local HTTP redirect server (loopback callback); on Android the consent flow runs in an in-app WebView that intercepts the loopback redirect, so no loopback network request is ever made. Cloudflare Managed OAuth DCR only accepts loopback redirect URIs, so no custom-scheme/AppAuth redirect is used.`
+- Cloudflare Access OAuth is supported on Android and desktop through a shared ephemeral 127.0.0.1 HttpServer callback bound before DCR and one exact redirect URI; desktop launches the system browser, while Android uses MainActivity's AndroidX Custom Tab with an external-browser fallback. iOS remains unsupported.
 - `package:tailscale` (`third_party/tailscale/`, path dependency in `pubspec.yaml`) provides embedded userspace Tailscale networking via a Go native build hook (`hook/build.dart`). The hook skips Windows native asset registration to keep the package importable while runtime Tailscale support remains stubbed on Windows — preserving Windows release builds. Supports Android, iOS, Linux, macOS; excluded from Web/Windows platform declarations.
 
 ### Debug Logging (issue #91)

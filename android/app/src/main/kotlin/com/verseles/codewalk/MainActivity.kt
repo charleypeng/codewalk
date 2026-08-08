@@ -2,12 +2,15 @@ package com.verseles.codewalk
 
 import android.content.ContentResolver
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.OpenableColumns
 import android.provider.Settings
+import androidx.browser.customtabs.CustomTabsClient
+import androidx.browser.customtabs.CustomTabsIntent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -127,8 +130,46 @@ class MainActivity : FlutterActivity() {
                 "requestDisableBatteryOptimizations" -> {
                     result.success(requestDisableBatteryOptimizations())
                 }
+                "launchOAuthAuthorization" -> {
+                    result.success(
+                        launchOAuthAuthorization(call.argument<String>("url")),
+                    )
+                }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun launchOAuthAuthorization(rawUrl: String?): String? {
+        val uri = rawUrl?.let(Uri::parse) ?: return null
+        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
+
+        val customTabsPackage = CustomTabsClient.getPackageName(this, null)
+        if (customTabsPackage != null) {
+            try {
+                val customTab = CustomTabsIntent.Builder()
+                    .setShowTitle(true)
+                    .build()
+                customTab.intent.setPackage(customTabsPackage)
+                customTab.launchUrl(this, uri)
+                return "custom_tab"
+            } catch (_: ActivityNotFoundException) {
+                // The selected browser disappeared; retry with a normal browser.
+            } catch (_: SecurityException) {
+                // A restricted Custom Tabs provider must not trigger WebView use.
+            }
+        }
+
+        return try {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, uri)
+                    .addCategory(Intent.CATEGORY_BROWSABLE),
+            )
+            "external_browser"
+        } catch (_: ActivityNotFoundException) {
+            null
+        } catch (_: SecurityException) {
+            null
         }
     }
 
