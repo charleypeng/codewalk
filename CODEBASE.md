@@ -88,9 +88,7 @@ codewalk/
 │   ├── android/app/build.gradle.kts      # Android build config and AndroidX Browser Custom Tabs dependency
 │   ├── android/app/src/main/AndroidManifest.xml # Android package-visibility query for Custom Tabs
 │   ├── android/app/src/main/kotlin/com/verseles/codewalk/
-<<<<<<< HEAD
 │       ├── MainActivity.kt              # Android session-overlay/system channel host, composer clipboard content-URI resolver, native CustomTabs OAuth launcher, and activation forwarding
->>>>>>> origin/main
 │       └── overlay/SessionOverlayService.kt # Android foreground overlay host and service-owned Flutter engine
 │   └── windows/runner/                   # Windows runner sources (incl. `windows_microphone_plugin.{h,cpp}` runner-owned WASAPI bridge for on-device STT — see ADR-038)
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
@@ -111,9 +109,7 @@ lib/presentation/pages/settings_page.dart     # Settings landing and responsive 
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; mounts the in-app session-attention overlay on iOS; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard; exposes buildComposerReceivingTips() for the localized composer status-tip catalog
   └── chat_page_local_models_part.dart # Local UI state classes (part of chat_page.dart; see commit 8759defc)
 lib/presentation/services/session_attention/session_overlay_entrypoint.dart # Desktop child-window and Android service-engine Flutter entrypoints
-<<<<<<< HEAD
 android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt # Android platform-channel host (session overlay, composer clipboard, launches native OAuth in CustomTabs) and activation handoff entrypoint
->>>>>>> origin/main
 android/app/src/main/kotlin/com/verseles/codewalk/overlay/SessionOverlayService.kt # Android foreground-service overlay entrypoint
 lib/presentation/pages/logs_page.dart           # In-app App Logs surface; gated by `SettingsProvider.loggingEnabled` (disabled by default) — renders `_LogsDisabledState` empty-state with enable action when off, otherwise filters by time range/level/search/performance, supports **tag filter chips** (common task/network/cache presets plus **custom tag** input dialog), copies filtered entries, surfaces `Slowest performance logs` modal or, when a `task:*` tag is selected, `Slowest tasks` modal; AppLogger/measurePerformance toggle persisted via SettingsProvider
 .github/workflows/ci.yml                      # CI workflow entry
