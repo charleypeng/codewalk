@@ -2,6 +2,23 @@
 
 Release notes for tagged CodeWalk versions. GitHub Issues remain the canonical tracker for planned work and acceptance criteria.
 
+## v1.197.0 - 2026-08-09
+
+- Merge pull request #126 from charleypeng/main
+- fix(oauth): harden profile lifecycle and Android flow
+- docs(CODEBASE): resolve merge descriptions for MainActivity
+- Merge remote-tracking branch 'origin/main'
+- Merge remote-tracking branch 'verseles/main'
+- fix(oauth): secure Android loopback authorization
+- plan: correct PR #126 Android OAuth flow
+- fix(oauth): intercept the loopback redirect in the Android auth WebView
+- fix(oauth): retry token exchange on transient network errors
+- fix(oauth): run the Android consent flow in an in-app WebView
+- feat(oauth): make PKCE flow failures self-diagnosing + add loopback probe tool
+- fix(oauth): never leave the connection-test spinner hanging on OAuth failures
+- fix(oauth): run in-app loopback redirect server on Android, drop flutter_appauth
+- fix(oauth): use private-use URI scheme redirect on Android instead of loopback HTTP
+
 ## v1.196.2 - 2026-08-05
 
 - fix(desktop): route integrated context usage popover
